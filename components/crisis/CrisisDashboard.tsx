@@ -361,6 +361,12 @@ export function CrisisDashboard() {
             <div className="rounded-full" style={{ flex: 3, background: CRISIS_COLORS.crisis }} />
             <div className="rounded-full" style={{ flex: 2, background: CRISIS_COLORS.danger }} />
           </div>
+          <div className="mt-1.5 flex w-full justify-between text-[9px] uppercase tracking-wide text-muted-foreground/70">
+            <span>0 Aman</span>
+            <span>Waspada</span>
+            <span>Krisis</span>
+            <span>Darurat 10</span>
+          </div>
         </div>
       ),
     },
