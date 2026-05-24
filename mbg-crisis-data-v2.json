@@ -39,7 +39,7 @@
     }
   ],
   "market_ticker": [
-    { "label": "USD/IDR", "value": "Rp 16.450", "delta": 0.3 },
+    { "label": "USD/IDR", "value": "Rp 17.700", "delta": 0.3 },
     { "label": "Beras Medium", "value": "Rp 13.800/kg", "delta": 1.2 },
     { "label": "Telur Ayam", "value": "Rp 29.500/kg", "delta": 0.8 },
     { "label": "Minyak Goreng", "value": "Rp 17.200/L", "delta": 0 },
