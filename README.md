@@ -18,23 +18,23 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
-## Synapse AI layer
+## Nexorus AI layer
 
-The dashboard ships with **Synapse**, an AI layer served from `/api/v1/ai/*`:
+The dashboard ships with **Nexorus AI**, an AI layer served from `/api/v1/ai/*`:
 
 - **Copilot** — ask-the-data chat in the ⌘K bar.
 - **Executive briefing** — one-click SITREP from every widget.
 - **Per-widget Ask** — a spark button on each tile (explain / drivers / talking points).
 - **Forecast & early-warning** — escalation trajectories + anomaly alerts in the bell menu.
 
-Synapse runs **hybrid**: with no key configured it answers from deterministic,
+Nexorus AI runs **hybrid**: with no key configured it answers from deterministic,
 data-grounded fallbacks (reliable and zero-cost for demos). Configure a key to switch
 the chat/briefing/widget endpoints to a live model:
 
 ```bash
 # .env.local
-SYNAPSE_AI_KEY=...           # enables the live path
-SYNAPSE_AI_MODEL=...         # optional model override
+NEXORUS_AI_KEY=...           # enables the live path
+NEXORUS_AI_MODEL=...         # optional model override
 ```
 
 No key is required to run or demo the dashboard.

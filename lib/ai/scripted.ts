@@ -6,6 +6,7 @@ export function scriptedChat(question: string, ctx: GroundingContext): string {
   const d = ctx.data;
   const q = question.toLowerCase();
   const cities = [...d.top_cities].sort((a, b) => b.severity_sum - a.severity_sum);
+  const preds = d.predictions ?? [];
 
   if (/(provinsi|kota|hotspot|wilayah|daerah|memburuk|parah|terdampak)/.test(q)) {
     const top = cities[0];
@@ -36,8 +37,10 @@ export function scriptedChat(question: string, ctx: GroundingContext): string {
     return `Sentimen kepemimpinan:\n${list}`;
   }
 
-  if (/(prediksi|akan|ramal|proyeksi|masa depan|7 hari)/.test(q) && d.prediction) {
-    return `${d.prediction.question}\n\nEstimasi: **${d.prediction.probability}% — ${d.prediction.answer_label}**. ${d.prediction.reasoning}`;
+  if (/(prediksi|akan|ramal|proyeksi|masa depan|7 hari)/.test(q) && preds.length) {
+    return preds
+      .map((p) => `${p.question}\nEstimasi: **${p.probability}% — ${p.answer_label}**. ${p.reasoning}`)
+      .join("\n\n");
   }
 
   if (/(rekomendasi|tindakan|saran|harus|langkah|respons)/.test(q)) {
@@ -50,7 +53,7 @@ export function scriptedChat(question: string, ctx: GroundingContext): string {
     `Indeks krisis MBG saat ini **${d.score}/10 (${d.level})** dari ${d.article_count} artikel (${d.high_crisis_count} krisis tinggi).`,
     d.insight ? `Insight: ${d.insight.title}.` : "",
     cities[0] ? `Hotspot utama: ${cities[0].city} (${cities[0].province}), isu ${cities[0].dominant_issue}.` : "",
-    d.prediction ? `Prediksi: ${d.prediction.probability}% ${d.prediction.answer_label}.` : "",
+    preds[0] ? `Prediksi utama: ${preds[0].probability}% ${preds[0].answer_label}.` : "",
   ]
     .filter(Boolean)
     .join(" ");
@@ -83,7 +86,11 @@ export function scriptedBriefing(ctx: GroundingContext): string {
       : "- Tidak ada data.",
     ``,
     `## Prediksi`,
-    d.prediction ? `${d.prediction.question} → **${d.prediction.probability}% ${d.prediction.answer_label}**. ${d.prediction.reasoning}` : "Tidak tersedia.",
+    d.predictions.length
+      ? d.predictions
+          .map((p) => `- ${p.question} → **${p.probability}% ${p.answer_label}**. ${p.reasoning}`)
+          .join("\n")
+      : "Tidak tersedia.",
     ``,
     `## Rekomendasi`,
     `1. Klarifikasi resmi + audit terkait ${cities[0]?.dominant_issue ?? "isu dominan"} dalam 24 jam.`,

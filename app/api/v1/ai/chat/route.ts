@@ -1,5 +1,5 @@
 import { type NextRequest } from "next/server";
-import { buildGroundingContext, SYNAPSE_SYSTEM } from "@/lib/ai/context";
+import { buildGroundingContext, NEXORUS_SYSTEM } from "@/lib/ai/context";
 import { hasLiveAI, liveStream } from "@/lib/ai/engine";
 import { scriptedChat } from "@/lib/ai/scripted";
 
@@ -11,7 +11,7 @@ export async function POST(req: NextRequest) {
   const last = messages.length ? messages[messages.length - 1].content : "";
 
   const ctx = buildGroundingContext();
-  const system = `${SYNAPSE_SYSTEM}\n\nDATA INTELIJEN:\n${ctx.text}`;
+  const system = `${NEXORUS_SYSTEM}\n\nDATA INTELIJEN:\n${ctx.text}`;
   const encoder = new TextEncoder();
 
   const stream = new ReadableStream<Uint8Array>({
@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
           }
         }
       } catch {
-        controller.enqueue(encoder.encode("\n\n[Synapse tidak tersedia saat ini.]"));
+        controller.enqueue(encoder.encode("\n\n[Nexorus AI tidak tersedia saat ini.]"));
       } finally {
         controller.close();
       }

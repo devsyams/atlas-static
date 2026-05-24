@@ -9,50 +9,77 @@
   },
   "insight": {
     "title": "Isu Keracunan Makanan Massal Dominan dan Terlokalisasi di Jember",
-    "text": "Mayoritas liputan berita (7 dari 8 artikel) berpusat pada insiden keracunan makanan terkait program MBG, dengan Jember, Jawa Timur, menjadi hotspot utama yang terdampak. Berita ini terutama melibatkan siswa TK/PAUD, menunjukkan krisis kepercayaan dan keamanan pangan yang serius di daerah tersebut."
+    "text": "Mayoritas liputan berita (7 dari 8 artikel) berpusat pada insiden keracunan makanan terkait program MBG, dengan Jember, Jawa Timur, menjadi hotspot utama yang terdampak. Berita ini terutama melibatkan siswa TK/PAUD, menunjukkan krisis kepercayaan dan keamanan pangan yang serius di daerah tersebut.",
+    "action": "Terbitkan klarifikasi resmi dan audit dapur penyedia di Jember dalam 24 jam, lalu aktifkan juru bicara terpadu untuk menahan eskalasi."
   },
-  "prediction": {
-    "question": "Apakah masyarakat masih menginginkan program MBG berlanjut?",
-    "probability": 20,
-    "answer_label": "Dukungan Lemah",
-    "reasoning": "Estimasi berdasarkan sinyal berita menunjukkan penolakan. Berita didominasi insiden keracunan makanan massal yang melibatkan anak-anak dan tuduhan korupsi disertai demo, menunjukkan erosi kepercayaan publik yang signifikan terhadap kelanjutan program."
-  },
+  "predictions": [
+    {
+      "question": "Apakah eskalasi krisis MBG akan memuncak dalam 7 hari ke depan?",
+      "probability": 72,
+      "answer_label": "Risiko Tinggi",
+      "tone": "negative",
+      "timeframe": "7 hari",
+      "reasoning": "Lonjakan pemberitaan keracunan massal di Jember dan penyebaran isu ke wilayah berpola serupa meningkatkan peluang eskalasi jangka pendek."
+    },
+    {
+      "question": "Apakah aksi protes publik akan meluas ke kota-kota besar?",
+      "probability": 41,
+      "answer_label": "Risiko Sedang",
+      "tone": "neutral",
+      "timeframe": "14 hari",
+      "reasoning": "Sentimen negatif masih terkonsentrasi di tingkat lokal dan belum ada pemicu berskala nasional, namun tuduhan korupsi berpotensi memperluas jangkauan."
+    },
+    {
+      "question": "Apakah masyarakat masih menginginkan program MBG berlanjut?",
+      "probability": 20,
+      "answer_label": "Dukungan Lemah",
+      "tone": "negative",
+      "timeframe": "30 hari",
+      "reasoning": "Berita didominasi insiden keracunan makanan massal yang melibatkan anak-anak dan tuduhan korupsi disertai demo, menunjukkan erosi kepercayaan publik yang signifikan terhadap kelanjutan program."
+    }
+  ],
+  "market_ticker": [
+    { "label": "USD/IDR", "value": "Rp 16.450", "delta": 0.3 },
+    { "label": "Beras Medium", "value": "Rp 13.800/kg", "delta": 1.2 },
+    { "label": "Telur Ayam", "value": "Rp 29.500/kg", "delta": 0.8 },
+    { "label": "Minyak Goreng", "value": "Rp 17.200/L", "delta": 0 },
+    { "label": "Daging Ayam", "value": "Rp 38.000/kg", "delta": -0.4 },
+    { "label": "Cabai Merah", "value": "Rp 45.000/kg", "delta": 3.1 },
+    { "label": "Gula Pasir", "value": "Rp 18.000/kg", "delta": 0.5 },
+    { "label": "Bawang Merah", "value": "Rp 32.000/kg", "delta": -1.1 },
+    { "label": "Inflasi (yoy)", "value": "2,8%", "delta": 0.1 },
+    { "label": "Harga Pangan Nasional", "value": "Indeks 108,4", "delta": 0.6 }
+  ],
   "ai_status": "partial",
   "mapped_article_count": 9,
   "unmapped_article_count": 1,
   "top_keywords": [
-    {
-      "keyword": "keracunan",
-      "count": 141
-    },
-    {
-      "keyword": "apresiasi",
-      "count": 100
-    },
-    {
-      "keyword": "protes",
-      "count": 92
-    },
-    {
-      "keyword": "berhasil",
-      "count": 81
-    },
-    {
-      "keyword": "masalah",
-      "count": 74
-    },
-    {
-      "keyword": "korupsi",
-      "count": 65
-    },
-    {
-      "keyword": "anggaran",
-      "count": 60
-    },
-    {
-      "keyword": "gagal",
-      "count": 55
-    }
+    { "keyword": "keracunan", "count": 141, "sentiment": "negative" },
+    { "keyword": "siswa", "count": 118, "sentiment": "neutral" },
+    { "keyword": "sekolah", "count": 112, "sentiment": "neutral" },
+    { "keyword": "gizi", "count": 105, "sentiment": "positive" },
+    { "keyword": "apresiasi", "count": 100, "sentiment": "positive" },
+    { "keyword": "makan", "count": 96, "sentiment": "neutral" },
+    { "keyword": "protes", "count": 92, "sentiment": "negative" },
+    { "keyword": "dapur", "count": 88, "sentiment": "neutral" },
+    { "keyword": "berhasil", "count": 81, "sentiment": "positive" },
+    { "keyword": "distribusi", "count": 78, "sentiment": "neutral" },
+    { "keyword": "masalah", "count": 74, "sentiment": "negative" },
+    { "keyword": "keamanan", "count": 70, "sentiment": "neutral" },
+    { "keyword": "pangan", "count": 68, "sentiment": "neutral" },
+    { "keyword": "korupsi", "count": 65, "sentiment": "negative" },
+    { "keyword": "anggaran", "count": 60, "sentiment": "neutral" },
+    { "keyword": "demo", "count": 58, "sentiment": "negative" },
+    { "keyword": "gagal", "count": 55, "sentiment": "negative" },
+    { "keyword": "audit", "count": 50, "sentiment": "neutral" },
+    { "keyword": "anak", "count": 47, "sentiment": "neutral" },
+    { "keyword": "evaluasi", "count": 44, "sentiment": "neutral" },
+    { "keyword": "vendor", "count": 40, "sentiment": "neutral" },
+    { "keyword": "higienis", "count": 36, "sentiment": "positive" },
+    { "keyword": "pengawasan", "count": 33, "sentiment": "neutral" },
+    { "keyword": "menu", "count": 29, "sentiment": "neutral" },
+    { "keyword": "klarifikasi", "count": 25, "sentiment": "neutral" },
+    { "keyword": "daerah", "count": 22, "sentiment": "neutral" }
   ],
   "top_cities": [
     {

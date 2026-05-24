@@ -42,11 +42,23 @@ export interface TopCity {
 export interface Keyword {
   keyword: string;
   count: number;
+  /** Tone of the term. Drives word-cloud color; absent = treated as positive. */
+  sentiment?: "negative" | "neutral" | "positive";
+}
+
+/** One scrolling item in the markets & food-prices ticker. */
+export interface MarketTickerItem {
+  label: string;
+  value: string;
+  /** Signed % change. Positive renders red (cost up = bad), negative green. */
+  delta?: number;
 }
 
 export interface Insight {
   title: string;
   text: string;
+  /** A single actionable "so what / now what" takeaway, shown as a callout. */
+  action?: string;
 }
 
 export interface Prediction {
@@ -54,6 +66,14 @@ export interface Prediction {
   probability: number;
   answer_label: string;
   reasoning: string;
+  /** Horizon for the estimate, e.g. "7 hari" — shown next to the percentage. */
+  timeframe?: string;
+  /**
+   * Optional color/sentiment override. When absent, the meter color is derived
+   * from `probability`. Use this when a low probability is still "good news"
+   * (e.g. low chance of recovery should read negative, not positive).
+   */
+  tone?: "negative" | "neutral" | "positive";
 }
 
 export interface ActorTopPost {
@@ -136,7 +156,8 @@ export interface DashboardData {
   mapped_article_count: number;
   unmapped_article_count: number;
   insight: Insight | null;
-  prediction: Prediction | null;
+  predictions: Prediction[];
+  market_ticker: MarketTickerItem[];
   top_keywords: Keyword[];
   city_map_points: CityMapPoint[];
   top_cities: TopCity[];

@@ -310,7 +310,7 @@ export function NeuralIgnition({
 
   const steps = useMemo(() => makeSteps(data), [data]);
   const firstPending = steps.findIndex((s) => progress < s.at);
-  const currentLabel = firstPending === -1 ? "SYNAPSE ONLINE" : steps[firstPending].label;
+  const currentLabel = firstPending === -1 ? "NEXORUS AI ONLINE" : steps[firstPending].label;
 
   const score = data?.score ?? 0;
   const level = data?.level ?? "—";
@@ -345,7 +345,7 @@ export function NeuralIgnition({
           </span>
           <div className="leading-tight">
             <div className="text-[9px] uppercase tracking-[0.28em] text-muted-foreground">Nexorus</div>
-            <div className="text-gradient text-xs font-bold tracking-[0.12em]">SYNAPSE CORE</div>
+            <div className="text-gradient text-xs font-bold tracking-[0.12em]">NEXORUS AI CORE</div>
           </div>
         </div>
 

@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { buildGroundingContext, SYNAPSE_SYSTEM } from "@/lib/ai/context";
+import { buildGroundingContext, NEXORUS_SYSTEM } from "@/lib/ai/context";
 import { hasLiveAI, liveAnswer } from "@/lib/ai/engine";
 import { scriptedWidget } from "@/lib/ai/scripted";
 
@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
   try {
     answer = hasLiveAI()
       ? await liveAnswer(
-          `${SYNAPSE_SYSTEM}\n\nDATA INTELIJEN:\n${ctx.text}`,
+          `${NEXORUS_SYSTEM}\n\nDATA INTELIJEN:\n${ctx.text}`,
           `Fokus pada widget "${widget}". ${MODE_PROMPT[mode] ?? MODE_PROMPT.explain}`,
           512,
         )

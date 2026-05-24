@@ -24,7 +24,7 @@ import {
   LogOut,
 } from "lucide-react";
 import { Dropdown } from "@/components/ui/Dropdown";
-import { SynapseCopilot } from "@/components/ai/SynapseCopilot";
+import { NexorusCopilot } from "@/components/ai/NexorusCopilot";
 
 type NavItem = {
   to: string;
@@ -97,7 +97,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             className="group flex w-full items-center gap-2 rounded-md border border-border bg-background/40 px-3 py-1.5 text-[12px] text-muted-foreground hover:border-primary/40 hover:text-foreground"
           >
             <Sparkles className="h-3.5 w-3.5 shrink-0 text-primary/70 group-hover:text-primary" />
-            <span className="flex-1 text-left">Tanya Synapse…</span>
+            <span className="flex-1 text-left">Tanya Nexorus AI…</span>
             <kbd className="hidden rounded border border-border bg-muted/40 px-1 py-0.5 text-[9px] tracking-wider sm:inline">
               ⌘K
             </kbd>
@@ -166,7 +166,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         <div className="mx-auto max-w-[1800px] px-4 py-4 sm:px-6 sm:py-6">{children}</div>
       </main>
 
-      <SynapseCopilot open={copilotOpen} onClose={() => setCopilotOpen(false)} />
+      <NexorusCopilot open={copilotOpen} onClose={() => setCopilotOpen(false)} />
 
       {/* Status strip */}
       <footer className="z-20 flex h-7 shrink-0 items-center justify-between border-t border-sidebar-border bg-sidebar/90 px-4 font-mono text-[10px] uppercase tracking-widest text-muted-foreground backdrop-blur-xl">
@@ -233,7 +233,7 @@ function NotificationsMenu() {
     >
       <div className="flex items-center justify-between border-b border-border px-3 py-2">
         <span className="flex items-center gap-1.5 text-xs font-semibold">
-          <Sparkles className="h-3 w-3 text-primary" /> Peringatan Synapse
+          <Sparkles className="h-3 w-3 text-primary" /> Peringatan Nexorus AI
         </span>
         <span className="text-[10px] uppercase tracking-widest text-muted-foreground">
           {items.length} aktif

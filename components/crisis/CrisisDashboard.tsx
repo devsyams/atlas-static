@@ -7,13 +7,11 @@ import {
   Gauge,
   Globe2,
   GripVertical,
-  Hash,
   Landmark,
   Lightbulb,
   Lock,
   MapPin,
   Newspaper,
-  Radar,
   RotateCcw,
   Sparkles,
   TrendingUp,
@@ -21,19 +19,19 @@ import {
   Users,
   type LucideIcon,
 } from "lucide-react";
-import type { Article, ArticleDetail, DashboardData } from "@/lib/mbg/types";
+import type { Article, ArticleDetail, DashboardData, MarketTickerItem } from "@/lib/mbg/types";
 import { CRISIS_COLORS, cityKeyFromLocation, scoreColor } from "@/lib/mbg/colors";
 import { cn } from "@/lib/utils";
 import { ScoreGauge } from "./ScoreGauge";
 import { TopCities } from "./TopCities";
-import { Keywords } from "./Keywords";
+import { InsightPanel } from "./InsightPanel";
+import { PredictionMeters } from "./PredictionMeters";
+import { Ticker } from "./Ticker";
 import { ArticleList } from "./ArticleList";
 import { ActorAnalysis } from "./ActorAnalysis";
 import { LeadershipSentiment } from "./LeadershipSentiment";
 import { DetailModal } from "./DetailModal";
-import { ForecastWidget } from "./ForecastWidget";
 import { BriefingPanel } from "@/components/ai/BriefingPanel";
-import { WidgetAskButton } from "@/components/ai/WidgetAskButton";
 
 const IncidentMap = dynamic(() => import("./IncidentMap"), {
   ssr: false,
@@ -41,19 +39,17 @@ const IncidentMap = dynamic(() => import("./IncidentMap"), {
 });
 const GridBoard = dynamic(() => import("./GridBoard"), { ssr: false });
 
-const LAYOUT_KEY = "atlas:crisis:layout:v4";
+const LAYOUT_KEY = "atlas:crisis:layout:v6";
 
 const DEFAULT_LAYOUT: LayoutItem[] = [
-  { i: "insight", x: 0, y: 0, w: 6, h: 3, minW: 3, minH: 2 },
-  { i: "prediction", x: 6, y: 0, w: 6, h: 3, minW: 3, minH: 2 },
-  { i: "map", x: 0, y: 3, w: 8, h: 9, minW: 4, minH: 5 },
-  { i: "score", x: 8, y: 3, w: 4, h: 4, minW: 3, minH: 3 },
-  { i: "topcities", x: 8, y: 7, w: 4, h: 5, minW: 3, minH: 3 },
-  { i: "forecast", x: 0, y: 12, w: 4, h: 6, minW: 3, minH: 4 },
-  { i: "articles", x: 4, y: 12, w: 8, h: 6, minW: 3, minH: 3 },
-  { i: "keywords", x: 8, y: 18, w: 4, h: 3, minW: 3, minH: 2 },
-  { i: "actors", x: 0, y: 18, w: 8, h: 5, minW: 4, minH: 4 },
-  { i: "leadership", x: 0, y: 23, w: 12, h: 6, minW: 4, minH: 4 },
+  { i: "insight", x: 0, y: 0, w: 6, h: 7, minW: 3, minH: 4 },
+  { i: "prediction", x: 6, y: 0, w: 6, h: 7, minW: 3, minH: 4 },
+  { i: "map", x: 0, y: 7, w: 8, h: 9, minW: 4, minH: 5 },
+  { i: "score", x: 8, y: 7, w: 4, h: 4, minW: 3, minH: 3 },
+  { i: "topcities", x: 8, y: 11, w: 4, h: 5, minW: 3, minH: 3 },
+  { i: "articles", x: 0, y: 16, w: 12, h: 6, minW: 3, minH: 3 },
+  { i: "actors", x: 0, y: 22, w: 12, h: 5, minW: 4, minH: 4 },
+  { i: "leadership", x: 0, y: 27, w: 12, h: 6, minW: 4, minH: 4 },
 ];
 
 function reconcileLayout(saved: LayoutItem[]): LayoutItem[] {
@@ -215,6 +211,16 @@ export function CrisisDashboard() {
   const score = data?.score ?? 0;
   const scoreCol = scoreColor(score);
 
+  const tickerItems: MarketTickerItem[] = data
+    ? [
+        { label: "Indeks Krisis MBG", value: `${score.toFixed(1)}/10 · ${data.level}` },
+        ...(data.predictions[0]
+          ? [{ label: "Prediksi Eskalasi", value: `${data.predictions[0].probability}%` }]
+          : []),
+        ...data.market_ticker,
+      ]
+    : [];
+
   const chip = "inline-flex items-center rounded-full border border-border bg-background/40 px-2 py-0.5 text-[10px] font-bold text-foreground/80";
 
   const widgets: Widget[] = [
@@ -222,42 +228,14 @@ export function CrisisDashboard() {
       i: "insight",
       title: "Insight",
       icon: Lightbulb,
-      body: (
-        <div>
-          <div className="text-base font-extrabold leading-tight">
-            {data ? data.insight?.title ?? "Insight belum tersedia" : "Menyusun insight…"}
-          </div>
-          <p className="mt-2 text-[13px] leading-relaxed text-muted-foreground">
-            {data
-              ? data.insight?.text ?? "Belum cukup sinyal untuk menyusun insight."
-              : "Analisis akan muncul setelah sinyal artikel dan sentimen siap."}
-          </p>
-        </div>
-      ),
+      bodyClassName: "overflow-auto scrollbar-thin",
+      body: <InsightPanel data={data} />,
     },
     {
       i: "prediction",
       title: "Prediction",
       icon: TrendingUp,
-      body: (
-        <div>
-          <div className="text-sm font-extrabold leading-tight">
-            {data ? data.prediction?.question ?? "Prediction belum tersedia" : "Menyusun prediction…"}
-          </div>
-          <div className="mt-2 flex items-baseline gap-2.5">
-            <span className="text-[40px] font-extrabold leading-none text-destructive">
-              {data?.prediction ? `${data.prediction.probability}%` : "--"}
-            </span>
-            <span className="rounded-full border border-destructive/30 bg-destructive/10 px-2.5 py-1 text-[11px] font-extrabold text-destructive">
-              {data?.prediction?.answer_label ?? "estimasi AI"}
-            </span>
-          </div>
-          <p className="mt-2 text-[12px] leading-relaxed text-muted-foreground">
-            {data?.prediction?.reasoning ??
-              "Estimasi akan muncul setelah AI membaca sinyal berita dan sentimen."}
-          </p>
-        </div>
-      ),
+      body: <PredictionMeters predictions={data?.predictions ?? []} updatedAt={data?.updated_at} />,
     },
     {
       i: "map",
@@ -364,12 +342,6 @@ export function CrisisDashboard() {
       ),
     },
     {
-      i: "forecast",
-      title: "Prakiraan & Peringatan Dini",
-      icon: Radar,
-      body: <ForecastWidget />,
-    },
-    {
       i: "articles",
       title: "Berita terkini",
       icon: Newspaper,
@@ -383,12 +355,6 @@ export function CrisisDashboard() {
           onOpen={openDetail}
         />
       ),
-    },
-    {
-      i: "keywords",
-      title: "Kata kunci terdeteksi",
-      icon: Hash,
-      body: <Keywords bare keywords={data?.top_keywords ?? []} />,
     },
     {
       i: "actors",
@@ -460,6 +426,8 @@ export function CrisisDashboard() {
         </div>
       </div>
 
+      <Ticker items={tickerItems} />
+
       {editMode && (
         <div className="mb-3 rounded-md border border-primary/30 bg-primary/5 px-3 py-2 text-[11px] text-primary">
           Mode atur aktif — seret judul kartu untuk memindahkan, tarik sudut kanan-bawah untuk
@@ -502,7 +470,6 @@ export function CrisisDashboard() {
                   </div>
                   <div className="widget-action flex items-center gap-1.5">
                     {w.headerRight}
-                    <WidgetAskButton widget={w.i} title={w.title} />
                   </div>
                 </div>
                 <div className={cn("min-h-0 flex-1 scrollbar-thin", w.bodyClassName ?? "overflow-auto p-3")}>
