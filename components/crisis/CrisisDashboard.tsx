@@ -11,6 +11,7 @@ import {
   Lightbulb,
   Lock,
   MapPin,
+  MonitorPlay,
   Newspaper,
   RotateCcw,
   Sparkles,
@@ -27,6 +28,8 @@ import { TopCities } from "./TopCities";
 import { InsightPanel } from "./InsightPanel";
 import { PredictionMeters } from "./PredictionMeters";
 import { Ticker } from "./Ticker";
+import { CountUp } from "./CountUp";
+import { WarRoomMode } from "./WarRoomMode";
 import { ArticleList } from "./ArticleList";
 import { ActorAnalysis } from "./ActorAnalysis";
 import { LeadershipSentiment } from "./LeadershipSentiment";
@@ -103,6 +106,7 @@ export function CrisisDashboard() {
   const [editMode, setEditMode] = useState(false);
   const [layout, setLayout] = useState<LayoutItem[]>(DEFAULT_LAYOUT);
   const [briefingOpen, setBriefingOpen] = useState(false);
+  const [warRoomOpen, setWarRoomOpen] = useState(false);
 
   const loadData = useCallback(() => {
     setLive("loading");
@@ -303,13 +307,20 @@ export function CrisisDashboard() {
           <ScoreGauge score={score} />
           <div className="-mt-1 text-center">
             <div className="text-[40px] font-extrabold leading-none" style={{ color: scoreCol }}>
-              {data ? score.toFixed(1) : "–"}
+              {data ? <CountUp value={score} decimals={1} /> : "–"}
             </div>
             <div className="mt-1 text-sm font-bold" style={{ color: data ? scoreCol : undefined }}>
               {data ? `${data.emoji} ${data.level}` : "Memuat data…"}
             </div>
             <div className="mt-1 text-[11px] text-muted-foreground">
-              {data ? `${data.article_count} artikel · ${data.high_crisis_count} krisis tinggi` : ""}
+              {data ? (
+                <>
+                  <CountUp value={data.article_count} /> artikel · <CountUp value={data.high_crisis_count} />{" "}
+                  krisis tinggi
+                </>
+              ) : (
+                ""
+              )}
             </div>
           </div>
           <div className="mt-3 flex h-[6px] w-full gap-0.5">
@@ -394,6 +405,13 @@ export function CrisisDashboard() {
             className="inline-flex items-center gap-1.5 rounded-md border border-primary/40 bg-gradient-accent px-2.5 py-1.5 text-[11px] font-bold text-primary-foreground shadow-[0_4px_16px_-4px_oklch(0.55_0.18_280/.5)] transition-transform hover:scale-[1.02]"
           >
             <Sparkles className="h-3.5 w-3.5" /> Briefing
+          </button>
+          <button
+            type="button"
+            onClick={() => setWarRoomOpen(true)}
+            className="inline-flex items-center gap-1.5 rounded-md border border-border bg-background/40 px-2.5 py-1.5 text-[11px] font-bold text-muted-foreground hover:text-foreground"
+          >
+            <MonitorPlay className="h-3.5 w-3.5" /> War Room
           </button>
           <button
             type="button"
@@ -492,6 +510,8 @@ export function CrisisDashboard() {
       />
 
       <BriefingPanel open={briefingOpen} onClose={() => setBriefingOpen(false)} />
+
+      <WarRoomMode open={warRoomOpen} onClose={() => setWarRoomOpen(false)} data={data} />
     </div>
   );
 }

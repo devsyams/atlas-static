@@ -53,6 +53,7 @@ export default function IncidentMap({
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
   const geoRef = useRef<L.GeoJSON | null>(null);
+  const pulseRef = useRef<L.LayerGroup | null>(null);
   const geoDataRef = useRef<GeoJSON.FeatureCollection | null>(null);
   const onSelectRef = useRef(onSelectCity);
   onSelectRef.current = onSelectCity;
@@ -181,6 +182,30 @@ export default function IncidentMap({
     });
     gl.addTo(map);
     geoRef.current = gl;
+
+    // Pulsing threat markers on the top hotspots.
+    if (pulseRef.current) {
+      pulseRef.current.remove();
+      pulseRef.current = null;
+    }
+    const hotspots = [...points].sort((a, b) => (b.heat || 0) - (a.heat || 0)).slice(0, 3);
+    if (hotspots.length) {
+      const group = L.layerGroup();
+      for (const p of hotspots) {
+        const color = scoreColor(Math.min(10, p.severity_sum || 0));
+        const icon = L.divIcon({
+          className: "",
+          html:
+            `<span class="threat-pulse" style="--c:${color}">` +
+            `<span class="ring"></span><span class="ring delay"></span><span class="dot"></span></span>`,
+          iconSize: [14, 14],
+          iconAnchor: [7, 7],
+        });
+        L.marker([p.lat, p.lng], { icon, interactive: false, keyboard: false }).addTo(group);
+      }
+      group.addTo(map);
+      pulseRef.current = group;
+    }
   }, [points, geoReady, selectedCityKey]);
 
   // Fly to the selected city's province.

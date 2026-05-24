@@ -22,7 +22,18 @@ export function ScoreGauge({ score }: { score: number }) {
     canvas.style.height = `${H}px`;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-    drawGauge(ctx, score);
+    // Sweep the needle/arc from 0 up to the score on mount or change.
+    let raf = 0;
+    const start = performance.now();
+    const duration = 1100;
+    const tick = (now: number) => {
+      const t = Math.min(1, (now - start) / duration);
+      const eased = 1 - Math.pow(1 - t, 3);
+      drawGauge(ctx, score * eased);
+      if (t < 1) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
   }, [score]);
 
   return <canvas ref={ref} className="block" />;

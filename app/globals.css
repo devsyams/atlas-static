@@ -458,3 +458,64 @@
   animation: ticker-scroll 45s linear infinite;
   will-change: transform;
 }
+
+/* Map gimmicks — threat pulses on hotspots + rotating radar sweep */
+@keyframes threat-ping {
+  0% {
+    transform: scale(0.5);
+    opacity: 0.85;
+  }
+  100% {
+    transform: scale(2.9);
+    opacity: 0;
+  }
+}
+.threat-pulse {
+  position: relative;
+  display: block;
+  height: 14px;
+  width: 14px;
+}
+.threat-pulse .dot {
+  position: absolute;
+  inset: 4px;
+  border-radius: 9999px;
+  background: var(--c);
+  box-shadow: 0 0 8px var(--c);
+}
+.threat-pulse .ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  border: 2px solid var(--c);
+  animation: threat-ping 2.2s ease-out infinite;
+}
+.threat-pulse .ring.delay {
+  animation-delay: 1.1s;
+}
+
+/* War-Room presentation mode */
+@keyframes war-slide-in {
+  from {
+    opacity: 0;
+    transform: translateY(18px) scale(0.99);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+.war-slide {
+  animation: war-slide-in 0.5s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+@keyframes war-progress {
+  from {
+    width: 0%;
+  }
+  to {
+    width: 100%;
+  }
+}
+.war-progress-bar {
+  animation: war-progress linear forwards;
+}

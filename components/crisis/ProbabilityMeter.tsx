@@ -4,6 +4,7 @@ import { useState } from "react";
 import { ChevronDown, Info } from "lucide-react";
 import type { Prediction } from "@/lib/mbg/types";
 import { cn } from "@/lib/utils";
+import { CountUp } from "./CountUp";
 
 type Band = "high" | "mid" | "low";
 
@@ -44,7 +45,7 @@ export function ProbabilityMeter({
       {/* probability + horizon */}
       <div className="mt-2 flex items-baseline gap-2">
         <span className={cn("text-[26px] font-extrabold leading-none tabular-nums", s.text)}>
-          {prediction.probability}%
+          <CountUp value={prediction.probability} />%
         </span>
         <span className="text-[11px] text-muted-foreground">
           <span className={cn("font-bold", s.text)}>{prediction.answer_label}</span>
