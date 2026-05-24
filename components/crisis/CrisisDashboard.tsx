@@ -46,7 +46,7 @@ const DEFAULT_LAYOUT: LayoutItem[] = [
   { i: "topcities", x: 8, y: 9, w: 4, h: 5, minW: 3, minH: 3 },
   { i: "articles", x: 0, y: 12, w: 8, h: 6, minW: 3, minH: 3 },
   { i: "keywords", x: 8, y: 14, w: 4, h: 3, minW: 3, minH: 2 },
-  { i: "actors", x: 0, y: 18, w: 12, h: 7, minW: 4, minH: 4 },
+  { i: "actors", x: 0, y: 18, w: 12, h: 9, minW: 4, minH: 5 },
 ];
 
 function reconcileLayout(saved: LayoutItem[]): LayoutItem[] {

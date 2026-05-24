@@ -52,26 +52,47 @@ export interface Prediction {
   reasoning: string;
 }
 
-export type ActorStance = "Kritis" | "Mendukung" | "Netral";
+export interface ActorTopPost {
+  text: string;
+  likes: number;
+  comments: number;
+  views: number;
+}
 
-export interface CrisisActor {
+/** A monitored social-media account in the sentiment/threat analysis. */
+export interface SocialActor {
+  handle: string;
   name: string;
-  type: string;
-  stance: ActorStance;
-  influence: number;
-  share: number;
-  mentions: number;
-  trend: "up" | "down" | "stable";
-  narrative: string;
-  implication: string;
+  platform: string;
+  status: string;
+  followers: number;
+  influence: number; // 0–10
+  credibility: number; // 0–10
+  sentiment: number; // negative … positive
+  risk_level: string; // low | moderate | high | critical
+  posts_7d: number;
+  brand_mentions: number;
+  avg_engagement: number;
+  total_engagement: number;
+  avatar: string;
+  themes: string[];
+  brand_summary: string;
+  influence_analysis: string;
+  collab_opportunity: string;
+  recommended_actions: string;
+  top_posts: ActorTopPost[];
+}
+
+export interface ActorAnalysisSummary {
+  total: number;
+  by_platform: Record<string, number>;
+  by_risk: Record<string, number>;
 }
 
 export interface ActorThreadAnalysis {
-  headline: string;
-  posture: string;
-  summary: string;
-  actors: CrisisActor[];
-  recommendation: string;
+  actors: SocialActor[];
+  summary: ActorAnalysisSummary;
+  updated_at: string;
 }
 
 export interface DashboardData {
