@@ -78,7 +78,7 @@ const STAGES = [
   "Memproyeksikan trajektori risiko",
   "Mensintesis SITREP eksekutif",
 ];
-const STEP_MS = 620;
+const STEP_MS = 1100;
 
 export function BriefingPanel({ open, onClose }: { open: boolean; onClose: () => void }) {
   const [content, setContent] = useState("");
@@ -110,7 +110,7 @@ export function BriefingPanel({ open, onClose }: { open: boolean; onClose: () =>
         setContent(d.content);
         setUpdatedAt(d.updated_at);
       })
-      .catch(() => setContent("Synapse tidak dapat menyusun briefing saat ini."))
+      .catch(() => setContent("Nexorus AI tidak dapat menyusun briefing saat ini."))
       .finally(() => setLoading(false));
 
     // March through the orchestration pipeline on a timer (independent of fetch).
@@ -143,12 +143,12 @@ export function BriefingPanel({ open, onClose }: { open: boolean; onClose: () =>
       .replace(/^[-*]\s+(.+)$/gm, "<li>$1</li>")
       .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
       .replace(/\n{2,}/g, "</p><p>");
-    w.document.write(`<!doctype html><html><head><title>Synapse SITREP</title>
+    w.document.write(`<!doctype html><html><head><title>Nexorus AI SITREP</title>
       <style>body{font-family:Georgia,serif;max-width:720px;margin:48px auto;padding:0 24px;color:#16181d;line-height:1.6}
       h1{font-size:22px;border-bottom:2px solid #6d4aff;padding-bottom:8px}
       h2{font-size:16px;margin-top:24px;color:#3a2db5}h3{font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:#555}
       li{margin:4px 0}.meta{color:#888;font-size:12px;margin-bottom:24px}</style></head>
-      <body><h1>Synapse · Executive SITREP</h1><div class="meta">Atlas MBG Crisis Dashboard · diperbarui ${updatedAt}</div>
+      <body><h1>Nexorus AI · Executive SITREP</h1><div class="meta">Atlas MBG Crisis Dashboard · diperbarui ${updatedAt}</div>
       <p>${safe}</p></body></html>`);
     w.document.close();
     w.focus();
@@ -175,7 +175,7 @@ export function BriefingPanel({ open, onClose }: { open: boolean; onClose: () =>
             <div className="leading-tight">
               <div className="text-[15px] font-bold">Executive Briefing</div>
               <div className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
-                Synapse AI Orchestration
+                Nexorus AI Orchestration
               </div>
             </div>
           </div>
@@ -253,7 +253,7 @@ function Orchestrating({ stage, loading }: { stage: number; loading: boolean }) 
 
       {/* title */}
       <div className="text-center">
-        <div className="text-gradient text-sm font-bold tracking-wide">Synapse AI Orchestration</div>
+        <div className="text-gradient text-sm font-bold tracking-wide">Nexorus AI Orchestration</div>
         <div className="mt-1 text-[11px] text-muted-foreground">
           Mensintesis intelijen dari seluruh widget…
         </div>

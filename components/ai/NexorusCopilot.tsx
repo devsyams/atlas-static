@@ -34,7 +34,7 @@ function Rich({ text }: { text: string }) {
   );
 }
 
-export function SynapseCopilot({ open, onClose }: { open: boolean; onClose: () => void }) {
+export function NexorusCopilot({ open, onClose }: { open: boolean; onClose: () => void }) {
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
@@ -83,7 +83,7 @@ export function SynapseCopilot({ open, onClose }: { open: boolean; onClose: () =
     } catch {
       setMessages((m) => {
         const copy = [...m];
-        copy[copy.length - 1] = { role: "assistant", content: "Synapse tidak tersedia saat ini." };
+        copy[copy.length - 1] = { role: "assistant", content: "Nexorus AI tidak tersedia saat ini." };
         return copy;
       });
     } finally {
@@ -104,7 +104,7 @@ export function SynapseCopilot({ open, onClose }: { open: boolean; onClose: () =
               <Sparkles className="h-4 w-4" />
             </span>
             <div className="leading-tight">
-              <div className="text-gradient text-sm font-bold tracking-wide">Synapse</div>
+              <div className="text-gradient text-sm font-bold tracking-wide">Nexorus AI</div>
               <div className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">Atlas AI Analyst</div>
             </div>
           </div>
@@ -123,7 +123,7 @@ export function SynapseCopilot({ open, onClose }: { open: boolean; onClose: () =
           {messages.length === 0 ? (
             <div className="mt-2">
               <p className="text-[13px] leading-relaxed text-muted-foreground">
-                Tanya apa saja tentang data krisis di dasbor — Synapse menjawab berdasarkan sinyal yang sedang tampil.
+                Tanya apa saja tentang data krisis di dasbor — Nexorus AI menjawab berdasarkan sinyal yang sedang tampil.
               </p>
               <div className="mt-4 flex flex-col gap-2">
                 {SUGGESTIONS.map((s) => (
@@ -174,7 +174,7 @@ export function SynapseCopilot({ open, onClose }: { open: boolean; onClose: () =
                 }
               }}
               rows={1}
-              placeholder="Tanya Synapse…"
+              placeholder="Tanya Nexorus AI…"
               className="max-h-28 flex-1 resize-none bg-transparent text-[13px] text-foreground outline-none placeholder:text-muted-foreground"
             />
             <button
@@ -188,7 +188,7 @@ export function SynapseCopilot({ open, onClose }: { open: boolean; onClose: () =
             </button>
           </div>
           <div className="mt-1.5 text-center text-[9px] uppercase tracking-[0.2em] text-muted-foreground/60">
-            Jawaban dibuat oleh Synapse dari data dasbor
+            Jawaban dibuat oleh Nexorus AI dari data dasbor
           </div>
         </div>
       </div>

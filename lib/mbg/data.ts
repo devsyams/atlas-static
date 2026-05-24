@@ -8,25 +8,55 @@ import type {
   DashboardData,
   Keyword,
   LeadershipSentiment,
+  MarketTickerItem,
+  Prediction,
   TopCity,
 } from "./types";
 
 const raw = rawData as typeof rawData;
 
+const DOW = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+/**
+ * Demo timestamps anchored to "now": a plain date, a date+time fixed at 00:10:00,
+ * and an RFC-style string whose first 16 chars are the date (the slice the UI
+ * shows for article rows). Every displayed timestamp is rebased onto these so the
+ * dashboard always reads as current.
+ */
+function nowStamps() {
+  const d = new Date();
+  const dd = String(d.getDate()).padStart(2, "0");
+  const mon = MON[d.getMonth()];
+  const yyyy = d.getFullYear();
+  const dow = DOW[d.getDay()];
+  const date = `${dd} ${mon} ${yyyy}`;
+  return {
+    date,
+    dateTime: `${date} 00:10:00`,
+    rfc: `${dow}, ${dd} ${mon} ${yyyy} 00:10:00 GMT`,
+  };
+}
+
 /** Map the exported crisis JSON onto the dashboard shape the UI consumes. */
 export function buildDashboard(): DashboardData {
+  const stamps = nowStamps();
+  const leadership = raw.leadership_sentiment as unknown as LeadershipSentiment | null;
+  const actors = raw.actor_thread_analysis as unknown as ActorThreadAnalysis | null;
+
   return {
     score: raw.crisis_score.score,
     emoji: raw.crisis_score.emoji,
     level: raw.crisis_score.level,
     article_count: raw.crisis_score.article_count,
     high_crisis_count: raw.crisis_score.high_crisis_count,
-    updated_at: raw.updated_at,
+    updated_at: stamps.dateTime,
     ai_status: raw.ai_status as AiStatus,
     mapped_article_count: raw.mapped_article_count,
     unmapped_article_count: raw.unmapped_article_count,
     insight: raw.insight,
-    prediction: raw.prediction,
+    predictions: (raw.predictions ?? []) as Prediction[],
+    market_ticker: (raw.market_ticker ?? []) as MarketTickerItem[],
     top_keywords: raw.top_keywords as Keyword[],
     city_map_points: raw.city_map_points as CityMapPoint[],
     top_cities: raw.top_cities as TopCity[],
@@ -35,7 +65,7 @@ export function buildDashboard(): DashboardData {
         title: a.title,
         source: a.source,
         score: a.score,
-        date: a.date,
+        date: stamps.rfc,
         link: a.link,
         location: a.location
           ? { city: a.location.city, province: a.location.province }
@@ -43,10 +73,17 @@ export function buildDashboard(): DashboardData {
         dominant_issue: a.dominant_issue,
       }),
     ),
-    actor_thread_analysis:
-      (raw.actor_thread_analysis as unknown as ActorThreadAnalysis) ?? null,
-    leadership_sentiment:
-      (raw.leadership_sentiment as unknown as LeadershipSentiment) ?? null,
+    actor_thread_analysis: actors ? { ...actors, updated_at: stamps.dateTime } : null,
+    leadership_sentiment: leadership
+      ? {
+          ...leadership,
+          updated_at: stamps.dateTime,
+          leaders: leadership.leaders.map((l) => ({
+            ...l,
+            recent_articles: l.recent_articles.map((a) => ({ ...a, date: stamps.rfc })),
+          })),
+        }
+      : null,
   };
 }
 

@@ -306,7 +306,7 @@
   bottom: 4px;
 }
 
-/* Synapse AI Orchestration — briefing reveal sequence */
+/* Nexorus AI Orchestration — briefing reveal sequence (syn- class prefix kept internal) */
 @keyframes syn-ring-spin {
   to {
     transform: rotate(360deg);
@@ -443,4 +443,18 @@
 }
 .syn-flash {
   animation: syn-flash 0.7s ease-out forwards;
+}
+
+/* Markets & food-prices running ticker */
+@keyframes ticker-scroll {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+.ticker-track {
+  animation: ticker-scroll 45s linear infinite;
+  will-change: transform;
 }

@@ -1,9 +1,9 @@
 import { buildDashboard } from "@/lib/mbg/data";
 import type { DashboardData } from "@/lib/mbg/types";
 
-/** Synapse analyst persona — grounded, concise, Indonesian, no vendor names. */
-export const SYNAPSE_SYSTEM = [
-  "Kamu adalah Synapse, analis intelijen untuk command center Atlas (pemantauan krisis program MBG / Makan Bergizi Gratis di Indonesia).",
+/** Nexorus AI analyst persona — grounded, concise, Indonesian, no vendor names. */
+export const NEXORUS_SYSTEM = [
+  "Kamu adalah Nexorus AI, analis intelijen untuk command center Atlas (pemantauan krisis program MBG / Makan Bergizi Gratis di Indonesia).",
   "Jawab ringkas, faktual, dan HANYA berdasarkan DATA INTELIJEN yang diberikan di bawah.",
   "Gunakan Bahasa Indonesia. Kutip angka langsung dari data. Jika informasi tidak ada di data, katakan 'tidak tersedia di data saat ini'.",
   "Hindari basa-basi. Saat relevan, beri implikasi singkat atau rekomendasi tindakan untuk pengambil keputusan.",
@@ -23,9 +23,13 @@ export function buildGroundingContext(): GroundingContext {
     `SKOR KRISIS: ${d.score}/10 (${d.level}) — ${d.article_count} artikel, ${d.high_crisis_count} berstatus krisis tinggi. Diperbarui ${d.updated_at}. Status AI: ${d.ai_status} (${d.mapped_article_count} terpeta, ${d.unmapped_article_count} belum).`,
   );
   if (d.insight) lines.push(`INSIGHT: ${d.insight.title} — ${d.insight.text}`);
-  if (d.prediction)
+  if (d.predictions.length)
     lines.push(
-      `PREDIKSI: "${d.prediction.question}" → ${d.prediction.probability}% (${d.prediction.answer_label}). ${d.prediction.reasoning}`,
+      `PREDIKSI:\n${d.predictions
+        .map(
+          (p) => `- "${p.question}" → ${p.probability}% (${p.answer_label}). ${p.reasoning}`,
+        )
+        .join("\n")}`,
     );
 
   if (d.top_cities.length)

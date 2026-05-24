@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { buildGroundingContext, SYNAPSE_SYSTEM } from "@/lib/ai/context";
+import { buildGroundingContext, NEXORUS_SYSTEM } from "@/lib/ai/context";
 import { hasLiveAI, liveAnswer } from "@/lib/ai/engine";
 import { scriptedBriefing } from "@/lib/ai/scripted";
 
@@ -15,7 +15,7 @@ export async function POST() {
   let content: string;
   try {
     content = hasLiveAI()
-      ? await liveAnswer(`${SYNAPSE_SYSTEM}\n\nDATA INTELIJEN:\n${ctx.text}`, BRIEFING_PROMPT, 1600)
+      ? await liveAnswer(`${NEXORUS_SYSTEM}\n\nDATA INTELIJEN:\n${ctx.text}`, BRIEFING_PROMPT, 1600)
       : scriptedBriefing(ctx);
   } catch {
     content = scriptedBriefing(ctx);

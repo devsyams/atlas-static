@@ -1,14 +1,14 @@
 import Anthropic from "@anthropic-ai/sdk";
 
 // Vendor-neutral env so the UI/config never names the provider.
-const MODEL = process.env.SYNAPSE_AI_MODEL || "claude-opus-4-7";
+const MODEL = process.env.NEXORUS_AI_MODEL || "claude-opus-4-7";
 
 export function hasLiveAI(): boolean {
-  return !!process.env.SYNAPSE_AI_KEY;
+  return !!process.env.NEXORUS_AI_KEY;
 }
 
 function client(): Anthropic {
-  return new Anthropic({ apiKey: process.env.SYNAPSE_AI_KEY });
+  return new Anthropic({ apiKey: process.env.NEXORUS_AI_KEY });
 }
 
 function systemBlocks(system: string) {
