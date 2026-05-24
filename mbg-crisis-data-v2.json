@@ -1,0 +1,415 @@
+{
+  "exported_at": "2026-05-23T18:18:52.409Z",
+  "crisis_score": {
+    "score": 4,
+    "level": "WASPADA",
+    "emoji": "🟡",
+    "article_count": 288,
+    "high_crisis_count": 9
+  },
+  "insight": {
+    "title": "Isu Keamanan Pangan dan Integritas Ancam Reputasi Program MBG",
+    "text": "Program MBG sangat rentan terhadap insiden keracunan makanan massal yang menimpa siswa di Jember dan Temanggung, menunjukkan masalah serius pada implementasi. Bersamaan dengan itu, isu korupsi dan pemborosan semakin memperburuk citra program di mata publik."
+  },
+  "prediction": {
+    "question": "Apakah masyarakat masih menginginkan program MBG berlanjut?",
+    "probability": 25,
+    "answer_label": "Dukungan Rapuh",
+    "reasoning": "Estimasi ini berdasarkan sinyal berita dan sentimen yang didominasi oleh insiden keracunan makanan massal pada anak-anak di Jember dan Temanggung, serta isu korupsi di Jakarta, yang secara signifikan mengikis kepercayaan dan dukungan masyarakat terhadap program MBG."
+  },
+  "ai_status": "partial",
+  "mapped_article_count": 9,
+  "unmapped_article_count": 1,
+  "top_keywords": [
+    {
+      "keyword": "keracunan",
+      "count": 97
+    },
+    {
+      "keyword": "korupsi",
+      "count": 56
+    },
+    {
+      "keyword": "anggaran",
+      "count": 27
+    },
+    {
+      "keyword": "masalah",
+      "count": 6
+    },
+    {
+      "keyword": "berhasil",
+      "count": 6
+    },
+    {
+      "keyword": "kritik",
+      "count": 6
+    },
+    {
+      "keyword": "dilarikan",
+      "count": 5
+    },
+    {
+      "keyword": "evaluasi",
+      "count": 2
+    }
+  ],
+  "top_cities": [
+    {
+      "city_key": "Jember|Jawa Timur",
+      "city": "Jember",
+      "province": "Jawa Timur",
+      "lat": -8.170668,
+      "lng": 113.702934,
+      "article_count": 6,
+      "severity_sum": 36,
+      "heat": 570,
+      "dominant_issue": "Keracunan Makanan"
+    },
+    {
+      "city_key": "Temanggung|Jawa Tengah",
+      "city": "Temanggung",
+      "province": "Jawa Tengah",
+      "lat": -7.3,
+      "lng": 110.19,
+      "article_count": 1,
+      "severity_sum": 7,
+      "heat": 98,
+      "dominant_issue": "Keracunan makanan"
+    },
+    {
+      "city_key": "Jakarta|DKI Jakarta",
+      "city": "Jakarta",
+      "province": "DKI Jakarta",
+      "lat": -6.2,
+      "lng": 106.8,
+      "article_count": 1,
+      "severity_sum": 6,
+      "heat": 90,
+      "dominant_issue": "Korupsi"
+    },
+    {
+      "city_key": "Pangkalpinang|Kepulauan Bangka Belitung",
+      "city": "Pangkalpinang",
+      "province": "Kepulauan Bangka Belitung",
+      "lat": -2.1396,
+      "lng": 106.1166,
+      "article_count": 1,
+      "severity_sum": 5,
+      "heat": 95,
+      "dominant_issue": "Kerentanan Korupsi"
+    }
+  ],
+  "city_map_points": [
+    {
+      "city_key": "Jember|Jawa Timur",
+      "city": "Jember",
+      "province": "Jawa Timur",
+      "lat": -8.170668,
+      "lng": 113.702934,
+      "article_count": 6,
+      "severity_sum": 36,
+      "heat": 570,
+      "dominant_issue": "Keracunan Makanan"
+    },
+    {
+      "city_key": "Temanggung|Jawa Tengah",
+      "city": "Temanggung",
+      "province": "Jawa Tengah",
+      "lat": -7.3,
+      "lng": 110.19,
+      "article_count": 1,
+      "severity_sum": 7,
+      "heat": 98,
+      "dominant_issue": "Keracunan makanan"
+    },
+    {
+      "city_key": "Jakarta|DKI Jakarta",
+      "city": "Jakarta",
+      "province": "DKI Jakarta",
+      "lat": -6.2,
+      "lng": 106.8,
+      "article_count": 1,
+      "severity_sum": 6,
+      "heat": 90,
+      "dominant_issue": "Korupsi"
+    },
+    {
+      "city_key": "Pangkalpinang|Kepulauan Bangka Belitung",
+      "city": "Pangkalpinang",
+      "province": "Kepulauan Bangka Belitung",
+      "lat": -2.1396,
+      "lng": 106.1166,
+      "article_count": 1,
+      "severity_sum": 5,
+      "heat": 95,
+      "dominant_issue": "Kerentanan Korupsi"
+    }
+  ],
+  "articles": [
+    {
+      "title": "Ratusan Siswa dan Guru di Temanggung Diare hingga Muntah Diduga Keracunan MBG - detikNews",
+      "source": "detikNews",
+      "link": "https://news.google.com/rss/articles/CBMiuAFBVV95cUxNdGRRbERDcVJzNmdwSVJDSW1lc0RJSEY2ZVJuQ09BdlhpcWxMYUlGc3d5dDZEVm9UN1RjVFJLQlJ0QVV2Qm41SmlDX0x1WWtqUllpN1Ewdi1WOE54aE1EMHJVQm96cDRfTGpRU3pLSUNxUUdJckwxbzljZndUbF9tS2xoaDhYbS03SjVGcV9semJMRTg4bkV2MUNxOVpqVC02YnFqWC1NcmJ4VHkyNEhoVjVyS1AzUXdP0gG-AUFVX3lxTFBHcWdnbzc3N2RjZTJ6U3c4WndNb3d6R0t4dEJHVXJMRWZpaFhYQUxzTmZkWXhQNlV1TkxKVzdzRy1DVUw4aFhRaXZqbWlSei1UcVJ6MzBVQkFCY0pwR0tpYjNNcldlMTJkcE5RdmxDOUdsd3p6bDBPUzVzODlXZ25waU5RYXhWelBwQVY1LV8wTmplRWFaRUU0ZVgzRUhDYjRBVDcxVTdIamQ5bVJybDZKS3gyUHBBaVR6cXZEeWc?oc=5",
+      "date": "Fri, 22 May 2026 07:49:23 GMT",
+      "summary": "<a href=\"https://news.google.com/rss/articles/CBMiuAFBVV95cUxNdGRRbERDcVJzNmdwSVJDSW1lc0RJSEY2ZVJuQ09BdlhpcWxMYUlGc3d5dDZEVm9UN1RjVFJLQlJ0QVV2Qm41SmlDX0x1WWtqUllpN1Ewdi1WOE54aE1EMHJVQm96cDRfTGpRU3pLSUNxUUdJckwxbzljZndUbF9tS2xoaDhYbS03SjVGcV9semJMRTg4bkV2MUNxOVpqVC02YnFqWC1NcmJ4VHkyNEhoVjVyS1AzUXdP0gG-AUFVX3lxTFBHcWdnbzc3N2RjZTJ6U3c4WndNb3d6R0t4dEJHVXJMRWZpaFhYQUxzTmZkWXhQNlV1TkxKVzdzRy1DVUw4aFhRaXZqbWlSei1UcVJ6MzBVQkFCY0pwR0tpYjNNcldlMTJkcE5RdmxDOUdsd3p6bDBPUzVzODlXZ25waU5RYXhWelBwQVY1LV8wTmplRWFaRUU0ZVgzRUhDYjRBVDcxVTdIamQ5bVJybDZKS3gyUHBBaVR6cXZEeWc?oc=5\" target=\"_blank\">Ratusan Siswa dan Guru di Temanggung Diare hingga Muntah Diduga Keracunan MBG</a>&nbsp;&nbsp;<font color=\"#6f6f6f\">detikNews</font>",
+      "score": 7,
+      "level": "KRISIS",
+      "emoji": "🔴",
+      "keywords": [
+        "keracunan",
+        "muntah",
+        "diare"
+      ],
+      "location": {
+        "city": "Temanggung",
+        "province": "Jawa Tengah",
+        "lat": -7.3,
+        "lng": 110.19,
+        "confidence": 1
+      },
+      "dominant_issue": "Keracunan makanan",
+      "secondary_issues": [
+        "Diare",
+        "Muntah"
+      ],
+      "negative_relevance": 98,
+      "ai_reasoning": "Lokasi kota (Temanggung) dan isu negatif utama (Diduga Keracunan MBG, diare, muntah) secara eksplisit disebutkan dalam judul dan isi berita."
+    },
+    {
+      "title": "Belasan Murid TK di Jember Diduga Keracunan MBG, Dilarikan ke Puskesmas - Tadatodays.com",
+      "source": "Tadatodays.com",
+      "link": "https://news.google.com/rss/articles/CBMiogFBVV95cUxORlAtbjQyM1VSakRTVi15bTc2ei1LaFRNWDBkWEREdC1GQlgxeHQzamsySXFZcE8xbjVPYks0SjNORzBSNGowRXVZMDMtWmdKYllaaTFXblhMYWxBLWpEQXFLZG1xVmRORDFxd3ZTa0JXQk5WazVoZDBMdDhVeFZidC16S3YwdDBYWnA5a1RQV2o3NWlOb1JWOXhfLTVoYUV0SVE?oc=5",
+      "date": "Thu, 21 May 2026 02:36:00 GMT",
+      "summary": "<a href=\"https://news.google.com/rss/articles/CBMiogFBVV95cUxORlAtbjQyM1VSakRTVi15bTc2ei1LaFRNWDBkWEREdC1GQlgxeHQzamsySXFZcE8xbjVPYks0SjNORzBSNGowRXVZMDMtWmdKYllaaTFXblhMYWxBLWpEQXFLZG1xVmRORDFxd3ZTa0JXQk5WazVoZDBMdDhVeFZidC16S3YwdDBYWnA5a1RQV2o3NWlOb1JWOXhfLTVoYUV0SVE?oc=5\" target=\"_blank\">Belasan Murid TK di Jember Diduga Keracunan MBG, Dilarikan ke Puskesmas</a>&nbsp;&nbsp;<font color=\"#6f6f6f\">Tadatodays.com</font>",
+      "score": 6,
+      "level": "KRISIS",
+      "emoji": "🔴",
+      "keywords": [
+        "keracunan",
+        "dilarikan"
+      ],
+      "location": {
+        "city": "Jember",
+        "province": "Jawa Timur",
+        "lat": -8.170668,
+        "lng": 113.702934,
+        "confidence": 1
+      },
+      "dominant_issue": "Keracunan MBG",
+      "secondary_issues": [],
+      "negative_relevance": 95,
+      "ai_reasoning": "Lokasi 'Jember' dan isu 'Keracunan MBG' diekstrak langsung dari judul berita. Provinsi dan koordinat dicari berdasarkan nama kota."
+    },
+    {
+      "title": "Belasan Siswa TK di Jember Dilarikan ke Puskesmas Diduga Keracunan MBG - Akurat Jatim",
+      "source": "Akurat Jatim",
+      "link": "https://news.google.com/rss/articles/CBMiqgFBVV95cUxNaE1DVUVoeEZwU19WVjlnSGV6eDVsQzhYRDVfYjJKcXJUZUhqaFNQeFBUU3IweDk5UTJhMW04ZEZDcHBJUXZUeUlmZGVNSFZic0ZrTjhhTG5NdDU0WXNENE0tRG45MkZaTjBMS3VIM2gzcDllYUdMd2ZQUVNOZjhQUW9JaE1LT0ZsUnR5QjM0cW1UX096c2FraklhMTdwS2lfcWEyRUNreTNhdw?oc=5",
+      "date": "Thu, 21 May 2026 10:07:01 GMT",
+      "summary": "<a href=\"https://news.google.com/rss/articles/CBMiqgFBVV95cUxNaE1DVUVoeEZwU19WVjlnSGV6eDVsQzhYRDVfYjJKcXJUZUhqaFNQeFBUU3IweDk5UTJhMW04ZEZDcHBJUXZUeUlmZGVNSFZic0ZrTjhhTG5NdDU0WXNENE0tRG45MkZaTjBMS3VIM2gzcDllYUdMd2ZQUVNOZjhQUW9JaE1LT0ZsUnR5QjM0cW1UX096c2FraklhMTdwS2lfcWEyRUNreTNhdw?oc=5\" target=\"_blank\">Belasan Siswa TK di Jember Dilarikan ke Puskesmas Diduga Keracunan MBG</a>&nbsp;&nbsp;<font color=\"#6f6f6f\">Akurat Jatim</font>",
+      "score": 6,
+      "level": "KRISIS",
+      "emoji": "🔴",
+      "keywords": [
+        "keracunan",
+        "dilarikan"
+      ],
+      "location": {
+        "city": "Jember",
+        "province": "Jawa Timur",
+        "lat": -8.1764,
+        "lng": 113.6997,
+        "confidence": 1
+      },
+      "dominant_issue": "Keracunan Makanan",
+      "secondary_issues": [],
+      "negative_relevance": 95,
+      "ai_reasoning": "Lokasi (Jember) dan isu negatif utama (keracunan MBG) disebutkan secara eksplisit dan sangat jelas dalam judul dan isi berita."
+    },
+    {
+      "title": "Diduga Keracunan MBG, 18 Siswa TK Al Hidayah Kaliwates Dilarikan ke Puskesmas dan RS - MEMOonline.co.id",
+      "source": "MEMOonline.co.id",
+      "link": "https://news.google.com/rss/articles/CBMi1wFBVV95cUxQREplOENXOU9WRTloX0RqdU1hNFN5cFQwZGNFNE1XV3dHcDN4d3J1MjV4U2Z3aU9qNkdHTHhqd2tLTXVFM2lYRmtNZ2xQb09Fel9wbzd5SVM4aHFuQURpVTB2bXltUnR4SkhOTkNwaWw5T25ieFdKYjNhaUZqYzNORnZlcV9wdEF6RmRUb3A5Z3hrZi1uelBXNjdBSWFpLUZkUjVKam5fYXBDdGc5YTQzWjh3dFFaQklvWm1CLWhaR01kMjJ2dnZpNDdDcTAyaHdNTHFtQlg4VQ?oc=5",
+      "date": "Fri, 22 May 2026 05:59:00 GMT",
+      "summary": "<a href=\"https://news.google.com/rss/articles/CBMi1wFBVV95cUxQREplOENXOU9WRTloX0RqdU1hNFN5cFQwZGNFNE1XV3dHcDN4d3J1MjV4U2Z3aU9qNkdHTHhqd2tLTXVFM2lYRmtNZ2xQb09Fel9wbzd5SVM4aHFuQURpVTB2bXltUnR4SkhOTkNwaWw5T25ieFdKYjNhaUZqYzNORnZlcV9wdEF6RmRUb3A5Z3hrZi1uelBXNjdBSWFpLUZkUjVKam5fYXBDdGc5YTQzWjh3dFFaQklvWm1CLWhaR01kMjJ2dnZpNDdDcTAyaHdNTHFtQlg4VQ?oc=5\" target=\"_blank\">Diduga Keracunan MBG, 18 Siswa TK Al Hidayah Kaliwates Dilarikan ke Puskesmas dan RS</a>&nbsp;&nbsp;<font color=\"#6f6f6f\">MEMOonline.co.id</font>",
+      "score": 6,
+      "level": "KRISIS",
+      "emoji": "🔴",
+      "keywords": [
+        "keracunan",
+        "dilarikan"
+      ],
+      "location": {
+        "city": "Jember",
+        "province": "Jawa Timur",
+        "lat": -8.16,
+        "lng": 113.7,
+        "confidence": 0.95
+      },
+      "dominant_issue": "Keracunan Makanan",
+      "secondary_issues": [
+        "Keamanan Pangan",
+        "Dampak Kesehatan"
+      ],
+      "negative_relevance": 95,
+      "ai_reasoning": "Lokasi 'Kaliwates' merupakan kecamatan di Kabupaten Jember, Jawa Timur. Isu 'Keracunan MBG' sangat eksplisit disebutkan dan berdampak serius pada kesehatan siswa."
+    },
+    {
+      "title": "Diduga Keracunan MBG, 18 Murid TK di Jember Dilarikan ke Rumah Sakit dan Puskesmas - KISS FM Jember",
+      "source": "KISS FM Jember",
+      "link": "https://news.google.com/rss/articles/CBMiuwFBVV95cUxQR0piWHg5SnZOeVY4Qk5vRm80cGwyalkwSTEwc1REUUh6Sm9CQkRUdUYzNTFob01iWnhqaWNjYjFnaGxMT1JPeFQzS25YazF2MUVZTExoUkNQUmtDRjZJVG9IcmE0NENVOHJhN3dIcDA2YTVDa28tbjIxM1daRDA0aHFnOFVMaHg0dHpQRXR1NXV6a1hjVHFnU215bWtIWllkajNMaVlUSlpFX2xWQzljYTc2WERmb2xhVmNn?oc=5",
+      "date": "Thu, 21 May 2026 11:57:51 GMT",
+      "summary": "<a href=\"https://news.google.com/rss/articles/CBMiuwFBVV95cUxQR0piWHg5SnZOeVY4Qk5vRm80cGwyalkwSTEwc1REUUh6Sm9CQkRUdUYzNTFob01iWnhqaWNjYjFnaGxMT1JPeFQzS25YazF2MUVZTExoUkNQUmtDRjZJVG9IcmE0NENVOHJhN3dIcDA2YTVDa28tbjIxM1daRDA0aHFnOFVMaHg0dHpQRXR1NXV6a1hjVHFnU215bWtIWllkajNMaVlUSlpFX2xWQzljYTc2WERmb2xhVmNn?oc=5\" target=\"_blank\">Diduga Keracunan MBG, 18 Murid TK di Jember Dilarikan ke Rumah Sakit dan Puskesmas</a>&nbsp;&nbsp;<font color=\"#6f6f6f\">KISS FM Jember</font>",
+      "score": 6,
+      "level": "KRISIS",
+      "emoji": "🔴",
+      "keywords": [
+        "keracunan",
+        "dilarikan"
+      ],
+      "location": {
+        "city": "Jember",
+        "province": "Jawa Timur",
+        "lat": -8.1751,
+        "lng": 113.6738,
+        "confidence": 1
+      },
+      "dominant_issue": "Keracunan Makanan",
+      "secondary_issues": [
+        "Keamanan Pangan",
+        "Kesehatan Murid"
+      ],
+      "negative_relevance": 95,
+      "ai_reasoning": "Berita secara eksplisit menyebutkan 'Diduga Keracunan MBG' di Jember. Lokasi dan isu negatif utama sangat jelas."
+    },
+    {
+      "title": "Diduga Keracunan MBG, 18 Siswa PAUD dan TK di Jember Dirawat - Jempolindo.id",
+      "source": "Jempolindo.id",
+      "link": "https://news.google.com/rss/articles/CBMiigFBVV95cUxOREFCSG5jVWpjeDl5WkcwV3FscGg0QnpEY2Zfc2tHWmM1YVI5dEc5RUdhXzkzTTljTmhkc05qMFVjU0QwY3lYcnYwN2ZiWGFQd3Q0ck1pUUtPQXVQTlUtVldoRUpKZ1BoNTVmRWRoa05XdkhuZE9iRmpfN0NzeEp1VWxhYVRzU2ZKMkE?oc=5",
+      "date": "Thu, 21 May 2026 03:55:50 GMT",
+      "summary": "<a href=\"https://news.google.com/rss/articles/CBMiigFBVV95cUxOREFCSG5jVWpjeDl5WkcwV3FscGg0QnpEY2Zfc2tHWmM1YVI5dEc5RUdhXzkzTTljTmhkc05qMFVjU0QwY3lYcnYwN2ZiWGFQd3Q0ck1pUUtPQXVQTlUtVldoRUpKZ1BoNTVmRWRoa05XdkhuZE9iRmpfN0NzeEp1VWxhYVRzU2ZKMkE?oc=5\" target=\"_blank\">Diduga Keracunan MBG, 18 Siswa PAUD dan TK di Jember Dirawat</a>&nbsp;&nbsp;<font color=\"#6f6f6f\">Jempolindo.id</font>",
+      "score": 6,
+      "level": "KRISIS",
+      "emoji": "🔴",
+      "keywords": [
+        "keracunan",
+        "dirawat"
+      ],
+      "location": {
+        "city": "Jember",
+        "province": "Jawa Timur",
+        "lat": -8.17,
+        "lng": 113.7,
+        "confidence": 1
+      },
+      "dominant_issue": "Keracunan makanan",
+      "secondary_issues": [
+        "Kualitas makanan",
+        "Dampak kesehatan"
+      ],
+      "negative_relevance": 95,
+      "ai_reasoning": "Lokasi Jember dan isu keracunan MBG disebutkan secara eksplisit dalam judul dan isi berita, dengan 18 siswa dirawat."
+    },
+    {
+      "title": "Diduga Keracunan MBG, 18 Siswa PAUD dan TK di Kaliwates Jember Dilarikan ke Rumah Sakit - PANTURA7.com",
+      "source": "PANTURA7.com",
+      "link": "https://news.google.com/rss/articles/CBMiwAFBVV95cUxQTXFHWmpLbnVDUGptX1l3N0tkNkJwejdZQ1JyZHg1LTVfQnl6TTdrQWpRVVV6MDhOaVpTaWJIOGY0MXd4ZHpHV0QzN3RfMTBINmV0Ry1CZnRudExhdlZTT0Z4N1c1YmdTeFpqd2Y1cWZ3YU1sMklIMzUtb3lIUmFuZmpLSHl4ZUVXQUdRaEUzRVVlVlVmdEQ2YnNfX2ZMbDdVNVFDRThBVi1PRkdZVzh5enhoenAzc3N6RENrb2hndzc?oc=5",
+      "date": "Thu, 21 May 2026 07:40:13 GMT",
+      "summary": "<a href=\"https://news.google.com/rss/articles/CBMiwAFBVV95cUxQTXFHWmpLbnVDUGptX1l3N0tkNkJwejdZQ1JyZHg1LTVfQnl6TTdrQWpRVVV6MDhOaVpTaWJIOGY0MXd4ZHpHV0QzN3RfMTBINmV0Ry1CZnRudExhdlZTT0Z4N1c1YmdTeFpqd2Y1cWZ3YU1sMklIMzUtb3lIUmFuZmpLSHl4ZUVXQUdRaEUzRVVlVlVmdEQ2YnNfX2ZMbDdVNVFDRThBVi1PRkdZVzh5enhoenAzc3N6RENrb2hndzc?oc=5\" target=\"_blank\">Diduga Keracunan MBG, 18 Siswa PAUD dan TK di Kaliwates Jember Dilarikan ke Rumah Sakit</a>&nbsp;&nbsp;<font color=\"#6f6f6f\">PANTURA7.com</font>",
+      "score": 6,
+      "level": "KRISIS",
+      "emoji": "🔴",
+      "keywords": [
+        "keracunan",
+        "dilarikan"
+      ],
+      "location": {
+        "city": "Jember",
+        "province": "Jawa Timur",
+        "lat": -8.1759,
+        "lng": 113.6966,
+        "confidence": 1
+      },
+      "dominant_issue": "Keracunan Makanan",
+      "secondary_issues": [
+        "Kesehatan Anak",
+        "Darurat Medis"
+      ],
+      "negative_relevance": 95,
+      "ai_reasoning": "Lokasi Jember dan isu keracunan sangat jelas disebutkan dalam judul berita."
+    },
+    {
+      "title": "Pengawasan Diperketat, Pemerintah Evaluasi Total Program MBG untuk Cegah Korupsi dan Pemborosan - beritanasionalupdate.com",
+      "source": "beritanasionalupdate.com",
+      "link": "https://news.google.com/rss/articles/CBMi3wFBVV95cUxPQV9RdmllMXR2Xzk4MjZLUFlNaGw0bjZBRllOdUVEN1BaZ2FTMm9zSXFaOGVuaS1vQWhXWWloXzhSX2FPMGc1YkZGc2FNYkJuTG9XWHVHeWdvQ00wak9FSXQ3MXJWLXQ0WGZpUmw5dDlFUzFOczl3c2xMcFMwMnJ4amxaNFZTNUxCdllEdVFvckNrZHdSaWRDdmdPZ2tGNUYxTlRBNVJaaGhhLV9aek9qNFZBYlhGNWt6SjdpQ3ZIX2swODUtVlNRQkJ2UXg3RHV3ZlRBLUZwNGczSmRncTBR?oc=5",
+      "date": "Tue, 12 May 2026 06:20:21 GMT",
+      "summary": "<a href=\"https://news.google.com/rss/articles/CBMi3wFBVV95cUxPQV9RdmllMXR2Xzk4MjZLUFlNaGw0bjZBRllOdUVEN1BaZ2FTMm9zSXFaOGVuaS1vQWhXWWloXzhSX2FPMGc1YkZGc2FNYkJuTG9XWHVHeWdvQ00wak9FSXQ3MXJWLXQ0WGZpUmw5dDlFUzFOczl3c2xMcFMwMnJ4amxaNFZTNUxCdllEdVFvckNrZHdSaWRDdmdPZ2tGNUYxTlRBNVJaaGhhLV9aek9qNFZBYlhGNWt6SjdpQ3ZIX2swODUtVlNRQkJ2UXg3RHV3ZlRBLUZwNGczSmRncTBR?oc=5\" target=\"_blank\">Pengawasan Diperketat, Pemerintah Evaluasi Total Program MBG untuk Cegah Korupsi dan Pemborosan</a>&nbsp;&nbsp;<font color=\"#6f6f6f\">beritanasionalupdate.com</font>",
+      "score": 6,
+      "level": "KRISIS",
+      "emoji": "🔴",
+      "keywords": [
+        "korupsi",
+        "pemborosan",
+        "evaluasi"
+      ],
+      "location": {
+        "city": "Jakarta",
+        "province": "DKI Jakarta",
+        "lat": -6.2,
+        "lng": 106.8,
+        "confidence": 0.8
+      },
+      "dominant_issue": "Korupsi",
+      "secondary_issues": [
+        "Pemborosan"
+      ],
+      "negative_relevance": 90,
+      "ai_reasoning": "Berita menyoroti 'Pemerintah' (nasional) melakukan evaluasi program MBG untuk cegah 'korupsi' dan 'pemborosan'. Jakarta adalah pusat pemerintahan Indonesia."
+    },
+    {
+      "title": "Program Makan Bergizi Gratis (MBG) : Rawan Penyimpangan dan Korupsi ? - artik.id",
+      "source": "artik.id",
+      "link": "https://news.google.com/rss/articles/CBMilwFBVV95cUxQY3g0WGlpMU5oaUxlYU83T0hKWEpJX3FQb1IzX1JlajZ2R0ZUTndXM3ZUOXZVdHBlekdVOThMWElSS05hV0V5RWxFMUItUngtT2tuVnF2QXE1QUxXSlBHMDZCNUR6aXM3VElGSzdiM19DbTN4OGJ4WTNZSFRyOVdYcFNxM2EzNzkzYzNSU1A1WHRsNThHa2M40gGcAUFVX3lxTFBNMFA0MWFaSVVUR3RNeG9BdWh1TkxfMDVLeVVlY050cHJ2Qmh3bEpNel9rRU93UDE5cUtWYkJzajU2Mmt6QXpiOERDSVVmMkpYU0J0N2o0X0dWU29YZV9qUm9QNW9jclZQQzBmLXJNaXZVQ2tNWlpsUXpNWl9zaHEyWDZkTk9iLWViMHlKaTVPNC1uWDh3YWNqaHZqbg?oc=5",
+      "date": "Fri, 15 May 2026 05:45:00 GMT",
+      "summary": "<a href=\"https://news.google.com/rss/articles/CBMilwFBVV95cUxQY3g0WGlpMU5oaUxlYU83T0hKWEpJX3FQb1IzX1JlajZ2R0ZUTndXM3ZUOXZVdHBlekdVOThMWElSS05hV0V5RWxFMUItUngtT2tuVnF2QXE1QUxXSlBHMDZCNUR6aXM3VElGSzdiM19DbTN4OGJ4WTNZSFRyOVdYcFNxM2EzNzkzYzNSU1A1WHRsNThHa2M40gGcAUFVX3lxTFBNMFA0MWFaSVVUR3RNeG9BdWh1TkxfMDVLeVVlY050cHJ2Qmh3bEpNel9rRU93UDE5cUtWYkJzajU2Mmt6QXpiOERDSVVmMkpYU0J0N2o0X0dWU29YZV9qUm9QNW9jclZQQzBmLXJNaXZVQ2tNWlpsUXpNWl9zaHEyWDZkTk9iLWViMHlKaTVPNC1uWDh3YWNqaHZqbg?oc=5\" target=\"_blank\">Program Makan Bergizi Gratis (MBG) : Rawan Penyimpangan dan Korupsi ?</a>&nbsp;&nbsp;<font color=\"#6f6f6f\">artik.id</font>",
+      "score": 6,
+      "level": "KRISIS",
+      "emoji": "🔴",
+      "keywords": [
+        "korupsi",
+        "penyimpangan"
+      ],
+      "location": null,
+      "dominant_issue": null,
+      "secondary_issues": [],
+      "negative_relevance": 0,
+      "ai_reasoning": ""
+    },
+    {
+      "title": "KPK Soroti Kerentanan Korupsi Anggaran Makan Bergizi Gratis - Babel Insight",
+      "source": "Babel Insight",
+      "link": "https://news.google.com/rss/articles/CBMidkFVX3lxTE5Ub1M1WnFkR3RsUlZNZDlxaDFXZXN4cDNVWW41clZ3ZDZPeW45Vi1yQVBjWThjUnJhbEp4MWxxRkN3LVpGM2IyYWV0Y1FHRHlUbFltaVBYRUpnM0V2SXAwS3Y1aGxVRlV4Yl9pdGJEemRmWFFLVkE?oc=5",
+      "date": "Wed, 20 May 2026 17:43:00 GMT",
+      "summary": "<a href=\"https://news.google.com/rss/articles/CBMidkFVX3lxTE5Ub1M1WnFkR3RsUlZNZDlxaDFXZXN4cDNVWW41clZ3ZDZPeW45Vi1yQVBjWThjUnJhbEp4MWxxRkN3LVpGM2IyYWV0Y1FHRHlUbFltaVBYRUpnM0V2SXAwS3Y1aGxVRlV4Yl9pdGJEemRmWFFLVkE?oc=5\" target=\"_blank\">KPK Soroti Kerentanan Korupsi Anggaran Makan Bergizi Gratis</a>&nbsp;&nbsp;<font color=\"#6f6f6f\">Babel Insight</font>",
+      "score": 5,
+      "level": "WASPADA",
+      "emoji": "🟡",
+      "keywords": [
+        "korupsi",
+        "anggaran"
+      ],
+      "location": {
+        "city": "Pangkalpinang",
+        "province": "Kepulauan Bangka Belitung",
+        "lat": -2.1396,
+        "lng": 106.1166,
+        "confidence": 0.9
+      },
+      "dominant_issue": "Kerentanan Korupsi",
+      "secondary_issues": [],
+      "negative_relevance": 95,
+      "ai_reasoning": "Lokasi diidentifikasi dari 'Babel Insight' (Kepulauan Bangka Belitung), Pangkalpinang adalah ibu kotanya. Isu negatif utama adalah kerentanan korupsi anggaran MBG yang disoroti KPK."
+    }
+  ],
+  "updated_at": "24 May 2026 01:18 WIB"
+}
