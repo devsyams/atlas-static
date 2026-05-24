@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
-import type { ComponentType, ReactNode } from "react";
+import { useEffect, useState, type ComponentType, type ReactNode } from "react";
 import {
   Database,
   LayoutDashboard,
@@ -14,7 +14,6 @@ import {
   Shapes,
   Users,
   FileText,
-  Search,
   Radio,
   Maximize2,
   ChevronDown,
@@ -25,6 +24,7 @@ import {
   LogOut,
 } from "lucide-react";
 import { Dropdown } from "@/components/ui/Dropdown";
+import { SynapseCopilot } from "@/components/ai/SynapseCopilot";
 
 type NavItem = {
   to: string;
@@ -52,6 +52,18 @@ const NAV: NavItem[] = [
 export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const groups = Array.from(new Set(NAV.map((n) => n.group)));
+  const [copilotOpen, setCopilotOpen] = useState(false);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setCopilotOpen((v) => !v);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
 
   const onFullscreen = () => {
     if (typeof document === "undefined") return;
@@ -81,10 +93,11 @@ export function AppShell({ children }: { children: ReactNode }) {
         <div className="mx-auto flex w-full max-w-xl items-center px-4">
           <button
             type="button"
-            className="flex w-full items-center gap-2 rounded-md border border-border bg-background/40 px-3 py-1.5 text-[12px] text-muted-foreground hover:text-foreground"
+            onClick={() => setCopilotOpen(true)}
+            className="group flex w-full items-center gap-2 rounded-md border border-border bg-background/40 px-3 py-1.5 text-[12px] text-muted-foreground hover:border-primary/40 hover:text-foreground"
           >
-            <Search className="h-3.5 w-3.5 shrink-0" />
-            <span className="flex-1 text-left">Search Atlas…</span>
+            <Sparkles className="h-3.5 w-3.5 shrink-0 text-primary/70 group-hover:text-primary" />
+            <span className="flex-1 text-left">Tanya Synapse…</span>
             <kbd className="hidden rounded border border-border bg-muted/40 px-1 py-0.5 text-[9px] tracking-wider sm:inline">
               ⌘K
             </kbd>
@@ -152,6 +165,8 @@ export function AppShell({ children }: { children: ReactNode }) {
       <main className="relative flex-1 overflow-y-auto">
         <div className="mx-auto max-w-[1800px] px-4 py-4 sm:px-6 sm:py-6">{children}</div>
       </main>
+
+      <SynapseCopilot open={copilotOpen} onClose={() => setCopilotOpen(false)} />
 
       {/* Status strip */}
       <footer className="z-20 flex h-7 shrink-0 items-center justify-between border-t border-sidebar-border bg-sidebar/90 px-4 font-mono text-[10px] uppercase tracking-widest text-muted-foreground backdrop-blur-xl">
