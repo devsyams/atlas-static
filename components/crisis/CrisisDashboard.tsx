@@ -37,7 +37,7 @@ const IncidentMap = dynamic(() => import("./IncidentMap"), {
 });
 const GridBoard = dynamic(() => import("./GridBoard"), { ssr: false });
 
-const LAYOUT_KEY = "atlas:crisis:layout:v1";
+const LAYOUT_KEY = "atlas:crisis:layout:v2";
 
 const DEFAULT_LAYOUT: LayoutItem[] = [
   { i: "insight", x: 0, y: 0, w: 6, h: 3, minW: 3, minH: 2 },
@@ -54,9 +54,17 @@ const DEFAULT_LAYOUT: LayoutItem[] = [
 
 function reconcileLayout(saved: LayoutItem[]): LayoutItem[] {
   const byId = new Map(saved.map((l) => [l.i, l]));
+  // Keep saved positions, but never let a tile drop below its minimum size.
   return DEFAULT_LAYOUT.map((def) => {
     const s = byId.get(def.i);
-    return s ? { ...def, x: s.x, y: s.y, w: s.w, h: s.h } : def;
+    if (!s) return def;
+    return {
+      ...def,
+      x: typeof s.x === "number" ? s.x : def.x,
+      y: typeof s.y === "number" ? s.y : def.y,
+      w: Math.max(s.w ?? def.w, def.minW ?? 2),
+      h: Math.max(s.h ?? def.h, def.minH ?? 2),
+    };
   });
 }
 
