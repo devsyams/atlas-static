@@ -45,11 +45,11 @@ export function Ticker({ items }: { items: MarketTickerItem[] }) {
   );
 
   return (
-    <div className="group mb-4 flex items-stretch overflow-hidden rounded-md border border-border/50 bg-card/50">
+    <div className="group sticky top-0 z-20 mb-4 flex items-stretch overflow-hidden rounded-md border border-border/50 bg-card/90 shadow-sm backdrop-blur-md">
       {/* fixed label */}
       <div className="z-10 flex shrink-0 items-center gap-1.5 border-r border-border/50 bg-card/80 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.14em] text-primary">
         <Activity className="h-3.5 w-3.5" />
-        Pasar &amp; Pangan
+        Nexorus
       </div>
 
       {/* scrolling marquee */}
