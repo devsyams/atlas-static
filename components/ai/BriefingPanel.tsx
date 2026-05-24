@@ -78,7 +78,7 @@ const STAGES = [
   "Memproyeksikan trajektori risiko",
   "Mensintesis SITREP eksekutif",
 ];
-const STEP_MS = 620;
+const STEP_MS = 1100;
 
 export function BriefingPanel({ open, onClose }: { open: boolean; onClose: () => void }) {
   const [content, setContent] = useState("");
