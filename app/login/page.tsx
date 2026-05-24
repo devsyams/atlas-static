@@ -8,6 +8,10 @@ import { cn } from "@/lib/utils";
 import { NeuralIgnition } from "@/components/login/NeuralIgnition";
 import type { DashboardData } from "@/lib/mbg/types";
 
+// Demo-grade hardcoded credentials (visible client-side — not real security).
+const AUTH_EMAIL = "atlasadmin@nexorus.io";
+const AUTH_PASSWORD = "adminatlas";
+
 export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
@@ -29,8 +33,13 @@ export default function LoginPage() {
   const submit = (e: FormEvent) => {
     e.preventDefault();
     setError(null);
+    if (email.trim().toLowerCase() !== AUTH_EMAIL || password !== AUTH_PASSWORD) {
+      setError("Email atau kata sandi salah.");
+      return;
+    }
     setBusy(true);
-    // Static mimic: play the ignition sequence, which navigates on completion.
+    // Mark the session, then play the ignition which navigates on completion.
+    document.cookie = `atlas_auth=1; path=/; max-age=${60 * 60 * 24}; samesite=lax`;
     setIgniting(true);
   };
 
