@@ -57,9 +57,12 @@ export default function IncidentMap({
     layerRef.current = L.layerGroup().addTo(map);
     mapRef.current = map;
 
+    const ro = new ResizeObserver(() => map.invalidateSize());
+    ro.observe(containerRef.current);
     const t = setTimeout(() => map.invalidateSize(), 120);
     return () => {
       clearTimeout(t);
+      ro.disconnect();
       map.remove();
       mapRef.current = null;
       layerRef.current = null;
@@ -119,5 +122,5 @@ export default function IncidentMap({
     map.flyTo([active.lat, active.lng], Math.max(map.getZoom(), 6), { duration: 0.35 });
   }, [selectedCityKey, points]);
 
-  return <div ref={containerRef} className="h-[520px] w-full" />;
+  return <div ref={containerRef} className="h-full min-h-[180px] w-full" />;
 }
