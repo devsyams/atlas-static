@@ -37,7 +37,7 @@ const IncidentMap = dynamic(() => import("./IncidentMap"), {
 });
 const GridBoard = dynamic(() => import("./GridBoard"), { ssr: false });
 
-const LAYOUT_KEY = "atlas:crisis:layout:v2";
+const LAYOUT_KEY = "atlas:crisis:layout:v3";
 
 const DEFAULT_LAYOUT: LayoutItem[] = [
   { i: "insight", x: 0, y: 0, w: 6, h: 3, minW: 3, minH: 2 },
@@ -48,8 +48,8 @@ const DEFAULT_LAYOUT: LayoutItem[] = [
   { i: "topcities", x: 8, y: 9, w: 4, h: 5, minW: 3, minH: 3 },
   { i: "articles", x: 0, y: 12, w: 8, h: 6, minW: 3, minH: 3 },
   { i: "keywords", x: 8, y: 14, w: 4, h: 3, minW: 3, minH: 2 },
-  { i: "actors", x: 0, y: 18, w: 12, h: 9, minW: 4, minH: 5 },
-  { i: "leadership", x: 0, y: 27, w: 12, h: 8, minW: 4, minH: 5 },
+  { i: "actors", x: 0, y: 18, w: 12, h: 5, minW: 4, minH: 4 },
+  { i: "leadership", x: 0, y: 23, w: 12, h: 6, minW: 4, minH: 4 },
 ];
 
 function reconcileLayout(saved: LayoutItem[]): LayoutItem[] {

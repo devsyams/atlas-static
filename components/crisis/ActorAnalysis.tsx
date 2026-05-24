@@ -123,21 +123,27 @@ export function ActorAnalysis({ data }: { data: ActorThreadAnalysis | null }) {
       x.sentiment - y.sentiment ||
       y.influence - x.influence,
   );
-  const r = data.summary.by_risk;
-  const platforms = Object.entries(data.summary.by_platform)
-    .filter(([, n]) => n > 0)
+  // Derive the tally from the actors actually shown (data.summary can be stale).
+  const r: Record<string, number> = { critical: 0, high: 0, moderate: 0, low: 0 };
+  const byPlatform: Record<string, number> = {};
+  for (const a of actors) {
+    const rk = (a.risk_level || "low").toLowerCase();
+    r[rk] = (r[rk] ?? 0) + 1;
+    byPlatform[a.platform] = (byPlatform[a.platform] ?? 0) + 1;
+  }
+  const platforms = Object.entries(byPlatform)
     .map(([p, n]) => `${n} ${p}`)
     .join(" · ");
 
   return (
-    <div className="flex h-full flex-col gap-3">
+    <div className="flex flex-col gap-3">
       <div>
         <div className="flex flex-wrap items-center gap-2">
           <span className="rounded-full border border-primary/40 bg-primary/10 px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-[0.14em] text-primary">
             ● Aktor &amp; Sentimen
           </span>
           <span className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
-            {data.summary.total} aktor dipantau{platforms ? ` · ${platforms}` : ""}
+            {actors.length} aktor dipantau{platforms ? ` · ${platforms}` : ""}
           </span>
         </div>
         <div className="mt-2 flex flex-wrap gap-1.5 text-[10px]">
@@ -148,7 +154,10 @@ export function ActorAnalysis({ data }: { data: ActorThreadAnalysis | null }) {
         </div>
       </div>
 
-      <div className="grid gap-2 lg:grid-cols-2">
+      <div
+        className="grid items-start gap-2"
+        style={{ gridTemplateColumns: `repeat(${Math.min(actors.length, 3)}, minmax(0, 1fr))` }}
+      >
         {actors.map((a) => (
           <ActorCard key={a.handle} a={a} />
         ))}

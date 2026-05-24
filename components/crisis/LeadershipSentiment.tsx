@@ -132,7 +132,7 @@ export function LeadershipSentiment({ data }: { data: LeadershipSentimentData | 
     data.leaders.reduce((sum, l) => sum + l.sentiment.score, 0) / data.leaders.length;
 
   return (
-    <div className="flex h-full flex-col gap-3">
+    <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center gap-2">
         <span className="rounded-full border border-primary/40 bg-primary/10 px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-[0.14em] text-primary">
           ● Sentimen Kepemimpinan
@@ -145,7 +145,10 @@ export function LeadershipSentiment({ data }: { data: LeadershipSentimentData | 
         </span>
       </div>
 
-      <div className="grid gap-2 lg:grid-cols-2">
+      <div
+        className="grid items-start gap-2"
+        style={{ gridTemplateColumns: `repeat(${Math.min(data.leaders.length, 2)}, minmax(0, 1fr))` }}
+      >
         {data.leaders.map((l) => (
           <LeaderCard key={l.id} leader={l} />
         ))}
