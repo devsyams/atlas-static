@@ -33,6 +33,10 @@ export interface TopCity {
   province: string;
   article_count: number;
   dominant_issue: string;
+  severity_sum: number;
+  heat: number;
+  lat: number;
+  lng: number;
 }
 
 export interface Keyword {

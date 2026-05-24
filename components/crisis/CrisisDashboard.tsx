@@ -13,7 +13,9 @@ import {
   Lock,
   MapPin,
   Newspaper,
+  Radar,
   RotateCcw,
+  Sparkles,
   TrendingUp,
   Unlock,
   Users,
@@ -29,6 +31,9 @@ import { ArticleList } from "./ArticleList";
 import { ActorAnalysis } from "./ActorAnalysis";
 import { LeadershipSentiment } from "./LeadershipSentiment";
 import { DetailModal } from "./DetailModal";
+import { ForecastWidget } from "./ForecastWidget";
+import { BriefingPanel } from "@/components/ai/BriefingPanel";
+import { WidgetAskButton } from "@/components/ai/WidgetAskButton";
 
 const IncidentMap = dynamic(() => import("./IncidentMap"), {
   ssr: false,
@@ -36,7 +41,7 @@ const IncidentMap = dynamic(() => import("./IncidentMap"), {
 });
 const GridBoard = dynamic(() => import("./GridBoard"), { ssr: false });
 
-const LAYOUT_KEY = "atlas:crisis:layout:v3";
+const LAYOUT_KEY = "atlas:crisis:layout:v4";
 
 const DEFAULT_LAYOUT: LayoutItem[] = [
   { i: "insight", x: 0, y: 0, w: 6, h: 3, minW: 3, minH: 2 },
@@ -44,9 +49,10 @@ const DEFAULT_LAYOUT: LayoutItem[] = [
   { i: "map", x: 0, y: 3, w: 8, h: 9, minW: 4, minH: 5 },
   { i: "score", x: 8, y: 3, w: 4, h: 4, minW: 3, minH: 3 },
   { i: "topcities", x: 8, y: 7, w: 4, h: 5, minW: 3, minH: 3 },
-  { i: "articles", x: 0, y: 12, w: 8, h: 6, minW: 3, minH: 3 },
-  { i: "keywords", x: 8, y: 14, w: 4, h: 3, minW: 3, minH: 2 },
-  { i: "actors", x: 0, y: 18, w: 12, h: 5, minW: 4, minH: 4 },
+  { i: "forecast", x: 0, y: 12, w: 4, h: 6, minW: 3, minH: 4 },
+  { i: "articles", x: 4, y: 12, w: 8, h: 6, minW: 3, minH: 3 },
+  { i: "keywords", x: 8, y: 18, w: 4, h: 3, minW: 3, minH: 2 },
+  { i: "actors", x: 0, y: 18, w: 8, h: 5, minW: 4, minH: 4 },
   { i: "leadership", x: 0, y: 23, w: 12, h: 6, minW: 4, minH: 4 },
 ];
 
@@ -100,6 +106,7 @@ export function CrisisDashboard() {
   const [modal, setModal] = useState<ModalState>(INITIAL_MODAL);
   const [editMode, setEditMode] = useState(false);
   const [layout, setLayout] = useState<LayoutItem[]>(DEFAULT_LAYOUT);
+  const [briefingOpen, setBriefingOpen] = useState(false);
 
   const loadData = useCallback(() => {
     setLive("loading");
@@ -357,6 +364,12 @@ export function CrisisDashboard() {
       ),
     },
     {
+      i: "forecast",
+      title: "Prakiraan & Peringatan Dini",
+      icon: Radar,
+      body: <ForecastWidget />,
+    },
+    {
       i: "articles",
       title: "Berita terkini",
       icon: Newspaper,
@@ -408,6 +421,13 @@ export function CrisisDashboard() {
         </div>
         <div className="flex flex-wrap items-center justify-end gap-2">
           <LiveBadge state={live} />
+          <button
+            type="button"
+            onClick={() => setBriefingOpen(true)}
+            className="inline-flex items-center gap-1.5 rounded-md border border-primary/40 bg-gradient-accent px-2.5 py-1.5 text-[11px] font-bold text-primary-foreground shadow-[0_4px_16px_-4px_oklch(0.55_0.18_280/.5)] transition-transform hover:scale-[1.02]"
+          >
+            <Sparkles className="h-3.5 w-3.5" /> Briefing
+          </button>
           <button
             type="button"
             onClick={() => setEditMode((v) => !v)}
@@ -480,9 +500,10 @@ export function CrisisDashboard() {
                     <Icon className="h-3 w-3 shrink-0 text-primary" />
                     <span className="truncate font-medium">{w.title}</span>
                   </div>
-                  {w.headerRight && (
-                    <div className="widget-action flex items-center gap-1.5">{w.headerRight}</div>
-                  )}
+                  <div className="widget-action flex items-center gap-1.5">
+                    {w.headerRight}
+                    <WidgetAskButton widget={w.i} title={w.title} />
+                  </div>
                 </div>
                 <div className={cn("min-h-0 flex-1 scrollbar-thin", w.bodyClassName ?? "overflow-auto p-3")}>
                   {w.body}
@@ -501,6 +522,8 @@ export function CrisisDashboard() {
         article={modal.article}
         onClose={closeDetail}
       />
+
+      <BriefingPanel open={briefingOpen} onClose={() => setBriefingOpen(false)} />
     </div>
   );
 }
