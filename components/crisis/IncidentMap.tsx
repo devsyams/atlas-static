@@ -3,7 +3,7 @@
 import { useEffect, useRef } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { markerRadius, scoreColor } from "@/lib/mbg/colors";
+import { scoreColor } from "@/lib/mbg/colors";
 import type { CityMapPoint } from "@/lib/mbg/types";
 
 const INDONESIA_BOUNDS: L.LatLngBoundsExpression = [
@@ -81,29 +81,44 @@ export default function IncidentMap({
     points.forEach((location) => {
       if (typeof location.lat !== "number" || typeof location.lng !== "number") return;
       const color = scoreColor(Math.min(10, location.severity_sum || 1));
+      const baseR = Math.max(130000, Math.min(420000, (location.heat || 1) * 600));
 
-      const circle = L.circle([location.lat, location.lng], {
-        radius: Math.max(12000, Math.min(38000, (location.heat || 1) * 2600)),
+      // Soft radial heat fill: stacked translucent circles, brightest at the centre.
+      (
+        [
+          [1, 0.1],
+          [0.62, 0.16],
+          [0.32, 0.26],
+        ] as [number, number][]
+      ).forEach(([rf, op], idx) => {
+        L.circle([location.lat, location.lng], {
+          radius: baseR * rf,
+          stroke: idx === 0,
+          color,
+          weight: 0.6,
+          opacity: 0.3,
+          fillColor: color,
+          fillOpacity: op,
+          className: "incident-blob",
+          interactive: true,
+        })
+          .addTo(layer)
+          .on("click", () => onSelectRef.current(location.city_key));
+      });
+
+      // Invisible centre anchor: reliable click target + popup.
+      const anchor = L.circleMarker([location.lat, location.lng], {
+        radius: 12,
+        opacity: 0,
+        fillOpacity: 0.01,
+        fillColor: color,
         color,
-        weight: 1,
-        fillColor: color,
-        fillOpacity: 0.12,
       }).addTo(layer);
-
-      const marker = L.circleMarker([location.lat, location.lng], {
-        radius: markerRadius(location.heat || 0),
-        color: "#ffffff",
-        weight: 2,
-        fillColor: color,
-        fillOpacity: 0.92,
-      }).addTo(layer);
-
-      marker.bindPopup(
+      anchor.bindPopup(
         `<div class="pin-popup-title">${escapeHtml(location.city)}, ${escapeHtml(location.province)}</div>` +
           `<div class="pin-popup-meta">${location.article_count} artikel · isu utama ${escapeHtml(location.dominant_issue)} · bobot ${location.heat}</div>`,
       );
-      marker.on("click", () => onSelectRef.current(location.city_key));
-      circle.on("click", () => onSelectRef.current(location.city_key));
+      anchor.on("click", () => onSelectRef.current(location.city_key));
       bounds.push([location.lat, location.lng]);
     });
 
