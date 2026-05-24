@@ -420,49 +420,70 @@
   "actor_thread_analysis": {
     "actors": [
       {
-        "handle": "indotodays",
-        "name": "indotodays",
+        "handle": "bandung.banget",
+        "name": "Bandung Banget!",
         "platform": "instagram",
         "status": "active",
-        "followers": 1300000,
-        "influence": 7.2,
-        "credibility": 6.5,
-        "sentiment": 0,
-        "risk_level": "low",
-        "posts_7d": 31,
+        "followers": 1900000,
+        "influence": 8.9,
+        "credibility": 5.8,
+        "sentiment": 0.7,
+        "risk_level": "moderate",
+        "posts_7d": 46,
         "brand_mentions": 0,
-        "avg_engagement": 15000,
-        "total_engagement": 465800,
-        "avatar": "",
+        "avg_engagement": 15250,
+        "total_engagement": 701500,
+        "avatar": "/social-media-avatars/bandung-banget.jpg",
         "themes": [
-          "Berita Lokal",
-          "Kejadian Viral",
-          "Lingkungan",
-          "Kecelakaan",
-          "Hiburan"
+          "Konten Viral",
+          "Tragedi KAI",
+          "Empati Pejabat",
+          "Bandung & Sekitarnya"
         ],
-        "brand_summary": "Tidak ada penyebutan mengenai MBG Indonesia dalam 20 postingan terakhir.",
-        "influence_analysis": "Akun @indotodays memiliki basis pengikut lebih dari satu juta dengan tingkat engagement sekitar 1,2%, menandakan pengaruh yang cukup luas di kalangan pengguna Instagram yang tertarik pada berita viral dan kejadian lokal. Namun, kontennya bersifat clickbait dan tidak terfokus pada topik bisnis atau industri tertentu.",
-        "collab_opportunity": "Tidak direkomendasikan untuk kolaborasi karena tidak ada kaitan brand dan engagementnya terfokus pada konten sensasional.",
-        "recommended_actions": "Lanjutkan monitoring rutin untuk memastikan tidak ada perubahan arah konten yang menyertakan MBG Indonesia. Tidak perlu melakukan pendekatan kolaborasi atau respons khusus pada saat ini.",
+        "brand_summary": "Tidak ada penyebutan program MBG. Konten mengangkat momen viral pernyataan Dirut KAI 'Sekolah kamu, aku yang bayarin'.",
+        "influence_analysis": "Akun konten viral berskala besar (1,9 juta pengikut) dengan jangkauan masif. Amplifikasi cepat dapat membentuk arah opini publik dalam hitungan jam.",
+        "collab_opportunity": "Jangkauan sangat luas namun konten cenderung sensasional; kolaborasi perlu kontrol pesan yang ketat.",
+        "recommended_actions": "Pantau intensif karena potensi viralitas tinggi; siapkan tanggapan cepat bila narasi bergeser negatif.",
         "top_posts": [
           {
-            "text": "Sebuah mobil berwarna putih di pinggir jalan Desa Bungun Jaya, Kecamatan Balai Riam, Kabupaten Sukamara, Kalimantan Tengah, tertimpa tandan buah segar (TBS) kelapa sawit...",
-            "likes": 12300,
-            "comments": 1900,
-            "views": 1000000
-          },
+            "text": "Ngena banget waktu pak Dirut KAI Bobby Rasyidin ngomong 'Sekolah kamu, aku yang bayarin'.",
+            "likes": 14800,
+            "comments": 448,
+            "views": 2100000
+          }
+        ]
+      },
+      {
+        "handle": "kitanotice",
+        "name": "kitanotice",
+        "platform": "instagram",
+        "status": "active",
+        "followers": 1200000,
+        "influence": 8.6,
+        "credibility": 6.2,
+        "sentiment": 0.7,
+        "risk_level": "moderate",
+        "posts_7d": 35,
+        "brand_mentions": 0,
+        "avg_engagement": 41867,
+        "total_engagement": 1465345,
+        "avatar": "/social-media-avatars/kitanotice.jpg",
+        "themes": [
+          "Konten Viral",
+          "Tragedi KAI",
+          "Empati Pejabat",
+          "Isu Nasional"
+        ],
+        "brand_summary": "Tidak ada penyebutan program MBG. Unggahan menyoroti kunjungan Menhub dan Dirut KAI ke keluarga korban di Bekasi Timur.",
+        "influence_analysis": "Akun berbasis 1,2 juta pengikut dengan engagement sangat tinggi per unggahan. Berperan sebagai akselerator isu nasional.",
+        "collab_opportunity": "Reach besar; sesuai untuk kampanye kesadaran publik dengan pengawasan pesan.",
+        "recommended_actions": "Pantau intensif; manfaatkan momentum sentimen positif untuk komunikasi publik.",
+        "top_posts": [
           {
-            "text": "Warga Gampong Blang Rubek, Kecamatan Lhoksukon, Kabupaten Aceh Utara digemparkan oleh semburan gas bercampur lumpur dan kobaran api setinggi puluhan meter...",
-            "likes": 3800,
-            "comments": 156,
-            "views": 120000
-          },
-          {
-            "text": "Sebuah rekaman kamera pengawas memperlihatkan momen apes saat sebuah sepeda motor matik mendadak melesat liar ketika dinyalakan...",
-            "likes": 2100,
-            "comments": 89,
-            "views": 85000
+            "text": "Menhub Dudy Purwagandhi dan Dirut KAI Bobby Rasyidin mengunjungi keluarga korban kecelakaan kereta di Bekasi Timur. 'Sekolah kamu, aku yang bayarin.'",
+            "likes": 41200,
+            "comments": 667,
+            "views": 3800000
           }
         ]
       },
@@ -471,46 +492,142 @@
         "name": "volix.media",
         "platform": "instagram",
         "status": "active",
-        "followers": 850000,
-        "influence": 7,
-        "credibility": 6.8,
-        "sentiment": 0.5,
+        "followers": 700000,
+        "influence": 7.6,
+        "credibility": 6.4,
+        "sentiment": 0.6,
         "risk_level": "low",
-        "posts_7d": 50,
+        "posts_7d": 48,
         "brand_mentions": 0,
-        "avg_engagement": 12000,
-        "total_engagement": 600000,
-        "avatar": "",
+        "avg_engagement": 11880,
+        "total_engagement": 570240,
+        "avatar": "/social-media-avatars/volix-media.jpg",
         "themes": [
-          "Berita Nasional",
-          "Politik",
-          "Ekonomi",
-          "Viral"
+          "Berita Lokal",
+          "Tragedi KAI",
+          "Empati Pejabat",
+          "Konten Viral"
         ],
-        "brand_summary": "Tidak ada penyebutan langsung mengenai program MBG dalam periode monitoring.",
-        "influence_analysis": "Akun @volix.media memiliki engagement rate yang baik dengan fokus pada berita nasional dan politik.",
-        "collab_opportunity": "Potensi kolaborasi rendah karena fokus konten berbeda dengan target audiens MBG.",
-        "recommended_actions": "Monitoring pasif, tidak memerlukan tindakan khusus.",
+        "brand_summary": "Tidak ada penyebutan program MBG. Unggahan menampilkan Dirut KAI mendatangi kediaman korban kecelakaan kereta di Bekasi Timur.",
+        "influence_analysis": "Akun media digital berbasis 700 ribu pengikut dengan ritme unggah tinggi. Berpengaruh dalam menyebarkan berita lokal secara cepat.",
+        "collab_opportunity": "Cocok untuk distribusi berita cepat; kolaborasi layak dengan panduan editorial.",
+        "recommended_actions": "Pantau rutin; jadikan kanal pendukung penyebaran informasi resmi.",
         "top_posts": [
           {
-            "text": "Breaking: Presiden mengumumkan kebijakan ekonomi baru...",
-            "likes": 8500,
-            "comments": 320,
-            "views": 450000
-          },
+            "text": "Direktur Utama PT KAI Bobby Rasyidin mendatangi kediaman korban kecelakaan kereta api di Bekasi Timur untuk menyampaikan belasungkawa dan bantuan.",
+            "likes": 11500,
+            "comments": 380,
+            "views": 520000
+          }
+        ]
+      },
+      {
+        "handle": "wartakertas.id",
+        "name": "wartakertas.id",
+        "platform": "instagram",
+        "status": "active",
+        "followers": 358000,
+        "influence": 7,
+        "credibility": 6.6,
+        "sentiment": 0.6,
+        "risk_level": "low",
+        "posts_7d": 33,
+        "brand_mentions": 0,
+        "avg_engagement": 9510,
+        "total_engagement": 313830,
+        "avatar": "/social-media-avatars/wartakertas-id.jpg",
+        "themes": [
+          "Berita Viral",
+          "Tragedi KAI",
+          "Empati Pejabat",
+          "Kemanusiaan"
+        ],
+        "brand_summary": "Tidak ada penyebutan program MBG. Konten mengangkat kisah kemanusiaan Dirut KAI terhadap keluarga korban kecelakaan kereta.",
+        "influence_analysis": "Akun berita viral menengah (358 ribu pengikut) dengan gaya naratif menyentuh. Efektif membangun resonansi emosional pembaca.",
+        "collab_opportunity": "Berpotensi untuk konten bernuansa human interest; verifikasi fakta perlu didorong.",
+        "recommended_actions": "Pantau rutin; dorong akurasi dengan menyediakan data resmi bila diperlukan.",
+        "top_posts": [
           {
-            "text": "Update situasi politik terkini dari Senayan...",
-            "likes": 6200,
-            "comments": 180,
-            "views": 280000
+            "text": "Dirut KAI Bobby Rasyidin dan Menhub mendatangi keluarga Nurlaela, korban kecelakaan kereta di Bekasi Timur. Sebuah janji sederhana: 'Sekolah kamu, aku yang bayarin.'",
+            "likes": 9200,
+            "comments": 310,
+            "views": 180000
+          }
+        ]
+      },
+      {
+        "handle": "harian.disway",
+        "name": "Harian Disway",
+        "platform": "instagram",
+        "status": "active",
+        "followers": 114000,
+        "influence": 6.4,
+        "credibility": 7.6,
+        "sentiment": 0.5,
+        "risk_level": "low",
+        "posts_7d": 38,
+        "brand_mentions": 0,
+        "avg_engagement": 1200,
+        "total_engagement": 45600,
+        "avatar": "/social-media-avatars/harian-disway.jpg",
+        "themes": [
+          "Berita KAI",
+          "Bekasi Timur",
+          "Jurnalisme",
+          "Pejabat Publik"
+        ],
+        "brand_summary": "Tidak ada penyebutan program MBG. Liputan menyorot kunjungan takziah Dirut KAI ke keluarga korban kecelakaan kereta di Bekasi Timur.",
+        "influence_analysis": "Akun media surat kabar dengan kredibilitas tinggi dan basis 114 ribu pengikut. Pemberitaannya faktual dan berpengaruh membentuk persepsi pembaca.",
+        "collab_opportunity": "Cocok untuk kemitraan pemberitaan resmi dan klarifikasi karena reputasi jurnalistiknya terjaga.",
+        "recommended_actions": "Jadikan kanal rujukan untuk rilis resmi; jaga hubungan media untuk akurasi pemberitaan.",
+        "top_posts": [
+          {
+            "text": "Direktur Utama PT KAI Bobby Rasyidin melakukan takziah ke kediaman salah satu korban kecelakaan kereta api di Stasiun Bekasi Timur. 'Yaudah nanti ini ya, sekolah kamu aku yang bayarin, mau nggak?'",
+            "likes": 190,
+            "comments": 15,
+            "views": 12000
+          }
+        ]
+      },
+      {
+        "handle": "dedenmnf_",
+        "name": "Deden Muhammad Nurul Falah",
+        "platform": "instagram",
+        "status": "active",
+        "followers": 45500,
+        "influence": 5.4,
+        "credibility": 5.5,
+        "sentiment": 0.6,
+        "risk_level": "low",
+        "posts_7d": 9,
+        "brand_mentions": 0,
+        "avg_engagement": 10730,
+        "total_engagement": 96570,
+        "avatar": "/social-media-avatars/dedenmnf_.jpg",
+        "themes": [
+          "Tragedi KAI",
+          "Bekasi Timur",
+          "Empati Pejabat",
+          "Doa & Solidaritas"
+        ],
+        "brand_summary": "Tidak ada penyebutan program MBG. Unggahan berfokus pada belasungkawa atas tragedi kecelakaan KA di Bekasi Timur dan apresiasi terhadap respons Dirut KAI.",
+        "influence_analysis": "Akun personal dengan sekitar 45 ribu pengikut, namun reel tentang Dirut KAI Bobby Rasyidin menembus engagement tinggi. Nada unggahan positif dan empatik, memperkuat citra pejabat di mata publik.",
+        "collab_opportunity": "Potensi kolaborasi terbatas karena skala audiens kecil dan konten bersifat momen personal, bukan kanal brand.",
+        "recommended_actions": "Pantau sebagai amplifier sentimen positif; tidak diperlukan respons khusus selama narasi tetap suportif.",
+        "top_posts": [
+          {
+            "text": "Turut berduka atas tragedi di Bekasi Timur. Salut untuk Dirut dan jajaran KAI yang sigap membantu keluarga korban. Semoga keluarga yang ditinggalkan diberi kekuatan.",
+            "likes": 10500,
+            "comments": 230,
+            "views": 420000
           }
         ]
       }
     ],
     "summary": {
-      "total": 3,
+      "total": 6,
       "by_platform": {
-        "instagram": 3,
+        "instagram": 6,
         "twitter": 0,
         "tiktok": 0,
         "facebook": 0,
@@ -519,11 +636,11 @@
       "by_risk": {
         "critical": 0,
         "high": 0,
-        "moderate": 0,
-        "low": 3
+        "moderate": 2,
+        "low": 4
       }
     },
-    "updated_at": "24 May 2026 02:39 WIB"
+    "updated_at": "24 May 2026 18:30 WIB"
   },
   "leadership_sentiment": {
     "leaders": [
@@ -532,7 +649,7 @@
         "name": "Dadan Hindayana",
         "position": "Kepala Badan Gizi Nasional",
         "organization": "BGN",
-        "photo": "https://ui-avatars.com/api/?name=Dadan+Hindayana&background=1d4ed8&color=fff&size=128&bold=true",
+        "photo": "/leadership-sentiment-avatars/dadan-hindayana.png",
         "sentiment": {
           "score": 4.4,
           "trend": "improving",
@@ -574,7 +691,7 @@
         "name": "Nanik S. Deyang",
         "position": "Wakil Kepala BGN",
         "organization": "BGN",
-        "photo": "https://ui-avatars.com/api/?name=Nanik+Deyang&background=1d4ed8&color=fff&size=128&bold=true",
+        "photo": "/leadership-sentiment-avatars/nanik-sudaryati-deyang.jpg",
         "sentiment": {
           "score": 4.7,
           "trend": "improving",

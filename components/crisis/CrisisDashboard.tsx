@@ -7,7 +7,6 @@ import {
   Gauge,
   Globe2,
   GripVertical,
-  Hash,
   Landmark,
   Lightbulb,
   Lock,
@@ -26,7 +25,6 @@ import { CRISIS_COLORS, cityKeyFromLocation, scoreColor } from "@/lib/mbg/colors
 import { cn } from "@/lib/utils";
 import { ScoreGauge } from "./ScoreGauge";
 import { TopCities } from "./TopCities";
-import { Keywords } from "./Keywords";
 import { ArticleList } from "./ArticleList";
 import { ActorAnalysis } from "./ActorAnalysis";
 import { LeadershipSentiment } from "./LeadershipSentiment";
@@ -41,7 +39,7 @@ const IncidentMap = dynamic(() => import("./IncidentMap"), {
 });
 const GridBoard = dynamic(() => import("./GridBoard"), { ssr: false });
 
-const LAYOUT_KEY = "atlas:crisis:layout:v4";
+const LAYOUT_KEY = "atlas:crisis:layout:v6";
 
 const DEFAULT_LAYOUT: LayoutItem[] = [
   { i: "insight", x: 0, y: 0, w: 6, h: 3, minW: 3, minH: 2 },
@@ -51,9 +49,8 @@ const DEFAULT_LAYOUT: LayoutItem[] = [
   { i: "topcities", x: 8, y: 7, w: 4, h: 5, minW: 3, minH: 3 },
   { i: "forecast", x: 0, y: 12, w: 4, h: 6, minW: 3, minH: 4 },
   { i: "articles", x: 4, y: 12, w: 8, h: 6, minW: 3, minH: 3 },
-  { i: "keywords", x: 8, y: 18, w: 4, h: 3, minW: 3, minH: 2 },
-  { i: "actors", x: 0, y: 18, w: 8, h: 5, minW: 4, minH: 4 },
-  { i: "leadership", x: 0, y: 23, w: 12, h: 6, minW: 4, minH: 4 },
+  { i: "actors", x: 0, y: 18, w: 12, h: 10, minW: 6, minH: 6 },
+  { i: "leadership", x: 0, y: 28, w: 12, h: 6, minW: 4, minH: 4 },
 ];
 
 function reconcileLayout(saved: LayoutItem[]): LayoutItem[] {
@@ -385,15 +382,10 @@ export function CrisisDashboard() {
       ),
     },
     {
-      i: "keywords",
-      title: "Kata kunci terdeteksi",
-      icon: Hash,
-      body: <Keywords bare keywords={data?.top_keywords ?? []} />,
-    },
-    {
       i: "actors",
-      title: "Actor Threat Analysis",
+      title: "Homeless Media",
       icon: Users,
+      bodyClassName: "overflow-hidden p-3",
       body: <ActorAnalysis data={data?.actor_thread_analysis ?? null} />,
     },
     {
