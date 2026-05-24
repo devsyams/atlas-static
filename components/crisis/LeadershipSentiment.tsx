@@ -1,3 +1,7 @@
+"use client";
+
+import Image from "next/image";
+import { useState } from "react";
 import { Minus, TrendingDown, TrendingUp } from "lucide-react";
 import type { Leader, LeadershipSentiment as LeadershipSentimentData } from "@/lib/mbg/types";
 import { CRISIS_COLORS } from "@/lib/mbg/colors";
@@ -26,10 +30,8 @@ function trendMeta(trend: string) {
   return { label: "Stabil", Icon: Minus, cls: "border-border bg-background/40 text-muted-foreground" };
 }
 
-function LeaderCard({ leader }: { leader: Leader }) {
-  const { sentiment: s, prediction: p } = leader;
-  const col = sentColor(s.score);
-  const trend = trendMeta(s.trend);
+/** Leader portrait from the photo field, falling back to initials on failure. */
+function LeaderAvatar({ leader }: { leader: Leader }) {
   const initials = leader.name
     .split(" ")
     .map((w) => w[0])
@@ -37,13 +39,38 @@ function LeaderCard({ leader }: { leader: Leader }) {
     .slice(0, 2)
     .join("")
     .toUpperCase();
+  const src = leader.photo && leader.photo.trim() ? leader.photo : null;
+  const [failed, setFailed] = useState(false);
+
+  if (!src || failed) {
+    return (
+      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-accent text-[11px] font-extrabold text-primary-foreground">
+        {initials}
+      </span>
+    );
+  }
+  return (
+    <Image
+      src={src}
+      alt={leader.name}
+      width={36}
+      height={36}
+      unoptimized
+      onError={() => setFailed(true)}
+      className="h-9 w-9 shrink-0 rounded-full bg-gradient-accent object-cover"
+    />
+  );
+}
+
+function LeaderCard({ leader }: { leader: Leader }) {
+  const { sentiment: s, prediction: p } = leader;
+  const col = sentColor(s.score);
+  const trend = trendMeta(s.trend);
 
   return (
     <div className="rounded-lg border border-border/50 bg-background/40 p-3">
       <div className="flex items-center gap-2.5">
-        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-accent text-[11px] font-extrabold text-primary-foreground">
-          {initials}
-        </span>
+        <LeaderAvatar leader={leader} />
         <div className="min-w-0 flex-1">
           <div className="truncate text-xs font-bold">{leader.name}</div>
           <div className="truncate text-[10px] text-muted-foreground">

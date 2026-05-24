@@ -649,7 +649,7 @@
         "name": "Dadan Hindayana",
         "position": "Kepala Badan Gizi Nasional",
         "organization": "BGN",
-        "photo": "https://ui-avatars.com/api/?name=Dadan+Hindayana&background=1d4ed8&color=fff&size=128&bold=true",
+        "photo": "/leadership-sentiment-avatars/dadan-hindayana.png",
         "sentiment": {
           "score": 4.4,
           "trend": "improving",
@@ -691,7 +691,7 @@
         "name": "Nanik S. Deyang",
         "position": "Wakil Kepala BGN",
         "organization": "BGN",
-        "photo": "https://ui-avatars.com/api/?name=Nanik+Deyang&background=1d4ed8&color=fff&size=128&bold=true",
+        "photo": "/leadership-sentiment-avatars/nanik-sudaryati-deyang.jpg",
         "sentiment": {
           "score": 4.7,
           "trend": "improving",
