@@ -1,4 +1,4 @@
-import rawData from "@/mbg-crisis-data.json";
+import rawData from "@/mbg-crisis-data-v2.json";
 import type {
   AiStatus,
   Article,

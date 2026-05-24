@@ -281,3 +281,27 @@
 .ig-granted {
   animation: ig-granted 0.5s cubic-bezier(0.2, 0.7, 0.2, 1) both;
 }
+
+/* react-grid-layout — themed for the dark command center */
+.react-grid-item.react-grid-placeholder {
+  background: oklch(0.78 0.14 230 / 0.16) !important;
+  border: 1px dashed oklch(0.78 0.14 230 / 0.55);
+  border-radius: var(--radius-lg);
+  opacity: 1;
+}
+.react-grid-item.resizing,
+.react-grid-item.react-draggable-dragging {
+  z-index: 30;
+  box-shadow: var(--shadow-panel), 0 0 0 1px oklch(0.78 0.14 230 / 0.4);
+}
+.react-grid-item > .react-resizable-handle {
+  background-image: none;
+}
+.react-grid-item > .react-resizable-handle::after {
+  border-right: 2px solid oklch(0.70 0.05 250 / 0.8);
+  border-bottom: 2px solid oklch(0.70 0.05 250 / 0.8);
+  width: 7px;
+  height: 7px;
+  right: 4px;
+  bottom: 4px;
+}
