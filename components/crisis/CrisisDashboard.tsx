@@ -9,6 +9,7 @@ import {
   Globe2,
   GripVertical,
   Hash,
+  Landmark,
   Lightbulb,
   Lock,
   MapPin,
@@ -27,6 +28,7 @@ import { TopCities } from "./TopCities";
 import { Keywords } from "./Keywords";
 import { ArticleList } from "./ArticleList";
 import { ActorAnalysis } from "./ActorAnalysis";
+import { LeadershipSentiment } from "./LeadershipSentiment";
 import { DetailModal } from "./DetailModal";
 
 const IncidentMap = dynamic(() => import("./IncidentMap"), {
@@ -47,6 +49,7 @@ const DEFAULT_LAYOUT: LayoutItem[] = [
   { i: "articles", x: 0, y: 12, w: 8, h: 6, minW: 3, minH: 3 },
   { i: "keywords", x: 8, y: 14, w: 4, h: 3, minW: 3, minH: 2 },
   { i: "actors", x: 0, y: 18, w: 12, h: 9, minW: 4, minH: 5 },
+  { i: "leadership", x: 0, y: 27, w: 12, h: 8, minW: 4, minH: 5 },
 ];
 
 function reconcileLayout(saved: LayoutItem[]): LayoutItem[] {
@@ -405,6 +408,12 @@ export function CrisisDashboard() {
       title: "Actor Threat Analysis",
       icon: Users,
       body: <ActorAnalysis data={data?.actor_thread_analysis ?? null} />,
+    },
+    {
+      i: "leadership",
+      title: "Leadership Sentiment",
+      icon: Landmark,
+      body: <LeadershipSentiment data={data?.leadership_sentiment ?? null} />,
     },
   ];
 

@@ -95,6 +95,32 @@ export interface ActorThreadAnalysis {
   updated_at: string;
 }
 
+export interface LeaderArticle {
+  title: string;
+  source: string;
+  date: string;
+  sentiment: number; // 0–5
+  crisis_score: number; // 0–10
+}
+
+export interface Leader {
+  id: string;
+  name: string;
+  position: string;
+  organization: string;
+  photo: string;
+  sentiment: { score: number; trend: string; article_count: number };
+  insight: string;
+  prediction: { question: string; probability: number; answer_label: string; reasoning: string };
+  recent_articles: LeaderArticle[];
+}
+
+export interface LeadershipSentiment {
+  leaders: Leader[];
+  ai_available: boolean;
+  updated_at: string;
+}
+
 export interface DashboardData {
   score: number;
   emoji: string;
@@ -112,6 +138,7 @@ export interface DashboardData {
   top_cities: TopCity[];
   articles: Article[];
   actor_thread_analysis: ActorThreadAnalysis | null;
+  leadership_sentiment: LeadershipSentiment | null;
 }
 
 export type ForecastTrend = "up" | "down" | "stable";
