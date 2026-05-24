@@ -48,8 +48,8 @@ const DEFAULT_LAYOUT: LayoutItem[] = [
   { i: "score", x: 8, y: 7, w: 4, h: 4, minW: 3, minH: 3 },
   { i: "topcities", x: 8, y: 11, w: 4, h: 5, minW: 3, minH: 3 },
   { i: "articles", x: 0, y: 16, w: 12, h: 6, minW: 3, minH: 3 },
-  { i: "actors", x: 0, y: 22, w: 12, h: 5, minW: 4, minH: 4 },
-  { i: "leadership", x: 0, y: 27, w: 12, h: 6, minW: 4, minH: 4 },
+  { i: "actors", x: 0, y: 22, w: 12, h: 10, minW: 6, minH: 6 },
+  { i: "leadership", x: 0, y: 32, w: 12, h: 6, minW: 4, minH: 4 },
 ];
 
 function reconcileLayout(saved: LayoutItem[]): LayoutItem[] {
@@ -358,8 +358,9 @@ export function CrisisDashboard() {
     },
     {
       i: "actors",
-      title: "Actor Threat Analysis",
+      title: "Homeless Media",
       icon: Users,
+      bodyClassName: "overflow-hidden p-3",
       body: <ActorAnalysis data={data?.actor_thread_analysis ?? null} />,
     },
     {
