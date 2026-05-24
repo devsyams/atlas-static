@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState, type FormEvent } from "react";
-import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { ShieldCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -13,7 +12,6 @@ const AUTH_EMAIL = "atlasadmin@nexorus.io";
 const AUTH_PASSWORD = "adminatlas";
 
 export default function LoginPage() {
-  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -21,14 +19,13 @@ export default function LoginPage() {
   const [igniting, setIgniting] = useState(false);
   const [crisis, setCrisis] = useState<DashboardData | null>(null);
 
-  // Warm up the Command Center + preload the live crisis data for the ignition HUD.
+  // Preload the live crisis data for the ignition HUD.
   useEffect(() => {
-    router.prefetch("/");
     fetch("/api/v1/mbg-crisis")
       .then((r) => r.json())
       .then(setCrisis)
       .catch(() => {});
-  }, [router]);
+  }, []);
 
   const submit = (e: FormEvent) => {
     e.preventDefault();
@@ -111,7 +108,9 @@ export default function LoginPage() {
         </p>
       </div>
 
-      {igniting && <NeuralIgnition data={crisis} onComplete={() => router.push("/")} />}
+      {igniting && (
+        <NeuralIgnition data={crisis} onComplete={() => window.location.assign("/")} />
+      )}
     </div>
   );
 }
