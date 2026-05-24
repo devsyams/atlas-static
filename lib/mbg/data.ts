@@ -1,5 +1,6 @@
 import rawData from "@/mbg-crisis-data-v2.json";
 import type {
+  ActorThreadAnalysis,
   AiStatus,
   Article,
   ArticleDetail,
@@ -41,6 +42,8 @@ export function buildDashboard(): DashboardData {
         dominant_issue: a.dominant_issue,
       }),
     ),
+    actor_thread_analysis:
+      (raw.actor_thread_analysis as unknown as ActorThreadAnalysis) ?? null,
   };
 }
 

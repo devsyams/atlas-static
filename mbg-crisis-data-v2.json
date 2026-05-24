@@ -411,5 +411,79 @@
       "ai_reasoning": "Lokasi diidentifikasi dari 'Babel Insight' (Kepulauan Bangka Belitung), Pangkalpinang adalah ibu kotanya. Isu negatif utama adalah kerentanan korupsi anggaran MBG yang disoroti KPK."
     }
   ],
+  "actor_thread_analysis": {
+    "headline": "Narasi krisis MBG digerakkan media nasional & pengawas antikorupsi",
+    "posture": "WASPADA TINGGI",
+    "summary": "Tekanan publik 7 hari terakhir didominasi liputan keracunan massal (Jember, Temanggung) dan sorotan korupsi anggaran oleh KPK. Narasi tandingan resmi dari pemerintah masih lemah, sehingga sentimen negatif berisiko mengeras dan meluas ke daerah lain.",
+    "actors": [
+      {
+        "name": "Media Nasional",
+        "type": "Media",
+        "stance": "Kritis",
+        "influence": 92,
+        "share": 41,
+        "mentions": 153,
+        "trend": "up",
+        "narrative": "Eskalasi keracunan massal MBG di Jember & Temanggung",
+        "implication": "Memperluas jangkauan isu ke audiens nasional dalam <24 jam."
+      },
+      {
+        "name": "KPK",
+        "type": "Lembaga",
+        "stance": "Kritis",
+        "influence": 85,
+        "share": 19,
+        "mentions": 71,
+        "trend": "up",
+        "narrative": "Kerentanan korupsi & pemborosan anggaran MBG",
+        "implication": "Memberi legitimasi institusional pada isu integritas."
+      },
+      {
+        "name": "Orang Tua & Wali Murid",
+        "type": "Akar Rumput",
+        "stance": "Kritis",
+        "influence": 64,
+        "share": 14,
+        "mentions": 52,
+        "trend": "up",
+        "narrative": "Kekhawatiran keamanan pangan untuk anak",
+        "implication": "Sentimen emosional, sulit diredam tanpa jaminan keamanan."
+      },
+      {
+        "name": "Pemerintah / BGN",
+        "type": "Pemerintah",
+        "stance": "Mendukung",
+        "influence": 58,
+        "share": 12,
+        "mentions": 44,
+        "trend": "stable",
+        "narrative": "Evaluasi total & pengetatan pengawasan dapur",
+        "implication": "Narasi defensif; perlu bukti tindakan cepat agar kredibel."
+      },
+      {
+        "name": "Politisi Oposisi",
+        "type": "Politik",
+        "stance": "Kritis",
+        "influence": 51,
+        "share": 9,
+        "mentions": 33,
+        "trend": "up",
+        "narrative": "Mempertanyakan keberlanjutan & tata kelola program",
+        "implication": "Berpotensi mempolitisasi isu menjelang agenda legislatif."
+      },
+      {
+        "name": "Pemda Semarang",
+        "type": "Pemerintah",
+        "stance": "Mendukung",
+        "influence": 38,
+        "share": 5,
+        "mentions": 18,
+        "trend": "stable",
+        "narrative": "Kisah sukses perluasan dapur MBG",
+        "implication": "Sinyal positif yang bisa diangkat sebagai narasi tandingan."
+      }
+    ],
+    "recommendation": "Aktifkan juru bicara terpadu dalam 24 jam: publikasikan hasil audit dapur Jember & Temanggung, tegaskan kolaborasi dengan KPK, dan angkat kisah sukses daerah sebagai penyeimbang narasi."
+  },
   "updated_at": "24 May 2026 01:18 WIB"
 }

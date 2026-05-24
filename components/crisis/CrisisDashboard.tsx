@@ -16,6 +16,7 @@ import {
   RotateCcw,
   TrendingUp,
   Unlock,
+  Users,
   type LucideIcon,
 } from "lucide-react";
 import type { Article, ArticleDetail, DashboardData } from "@/lib/mbg/types";
@@ -25,6 +26,7 @@ import { ScoreGauge } from "./ScoreGauge";
 import { TopCities } from "./TopCities";
 import { Keywords } from "./Keywords";
 import { ArticleList } from "./ArticleList";
+import { ActorAnalysis } from "./ActorAnalysis";
 import { DetailModal } from "./DetailModal";
 
 const IncidentMap = dynamic(() => import("./IncidentMap"), {
@@ -44,6 +46,7 @@ const DEFAULT_LAYOUT: LayoutItem[] = [
   { i: "topcities", x: 8, y: 9, w: 4, h: 5, minW: 3, minH: 3 },
   { i: "articles", x: 0, y: 12, w: 8, h: 6, minW: 3, minH: 3 },
   { i: "keywords", x: 8, y: 14, w: 4, h: 3, minW: 3, minH: 2 },
+  { i: "actors", x: 0, y: 18, w: 12, h: 7, minW: 4, minH: 4 },
 ];
 
 function reconcileLayout(saved: LayoutItem[]): LayoutItem[] {
@@ -396,6 +399,12 @@ export function CrisisDashboard() {
       title: "Kata kunci terdeteksi",
       icon: Hash,
       body: <Keywords bare keywords={data?.top_keywords ?? []} />,
+    },
+    {
+      i: "actors",
+      title: "Actor Threat Analysis",
+      icon: Users,
+      body: <ActorAnalysis data={data?.actor_thread_analysis ?? null} />,
     },
   ];
 

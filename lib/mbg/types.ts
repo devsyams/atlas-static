@@ -52,6 +52,28 @@ export interface Prediction {
   reasoning: string;
 }
 
+export type ActorStance = "Kritis" | "Mendukung" | "Netral";
+
+export interface CrisisActor {
+  name: string;
+  type: string;
+  stance: ActorStance;
+  influence: number;
+  share: number;
+  mentions: number;
+  trend: "up" | "down" | "stable";
+  narrative: string;
+  implication: string;
+}
+
+export interface ActorThreadAnalysis {
+  headline: string;
+  posture: string;
+  summary: string;
+  actors: CrisisActor[];
+  recommendation: string;
+}
+
 export interface DashboardData {
   score: number;
   emoji: string;
@@ -68,6 +90,7 @@ export interface DashboardData {
   city_map_points: CityMapPoint[];
   top_cities: TopCity[];
   articles: Article[];
+  actor_thread_analysis: ActorThreadAnalysis | null;
 }
 
 export type ForecastTrend = "up" | "down" | "stable";
