@@ -189,12 +189,33 @@ export function AppShell({ children }: { children: ReactNode }) {
   );
 }
 
+interface Anomaly {
+  title: string;
+  detail: string;
+  severity: "high" | "med" | "low";
+}
+const SEV_DOT: Record<Anomaly["severity"], string> = {
+  high: "bg-destructive",
+  med: "bg-warning",
+  low: "bg-primary",
+};
+
 function NotificationsMenu() {
-  const items = [
-    { title: "Anomaly detected", body: "Signal spike in Sector 7 — +312% in 15m", time: "2m" },
-    { title: "Source reconnected", body: "Feed “Maritime AIS” is back online", time: "18m" },
-    { title: "Briefing ready", body: "Daily strategic digest compiled", time: "1h" },
-  ];
+  const [items, setItems] = useState<Anomaly[]>([]);
+
+  useEffect(() => {
+    let alive = true;
+    fetch("/api/v1/ai/forecast")
+      .then((r) => r.json())
+      .then((d: { anomalies?: Anomaly[] }) => alive && setItems(d.anomalies ?? []))
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  const hasHigh = items.some((i) => i.severity === "high");
+
   return (
     <Dropdown
       align="end"
@@ -202,30 +223,41 @@ function NotificationsMenu() {
       trigger={
         <span className="relative rounded-md border border-border bg-background/40 p-1.5 text-muted-foreground hover:text-foreground">
           <Bell className="h-3.5 w-3.5" />
-          <span className="absolute right-1 top-1 h-1.5 w-1.5 rounded-full bg-destructive" />
+          {items.length > 0 && (
+            <span
+              className={`absolute right-1 top-1 h-1.5 w-1.5 rounded-full ${hasHigh ? "bg-destructive" : "bg-primary"}`}
+            />
+          )}
         </span>
       }
     >
       <div className="flex items-center justify-between border-b border-border px-3 py-2">
-        <span className="text-xs font-semibold">Notifications</span>
-        <span className="text-[10px] uppercase tracking-widest text-muted-foreground">3 new</span>
+        <span className="flex items-center gap-1.5 text-xs font-semibold">
+          <Sparkles className="h-3 w-3 text-primary" /> Peringatan Synapse
+        </span>
+        <span className="text-[10px] uppercase tracking-widest text-muted-foreground">
+          {items.length} aktif
+        </span>
       </div>
       <div className="max-h-80 overflow-y-auto">
-        {items.map((n) => (
-          <div
-            key={n.title}
-            className="flex gap-2 border-b border-border/40 px-3 py-2 last:border-b-0 hover:bg-sidebar-accent"
-          >
-            <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center justify-between gap-2">
-                <span className="truncate text-xs font-medium">{n.title}</span>
-                <span className="shrink-0 text-[10px] text-muted-foreground">{n.time}</span>
-              </div>
-              <p className="mt-0.5 text-[11px] leading-snug text-muted-foreground">{n.body}</p>
-            </div>
+        {items.length === 0 ? (
+          <div className="px-3 py-6 text-center text-[11px] text-muted-foreground">
+            Tidak ada anomali terdeteksi.
           </div>
-        ))}
+        ) : (
+          items.map((n) => (
+            <div
+              key={n.title}
+              className="flex gap-2 border-b border-border/40 px-3 py-2 last:border-b-0 hover:bg-sidebar-accent"
+            >
+              <span className={`mt-1 h-1.5 w-1.5 shrink-0 rounded-full ${SEV_DOT[n.severity]}`} />
+              <div className="min-w-0 flex-1">
+                <span className="block text-xs font-medium leading-snug">{n.title}</span>
+                <p className="mt-0.5 text-[11px] leading-snug text-muted-foreground">{n.detail}</p>
+              </div>
+            </div>
+          ))
+        )}
       </div>
     </Dropdown>
   );

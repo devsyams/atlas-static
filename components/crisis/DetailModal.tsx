@@ -171,7 +171,7 @@ export function DetailModal({
               )}
               <div className="flex justify-between gap-2.5 text-[10px] text-muted-foreground/70">
                 <span>Diperbarui hari ini</span>
-                <span>Prakiraan oleh AI engine</span>
+                <span>Prakiraan oleh Synapse</span>
               </div>
             </div>
 
