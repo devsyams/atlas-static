@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { scoreColor } from "@/lib/mbg/colors";
@@ -10,6 +10,9 @@ const INDONESIA_BOUNDS: L.LatLngBoundsExpression = [
   [-11.5, 94.0],
   [6.5, 141.5],
 ];
+const GEO_URL = "/geo/idn-provinces.geojson";
+const EMPTY_FILL = "oklch(0.34 0.02 260)";
+const EMPTY_STROKE = "oklch(0.46 0.03 265)";
 
 function escapeHtml(text: string): string {
   return String(text ?? "")
@@ -18,6 +21,24 @@ function escapeHtml(text: string): string {
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#39;");
+}
+
+/** Normalise province names so the data matches the GeoJSON `state` field. */
+function canonProvince(s: string): string {
+  let x = (s || "").toLowerCase().replace(/[^a-z]/g, "");
+  x = x.replace(/^(dki|di|provinsi|prov)/, "");
+  if (x.includes("jakarta")) return "jakarta";
+  if (x.includes("yogya") || x.includes("jogja")) return "yogyakarta";
+  if (x.includes("bangka")) return "bangkabelitung";
+  return x;
+}
+
+interface ProvInfo {
+  severity: number;
+  articles: number;
+  issue: string;
+  topKey: string;
+  topHeat: number;
 }
 
 export default function IncidentMap({
@@ -31,11 +52,13 @@ export default function IncidentMap({
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
-  const layerRef = useRef<L.LayerGroup | null>(null);
+  const geoRef = useRef<L.GeoJSON | null>(null);
+  const geoDataRef = useRef<GeoJSON.FeatureCollection | null>(null);
   const onSelectRef = useRef(onSelectCity);
   onSelectRef.current = onSelectCity;
+  const [geoReady, setGeoReady] = useState(false);
 
-  // Initialise the map once.
+  // Initialise the map + load province polygons once.
   useEffect(() => {
     if (mapRef.current || !containerRef.current) return;
 
@@ -53,82 +76,114 @@ export default function IncidentMap({
       subdomains: "abcd",
       attribution: "&copy; OpenStreetMap &copy; CARTO",
     }).addTo(map);
-
-    layerRef.current = L.layerGroup().addTo(map);
     mapRef.current = map;
 
     const ro = new ResizeObserver(() => map.invalidateSize());
     ro.observe(containerRef.current);
     const t = setTimeout(() => map.invalidateSize(), 120);
+
+    let cancelled = false;
+    fetch(GEO_URL)
+      .then((r) => r.json())
+      .then((d: GeoJSON.FeatureCollection) => {
+        if (!cancelled) {
+          geoDataRef.current = d;
+          setGeoReady(true);
+        }
+      })
+      .catch(() => {});
+
     return () => {
+      cancelled = true;
       clearTimeout(t);
       ro.disconnect();
       map.remove();
       mapRef.current = null;
-      layerRef.current = null;
+      geoRef.current = null;
     };
   }, []);
 
-  // Draw markers whenever the points change.
+  // Build / rebuild the choropleth when data, polygons, or selection change.
   useEffect(() => {
     const map = mapRef.current;
-    const layer = layerRef.current;
-    if (!map || !layer) return;
+    const data = geoDataRef.current;
+    if (!map || !data) return;
 
-    layer.clearLayers();
-    const bounds: L.LatLngTuple[] = [];
-
-    points.forEach((location) => {
-      if (typeof location.lat !== "number" || typeof location.lng !== "number") return;
-      const color = scoreColor(Math.min(10, location.severity_sum || 1));
-      const baseR = Math.max(130000, Math.min(420000, (location.heat || 1) * 600));
-
-      // Soft radial heat fill: stacked translucent circles, brightest at the centre.
-      (
-        [
-          [1, 0.1],
-          [0.62, 0.16],
-          [0.32, 0.26],
-        ] as [number, number][]
-      ).forEach(([rf, op], idx) => {
-        L.circle([location.lat, location.lng], {
-          radius: baseR * rf,
-          stroke: idx === 0,
-          color,
-          weight: 0.6,
-          opacity: 0.3,
-          fillColor: color,
-          fillOpacity: op,
-          className: "incident-blob",
-          interactive: true,
-        })
-          .addTo(layer)
-          .on("click", () => onSelectRef.current(location.city_key));
-      });
-
-      // Invisible centre anchor: reliable click target + popup.
-      const anchor = L.circleMarker([location.lat, location.lng], {
-        radius: 12,
-        opacity: 0,
-        fillOpacity: 0.01,
-        fillColor: color,
-        color,
-      }).addTo(layer);
-      anchor.bindPopup(
-        `<div class="pin-popup-title">${escapeHtml(location.city)}, ${escapeHtml(location.province)}</div>` +
-          `<div class="pin-popup-meta">${location.article_count} artikel · isu utama ${escapeHtml(location.dominant_issue)} · bobot ${location.heat}</div>`,
-      );
-      anchor.on("click", () => onSelectRef.current(location.city_key));
-      bounds.push([location.lat, location.lng]);
-    });
-
-    if (bounds.length) {
-      map.fitBounds(bounds, { padding: [40, 40], maxZoom: 6 });
-      map.setMaxBounds(INDONESIA_BOUNDS);
+    if (geoRef.current) {
+      geoRef.current.remove();
+      geoRef.current = null;
     }
-  }, [points]);
 
-  // Fly to the selected city.
+    const byProv = new Map<string, ProvInfo>();
+    for (const p of points) {
+      const key = canonProvince(p.province);
+      const sev = Math.min(10, p.severity_sum || 0);
+      const cur = byProv.get(key);
+      if (!cur) {
+        byProv.set(key, {
+          severity: sev,
+          articles: p.article_count || 0,
+          issue: p.dominant_issue || "—",
+          topKey: p.city_key,
+          topHeat: p.heat || 0,
+        });
+      } else {
+        cur.severity = Math.max(cur.severity, sev);
+        cur.articles += p.article_count || 0;
+        if ((p.heat || 0) >= cur.topHeat) {
+          cur.topHeat = p.heat || 0;
+          cur.topKey = p.city_key;
+          cur.issue = p.dominant_issue || cur.issue;
+        }
+      }
+    }
+
+    const selectedProv = (() => {
+      const sp = points.find((p) => p.city_key === selectedCityKey);
+      return sp ? canonProvince(sp.province) : null;
+    })();
+
+    const styleFor = (state: string): L.PathOptions => {
+      const info = byProv.get(canonProvince(state));
+      if (!info) {
+        return {
+          color: EMPTY_STROKE,
+          weight: 0.6,
+          opacity: 0.4,
+          fillColor: EMPTY_FILL,
+          fillOpacity: 0.12,
+        };
+      }
+      const c = scoreColor(info.severity);
+      const sel = canonProvince(state) === selectedProv;
+      return {
+        color: sel ? "#ffffff" : c,
+        weight: sel ? 2 : 1,
+        opacity: sel ? 0.95 : 0.55,
+        fillColor: c,
+        fillOpacity: sel ? 0.7 : 0.45,
+      };
+    };
+
+    const gl = L.geoJSON(data, {
+      style: (feature) => styleFor(feature?.properties?.state ?? ""),
+      onEachFeature: (feature, layer) => {
+        const info = byProv.get(canonProvince(feature?.properties?.state ?? ""));
+        if (!info) return;
+        layer.bindPopup(
+          `<div class="pin-popup-title">${escapeHtml(feature.properties.state)}</div>` +
+            `<div class="pin-popup-meta">${info.articles} artikel · isu utama ${escapeHtml(info.issue)}</div>`,
+        );
+        layer.on("click", () => onSelectRef.current(info.topKey));
+        layer.on("mouseover", () => (layer as L.Path).setStyle({ weight: 2, fillOpacity: 0.62 }));
+        layer.on("mouseout", () => geoRef.current?.resetStyle(layer as L.Path));
+      },
+    });
+    gl.addTo(map);
+    geoRef.current = gl;
+  }, [points, geoReady, selectedCityKey]);
+
+  // Fly to the selected city's province.
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !selectedCityKey) return;

@@ -227,10 +227,6 @@
 .leaflet-control-attribution a {
   color: var(--primary);
 }
-/* Incident map — soften the stacked heat circles into a smooth fill */
-.incident-blob {
-  filter: blur(6px);
-}
 
 /* Neural Ignition — post-login boot sequence */
 @keyframes ig-backdrop {
