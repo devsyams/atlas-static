@@ -4,6 +4,19 @@ import { useState } from "react";
 import { Sparkles, Loader2 } from "lucide-react";
 import { Dropdown } from "@/components/ui/Dropdown";
 
+/** Renders **bold** spans; everything else plain. */
+function rich(text: string) {
+  return text.split(/(\*\*[^*]+\*\*)/g).map((p, i) =>
+    p.startsWith("**") && p.endsWith("**") ? (
+      <strong key={i} className="font-bold text-foreground">
+        {p.slice(2, -2)}
+      </strong>
+    ) : (
+      <span key={i}>{p}</span>
+    ),
+  );
+}
+
 const MODES: { key: string; label: string }[] = [
   { key: "explain", label: "Jelaskan" },
   { key: "drivers", label: "Pendorong" },
@@ -75,7 +88,7 @@ export function WidgetAskButton({ widget, title }: { widget: string; title: stri
             <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" /> Menganalisis…
           </span>
         ) : answer ? (
-          <span className="whitespace-pre-wrap">{answer}</span>
+          <span className="whitespace-pre-wrap">{rich(answer)}</span>
         ) : (
           <span className="text-muted-foreground">Pilih mode untuk insight singkat dari Synapse.</span>
         )}
