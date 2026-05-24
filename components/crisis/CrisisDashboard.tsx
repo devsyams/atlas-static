@@ -4,7 +4,6 @@ import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react
 import dynamic from "next/dynamic";
 import type { LayoutItem } from "react-grid-layout/legacy";
 import {
-  Bot,
   Gauge,
   Globe2,
   GripVertical,
@@ -44,8 +43,7 @@ const DEFAULT_LAYOUT: LayoutItem[] = [
   { i: "prediction", x: 6, y: 0, w: 6, h: 3, minW: 3, minH: 2 },
   { i: "map", x: 0, y: 3, w: 8, h: 9, minW: 4, minH: 5 },
   { i: "score", x: 8, y: 3, w: 4, h: 4, minW: 3, minH: 3 },
-  { i: "aistatus", x: 8, y: 7, w: 4, h: 2, minW: 3, minH: 2 },
-  { i: "topcities", x: 8, y: 9, w: 4, h: 5, minW: 3, minH: 3 },
+  { i: "topcities", x: 8, y: 7, w: 4, h: 5, minW: 3, minH: 3 },
   { i: "articles", x: 0, y: 12, w: 8, h: 6, minW: 3, minH: 3 },
   { i: "keywords", x: 8, y: 14, w: 4, h: 3, minW: 3, minH: 2 },
   { i: "actors", x: 0, y: 18, w: 12, h: 5, minW: 4, minH: 4 },
@@ -210,32 +208,6 @@ export function CrisisDashboard() {
   const score = data?.score ?? 0;
   const scoreCol = scoreColor(score);
 
-  const aiTone =
-    data?.ai_status === "ready"
-      ? "border-success/45"
-      : data?.ai_status === "partial"
-        ? "border-warning/45"
-        : data?.ai_status === "unavailable"
-          ? "border-destructive/45"
-          : "border-border/60";
-  const aiText =
-    !data
-      ? { t: "Memeriksa AI engine…", c: "Lokasi kota dan isu dominan akan diisi setelah analisis AI siap." }
-      : data.ai_status === "ready"
-        ? {
-            t: "AI engine aktif untuk kota dan isu",
-            c: `${data.mapped_article_count} artikel berhasil dipetakan ke kota. Heatmap dan ranking kota memakai analisis AI ini.`,
-          }
-        : data.ai_status === "partial"
-          ? {
-              t: "AI engine hanya memetakan sebagian artikel",
-              c: `${data.mapped_article_count} artikel berhasil dipetakan, ${data.unmapped_article_count} masih belum cukup yakin untuk dipakai di peta.`,
-            }
-          : {
-              t: "AI engine belum tersedia untuk heatmap",
-              c: "Skor krisis dan berita tetap tampil, tetapi peta dan ranking kota dinonaktifkan sampai AI engine siap.",
-            };
-
   const chip = "inline-flex items-center rounded-full border border-border bg-background/40 px-2 py-0.5 text-[10px] font-bold text-foreground/80";
 
   const widgets: Widget[] = [
@@ -367,18 +339,6 @@ export function CrisisDashboard() {
             <span>Krisis</span>
             <span>Darurat 10</span>
           </div>
-        </div>
-      ),
-    },
-    {
-      i: "aistatus",
-      title: "AI Status",
-      icon: Bot,
-      tileClassName: aiTone,
-      body: (
-        <div>
-          <div className="text-xs font-extrabold">{aiText.t}</div>
-          <p className="mt-1.5 text-[11px] leading-relaxed text-muted-foreground">{aiText.c}</p>
         </div>
       ),
     },
