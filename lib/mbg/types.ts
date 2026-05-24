@@ -52,6 +52,75 @@ export interface Prediction {
   reasoning: string;
 }
 
+export interface ActorTopPost {
+  text: string;
+  likes: number;
+  comments: number;
+  views: number;
+}
+
+/** A monitored social-media account in the sentiment/threat analysis. */
+export interface SocialActor {
+  handle: string;
+  name: string;
+  platform: string;
+  status: string;
+  followers: number;
+  influence: number; // 0–10
+  credibility: number; // 0–10
+  sentiment: number; // negative … positive
+  risk_level: string; // low | moderate | high | critical
+  posts_7d: number;
+  brand_mentions: number;
+  avg_engagement: number;
+  total_engagement: number;
+  avatar: string;
+  themes: string[];
+  brand_summary: string;
+  influence_analysis: string;
+  collab_opportunity: string;
+  recommended_actions: string;
+  top_posts: ActorTopPost[];
+}
+
+export interface ActorAnalysisSummary {
+  total: number;
+  by_platform: Record<string, number>;
+  by_risk: Record<string, number>;
+}
+
+export interface ActorThreadAnalysis {
+  actors: SocialActor[];
+  summary: ActorAnalysisSummary;
+  updated_at: string;
+}
+
+export interface LeaderArticle {
+  title: string;
+  source: string;
+  date: string;
+  sentiment: number; // 0–5
+  crisis_score: number; // 0–10
+}
+
+export interface Leader {
+  id: string;
+  name: string;
+  position: string;
+  organization: string;
+  photo: string;
+  sentiment: { score: number; trend: string; article_count: number };
+  insight: string;
+  prediction: { question: string; probability: number; answer_label: string; reasoning: string };
+  recent_articles: LeaderArticle[];
+}
+
+export interface LeadershipSentiment {
+  leaders: Leader[];
+  ai_available: boolean;
+  updated_at: string;
+}
+
 export interface DashboardData {
   score: number;
   emoji: string;
@@ -68,6 +137,8 @@ export interface DashboardData {
   city_map_points: CityMapPoint[];
   top_cities: TopCity[];
   articles: Article[];
+  actor_thread_analysis: ActorThreadAnalysis | null;
+  leadership_sentiment: LeadershipSentiment | null;
 }
 
 export type ForecastTrend = "up" | "down" | "stable";

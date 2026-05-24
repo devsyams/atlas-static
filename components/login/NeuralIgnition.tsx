@@ -16,13 +16,15 @@ function makeSteps(data: DashboardData | null) {
   const topCity = data?.top_cities?.[0]?.city ?? "—";
   const level = data?.level ?? "—";
   const score = data?.score ?? 0;
+  const actors = data?.actor_thread_analysis?.actors.length ?? 0;
   return [
     { label: "AUTHENTICATING OPERATOR", at: 8 },
-    { label: "ESTABLISHING SECURE UPLINK", at: 20 },
-    { label: `INGESTING ${articles.toLocaleString()} ARTICLES`, at: 34 },
-    { label: `GEO-MAPPING ${mapped} INCIDENTS`, at: 50 },
-    { label: `RANKING HOTSPOTS · ${topCity.toUpperCase()}`, at: 66 },
-    { label: "CALIBRATING AI ENGINE", at: 82 },
+    { label: "ESTABLISHING SECURE UPLINK", at: 19 },
+    { label: `INGESTING ${articles.toLocaleString()} ARTICLES`, at: 31 },
+    { label: `GEO-MAPPING ${mapped} INCIDENTS`, at: 45 },
+    { label: `RANKING HOTSPOTS · ${topCity.toUpperCase()}`, at: 59 },
+    { label: `PROFILING ${actors} ACTORS`, at: 72 },
+    { label: "CALIBRATING AI ENGINE", at: 86 },
     { label: `CRISIS INDEX · ${level} ${score.toFixed(1)}`, at: 100 },
   ];
 }

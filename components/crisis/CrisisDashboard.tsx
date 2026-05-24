@@ -9,6 +9,7 @@ import {
   Globe2,
   GripVertical,
   Hash,
+  Landmark,
   Lightbulb,
   Lock,
   MapPin,
@@ -16,6 +17,7 @@ import {
   RotateCcw,
   TrendingUp,
   Unlock,
+  Users,
   type LucideIcon,
 } from "lucide-react";
 import type { Article, ArticleDetail, DashboardData } from "@/lib/mbg/types";
@@ -25,6 +27,8 @@ import { ScoreGauge } from "./ScoreGauge";
 import { TopCities } from "./TopCities";
 import { Keywords } from "./Keywords";
 import { ArticleList } from "./ArticleList";
+import { ActorAnalysis } from "./ActorAnalysis";
+import { LeadershipSentiment } from "./LeadershipSentiment";
 import { DetailModal } from "./DetailModal";
 
 const IncidentMap = dynamic(() => import("./IncidentMap"), {
@@ -33,7 +37,7 @@ const IncidentMap = dynamic(() => import("./IncidentMap"), {
 });
 const GridBoard = dynamic(() => import("./GridBoard"), { ssr: false });
 
-const LAYOUT_KEY = "atlas:crisis:layout:v1";
+const LAYOUT_KEY = "atlas:crisis:layout:v3";
 
 const DEFAULT_LAYOUT: LayoutItem[] = [
   { i: "insight", x: 0, y: 0, w: 6, h: 3, minW: 3, minH: 2 },
@@ -44,13 +48,23 @@ const DEFAULT_LAYOUT: LayoutItem[] = [
   { i: "topcities", x: 8, y: 9, w: 4, h: 5, minW: 3, minH: 3 },
   { i: "articles", x: 0, y: 12, w: 8, h: 6, minW: 3, minH: 3 },
   { i: "keywords", x: 8, y: 14, w: 4, h: 3, minW: 3, minH: 2 },
+  { i: "actors", x: 0, y: 18, w: 12, h: 5, minW: 4, minH: 4 },
+  { i: "leadership", x: 0, y: 23, w: 12, h: 6, minW: 4, minH: 4 },
 ];
 
 function reconcileLayout(saved: LayoutItem[]): LayoutItem[] {
   const byId = new Map(saved.map((l) => [l.i, l]));
+  // Keep saved positions, but never let a tile drop below its minimum size.
   return DEFAULT_LAYOUT.map((def) => {
     const s = byId.get(def.i);
-    return s ? { ...def, x: s.x, y: s.y, w: s.w, h: s.h } : def;
+    if (!s) return def;
+    return {
+      ...def,
+      x: typeof s.x === "number" ? s.x : def.x,
+      y: typeof s.y === "number" ? s.y : def.y,
+      w: Math.max(s.w ?? def.w, def.minW ?? 2),
+      h: Math.max(s.h ?? def.h, def.minH ?? 2),
+    };
   });
 }
 
@@ -396,6 +410,18 @@ export function CrisisDashboard() {
       title: "Kata kunci terdeteksi",
       icon: Hash,
       body: <Keywords bare keywords={data?.top_keywords ?? []} />,
+    },
+    {
+      i: "actors",
+      title: "Actor Threat Analysis",
+      icon: Users,
+      body: <ActorAnalysis data={data?.actor_thread_analysis ?? null} />,
+    },
+    {
+      i: "leadership",
+      title: "Leadership Sentiment",
+      icon: Landmark,
+      body: <LeadershipSentiment data={data?.leadership_sentiment ?? null} />,
     },
   ];
 

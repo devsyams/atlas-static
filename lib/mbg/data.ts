@@ -1,11 +1,13 @@
 import rawData from "@/mbg-crisis-data-v2.json";
 import type {
+  ActorThreadAnalysis,
   AiStatus,
   Article,
   ArticleDetail,
   CityMapPoint,
   DashboardData,
   Keyword,
+  LeadershipSentiment,
   TopCity,
 } from "./types";
 
@@ -41,6 +43,10 @@ export function buildDashboard(): DashboardData {
         dominant_issue: a.dominant_issue,
       }),
     ),
+    actor_thread_analysis:
+      (raw.actor_thread_analysis as unknown as ActorThreadAnalysis) ?? null,
+    leadership_sentiment:
+      (raw.leadership_sentiment as unknown as LeadershipSentiment) ?? null,
   };
 }
 
