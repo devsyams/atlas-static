@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Sparkles, Copy, Check, Printer, Loader2 } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 /** Minimal markdown → React: ## / ### headings, - bullets, **bold**, paragraphs. */
 function renderMarkdown(md: string) {
@@ -70,11 +71,24 @@ function inline(text: string) {
   );
 }
 
+const STAGES = [
+  "Menarik sinyal lintas-wilayah",
+  "Memetakan aktor & narasi",
+  "Mengukur sentimen kepemimpinan",
+  "Memproyeksikan trajektori risiko",
+  "Mensintesis SITREP eksekutif",
+];
+const STEP_MS = 620;
+
 export function BriefingPanel({ open, onClose }: { open: boolean; onClose: () => void }) {
   const [content, setContent] = useState("");
   const [updatedAt, setUpdatedAt] = useState("");
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [stage, setStage] = useState(0);
+  const [animDone, setAnimDone] = useState(false);
+
+  const revealed = !loading && animDone;
 
   useEffect(() => {
     if (!open) return;
@@ -87,6 +101,9 @@ export function BriefingPanel({ open, onClose }: { open: boolean; onClose: () =>
     if (!open) return;
     setLoading(true);
     setContent("");
+    setStage(0);
+    setAnimDone(false);
+
     fetch("/api/v1/ai/briefing", { method: "POST" })
       .then((r) => r.json())
       .then((d: { content: string; updated_at: string }) => {
@@ -95,6 +112,18 @@ export function BriefingPanel({ open, onClose }: { open: boolean; onClose: () =>
       })
       .catch(() => setContent("Synapse tidak dapat menyusun briefing saat ini."))
       .finally(() => setLoading(false));
+
+    // March through the orchestration pipeline on a timer (independent of fetch).
+    let s = 0;
+    const id = setInterval(() => {
+      s += 1;
+      setStage(s);
+      if (s >= STAGES.length) {
+        clearInterval(id);
+        setTimeout(() => setAnimDone(true), 480);
+      }
+    }, STEP_MS);
+    return () => clearInterval(id);
   }, [open]);
 
   const copy = async () => {
@@ -146,7 +175,7 @@ export function BriefingPanel({ open, onClose }: { open: boolean; onClose: () =>
             <div className="leading-tight">
               <div className="text-[15px] font-bold">Executive Briefing</div>
               <div className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
-                Disusun oleh Synapse
+                Synapse AI Orchestration
               </div>
             </div>
           </div>
@@ -154,7 +183,7 @@ export function BriefingPanel({ open, onClose }: { open: boolean; onClose: () =>
             <button
               type="button"
               onClick={copy}
-              disabled={loading || !content}
+              disabled={!revealed}
               className="inline-flex items-center gap-1.5 rounded-md border border-border bg-background/40 px-2.5 py-1.5 text-[11px] font-bold text-muted-foreground hover:text-foreground disabled:opacity-40"
             >
               {copied ? <Check className="h-3.5 w-3.5 text-success" /> : <Copy className="h-3.5 w-3.5" />}
@@ -163,7 +192,7 @@ export function BriefingPanel({ open, onClose }: { open: boolean; onClose: () =>
             <button
               type="button"
               onClick={print}
-              disabled={loading || !content}
+              disabled={!revealed}
               className="inline-flex items-center gap-1.5 rounded-md border border-border bg-background/40 px-2.5 py-1.5 text-[11px] font-bold text-muted-foreground hover:text-foreground disabled:opacity-40"
             >
               <Printer className="h-3.5 w-3.5" /> Cetak
@@ -180,15 +209,101 @@ export function BriefingPanel({ open, onClose }: { open: boolean; onClose: () =>
         </div>
 
         {/* body */}
-        <div className="scrollbar-thin min-h-0 flex-1 overflow-y-auto px-6 py-5">
-          {loading ? (
-            <div className="flex flex-col items-center justify-center gap-3 py-16 text-muted-foreground">
-              <Loader2 className="h-6 w-6 animate-spin text-primary" />
-              <div className="text-[13px]">Synapse sedang menyusun SITREP dari seluruh widget…</div>
-            </div>
+        <div className="scrollbar-thin relative min-h-0 flex-1 overflow-y-auto px-6 py-5">
+          {!revealed ? (
+            <Orchestrating stage={stage} loading={loading} />
           ) : (
-            <article>{renderMarkdown(content)}</article>
+            <>
+              <span className="syn-flash pointer-events-none absolute inset-0 z-10 bg-gradient-to-b from-primary/25 via-transparent to-transparent" />
+              <article className="syn-doc">{renderMarkdown(content)}</article>
+            </>
           )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Orchestrating({ stage, loading }: { stage: number; loading: boolean }) {
+  const len = STAGES.length;
+  const waiting = stage >= len && loading;
+  const allDone = stage >= len && !loading;
+  const pct = allDone ? 100 : Math.min(96, Math.round(((Math.min(stage, len - 1) + 0.5) / len) * 100));
+
+  const statusOf = (i: number): "done" | "active" | "pending" => {
+    if (allDone) return "done";
+    if (waiting) return i === len - 1 ? "active" : "done";
+    if (i < stage) return "done";
+    if (i === stage) return "active";
+    return "pending";
+  };
+
+  return (
+    <div className="flex flex-col items-center justify-center gap-6 py-8">
+      {/* neural core */}
+      <div className="relative h-28 w-28">
+        <span className="syn-pulse absolute inset-0 rounded-full border border-primary/40" />
+        <span className="syn-pulse-2 absolute inset-0 rounded-full border border-primary/30" />
+        <div className="syn-ring absolute inset-0 rounded-full" />
+        <div className="syn-ring-inner absolute inset-2 rounded-full" />
+        <div className="syn-core absolute inset-[30px] flex items-center justify-center rounded-full bg-gradient-accent text-primary-foreground">
+          <Sparkles className="h-6 w-6" />
+        </div>
+      </div>
+
+      {/* title */}
+      <div className="text-center">
+        <div className="text-gradient text-sm font-bold tracking-wide">Synapse AI Orchestration</div>
+        <div className="mt-1 text-[11px] text-muted-foreground">
+          Mensintesis intelijen dari seluruh widget…
+        </div>
+      </div>
+
+      {/* pipeline */}
+      <div className="relative w-full max-w-sm overflow-hidden rounded-xl border border-border/60 bg-background/40 p-3">
+        <span className="syn-scan pointer-events-none absolute inset-x-0 top-0 h-8 bg-gradient-to-b from-primary/25 to-transparent" />
+        <div className="relative space-y-2">
+          {STAGES.map((label, i) => {
+            const st = statusOf(i);
+            return (
+              <div key={label} className="syn-stage flex items-center gap-2.5" style={{ animationDelay: `${i * 90}ms` }}>
+                <span className="flex h-4 w-4 shrink-0 items-center justify-center">
+                  {st === "done" ? (
+                    <Check className="h-4 w-4 text-success" />
+                  ) : st === "active" ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />
+                  ) : (
+                    <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/40" />
+                  )}
+                </span>
+                <span
+                  className={cn(
+                    "text-[12px] transition-colors",
+                    st === "done" && "text-foreground/70",
+                    st === "active" && "font-medium text-foreground",
+                    st === "pending" && "text-muted-foreground/50",
+                  )}
+                >
+                  {label}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* progress */}
+      <div className="w-full max-w-sm">
+        <div className="relative h-1.5 overflow-hidden rounded-full bg-white/10">
+          <div
+            className="h-full rounded-full bg-gradient-accent transition-[width] duration-500"
+            style={{ width: `${pct}%` }}
+          />
+          <span className="syn-shimmer absolute top-0 left-0 h-full w-1/3 bg-gradient-to-r from-transparent via-white/40 to-transparent" />
+        </div>
+        <div className="mt-1.5 flex justify-between text-[10px] uppercase tracking-[0.18em] text-muted-foreground/70">
+          <span>Orchestrating</span>
+          <span>{pct}%</span>
         </div>
       </div>
     </div>
