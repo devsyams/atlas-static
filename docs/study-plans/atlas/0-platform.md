@@ -7,7 +7,7 @@
 
 ### P1. Monorepo foundation & tooling
 
-- **Version:** 1.0 · **Stage:** 0-platform · **Sprint:** S1 · **Status:** Planned · **Spec ref:** §4–5, E1 · **Owner:** DevOps/Dev C
+- **Version:** 1.0 · **Stage:** 0-platform · **Sprint:** S1 · **Status:** Built · **Spec ref:** §4–5, E1 · **Owner:** DevOps/Dev C
 
 #### PM
 **Background (why):** The product is a static single Next.js app. Topology C needs a TS frontend
