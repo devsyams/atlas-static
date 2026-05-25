@@ -16,8 +16,8 @@
 | **P2** | DigitalOcean infrastructure & CI/CD | 0-platform | S1 | E1 | 1.0 | Planned |
 | **P3** | Database schema, migrations & type generation | 0-platform | S1–S2 | E2 | 1.0 | Built |
 | **P4** | Object storage (Spaces) integration | 0-platform | S2 | E2 | 1.0 | Planned |
-| **P5** | Authentication — email/password + sessions | 0-platform | S2 | E3 | 1.0 | Planned |
-| **P6** | RBAC, route guards & audit log | 0-platform | S2 | E3 | 1.0 | Planned |
+| **P5** | Authentication — email/password + sessions | 0-platform | S2 | E3 | 1.0 | Built |
+| **P6** | RBAC, route guards & audit log | 0-platform | S2 | E3 | 1.0 | Built |
 | **P7** | Observability, hardening, backups & launch | 0-platform | S1,S6 | E8,E9 | 1.0 | Planned |
 | **W1** | Source registry & scheduler | 1-watch | S3 | E4 | 1.0 | Planned |
 | **W2** | RSS & news-API connectors | 1-watch | S3 | E4 | 1.0 | Planned |
@@ -29,7 +29,7 @@
 | **U3** | Geocoding & incident mapping | 2-understand | S4 | E5 | 1.0 | Planned |
 | **U4** | Crisis snapshots & trends | 2-understand | S4 | E5 | 1.0 | Planned |
 | **U5** | Predictions, insights, actor & leadership analytics | 2-understand | S4–S5 | E5 | 1.0 | Planned |
-| **A1** | Dashboard read API & caching | 3-act | S2,S5 | E6 | 1.0 | In progress |
+| **A1** | Dashboard read API & caching | 3-act | S2,S5 | E6 | 1.0 | Built |
 | **A2** | Widget integration & live data | 3-act | S5 | E6 | 1.0 | Planned |
 | **A3** | Persisted dashboard layout | 3-act | S5 | E6 | 1.0 | Planned |
 | **A4** | AI assistant — copilot chat | 3-act | S5 | E7 | 1.0 | Planned |
