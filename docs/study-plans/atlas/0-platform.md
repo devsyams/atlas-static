@@ -172,7 +172,7 @@ cheap, private, and signed-URL accessible — and makes ingestion auditable.
 
 ### P5. Authentication — email/password + sessions
 
-- **Version:** 1.0 · **Stage:** 0-platform · **Sprint:** S2 · **Status:** Planned · **Spec ref:** §10, E3 · **Owner:** Dev A
+- **Version:** 1.0 · **Stage:** 0-platform · **Sprint:** S2 · **Status:** Built · **Spec ref:** §10, E3 · **Owner:** Dev A
 
 #### PM
 **Background (why):** Current "auth" is hardcoded credentials in client code + a presence cookie —
@@ -216,7 +216,7 @@ passwords, server-side sessions, and a real login gate. This is a launch blocker
 
 ### P6. RBAC, route guards & audit log
 
-- **Version:** 1.0 · **Stage:** 0-platform · **Sprint:** S2 · **Status:** Planned · **Spec ref:** §10, E3 · **Owner:** Dev A
+- **Version:** 1.0 · **Stage:** 0-platform · **Sprint:** S2 · **Status:** Built · **Spec ref:** §10, E3 · **Owner:** Dev A
 
 #### PM
 **Background (why):** Not everyone should do everything. Admins manage users/sources; analysts use
