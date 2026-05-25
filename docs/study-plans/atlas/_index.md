@@ -12,7 +12,7 @@
 
 | ID | Feature | Stage | Sprint | Spec epic | Ver | Status |
 |----|---------|-------|:------:|-----------|:---:|--------|
-| **P1** | Monorepo foundation & tooling | 0-platform | S1 | E1 | 1.0 | Planned |
+| **P1** | Monorepo foundation & tooling | 0-platform | S1 | E1 | 1.0 | Built |
 | **P2** | DigitalOcean infrastructure & CI/CD | 0-platform | S1 | E1 | 1.0 | Planned |
 | **P3** | Database schema, migrations & type generation | 0-platform | S1–S2 | E2 | 1.0 | Planned |
 | **P4** | Object storage (Spaces) integration | 0-platform | S2 | E2 | 1.0 | Planned |
