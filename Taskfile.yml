@@ -43,6 +43,21 @@ tasks:
     cmds:
       - pnpm typecheck
 
+  typegen:
+    desc: Regenerate TS DB types from the live schema (kysely-codegen)
+    dir: apps/web
+    env:
+      DATABASE_URL: "postgres://atlas:atlas@127.0.0.1:55432/atlas"
+    cmds:
+      - pnpm db:codegen
+
+  db:check:
+    desc: "CI guard (P3 AC4): regenerate DB types and fail on drift; forbid TS migration tools"
+    cmds:
+      - task: typegen
+      - git diff --exit-code apps/web/lib/db/types.gen.ts
+      - uv run --directory services/pipeline pytest tests/test_schema_governance.py -q
+
   test:
     desc: Run Python (pytest) tests; TS vitest is added with the first TS test (P3+)
     dir: services/pipeline
