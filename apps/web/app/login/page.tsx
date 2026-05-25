@@ -7,10 +7,6 @@ import { cn } from "@/lib/utils";
 import { NeuralIgnition } from "@/components/login/NeuralIgnition";
 import type { DashboardData } from "@/lib/mbg/types";
 
-// Demo-grade hardcoded credentials (visible client-side — not real security).
-const AUTH_EMAIL = "atlasadmin@nexorus.io";
-const AUTH_PASSWORD = "adminatlas";
-
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -27,17 +23,28 @@ export default function LoginPage() {
       .catch(() => {});
   }, []);
 
-  const submit = (e: FormEvent) => {
+  const submit = async (e: FormEvent) => {
     e.preventDefault();
     setError(null);
-    if (email.trim().toLowerCase() !== AUTH_EMAIL || password !== AUTH_PASSWORD) {
-      setError("Email atau kata sandi salah.");
-      return;
-    }
     setBusy(true);
-    // Mark the session, then play the ignition which navigates on completion.
-    document.cookie = `atlas_auth=1; path=/; max-age=${60 * 60 * 24}; samesite=lax`;
-    setIgniting(true);
+    try {
+      const res = await fetch("/api/v1/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email.trim(), password }),
+      });
+      if (!res.ok) {
+        const data = (await res.json().catch(() => ({}))) as { error?: string };
+        setError(data.error ?? "Email atau kata sandi salah.");
+        setBusy(false);
+        return;
+      }
+      // The server set an httpOnly session cookie; play the ignition, then navigate.
+      setIgniting(true);
+    } catch {
+      setError("Tidak dapat terhubung ke server. Coba lagi.");
+      setBusy(false);
+    }
   };
 
   return (
