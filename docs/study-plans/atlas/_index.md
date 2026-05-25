@@ -23,6 +23,7 @@
 | **W2** | RSS & news-API connectors | 1-watch | S3 | E4 | 1.0 | Planned |
 | **W3** | Social connectors (X/IG/FB/TikTok) | 1-watch | S3–S4 | E4 | 1.0 | Planned |
 | **W4** | Normalization, dedup & raw storage | 1-watch | S3 | E4 | 1.0 | Planned |
+| **W5** | Initial recent-window backfill | 1-watch | S3 | E4 | 1.0 | Planned |
 | **U1** | LLM provider abstraction & cost ledger | 2-understand | S4 | E5 | 1.0 | Planned |
 | **U2** | Article enrichment (score/issues/sentiment/summary/keywords) | 2-understand | S4 | E5 | 1.0 | Planned |
 | **U3** | Geocoding & incident mapping | 2-understand | S4 | E5 | 1.0 | Planned |
@@ -35,7 +36,7 @@
 | **A5** | AI assistant — briefing, forecast & per-widget ask | 3-act | S5 | E7 | 1.0 | Planned |
 | **A6** | Real-time ticker, alerts & War Room | 3-act | S5–S6 | E8 | 1.0 | Planned |
 
-**Totals:** 22 features · 7 platform · 4 watch · 5 understand · 6 act.
+**Totals:** 23 features · 7 platform · 5 watch · 5 understand · 6 act.
 
 ## Sprint → feature map (delivery view)
 
@@ -43,7 +44,7 @@
 |---|---|---|
 | **S1** | Jun 1–12 | P1, P2, P3 (start), P7 (skeleton) |
 | **S2** | Jun 15–26 | P3 (finish), P4, P5, P6, A1 (initial) · **M1: DB-backed dashboard** |
-| **S3** | Jun 29–Jul 10 | W1, W2, W4, W3 (spike) |
+| **S3** | Jun 29–Jul 10 | W1, W2, W4, W5, W3 (spike) |
 | **S4** | Jul 13–24 | U1, U2, U3, U4, W3 (cont.) · **M2: live enrichment** |
 | **S5** | Jul 27–Aug 7 | U5, A1 (finish), A2, A3, A4, A5, A6 (start) · **M3: feature-complete** |
 | **S6** | Aug 10–21 | A6 (finish), P7 (hardening/launch) · **M4: production launch** |
@@ -52,3 +53,4 @@
 | Version | Date | Change |
 |---|---|---|
 | 1.0 | 2026-05-25 | Initial register: 22 features derived from the architecture spec |
+| 1.1 | 2026-05-25 | Added W5 (initial recent-window backfill) after the light-backfill decision; 22→23 features |

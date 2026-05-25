@@ -2,7 +2,7 @@
 
 Generates:
   docs/exports/Nexorus-ATLAS-Architecture.docx    (from the architecture spec markdown)
-  docs/exports/Nexorus-ATLAS-Study-Plans.docx     (SOP + register + 22 PM/Arch/QA blocks)
+  docs/exports/Nexorus-ATLAS-Study-Plans.docx     (SOP + register + 23 PM/Arch/QA blocks)
   docs/exports/Nexorus-ATLAS-WBS-Sprint-Plan.xlsx (WBS / sprints / Gantt / risks / milestones)
 
 Both upload cleanly into Google Docs / Google Sheets and open natively in Word / Excel.
@@ -158,7 +158,7 @@ def build_study_plans_docx():
     doc = new_doc()
     title = doc.add_heading("", level=0); add_runs(title, "Nexorus ATLAS - Study Plans")
     sub = doc.add_paragraph()
-    r = sub.add_run("SOP + register + PM -> Architecture -> QA for all 22 features (v1.0)")
+    r = sub.add_run("SOP + register + PM -> Architecture -> QA for all 23 features (v1.0)")
     r.italic = True; r.font.color.rgb = RGBColor(0x55, 0x55, 0x66)
     for rel in STUDY_FILES:
         doc.add_page_break()
@@ -192,6 +192,7 @@ FEATURES = [
     ("W2", "RSS & news-API connectors", "1-watch", "S3", "E4"),
     ("W3", "Social connectors (X/IG/FB/TikTok)", "1-watch", "S3-S4", "E4"),
     ("W4", "Normalization, dedup & raw storage", "1-watch", "S3", "E4"),
+    ("W5", "Initial recent-window backfill", "1-watch", "S3", "E4"),
     ("U1", "LLM provider abstraction & cost ledger", "2-understand", "S4", "E5"),
     ("U2", "Article enrichment (score/issues/sentiment/summary/keywords)", "2-understand", "S4", "E5"),
     ("U3", "Geocoding & incident mapping", "2-understand", "S4", "E5"),
@@ -210,7 +211,7 @@ SPRINTS = [
      "Monorepo + DO infra + CI/CD; local stack boots; web deploys to staging."),
     ("S2", "Jun 15-26, 2026", "P3 (finish), P4, P5, P6, A1 (initial)", "M1: DB-backed dashboard",
      "Real login + RBAC; dashboard renders from Postgres, not static JSON."),
-    ("S3", "Jun 29-Jul 10, 2026", "W1, W2, W4, W3 (spike)", "-",
+    ("S3", "Jun 29-Jul 10, 2026", "W1, W2, W4, W5, W3 (spike)", "-",
      "Scheduled crawl ingests real Indonesian articles; raw to Spaces; dedup."),
     ("S4", "Jul 13-24, 2026", "U1, U2, U3, U4, W3 (cont.)", "M2: live enrichment",
      "Model-agnostic enrichment writes real data; cost tracked; provider switchable."),
@@ -417,8 +418,8 @@ def verify_consistency():
     for fid in sorted(set(md) | set(script)):
         if md.get(fid) != script.get(fid):
             issues.append(f"{fid}: index={md.get(fid)} xlsx={script.get(fid)}")
-    if len(md) != 22:
-        issues.append(f"expected 22 features in _index.md, found {len(md)}")
+    if len(md) != len(FEATURES):
+        issues.append(f"expected {len(FEATURES)} features in _index.md, found {len(md)}")
     return issues
 
 
@@ -431,10 +432,13 @@ if __name__ == "__main__":
         raise SystemExit(1)
     print(f"consistency check OK: {len(FEATURES)} features match _index.md")
 
-    outs = [build_docx(), build_study_plans_docx()]
-    try:
-        outs.append(build_xlsx())
-    except PermissionError:
-        print("WARNING: xlsx is open/locked - skipped rewrite (close Excel to regenerate).")
+    outs = []
+    for name, fn in (("Architecture.docx", build_docx),
+                     ("Study-Plans.docx", build_study_plans_docx),
+                     ("WBS-Sprint-Plan.xlsx", build_xlsx)):
+        try:
+            outs.append(fn())
+        except PermissionError:
+            print(f"WARNING: {name} is open/locked - skipped (close Word/Excel to regenerate).")
     for p in outs:
         print(f"{os.path.relpath(p, ROOT)}  ({os.path.getsize(p):,} bytes)")

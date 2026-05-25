@@ -192,6 +192,7 @@ Monitoring **arbitrary third-party accounts** is the hard part, not a code probl
 - **Dedup** by canonical URL + content hash (SimHash/MinHash for near-dup); upsert.
 - Raw HTML/JSON snapshot → **Spaces** (provenance/audit); pointer stored as `raw_uri`.
 - Per-source rate limiting + backoff via Redis; failures logged, retried with Celery.
+- **Initial backfill (light):** on a source's first crawl, pull the recent window it naturally exposes (RSS full feed; news-API items ≤~30 days, capped), then switch to incremental — **no paid deep-archive access**. Snapshots are retro-computed over this window so trends aren't empty at launch (feature W5).
 
 ---
 
@@ -343,7 +344,7 @@ Celery broker/results, dashboard-payload cache (30–60 s TTL), rate-limit count
 - **Acceptance (M1):** real login works; unauth → /login; dashboard renders from **Postgres** (not static JSON); roles enforced.
 
 ### Sprint 3 — Ingestion pipeline (E4)
-- Celery + Beat; `SourceConnector`; **RSS + news-API** connectors live; dedup/normalize; raw→Spaces; `sources` registry + scheduling. Begin social connector spike (X or aggregator PoC) — time-boxed.
+- Celery + Beat; `SourceConnector`; **RSS + news-API** connectors live; dedup/normalize; raw→Spaces; `sources` registry + scheduling; **initial light backfill** (recent window + retro-snapshots, W5). Begin social connector spike (X or aggregator PoC) — time-boxed.
 - **Acceptance:** scheduled crawl ingests real Indonesian articles into Postgres + raw to Spaces; dedup verified; sources configurable.
 
 ### Sprint 4 — AI enrichment (E5) · **Milestone M2**

@@ -173,3 +173,48 @@ backed storage is what makes the downstream enrichment and scoring trustworthy.
 | Version | Date | Change |
 |---|---|---|
 | 1.0 | 2026-05-25 | Initial plan from architecture spec |
+
+---
+
+### W5. Initial recent-window backfill
+
+- **Version:** 1.0 · **Stage:** 1-watch · **Sprint:** S3 · **Status:** Planned · **Spec ref:** §7.4, E4 · **Owner:** Dev B
+
+#### PM
+**Background (why):** On launch the dashboard would otherwise be empty until crawls accumulate, and
+trends would start flat. A bounded, one-time backfill of the **recent window each source naturally
+exposes** makes the dashboard meaningful on day one and gives trends a short head start — *without*
+paying for deep archive access (decision: "light/recent only"). Deep historical import (paid news-API
+archives, social history via aggregators) is explicitly **out of scope** for this feature.
+
+**Acceptance criteria:**
+- **AC1** — *Given* a newly onboarded source, *When* it is first crawled, *Then* the connector pulls the full recent window it exposes (RSS: all current entries; news API: items within a configurable max-age, e.g. ≤30 days), bounded by a max-items cap.
+- **AC2** — *Given* the initial backfill has completed, *When* later crawls run, *Then* the source switches to **incremental** (only items newer than last seen), with no duplicates (reuses W4 dedup).
+- **AC3** — *Given* backfilled articles carry their real `published_at`, *When* enrichment + rollup run, *Then* snapshots are **retro-computed** over the backfilled window so trend charts show a short history at launch.
+- **AC4** — *Given* cost/ToS limits, *When* backfilling, *Then* it respects the per-source cap and does **not** call paid deep-archive endpoints (light mode only).
+
+#### Architecture
+**Impact — files add/change:**
+- `add` `services/pipeline/ingest/backfill.py` (first-run detection, bounded lookback, max-age/max-items caps)
+- `change` `services/pipeline/ingest/scheduler.py` (W1) — first-run vs incremental branch
+- `change` connectors (W2) — accept `since` / `max_age` / `limit` params
+- `change` rollup (U4) — invoked over the backfilled window for retro-snapshots (best-effort)
+
+**Data-model / API changes:** `sources` gains `backfilled_at` (or treat `last_run_at IS NULL` as first run); relies on `articles.published_at`.
+**Reuse:** W2 connectors, W4 dedup/persist, U4 rollup.
+**Risks (R2):** feeds/news-API recent windows vary (some return little) → best-effort; enrichment cost of the initial batch → batch + budget guard; **must not** trigger paid deep-archive (cap enforced).
+
+#### QA
+| # | Maps to | Test case | Type |
+|---|---|---|---|
+| T1 | AC1 | first crawl pulls full recent window within caps | integration |
+| T2 | AC2 | second crawl is incremental; no duplicates | integration |
+| T3 | AC3 | retro-snapshots created over backfill window; trend non-empty | integration |
+| T4 | AC4 | no paid-archive endpoint called; per-source cap enforced | unit |
+
+**Governance edge cases:** backfill enrichment cost logged + capped; idempotent (safe re-run); ToS respected (no deep scrape).
+
+#### Revision history
+| Version | Date | Change |
+|---|---|---|
+| 1.0 | 2026-05-25 | Added after the "light/recent backfill" scope decision |
