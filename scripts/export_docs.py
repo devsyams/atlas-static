@@ -1,7 +1,8 @@
 """Export ATLAS planning docs to Office formats.
 
 Generates:
-  docs/exports/Nexorus-ATLAS-Architecture.docx   (from the architecture spec markdown)
+  docs/exports/Nexorus-ATLAS-Architecture.docx    (from the architecture spec markdown)
+  docs/exports/Nexorus-ATLAS-Study-Plans.docx     (SOP + register + 22 PM/Arch/QA blocks)
   docs/exports/Nexorus-ATLAS-WBS-Sprint-Plan.xlsx (WBS / sprints / Gantt / risks / milestones)
 
 Both upload cleanly into Google Docs / Google Sheets and open natively in Word / Excel.
@@ -92,12 +93,14 @@ def add_table(doc, rows):
     doc.add_paragraph()
 
 
-def build_docx():
-    md = open(SPEC, encoding="utf-8").read().splitlines()
+def new_doc():
     doc = Document()
     doc.styles["Normal"].font.name = "Calibri"; doc.styles["Normal"].font.size = Pt(10.5)
+    return doc
 
-    i, first_h1 = 0, True
+
+def render_md(doc, md, first_h1_as_title=True):
+    i, first_h1 = 0, first_h1_as_title
     while i < len(md):
         line = md[i]
         if line.startswith("```"):                       # fenced code
@@ -132,7 +135,36 @@ def build_docx():
             p = doc.add_paragraph(); add_runs(p, line)
         i += 1
 
+    return doc
+
+
+def build_docx():
+    doc = render_md(new_doc(), open(SPEC, encoding="utf-8").read().splitlines())
     path = os.path.join(OUT, "Nexorus-ATLAS-Architecture.docx")
+    doc.save(path); return path
+
+
+STUDY_FILES = [
+    "docs/study-plans/README.md",
+    "docs/study-plans/atlas/_index.md",
+    "docs/study-plans/atlas/0-platform.md",
+    "docs/study-plans/atlas/1-watch.md",
+    "docs/study-plans/atlas/2-understand.md",
+    "docs/study-plans/atlas/3-act.md",
+]
+
+
+def build_study_plans_docx():
+    doc = new_doc()
+    title = doc.add_heading("", level=0); add_runs(title, "Nexorus ATLAS - Study Plans")
+    sub = doc.add_paragraph()
+    r = sub.add_run("SOP + register + PM -> Architecture -> QA for all 22 features (v1.0)")
+    r.italic = True; r.font.color.rgb = RGBColor(0x55, 0x55, 0x66)
+    for rel in STUDY_FILES:
+        doc.add_page_break()
+        render_md(doc, open(os.path.join(ROOT, rel), encoding="utf-8").read().splitlines(),
+                  first_h1_as_title=False)
+    path = os.path.join(OUT, "Nexorus-ATLAS-Study-Plans.docx")
     doc.save(path); return path
 
 
@@ -361,6 +393,6 @@ def build_xlsx():
 
 
 if __name__ == "__main__":
-    d = build_docx(); x = build_xlsx()
-    for p in (d, x):
+    d = build_docx(); s = build_study_plans_docx(); x = build_xlsx()
+    for p in (d, s, x):
         print(f"{os.path.relpath(p, ROOT)}  ({os.path.getsize(p):,} bytes)")
