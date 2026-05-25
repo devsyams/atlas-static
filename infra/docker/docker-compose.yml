@@ -1,0 +1,26 @@
+# Local dev stack for ATLAS. Started here for P3 (Postgres only); P2 expands this
+# with redis, web, ai-api, worker, beat. Bring up the DB with:
+#   docker compose -f infra/docker/docker-compose.yml up -d db
+services:
+  db:
+    image: postgres:17
+    container_name: atlas-db
+    environment:
+      POSTGRES_USER: atlas
+      POSTGRES_PASSWORD: atlas
+      POSTGRES_DB: atlas
+    # Host 5432/5433 are taken by a native PostgreSQL on some dev machines, which
+    # wins the loopback over Docker. Publish on 55432 (loopback) to avoid the clash.
+    # Override with DATABASE_URL elsewhere (CI/prod).
+    ports:
+      - "127.0.0.1:55432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U atlas -d atlas"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  pgdata:

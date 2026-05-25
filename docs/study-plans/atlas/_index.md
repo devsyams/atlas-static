@@ -14,7 +14,7 @@
 |----|---------|-------|:------:|-----------|:---:|--------|
 | **P1** | Monorepo foundation & tooling | 0-platform | S1 | E1 | 1.0 | Built |
 | **P2** | DigitalOcean infrastructure & CI/CD | 0-platform | S1 | E1 | 1.0 | Planned |
-| **P3** | Database schema, migrations & type generation | 0-platform | S1–S2 | E2 | 1.0 | Planned |
+| **P3** | Database schema, migrations & type generation | 0-platform | S1–S2 | E2 | 1.0 | Built |
 | **P4** | Object storage (Spaces) integration | 0-platform | S2 | E2 | 1.0 | Planned |
 | **P5** | Authentication — email/password + sessions | 0-platform | S2 | E3 | 1.0 | Planned |
 | **P6** | RBAC, route guards & audit log | 0-platform | S2 | E3 | 1.0 | Planned |
