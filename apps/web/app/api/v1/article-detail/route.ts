@@ -1,10 +1,11 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { buildArticleDetail } from "@/lib/mbg/data";
+
+import { getArticleDetail } from "@/lib/article.repo";
+import { getDb } from "@/lib/db/client";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
-  await new Promise((r) => setTimeout(r, 350));
-  const detail = buildArticleDetail(request.nextUrl.searchParams);
+  const detail = await getArticleDetail(getDb(), request.nextUrl.searchParams);
   return NextResponse.json(detail);
 }

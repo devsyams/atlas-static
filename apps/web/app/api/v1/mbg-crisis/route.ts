@@ -1,14 +1,21 @@
 import { NextResponse } from "next/server";
-import { buildDashboard } from "@/lib/mbg/data";
+
+import { cached } from "@/lib/cache";
+import { getDashboard } from "@/lib/dashboard.repo";
+import { getDb } from "@/lib/db/client";
 import { fetchUsdIdr } from "@/lib/market/usdidr";
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
-  const dashboard = buildDashboard();
+const CACHE_KEY = "dashboard:mbg-crisis";
+const CACHE_TTL_SEC = 45;
 
-  // Override the USD/IDR ticker item with a live rate (falls back to the static
-  // JSON value if the upstream feeds are unreachable).
+export async function GET() {
+  // Source of truth is Postgres (spec §6.1), cached ~45s so polls don't re-query.
+  const dashboard = await cached(CACHE_KEY, CACHE_TTL_SEC, () => getDashboard(getDb()));
+
+  // Apply the live USD/IDR override AFTER the cache so the rate stays fresh
+  // (falls back to the stored value if the upstream feeds are unreachable).
   const usdidr = await fetchUsdIdr();
   if (usdidr) {
     dashboard.market_ticker = dashboard.market_ticker.map((item) =>
