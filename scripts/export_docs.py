@@ -392,7 +392,49 @@ def build_xlsx():
     wb.save(path); return path
 
 
+def _norm(s):
+    for d in ("–", "—", "‒", "―", "−"):
+        s = s.replace(d, "-")
+    return s.strip()
+
+
+def verify_consistency():
+    """Guard: the workbook's hardcoded feature data must match the markdown index.
+
+    The .docx files are rendered directly from markdown, so they can't drift. The
+    .xlsx is built from the FEATURES list above, so we assert it against the single
+    source of truth (docs/study-plans/atlas/_index.md). Returns a list of issues.
+    """
+    idx = os.path.join(ROOT, "docs", "study-plans", "atlas", "_index.md")
+    md = {}
+    for line in open(idx, encoding="utf-8"):
+        m = re.match(r"\|\s*\*\*([PWUA]\d+)\*\*\s*\|(.+)", line)
+        if m:
+            c = [x.strip() for x in m.group(2).split("|")]
+            md[m.group(1)] = (_norm(c[0]), _norm(c[1]), _norm(c[2]), _norm(c[3]))
+    script = {f[0]: (_norm(f[1]), _norm(f[2]), _norm(f[3]), _norm(f[4])) for f in FEATURES}
+    issues = []
+    for fid in sorted(set(md) | set(script)):
+        if md.get(fid) != script.get(fid):
+            issues.append(f"{fid}: index={md.get(fid)} xlsx={script.get(fid)}")
+    if len(md) != 22:
+        issues.append(f"expected 22 features in _index.md, found {len(md)}")
+    return issues
+
+
 if __name__ == "__main__":
-    d = build_docx(); s = build_study_plans_docx(); x = build_xlsx()
-    for p in (d, s, x):
+    issues = verify_consistency()
+    if issues:
+        print("CONSISTENCY CHECK FAILED (xlsx data vs docs/study-plans/atlas/_index.md):")
+        for i in issues:
+            print("  -", i)
+        raise SystemExit(1)
+    print(f"consistency check OK: {len(FEATURES)} features match _index.md")
+
+    outs = [build_docx(), build_study_plans_docx()]
+    try:
+        outs.append(build_xlsx())
+    except PermissionError:
+        print("WARNING: xlsx is open/locked - skipped rewrite (close Excel to regenerate).")
+    for p in outs:
         print(f"{os.path.relpath(p, ROOT)}  ({os.path.getsize(p):,} bytes)")
