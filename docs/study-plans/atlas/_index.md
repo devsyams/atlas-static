@@ -29,7 +29,7 @@
 | **U3** | Geocoding & incident mapping | 2-understand | S4 | E5 | 1.0 | Planned |
 | **U4** | Crisis snapshots & trends | 2-understand | S4 | E5 | 1.0 | Planned |
 | **U5** | Predictions, insights, actor & leadership analytics | 2-understand | S4–S5 | E5 | 1.0 | Planned |
-| **A1** | Dashboard read API & caching | 3-act | S2,S5 | E6 | 1.0 | Planned |
+| **A1** | Dashboard read API & caching | 3-act | S2,S5 | E6 | 1.0 | In progress |
 | **A2** | Widget integration & live data | 3-act | S5 | E6 | 1.0 | Planned |
 | **A3** | Persisted dashboard layout | 3-act | S5 | E6 | 1.0 | Planned |
 | **A4** | AI assistant — copilot chat | 3-act | S5 | E7 | 1.0 | Planned |

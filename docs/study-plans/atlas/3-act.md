@@ -9,7 +9,7 @@
 
 ### A1. Dashboard read API & caching
 
-- **Version:** 1.0 · **Stage:** 3-act · **Sprint:** S2 (initial) → S5 · **Status:** Planned · **Spec ref:** §6.1, E6 · **Owner:** Dev A
+- **Version:** 1.0 · **Stage:** 3-act · **Sprint:** S2 (initial) → S5 · **Status:** In progress (AC1–AC3 built; AC4 401-guard pending P5/P6 auth) · **Spec ref:** §6.1, E6 · **Owner:** Dev A
 
 #### PM
 **Background (why):** Today `GET /api/v1/mbg-crisis` reads a bundled JSON via `buildDashboard()`. In
