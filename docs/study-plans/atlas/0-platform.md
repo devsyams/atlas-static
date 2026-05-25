@@ -89,7 +89,7 @@ deploy so the team ships confidently from day one.
 
 ### P3. Database schema, migrations & type generation
 
-- **Version:** 1.0 · **Stage:** 0-platform · **Sprint:** S1–S2 · **Status:** Planned · **Spec ref:** §4, §9, E2 · **Owner:** Dev B + Dev A
+- **Version:** 1.0 · **Stage:** 0-platform · **Sprint:** S1–S2 · **Status:** Built · **Spec ref:** §4, §9, E2 · **Owner:** Dev B + Dev A
 
 #### PM
 **Background (why):** All data must live in a real store with history and provenance. Today's static
