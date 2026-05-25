@@ -27,6 +27,10 @@
 # office temp lock files
 ~$*
 
+# python (scripts/)
+__pycache__/
+*.pyc
+
 # debug
 npm-debug.log*
 yarn-debug.log*
