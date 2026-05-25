@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
 
 import { SESSION_COOKIE, SESSION_MAX_AGE } from "@/lib/auth";
+import { writeAudit } from "@/lib/auth/audit";
 import { attemptLogin } from "@/lib/auth/login";
 import { getDb } from "@/lib/db/client";
 
@@ -15,10 +16,17 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Email atau kata sandi salah." }, { status: 400 });
   }
 
-  const result = await attemptLogin(getDb(), parsed.data.email, parsed.data.password);
+  const db = getDb();
+  const result = await attemptLogin(db, parsed.data.email, parsed.data.password);
   if (!result) {
+    await writeAudit(db, { action: "auth.login.failed", target: parsed.data.email });
     return NextResponse.json({ error: "Email atau kata sandi salah." }, { status: 401 });
   }
+  await writeAudit(db, {
+    userId: result.user.userId,
+    action: "auth.login",
+    target: parsed.data.email,
+  });
 
   const res = NextResponse.json({ ok: true });
   res.cookies.set(SESSION_COOKIE, result.token, {
