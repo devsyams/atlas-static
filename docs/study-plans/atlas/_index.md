@@ -26,10 +26,11 @@
 | **W4** | Normalization, dedup & raw storage | 1-watch | S3 | E4 | 1.0 | Planned |
 | **W5** | Initial recent-window backfill | 1-watch | S3 | E4 | 1.0 | Planned |
 | **U1** | LLM provider abstraction & cost ledger | 2-understand | S4 | E5 | 1.0 | Planned |
-| **U2** | Article enrichment (score/issues/sentiment/summary/keywords) | 2-understand | S4 | E5 | 1.0 | Planned |
+| **U2** | Article enrichment (score/issues/sentiment/summary/keywords/embedding) | 2-understand | S4 | E5 | 2.0 | Planned |
 | **U3** | Geocoding & incident mapping | 2-understand | S4 | E5 | 1.0 | Planned |
 | **U4** | Crisis snapshots & trends | 2-understand | S4 | E5 | 1.0 | Planned |
 | **U5** | Predictions, insights, actor & leadership analytics | 2-understand | S4–S5 | E5 | 1.0 | Planned |
+| **U6** | Semantic search & embedding index (assistant RAG layer) | 2-understand | S4–S5 | E5 (ext) | 1.0 | Planned |
 | **A1** | Dashboard read API & caching | 3-act | S2,S5 | E6 | 1.0 | Built |
 | **A2** | Widget integration & live data | 3-act | S5 | E6 | 1.0 | Planned |
 | **A3** | Persisted dashboard layout | 3-act | S5 | E6 | 1.0 | Planned |
@@ -37,7 +38,7 @@
 | **A5** | AI assistant — briefing, forecast & per-widget ask | 3-act | S5 | E7 | 1.0 | Planned |
 | **A6** | Real-time ticker, alerts & War Room | 3-act | S5–S6 | E8 | 1.0 | Planned |
 
-**Totals:** 24 features · 8 platform · 5 watch · 5 understand · 6 act.
+**Totals:** 25 features · 8 platform · 5 watch · 6 understand · 6 act.
 
 ## Sprint → feature map (delivery view)
 
@@ -46,8 +47,8 @@
 | **S1** | Jun 1–12 | P1, P2, P3 (start), P7 (skeleton) |
 | **S2** | Jun 15–26 | P3 (finish), P4, P5, P6, P8 (start), A1 (initial) · **M1: DB-backed dashboard** |
 | **S3** | Jun 29–Jul 10 | W1, W2, W4, W5, W3 (spike), P8 (finish) |
-| **S4** | Jul 13–24 | U1, U2, U3, U4, W3 (cont.) · **M2: live enrichment** |
-| **S5** | Jul 27–Aug 7 | U5, A1 (finish), A2, A3, A4, A5, A6 (start) · **M3: feature-complete** |
+| **S4** | Jul 13–24 | U1, U2 (v2.0 incl. embeddings), U3, U4, U6 (start), W3 (cont.) · **M2: live enrichment** |
+| **S5** | Jul 27–Aug 7 | U5, U6 (finish), A1 (finish), A2, A3, A4, A5, A6 (start) · **M3: feature-complete** |
 | **S6** | Aug 10–21 | A6 (finish), P7 (hardening/launch) · **M4: production launch** |
 
 ## Index revision history
@@ -56,3 +57,4 @@
 | 1.0 | 2026-05-25 | Initial register: 22 features derived from the architecture spec |
 | 1.1 | 2026-05-25 | Added W5 (initial recent-window backfill) after the light-backfill decision; 22→23 features |
 | 1.2 | 2026-05-26 | Added P8 (multi-tenancy & per-tenant narration) after multi-client scope expansion; 23→24 features; sprint map updated (P8 in S2–S3) |
+| 1.3 | 2026-05-26 | Added U6 (semantic search & embedding index) for assistant RAG layer; bumped U2 to v2.0 (embedding-generation AC added); 24→25 features; sprint map updated (U6 in S4–S5) |

@@ -53,9 +53,9 @@ enrichment and the assistant.
 
 ---
 
-### U2. Article enrichment (score / issues / sentiment / summary / keywords)
+### U2. Article enrichment (score / issues / sentiment / summary / keywords / embedding)
 
-- **Version:** 1.0 · **Stage:** 2-understand · **Sprint:** S4 · **Status:** Planned · **Spec ref:** §8, §9, E5 · **Owner:** Dev B
+- **Version:** 2.0 · **Stage:** 2-understand · **Sprint:** S4 · **Status:** Planned · **Spec ref:** §8, §9, E5 · **Owner:** Dev B
 
 #### PM
 **Background (why):** Raw articles mean nothing to an operator until they carry a crisis score, the
@@ -68,12 +68,15 @@ fields with live AI output.
 - **AC2** — *Given* enrichment output, *When* validated, *Then* it conforms to the typed schema (U1) and out-of-range scores are rejected.
 - **AC3** — *Given* an already-enriched article, *When* re-triggered, *Then* it is not re-charged for LLM unless content changed (idempotent).
 - **AC4** — *Given* the existing UI fields (e.g., `dominant_issue`, `ai_reasoning`, `secondary_issues`), *When* enrichment runs, *Then* it populates exactly those shapes consumed by the Articles list and DetailModal.
+- **AC5** — *Given* a newly enriched article, *When* the enrichment task completes, *Then* a vector embedding (via the U1 abstraction) is generated and stored on `articles.embedding`; cost is logged to the U1 ledger; consumer is U6 (semantic search).
 
 #### Architecture
 **Impact — files add/change:**
 - `add` `services/pipeline/enrich/article.py` (prompt + structured call → enrichment row)
 - `add` keyword extraction → `keywords` rollup contribution
 - `change` enqueue hook from W4 triggers this task
+- `change` `services/pipeline/enrich/article.py` — after enrichment validates, call
+  `services/pipeline/llm/embed.py` (U6) and store on `articles.embedding` in the same write
 
 **Data-model / API changes:** `article_enrichment` (1:1 articles); contributes to `keywords`.
 **Reuse:** issue taxonomy + field shapes from `lib/mbg/types.ts` and `buildArticleDetail`.
@@ -86,13 +89,15 @@ fields with live AI output.
 | T2 | AC2 | out-of-range/garbage output rejected/retried | unit |
 | T3 | AC3 | re-run unchanged article → no new LLM charge | integration |
 | T4 | AC4 | enriched shape matches `Article`/`ArticleDetail` types | unit |
+| T5 | AC5 | after enrichment, `articles.embedding` is populated and the U1 ledger has a corresponding embedding-call row | integration |
 
-**Governance edge cases:** cost logged per article (U1); idempotency prevents double-spend; PII in summaries minimized.
+**Governance edge cases:** cost logged per article (U1); idempotency prevents double-spend; PII in summaries minimized; embedding regenerated when article content changes (content_hash diff).
 
 #### Revision history
 | Version | Date | Change |
 |---|---|---|
 | 1.0 | 2026-05-25 | Initial plan from architecture spec |
+| 2.0 | 2026-05-26 | Added AC5: generate embedding alongside enrichment (consumer: U6 semantic search). MAJOR bump — scope/behaviour change. |
 
 ---
 
@@ -221,3 +226,139 @@ that hold up.
 | Version | Date | Change |
 |---|---|---|
 | 1.0 | 2026-05-25 | Initial plan from architecture spec |
+
+---
+
+### U6. Semantic search & embedding index (assistant RAG layer)
+
+- **Version:** 1.0 · **Stage:** 2-understand · **Sprint:** S4–S5 · **Status:** Planned · **Spec ref:** §8 extension (new scope), pairs with U2 v2.0 · **Owner:** Dev B
+
+#### PM
+**Background (why):** U2 turns unstructured articles into **structured metrics** (score, dominant
+issue, sentiment, geocode, keywords). For most assistant questions — "what's the current crisis
+score?", "which cities spiked this week?", "how is leader X trending?" — those structured tables are
+the right answer and the assistant can read them with plain SQL/API tools. **But** for open-ended
+*narrative* questions — "tell me about the rice supply crisis", "what are people saying about the
+rupiah drop?", "find articles similar to this one" — structured aggregates fall short; the user
+wants the actual story from raw articles and posts. Without semantic retrieval the assistant (A4/A5)
+will sound shallow on exactly the questions analysts care most about. This adds a **small, focused
+RAG layer**: pgvector embedding index over `articles` and `actor_posts`, exposed to the assistant as
+search **tools** it can call alongside its structured query tools. **Not** a full RAG replacement
+for the enrichment pipeline — structured retrieval stays the default; semantic search is invoked
+only when the question warrants it.
+
+**Scope decisions (resolved during design):**
+- **Structured-first, RAG-as-tool**, not RAG-first. The assistant prefers structured SQL/API tools;
+  semantic search is one tool among several. Documented in the assistant system prompt.
+- **pgvector on the existing Postgres** — no new vector DB service. Keeps infra surface small and
+  reuses the P3 Alembic-owned schema contract.
+- **Embeddings computed at enrichment time** (one call per article during U2), not on-demand.
+  Cheap embedding model; cost flows through the U1 ledger like any other LLM call.
+
+**Acceptance criteria:**
+- **AC1** — *Given* an article whose enrichment has produced an embedding (U2 v2.0), *When* it is
+  persisted, *Then* `articles.embedding` is stored and the pgvector index includes it; same for
+  `actor_posts`.
+- **AC2** — *Given* a semantic query, *When* `search_articles(q, k, filters)` is called, *Then*
+  the top-k articles by cosine similarity are returned, with optional metadata filters (date range,
+  city, province, dominant_issue, source, tenant subscription) applied **before** the similarity
+  cut so results are correct, not just top-k.
+- **AC3** — *Given* social posts, *When* `search_actor_posts(q, k)` is called, *Then* top-k
+  semantically similar posts are returned, also tenant-scoped.
+- **AC4** — *Given* the assistant (A4/A5), *When* a user asks a narrative question, *Then* the LLM
+  may call `search_articles` / `search_actor_posts` as tools alongside its structured tools and
+  ground its answer with provenance (article ids + `raw_uri`).
+- **AC5** — *Given* a hybrid question ("high-crisis food-supply articles in Java this week"),
+  *When* served, *Then* metadata filters and vector similarity combine in a single query (filters
+  applied first, then nearest-neighbor over the filtered set).
+- **AC6** — *Given* the U1 cost ledger, *When* embedding generation runs, *Then* every call writes
+  a ledger row (model, tokens, cost) and respects the daily budget guard.
+- **AC7** — *Given* tenant scoping (P8), *When* a tenant's user calls a search tool, *Then* results
+  are restricted to articles whose source is in that tenant's `tenant_sources` subscription.
+
+#### Architecture
+**Impact — files add/change:**
+- `add` Alembic migration `<ts>_enable_pgvector_and_embeddings.py` — `CREATE EXTENSION vector`;
+  adds `articles.embedding vector(<dim>)` and `actor_posts.embedding vector(<dim>)`; creates HNSW
+  indexes on both
+- `change` `services/pipeline/db/models/content.py` — `Article.embedding`; configure pgvector type
+- `change` `services/pipeline/db/models/social.py` — `ActorPost.embedding`
+- `add` `services/pipeline/llm/embed.py` — embedding wrapper over LiteLLM (model selectable per
+  U1 config; logs to ledger)
+- `change` `services/pipeline/enrich/article.py` (U2) — invoke embedding step after enrichment
+  output is validated; store on the same row write
+- `change` `services/pipeline/enrich/actors.py` (U5) — invoke embedding for new posts
+- `add` `services/pipeline/search/semantic.py` — `search_articles(q, k, filters)`,
+  `search_actor_posts(q, k, filters)`; applies tenant + metadata filters then orders by
+  `embedding <=> $1` (cosine distance)
+- `add` `apps/web/app/api/v1/search/articles/route.ts` — BFF wrapper (RBAC + tenant scope + rate
+  limit); calls the AI service or Postgres directly via Kysely
+- `add` `apps/web/app/api/v1/search/actor-posts/route.ts` — same pattern
+- `add` `apps/web/lib/db/search.ts` — Kysely query helpers for pgvector (raw SQL fragment for the
+  similarity operator until codegen catches up)
+- `change` `apps/web/lib/db/types.gen.ts` — regenerate after migration
+- `change` (later, A4/A5) assistant tool registry — register `search_articles` and
+  `search_actor_posts` alongside structured query tools; system prompt instructs structured-first
+- `add` `docs/runbooks/embedding-model.md` — chosen model, dimension, evaluation notes, change
+  procedure
+
+**Data-model / API changes:**
+- `articles.embedding vector(<dim>)`, `actor_posts.embedding vector(<dim>)` — dim recorded in
+  `docs/runbooks/embedding-model.md` and pinned in U1 config; switching providers requires recompute
+- New indexes: HNSW on both (`USING hnsw (embedding vector_cosine_ops)`)
+- New API: `POST /api/v1/search/articles { q, k, filters }` → `[{ article, score }]`;
+  `POST /api/v1/search/actor-posts { q, k, filters }` → `[{ post, score }]`
+- pgvector extension added to the Postgres dependency list (P2 infra + P3 migration ownership)
+
+**Reuse:**
+- U1 LiteLLM abstraction — LiteLLM exposes embeddings via the same client; one new wrapper, no
+  new provider dependency.
+- U2 enrichment task already runs per new article — extend it, don't add a new pipeline stage.
+- P3 Alembic ownership pattern (no second migration source).
+- P6 RBAC for the new endpoints; P8 tenant scoping in `search/semantic.py` and the BFF wrappers.
+- A4/A5 assistant tool-use mechanism (same registry pattern as structured tools).
+
+**Risks:**
+- **N1 — Embedding model lock-in by dimension.** Vectors are tied to one model's dimension;
+  switching providers means recomputing every embedding. *Mitigation:* pin model + dim in U1 config
+  and `embedding-model.md`; reserve a follow-up runbook for the recompute procedure (batched,
+  budget-capped).
+- **N2 — Indonesian-language recall.** Some embedding models underperform on Bahasa Indonesia.
+  *Mitigation:* evaluate candidates (e.g., `text-embedding-3-small`, `multilingual-e5`, Cohere
+  multilingual) against a small Indonesian crisis-article eval set before locking in; document
+  recall numbers in `embedding-model.md`.
+- **N3 — pgvector index tuning.** HNSW vs IVFFlat is a recall/build-time/memory tradeoff.
+  *Mitigation:* default HNSW with conservative params; benchmark on the real corpus during S4 and
+  document chosen params.
+- **N4 — Cross-tenant leak via search.** Search must filter by `tenant_sources` server-side;
+  client-only filtering is unsafe. *Mitigation:* tenant filter applied in `search/semantic.py`
+  before similarity ranking; integration test asserts a tenant-B user cannot retrieve tenant-A-only
+  articles even with crafted filters.
+- **N5 — Assistant over-uses RAG when structured query is correct.** Could re-summarize from raw
+  articles instead of reading the cheap aggregate. *Mitigation:* system-prompt instructions "prefer
+  structured tools for aggregates; use search for narratives/exploration"; weekly review of
+  assistant traces in the cost ledger to catch drift.
+- **N6 — Cost spike on backfill.** Embedding every backfilled article at once (W5) can blow budget.
+  *Mitigation:* batched embedding with a budget cap per run; backfill embeddings can lag enrichment
+  by hours without breaking the dashboard.
+
+#### QA
+| # | Maps to | Test case | Type |
+|---|---|---|---|
+| T1 | AC1 | enriching a fixture article writes `embedding`; index contains the new vector; round-trip read returns the same vector | integration |
+| T2 | AC2 | semantic query returns top-k by similarity; metadata filter (e.g., `dominant_issue='food_safety'`) is applied before ranking; results stable for fixed seed | integration |
+| T3 | AC3 | `search_actor_posts` returns relevant posts; respects tenant scope | integration |
+| T4 | AC4 | assistant given "tell me about the rice supply crisis" invokes `search_articles`, returns answer citing returned article ids + `raw_uri` | integration |
+| T5 | AC5 | hybrid query (filters + similarity) returns the intersection, not the union; explain plan shows filter-first | integration |
+| T6 | AC6 | each embedding call writes a ledger row with model/tokens/cost; exceeding daily budget pauses non-critical embedding | integration |
+| T7 | AC7 | tenant-B user calling search cannot retrieve tenant-A-only articles even with crafted filters | integration |
+
+**Governance edge cases:** tenant scoping enforced server-side (P8); cost logged per call (U1);
+embedding dimension + model recorded in a runbook so changes require an explicit recompute plan;
+PII in retrieved passages already minimized by U2 summary policy; search endpoints rate-limited
+(P7) to prevent assistant runaway loops.
+
+#### Revision history
+| Version | Date | Change |
+|---|---|---|
+| 1.0 | 2026-05-26 | Initial plan — RAG layer added after the structured-first / RAG-as-tool decision; pgvector on existing Postgres; assistant gains search tools alongside its structured query tools |
