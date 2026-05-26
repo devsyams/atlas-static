@@ -1,0 +1,65 @@
+version: "3"
+
+# Cross-language task runner for the ATLAS monorepo:
+#   JS  -> pnpm + turbo (apps/web, packages/*)
+#   Py  -> uv          (services/pipeline)
+# Install go-task to use these (`winget install Task.Task`); every cmd also runs directly.
+
+tasks:
+  setup:
+    desc: Install JS (pnpm) and Python (uv) dependencies
+    cmds:
+      - pnpm install
+      - uv sync --project services/pipeline
+
+  dev:
+    desc: Run web app + ai-api stub together
+    deps: [dev-web, dev-ai]
+
+  dev-web:
+    internal: true
+    cmds:
+      - pnpm --filter web dev
+
+  dev-ai:
+    internal: true
+    dir: services/pipeline
+    cmds:
+      - uv run uvicorn ai_api.main:app --reload --port 8000
+
+  build:
+    desc: Build all JS packages
+    cmds:
+      - pnpm build
+
+  lint:
+    desc: Lint JS (eslint) and Python (ruff)
+    cmds:
+      - pnpm lint
+      - uv run --project services/pipeline ruff check services/pipeline
+
+  typecheck:
+    desc: Typecheck JS (tsc)
+    cmds:
+      - pnpm typecheck
+
+  typegen:
+    desc: Regenerate TS DB types from the live schema (kysely-codegen)
+    dir: apps/web
+    env:
+      DATABASE_URL: "postgres://atlas:atlas@127.0.0.1:55432/atlas"
+    cmds:
+      - pnpm db:codegen
+
+  db:check:
+    desc: "CI guard (P3 AC4): regenerate DB types and fail on drift; forbid TS migration tools"
+    cmds:
+      - task: typegen
+      - git diff --exit-code apps/web/lib/db/types.gen.ts
+      - uv run --directory services/pipeline pytest tests/test_schema_governance.py -q
+
+  test:
+    desc: Run Python (pytest) tests; TS vitest is added with the first TS test (P3+)
+    dir: services/pipeline
+    cmds:
+      - uv run pytest

@@ -7,7 +7,7 @@
 
 ### P1. Monorepo foundation & tooling
 
-- **Version:** 1.0 · **Stage:** 0-platform · **Sprint:** S1 · **Status:** Planned · **Spec ref:** §4–5, E1 · **Owner:** DevOps/Dev C
+- **Version:** 1.0 · **Stage:** 0-platform · **Sprint:** S1 · **Status:** Built · **Spec ref:** §4–5, E1 · **Owner:** DevOps/Dev C
 
 #### PM
 **Background (why):** The product is a static single Next.js app. Topology C needs a TS frontend
@@ -89,7 +89,7 @@ deploy so the team ships confidently from day one.
 
 ### P3. Database schema, migrations & type generation
 
-- **Version:** 1.0 · **Stage:** 0-platform · **Sprint:** S1–S2 · **Status:** Planned · **Spec ref:** §4, §9, E2 · **Owner:** Dev B + Dev A
+- **Version:** 1.0 · **Stage:** 0-platform · **Sprint:** S1–S2 · **Status:** Built · **Spec ref:** §4, §9, E2 · **Owner:** Dev B + Dev A
 
 #### PM
 **Background (why):** All data must live in a real store with history and provenance. Today's static
@@ -172,7 +172,7 @@ cheap, private, and signed-URL accessible — and makes ingestion auditable.
 
 ### P5. Authentication — email/password + sessions
 
-- **Version:** 1.0 · **Stage:** 0-platform · **Sprint:** S2 · **Status:** Planned · **Spec ref:** §10, E3 · **Owner:** Dev A
+- **Version:** 1.0 · **Stage:** 0-platform · **Sprint:** S2 · **Status:** Built · **Spec ref:** §10, E3 · **Owner:** Dev A
 
 #### PM
 **Background (why):** Current "auth" is hardcoded credentials in client code + a presence cookie —
@@ -216,7 +216,7 @@ passwords, server-side sessions, and a real login gate. This is a launch blocker
 
 ### P6. RBAC, route guards & audit log
 
-- **Version:** 1.0 · **Stage:** 0-platform · **Sprint:** S2 · **Status:** Planned · **Spec ref:** §10, E3 · **Owner:** Dev A
+- **Version:** 1.0 · **Stage:** 0-platform · **Sprint:** S2 · **Status:** Built · **Spec ref:** §10, E3 · **Owner:** Dev A
 
 #### PM
 **Background (why):** Not everyone should do everything. Admins manage users/sources; analysts use
@@ -302,3 +302,176 @@ breach is invisible until it hurts. This is the gate between "feature-complete" 
 | Version | Date | Change |
 |---|---|---|
 | 1.0 | 2026-05-25 | Initial plan from architecture spec |
+
+---
+
+### P8. Multi-tenancy & per-tenant narration
+
+- **Version:** 1.0 · **Stage:** 0-platform · **Sprint:** S2–S3 · **Status:** Planned · **Spec ref:** §9–10 extension (new scope) · **Owner:** Dev A + Dev B
+
+#### PM
+**Background (why):** ATLAS was designed for a single tenant (MBG). The sales pipeline now includes
+multiple enterprise clients who want the **same news/social ingestion backbone** but with a
+**different dashboard layout, different narration tone/terminology, different source mix, and in at
+least one case bespoke widgets** (e.g., an embedded CCTV feed for an operations-heavy client). Without
+multi-tenancy this forces a fork per client — multiplying deploy/maintenance cost, blocking shared
+improvements, and breaking the "one product" go-to-market. This feature establishes **one codebase,
+one deployment, isolated data and presentation per tenant**, with a platform-admin console for
+provisioning tenants and curating which widgets each one is allowed to use. It unlocks every
+client-facing deal from this point forward.
+
+**Scope decisions (resolved during design):**
+- **Platform-curated widgets** (not self-serve). Platform admins decide which widgets each tenant
+  may use; tenant admins only arrange what's been enabled. Prevents support sprawl with a small
+  number of enterprise tenants.
+- **Phase-1 admin UI is JSON-edit forms** (not a visual drag-drop layout builder). The visual
+  builder is a future feature; layout JSON + a preview pane is enough to ship the business.
+- **Shared ingestion + enrichment, tenant-scoped presentation.** `sources`, `articles`,
+  `article_enrichment`, `cities` stay global; everything that depends on which sources/issues a
+  tenant cares about (snapshots, metrics, keywords, predictions, insights, ticker, social/leader
+  surfaces, assistant state) gains `tenant_id`.
+
+**Acceptance criteria:**
+- **AC1** — *Given* a `platform_admin`, *When* they provision a new tenant, *Then* a `tenants` row,
+  an empty `tenant_layouts` default, empty `tenant_sources`/`tenant_issues`, and a seeded
+  `tenant_admin` user exist; re-running provisioning is idempotent.
+- **AC2** — *Given* a logged-in user belonging to tenant T, *When* they call any tenant-scoped read
+  or write API, *Then* they only see rows where `tenant_id = T`, enforced both in middleware and by
+  Postgres RLS (belt-and-suspenders); cross-tenant ID probing returns empty.
+- **AC3** — *Given* the shared `sources` catalog, *When* a `tenant_admin` subscribes/unsubscribes
+  a source, *Then* their tenant-scoped aggregates (snapshots, city metrics, keywords) are computed
+  only over subscribed sources from that point forward.
+- **AC4** — *Given* a tenant's active `prompt_packs`, *When* U2/A4/A5 invoke an LLM call for that
+  tenant, *Then* the tenant's active prompt content is used, with documented fallback to the
+  `default` tenant's pack if a key is missing.
+- **AC5** — *Given* a widget registry and a tenant's `allowed_widgets` list, *When* a layout
+  references a widget key not in the allowlist, *Then* the widget is not rendered and the omission
+  is logged (not a crash).
+- **AC6** — *Given* a user opening their dashboard, *When* layout resolution runs, *Then* the
+  precedence is **user layout → tenant layout → built-in default** (first hit wins).
+- **AC7** — *Given* a `platform_admin`, *When* they open `/admin`, *Then* they can create tenants,
+  toggle feature flags, manage the widget allowlist per tenant, and view per-tenant LLM cost;
+  *Given* a `tenant_admin`, *When* they open `/settings`, *Then* they can edit the tenant default
+  layout (JSON + preview), the narration prompt pack, source/issue subscriptions, and the tenant's
+  own users — but cannot reach `/admin` (403).
+- **AC8** — *Given* per-tenant LLM activity, *When* `ai_messages` rows are written, *Then*
+  `tenant_id` is recorded; *And* shared enrichment cost is amortized across subscribing tenants by a
+  documented allocation (proportional to subscription) and surfaced in the platform-admin cost view.
+
+**Open question for sign-off (defaulted):** Users belong to exactly **one** tenant
+(`users.tenant_id NOT NULL`). Internal staff get their own `internal` tenant and become
+`platform_admin` there; cross-tenant access is an elevated audited read path (no second tenant
+membership). Upgrade to a `tenant_memberships(user_id, tenant_id, role)` join table later via
+`/change-feature` if multi-tenant staff become a real need.
+
+#### Architecture
+**Impact — files add/change:**
+- `add` `services/pipeline/db/models/tenancy.py` — `Tenant`, `TenantSource`, `TenantIssue`,
+  `PromptPack`, `TenantLayout`
+- `change` `services/pipeline/db/models/identity.py` — `User`: add `tenant_id`; drop global
+  `email UNIQUE`, add `(tenant_id, email) UNIQUE`; `AuditLog`: add nullable `tenant_id` (null for
+  cross-tenant platform actions)
+- `change` `services/pipeline/db/models/aggregates.py` — add `tenant_id` to `CrisisSnapshot`,
+  `CityMetric`, `Keyword`, `Prediction`, `Insight`, `MarketTicker`; rewrite time-series indexes as
+  `(tenant_id, captured_at DESC)`
+- `change` `services/pipeline/db/models/assistant.py` — add `tenant_id` to `AiConversation`,
+  `AiMessage`, `DashboardLayout`
+- `change` `services/pipeline/db/models/social.py` — add `tenant_id` to `SocialActor`, `ActorPost`,
+  `Leader`, `LeaderSentiment`, `LeaderArticle`
+- `add` Alembic migration `<ts>_add_multi_tenancy.py` — creates the 5 new tables; adds `tenant_id`
+  columns (nullable → backfill to `default` tenant → set `NOT NULL`); creates indexes; enables RLS
+  policies on every tenant-scoped table keyed on `current_setting('app.current_tenant_id')::int`
+- `change` `services/pipeline/db/seed.py` — seed a `default` tenant; assign existing rows to it
+- `change` `services/pipeline/ai_api/**` — LLM tasks load prompt content via
+  `prompt_packs.get(tenant_id, key, active=true)` with fallback to `default`; pass `tenant_id`
+  through to the cost ledger
+- `change` `apps/web/middleware.ts` — resolve tenant from session; set Postgres GUC
+  `app.current_tenant_id` on each request; enforce `platform_admin`-only routes
+- `add` `apps/web/lib/tenant.ts` — `resolveTenant(session)`, `allowedWidgets(tenant)`,
+  `resolveLayout(user, tenant)`
+- `change` `apps/web/lib/authz.ts` — add `platform_admin` role tier above `admin`; tenant scoping
+  on `requireRole`
+- `change` `apps/web/app/api/v1/**` — every handler scoped by tenant_id (RLS is the safety net, not
+  the only check)
+- `add` `apps/web/app/admin/**` — platform-admin pages: tenant CRUD, feature flags, widget
+  allowlist editor, per-tenant cost view
+- `add` `apps/web/app/settings/**` — tenant-admin pages: layout JSON editor + preview, narration
+  prompt editor, source/issue subscription toggles, tenant user management
+- `add` `apps/web/components/widgets/registry.ts` — `{ widgetKey → () => dynamic import }`; render
+  pipeline filters by `tenants.config_jsonb.allowed_widgets`
+- `add` `apps/web/components/widgets/custom/<tenant-slug>/*` — bespoke widget folder per tenant
+  (lazy-loaded, gated by allowlist)
+- `add` `docs/runbooks/widgets/<slug>.md` — decision record per custom widget (CI check that
+  every key under `custom/` has a matching runbook)
+- `change` `packages/contracts/**` — add `Tenant`, `PromptPack`, `TenantLayout`, `WidgetKey` types
+  and admin/settings payload shapes
+- `change` `apps/web/lib/db/types.gen.ts` — re-generated via kysely-codegen after the migration
+
+**Data-model / API changes:**
+- **New tables (5):** `tenants(id, slug UNIQUE, name, status, config_jsonb, created_at)`,
+  `tenant_sources(tenant_id, source_id, enabled, PK(tenant_id,source_id))`,
+  `tenant_issues(tenant_id, issue_key, weight, PK(tenant_id,issue_key))`,
+  `prompt_packs(id, tenant_id, key, version, content, active, updated_at, UNIQUE(tenant_id,key,version))`,
+  `tenant_layouts(tenant_id PK, layout_jsonb, updated_at)`.
+- **Columns added:** `tenant_id` on `users`, `audit_log`, `crisis_snapshots`, `city_metrics`,
+  `keywords`, `predictions`, `insights`, `market_ticker`, `social_actors`, `actor_posts`, `leaders`,
+  `leader_sentiment`, `leader_articles`, `ai_conversations`, `ai_messages`, `dashboard_layouts`.
+- **Stay shared (no tenant_id):** `sources`, `articles`, `article_enrichment`, `cities`. Tenant
+  views over them are joins through `tenant_sources` / `tenant_issues`.
+- **Uniqueness shift:** `users.email` global UNIQUE → `(tenant_id, email)` UNIQUE.
+- **Indexes:** every existing time-series index becomes `(tenant_id, captured_at DESC)`; add
+  `tenant_id` btree on every newly tenant-scoped table.
+- **RLS:** policy `tenant_id = current_setting('app.current_tenant_id')::int` on all tenant-scoped
+  tables; bypass via dedicated `platform_admin` DB role for cross-tenant ops.
+- **New API surfaces:** `/api/v1/admin/tenants/*` (platform_admin only), `/api/v1/settings/*`
+  (tenant_admin within own tenant).
+
+**Reuse:**
+- P5 sessions and P6 role-checking pattern (add one tier; same enforcement story).
+- A3 `dashboard_layouts` pattern extended with `tenant_layouts` as the layer beneath user layouts.
+- U1 LLM provider abstraction — LiteLLM layer unchanged; only the prompt content swaps per tenant.
+- W1/W4 ingestion stays single-pipeline; only the **rollup** (U4) gains a per-tenant fan-out.
+
+**Risks:**
+- **M1 — Cross-tenant data leak.** Bug in middleware/RLS could expose another tenant's rows.
+  *Mitigation:* RLS at the DB layer (not just app code), integration tests asserting isolation for
+  every API route, contract tests for the GUC setter, security review before launch.
+- **M2 — Retrofit churn on existing tables.** 15+ tables get a NOT NULL column; A1 (Built) and
+  P3/P5/P6 schema all need adjustment. *Mitigation:* two-step migration (nullable + backfill +
+  NOT NULL); A1 gets a `/change-feature` bump in the same sprint.
+- **M3 — Enrichment cost attribution drift.** Shared enrichment vs per-tenant billing can desync.
+  *Mitigation:* subscribe-time-weighted amortization with monthly reconciliation; rule documented
+  in `docs/runbooks/cost-attribution.md`.
+- **M4 — `widgets/custom/` sprawl.** A junk drawer of one-off widgets becomes unmaintainable.
+  *Mitigation:* CI check that every custom widget has a decision record; revisit a real plugin SDK
+  when the count crosses ~10.
+- **M5 — Narration drift between tenants and product canonical copy.** Prompts diverge silently.
+  *Mitigation:* `default` tenant prompt pack is canonical; per-tenant overrides are diffed against
+  `default` in the editor; every prompt change is versioned and auditable.
+- **M6 — Platform admin too powerful.** A `platform_admin` can read every tenant's data.
+  *Mitigation:* every cross-tenant read writes an `audit_log` row with `target = tenant:<id>`,
+  reviewed weekly; admin actions require re-auth (step-up) for write operations on other tenants.
+
+#### QA
+| # | Maps to | Test case | Type |
+|---|---|---|---|
+| T1 | AC1 | platform_admin creates tenant → row, default layout, initial admin user present; re-run is idempotent | integration |
+| T2 | AC2 | user from tenant A querying tenant B IDs returns empty; direct API access 403; RLS-bypass attempt fails even if middleware skipped | integration |
+| T3 | AC3 | subscribe/unsubscribe sources → next rollup includes/excludes correctly; aggregates of unsubscribed sources invisible to that tenant | integration |
+| T4 | AC4 | LLM call for tenant T uses T's active prompt; missing key falls back to `default`; version bump picked up on next call | integration |
+| T5 | AC5 | layout entry with non-allowlisted widget is skipped + logged; allowed widgets render; custom widget without a decision record fails CI | unit + e2e + CI |
+| T6 | AC6 | resolveLayout returns user > tenant > built-in in that order; missing layers fall through cleanly | unit |
+| T7 | AC7 | platform_admin can CRUD tenants/toggle flags/edit allowlist/view cost; tenant_admin gets 403 on `/admin` but can edit own tenant settings; never sees another tenant | integration + e2e |
+| T8 | AC8 | `ai_messages.tenant_id` populated; per-tenant cost report sums correctly; enrichment amortization splits as documented | integration |
+
+**Governance edge cases:** all cross-tenant operations are `platform_admin`-only and audited;
+RLS verified by a CI integration test; `tenant_admin` inherits `analyst` scope **within own
+tenant only**, never across; tenant feature flags (`allowed_widgets`) are platform-curated (resolved
+design decision); per-tenant per-day LLM budget enforced (throttle + alert on exceed); tenant
+deletion is soft-delete with retention honored per P4/P7; secrets in `tenants.config_jsonb` are
+referenced (not stored plaintext) and never reach the client.
+
+#### Revision history
+| Version | Date | Change |
+|---|---|---|
+| 1.0 | 2026-05-26 | Initial plan — multi-tenancy retrofit; platform-curated widgets; Phase-1 JSON admin UI; visual layout builder explicitly out of scope |
