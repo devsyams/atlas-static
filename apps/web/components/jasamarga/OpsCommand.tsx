@@ -3,7 +3,9 @@
 import { useCallback, useEffect, useState, type ComponentType, type ReactNode } from "react";
 import {
   Activity,
+  CalendarClock,
   CheckCircle2,
+  Clock,
   CloudRain,
   Gauge,
   Megaphone,
@@ -15,7 +17,6 @@ import {
   Sparkles,
   TrafficCone,
   TrendingUp,
-  Video,
 } from "lucide-react";
 import { Ticker } from "@/components/crisis/Ticker";
 import { PredictionMeters } from "@/components/crisis/PredictionMeters";
@@ -34,7 +35,8 @@ import { CommandWall } from "./CommandWall";
 import { SocialPulse } from "./SocialPulse";
 import { OfficialFeed } from "./OfficialFeed";
 import { NewsCoverage } from "./NewsCoverage";
-import { CctvPanel } from "./CctvPanel";
+import { ForecastTimeline } from "./ForecastTimeline";
+import { TravelTimeBoard } from "./TravelTimeBoard";
 import { SourceStatus } from "./SourceStatus";
 
 const BRIEFING_STAGES = [
@@ -96,7 +98,7 @@ export function OpsCommand() {
             Pemantauan Lalu Lintas — {data?.corridor ?? "Jakarta–Cikampek"}
           </h1>
           <p className="mt-1.5 text-[12px] text-muted-foreground">
-            Diperbarui {data?.updated_at ?? "—"} · 100% dari sumber publik/daring (lalu lintas, Waze, medsos, berita, CCTV, BMKG, kanal resmi) + analitik Nexorus AI.
+            Diperbarui {data?.updated_at ?? "—"} · 100% dari sumber publik/daring (traffic API, medsos, berita, BMKG, kanal resmi) + analitik Nexorus AI.
           </p>
         </div>
         <div className="flex flex-wrap items-center justify-end gap-2">
@@ -241,6 +243,16 @@ export function OpsCommand() {
           {data ? <SocialPulse data={data.social} /> : <Empty state={live} />}
         </Tile>
 
+        {/* Congestion Forecast Timeline — predictive, from public typical-traffic */}
+        <Tile title="Proyeksi Beban 6 Jam" icon={CalendarClock} className="lg:col-span-8" bodyClassName="p-3" style={{ minHeight: 230 }}>
+          {data ? <ForecastTimeline hours={data.forecast} /> : <Empty state={live} />}
+        </Tile>
+
+        {/* Travel-Time Board */}
+        <Tile title="Papan Waktu Tempuh" icon={Clock} className="lg:col-span-4" bodyClassName="overflow-auto scrollbar-thin p-3" style={{ maxHeight: 300 }}>
+          {data ? <TravelTimeBoard routes={data.travel_times} /> : <Empty state={live} />}
+        </Tile>
+
         {/* Official Feed */}
         <Tile title="Kanal Resmi" icon={Megaphone} className="lg:col-span-4" bodyClassName="overflow-auto scrollbar-thin p-3" style={{ maxHeight: 340 }}>
           {data ? <OfficialFeed posts={data.official} /> : <Empty state={live} />}
@@ -251,13 +263,8 @@ export function OpsCommand() {
           {data ? <NewsCoverage articles={data.news} /> : <Empty state={live} />}
         </Tile>
 
-        {/* Live CCTV */}
-        <Tile title="CCTV Publik (Travoy)" icon={Video} className="lg:col-span-4" bodyClassName="overflow-auto scrollbar-thin p-3" style={{ maxHeight: 340 }}>
-          {data ? <CctvPanel feeds={data.cctv} /> : <Empty state={live} />}
-        </Tile>
-
         {/* Top Ruas */}
-        <Tile title="Titik Macet Teratas" icon={Route} className="lg:col-span-12" bodyClassName="p-3">
+        <Tile title="Titik Macet Teratas" icon={Route} className="lg:col-span-4" bodyClassName="overflow-auto scrollbar-thin p-3" style={{ maxHeight: 340 }}>
           {data ? <TopRuas ruas={data.top_ruas} /> : <Empty state={live} />}
         </Tile>
       </div>

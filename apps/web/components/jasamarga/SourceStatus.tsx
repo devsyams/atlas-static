@@ -5,7 +5,6 @@ import {
   Navigation,
   Newspaper,
   TriangleAlert,
-  Video,
   type LucideIcon,
 } from "lucide-react";
 import type { SourceFeed, SourceType } from "@/lib/jasamarga/types";
@@ -16,7 +15,6 @@ const ICON: Record<SourceType, LucideIcon> = {
   waze: TriangleAlert,
   medsos: AtSign,
   berita: Newspaper,
-  cctv: Video,
   cuaca: CloudRain,
   resmi: BadgeCheck,
 };

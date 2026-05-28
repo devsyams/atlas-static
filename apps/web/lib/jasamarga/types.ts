@@ -4,7 +4,7 @@ import type { MarketTickerItem, Prediction } from "@/lib/mbg/types";
 export type FlowStatus = "lancar" | "padat" | "macet" | "lumpuh";
 
 /** Where a signal was scraped/ingested from — all publicly available online. */
-export type SourceType = "traffic" | "waze" | "medsos" | "berita" | "cctv" | "cuaca" | "resmi";
+export type SourceType = "traffic" | "waze" | "medsos" | "berita" | "cuaca" | "resmi";
 
 /**
  * One landmark-to-landmark stretch of the corridor for the Route Ribbon.
@@ -91,12 +91,21 @@ export interface NewsArticle {
   summary: string;
 }
 
-/** A public CCTV vantage (Travoy / Jasa Marga live cameras). */
-export interface CctvFeed {
-  km: number;
-  name: string;
-  status: FlowStatus;
-  note: string;
+/** One hour of the congestion projection (from typical-traffic + weather + calendar). */
+export interface ForecastHour {
+  hour: string; // "15:00"
+  load: number; // 0–10 predicted congestion
+  label?: string; // "Sekarang", "Puncak"
+}
+
+/** Live travel time for an origin→destination pair (from routing/traffic APIs). */
+export interface TravelTime {
+  route: string; // "Halim → Cikampek Utama"
+  via: string; // "Tol Japek", "Layang MBZ", "Arteri Pantura"
+  minutes: number;
+  normal_minutes: number; // free-flow / typical
+  trend: "up" | "down" | "flat";
+  best?: boolean; // fastest option right now
 }
 
 export interface WeatherZone {
@@ -160,7 +169,8 @@ export interface OpsSnapshot {
   social: SocialPulse;
   official: OfficialPost[];
   news: NewsArticle[];
-  cctv: CctvFeed[];
+  forecast: ForecastHour[];
+  travel_times: TravelTime[];
   weather: WeatherZone[];
   sources: SourceFeed[];
 }

@@ -73,6 +73,37 @@ function buildSlides(d: OpsSnapshot): Slide[] {
     });
   }
 
+  if (d.forecast.length) {
+    slides.push({
+      label: "Proyeksi 6 Jam",
+      render: () => (
+        <div className="mx-auto w-full max-w-4xl">
+          <h2 className="mb-10 text-center text-4xl font-extrabold text-foreground">Proyeksi Beban 6 Jam</h2>
+          <div className="flex h-64 items-end justify-center gap-4">
+            {d.forecast.map((h) => (
+              <div key={h.hour} className="flex h-full flex-1 flex-col items-center justify-end gap-2">
+                {h.label && (
+                  <span
+                    className="text-sm font-bold uppercase tracking-wide"
+                    style={{ color: h.label === "Puncak" ? "var(--destructive)" : "var(--primary)" }}
+                  >
+                    {h.label}
+                  </span>
+                )}
+                <span className="text-xl font-extrabold tabular-nums" style={{ color: loadColor(h.load) }}>
+                  {h.load.toFixed(1)}
+                </span>
+                <div className="w-full max-w-[64px] rounded-t-lg" style={{ height: `${(h.load / 10) * 100}%`, background: loadColor(h.load) }} />
+                <span className="text-base tabular-nums text-muted-foreground">{h.hour}</span>
+              </div>
+            ))}
+          </div>
+          <p className="mt-8 text-center text-lg text-muted-foreground">Dari pola lalu lintas tipikal + cuaca + kalender libur</p>
+        </div>
+      ),
+    });
+  }
+
   const incidents = [...d.incidents].sort((a, b) => b.severity - a.severity).slice(0, 4);
   if (incidents.length) {
     slides.push({

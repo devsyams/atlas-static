@@ -1,4 +1,4 @@
-import type { OpsSnapshot, RouteSegment } from "./types";
+import type { ForecastHour, OpsSnapshot, RouteSegment } from "./types";
 import { loadLevel, speedStatus } from "./ui";
 
 /**
@@ -49,6 +49,17 @@ export function buildSnapshot(): OpsSnapshot {
 
   const mentions_24h = Math.round(jit(3214, 180));
   const negativity = +clamp(jit(7.2, 0.4), 0, 10).toFixed(1);
+
+  // 6-hour projection from current congestion, shaped toward the evening peak.
+  const baseHour = now.getHours();
+  const offsets = [0, -0.9, -1.6, -0.6, 0.5, 1.0, -1.3];
+  const forecast: ForecastHour[] = offsets.map((off, i) => ({
+    hour: `${String((baseHour + i) % 24).padStart(2, "0")}:00`,
+    load: +clamp(load_index + off + (Math.random() - 0.5) * 0.4, 0.5, 10).toFixed(1),
+  }));
+  const peakIdx = forecast.reduce((m, h, i, a) => (h.load > a[m].load ? i : m), 0);
+  forecast[0].label = "Sekarang";
+  if (peakIdx !== 0) forecast[peakIdx].label = "Puncak";
 
   return {
     corridor: "Jakarta–Cikampek (Japek)",
@@ -296,12 +307,14 @@ export function buildSnapshot(): OpsSnapshot {
       { title: "Pengguna keluhkan antrean Gerbang Cikampek Utama", source: "Tribunnews", time: "40 mnt lalu", sentiment: 7, summary: "Antrean panjang dilaporkan; pengguna minta penambahan gardu saat puncak." },
     ],
 
-    cctv: [
-      { km: 29, name: "CCTV KM 29 (Cikarang Utama)", status: "padat", note: "Arus padat merayap" },
-      { km: 38, name: "CCTV KM 38 (Karawang Barat)", status: "macet", note: "Antrean rambat, 1 lajur menyempit" },
-      { km: 47, name: "CCTV KM 47 (Karawang Timur)", status: "macet", note: "Mulai padat menjelang titik insiden" },
-      { km: 52, name: "CCTV KM 52", status: "lumpuh", note: "Kecelakaan — 2 lajur tertutup" },
-      { km: 70, name: "CCTV KM 70 (Kalihurip)", status: "lancar", note: "Arus lancar" },
+    forecast,
+
+    travel_times: [
+      { route: "Halim → Cikampek Utama", via: "Tol Japek (bawah)", minutes: 112, normal_minutes: 48, trend: "up" },
+      { route: "Halim → Cikampek Utama", via: "Layang MBZ (Gol I)", minutes: 96, normal_minutes: 55, trend: "up", best: true },
+      { route: "Halim → Karawang Barat", via: "Tol Japek", minutes: 58, normal_minutes: 36, trend: "up" },
+      { route: "Cikarang → Cikampek", via: "Tol Japek", minutes: 41, normal_minutes: 23, trend: "flat" },
+      { route: "Jakarta → Cikampek", via: "Arteri Pantura (alt.)", minutes: 135, normal_minutes: 120, trend: "flat" },
     ],
 
     weather: [
@@ -311,13 +324,12 @@ export function buildSnapshot(): OpsSnapshot {
     ],
 
     sources: [
-      { name: "Google/Waze Traffic", type: "traffic", status: "live", items_24h: 1440, last_sync: "baru saja" },
-      { name: "Waze Insiden", type: "waze", status: "live", items_24h: 86, last_sync: "1 mnt" },
-      { name: "Media Sosial (X)", type: "medsos", status: "live", items_24h: mentions_24h, last_sync: "baru saja" },
-      { name: "Berita Online", type: "berita", status: "live", items_24h: 47, last_sync: "4 mnt" },
-      { name: "CCTV Travoy", type: "cctv", status: "live", items_24h: 12, last_sync: "baru saja" },
+      { name: "Traffic Flow (TomTom/HERE)", type: "traffic", status: "live", items_24h: 1440, last_sync: "baru saja" },
+      { name: "Insiden Lalu Lintas (TomTom)", type: "waze", status: "live", items_24h: 86, last_sync: "1 mnt" },
+      { name: "Media Sosial (X API)", type: "medsos", status: "live", items_24h: mentions_24h, last_sync: "baru saja" },
+      { name: "Berita Online (RSS)", type: "berita", status: "live", items_24h: 47, last_sync: "4 mnt" },
       { name: "BMKG Cuaca", type: "cuaca", status: "delay", items_24h: 24, last_sync: "18 mnt" },
-      { name: "@PTJASAMARGA Resmi", type: "resmi", status: "live", items_24h: 9, last_sync: "8 mnt" },
+      { name: "Kanal Resmi (@PTJASAMARGA)", type: "resmi", status: "live", items_24h: 9, last_sync: "8 mnt" },
     ],
   };
 }
