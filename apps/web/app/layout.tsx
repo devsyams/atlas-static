@@ -30,7 +30,11 @@ export default function RootLayout({
       lang="en"
       className={`${spaceGrotesk.variable} ${jetbrainsMono.variable} h-full antialiased`}
     >
-      <body className="min-h-screen text-foreground">{children}</body>
+      {/* suppressHydrationWarning: browser extensions (e.g. ColorZilla's
+          cz-shortcut-listen) mutate <body> before React hydrates. */}
+      <body className="min-h-screen text-foreground" suppressHydrationWarning>
+        {children}
+      </body>
     </html>
   );
 }
