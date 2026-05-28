@@ -22,6 +22,8 @@ export function middleware(req: NextRequest) {
 }
 
 export const config = {
-  // Run on every route except API routes, Next internals, and static files.
-  matcher: ["/((?!api|_next|.*\\..*).*)"],
+  // Run on every route except API routes, Next internals, static files, and the
+  // standalone JasaMarga sales-lead demo (synthetic data, intentionally
+  // unauthenticated so it runs with zero setup — gate it if productized).
+  matcher: ["/((?!api|_next|jasamarga|.*\\..*).*)"],
 };
