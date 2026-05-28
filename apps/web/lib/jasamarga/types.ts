@@ -1,72 +1,46 @@
 import type { MarketTickerItem, Prediction } from "@/lib/mbg/types";
 
-/** Flow state of a road segment / facility, ascending in severity. */
+/** Flow state of a road segment, ascending in severity. */
 export type FlowStatus = "lancar" | "padat" | "macet" | "lumpuh";
 
-/** One landmark-to-landmark stretch of the corridor, for the Route Ribbon. */
+/** Where a signal was scraped/ingested from — all publicly available online. */
+export type SourceType = "traffic" | "waze" | "medsos" | "berita" | "cctv" | "cuaca" | "resmi";
+
+/**
+ * One landmark-to-landmark stretch of the corridor for the Route Ribbon.
+ * Speed + delay come from public traffic APIs (Google/Waze/TomTom) — no
+ * internal volume/capacity figures.
+ */
 export interface RouteSegment {
   km_from: number;
   km_to: number;
   label: string;
-  speed: number; // km/h
-  vcr: number; // volume / capacity (≥1 = over capacity)
+  speed: number; // km/h (public traffic data)
+  delay_min: number; // extra minutes vs free-flow over this stretch
   status: FlowStatus;
-  /** Sheikh Mohamed bin Zayed elevated (Layang MBZ) available over this stretch. */
-  elevated?: boolean;
+  elevated?: boolean; // Layang MBZ available
   incident?: boolean;
 }
 
-/** A toll plaza (gerbang/gardu) and its live transaction load. */
-export interface Gate {
-  name: string;
+/** Public location marker on the ribbon (no internal metrics). */
+export interface Landmark {
   km: number;
-  txn_per_min: number;
-  avg_txn_sec: number;
-  queue_m: number;
-  open_lanes: number;
-  total_lanes: number;
+  name: string;
+  kind: "gerbang" | "rest";
 }
 
 export interface IncidentItem {
   id: string;
   km: string; // e.g. "KM 52+400"
-  direction: string; // arah Cikampek / arah Jakarta
-  type: string; // Kecelakaan, Kendaraan Mogok, ODOL, Genangan, Perbaikan
-  severity: number; // 0–10
-  status: string; // Ditangani, Dalam perjalanan, Antre, Selesai
-  unit: string; // responding unit(s)
-  eta_min: number; // ETA to clear / arrive
-  lanes_blocked: number;
-  lanes_total: number;
+  direction: string;
+  type: string; // Kecelakaan, Kendaraan mogok, Banjir, Penutupan…
+  severity: number; // 0–10 (AI-scored from the report)
+  status: string; // Dilaporkan, Berlangsung, Terkonfirmasi, Selesai
+  source: string; // @TMCPoldaMetro, Waze, detik.com, @PTJASAMARGA…
+  source_type: SourceType;
   reported: string; // relative time
+  lanes_blocked?: number; // only when the public report states it
   detail: string;
-}
-
-export interface RestArea {
-  km: number;
-  name: string;
-  type: "A" | "B" | "C";
-  capacity: number;
-  occupancy: number; // current vehicles (can exceed capacity → overflow)
-  status: FlowStatus;
-}
-
-export interface FleetUnit {
-  id: string;
-  type: string; // Derek, Ambulans, PJR, Rescue
-  call: string; // call sign
-  status: "Standby" | "Bergerak" | "Di lokasi" | "Kembali";
-  location_km: number;
-  assigned?: string; // incident id
-  response_min?: number;
-}
-
-export interface SpmMetric {
-  category: string;
-  value: string; // current measured value
-  standard: string; // BPJT minimum-service standard
-  compliance: number; // 0–100 %
-  ok: boolean;
 }
 
 export interface RuasLoad {
@@ -74,20 +48,84 @@ export interface RuasLoad {
   km_range: string;
   load: number; // 0–10
   speed: number; // km/h
-  volume: number; // vehicles/hour
-  dominant: string; // dominant condition driver
+  delay_min: number;
+  dominant: string;
 }
 
-/** A traffic-engineering option the AI can simulate and "apply". */
+export interface TrendKeyword {
+  keyword: string;
+  count: number;
+  sentiment?: "negative" | "neutral" | "positive";
+}
+
+export interface SocialPost {
+  handle: string;
+  platform: string;
+  text: string;
+  sentiment: "negative" | "neutral" | "positive";
+  engagement: number;
+  time: string;
+}
+
+/** Public-sentiment pulse from social monitoring (the MBG-style core). */
+export interface SocialPulse {
+  mentions_24h: number;
+  negativity: number; // 0–10 (high = more negative chatter)
+  trend: TrendKeyword[];
+  top_posts: SocialPost[];
+}
+
+/** Scraped official announcement (@PTJASAMARGA / Travoy / press release). */
+export interface OfficialPost {
+  time: string;
+  category: string; // Rekayasa, Tarif, Pemeliharaan, Imbauan
+  title: string;
+  body: string;
+}
+
+export interface NewsArticle {
+  title: string;
+  source: string;
+  time: string;
+  sentiment: number; // 0–10 (high = negative)
+  summary: string;
+}
+
+/** A public CCTV vantage (Travoy / Jasa Marga live cameras). */
+export interface CctvFeed {
+  km: number;
+  name: string;
+  status: FlowStatus;
+  note: string;
+}
+
+export interface WeatherZone {
+  zone: string;
+  condition: string; // Cerah, Hujan ringan, Hujan lebat…
+  temp: number;
+  impact: "rendah" | "sedang" | "tinggi";
+}
+
+/** A connected online feed, surfaced in the "Sumber Data" status strip. */
+export interface SourceFeed {
+  name: string;
+  type: SourceType;
+  status: "live" | "delay" | "down";
+  items_24h: number;
+  last_sync: string;
+}
+
+/** A traffic-engineering option the AI recommends (decision-support, not control). */
 export interface Intervention {
   id: string;
   title: string;
   segment: string;
   rationale: string;
-  impact_time_pct: number; // travel-time change (negative = faster)
-  impact_clear_min: number; // projected minutes to clear the queue
+  impact_time_pct: number; // projected travel-time change (negative = faster)
+  impact_clear_min: number;
   risk: "rendah" | "sedang" | "tinggi";
   recommended: boolean;
+  officially_announced: boolean; // already announced by JasaMarga?
 }
 
 export interface OpsInsight {
@@ -104,26 +142,25 @@ export interface ConditionChip {
 export interface OpsSnapshot {
   corridor: string;
   updated_at: string;
-  load_index: number; // 0–10 network strain (high = bad)
+  load_index: number; // 0–10 congestion index (high = bad)
   level: string; // Lancar / Padat / Macet / Lumpuh
   emoji: string;
-  avg_speed: number; // km/h
+  avg_speed: number; // km/h (public traffic)
+  avg_delay_min: number; // extra minutes end-to-end vs free-flow
   active_incidents: number;
-  vehicles_now: number; // vehicles currently on corridor
-  lhr_today: number; // running average daily traffic
-  revenue_today: number; // rupiah
-  revenue_target: number; // rupiah
-  spm_compliance: number; // overall %
   insight: OpsInsight;
   conditions: ConditionChip[];
   predictions: Prediction[];
   ticker: MarketTickerItem[];
   segments: RouteSegment[];
-  gates: Gate[];
+  landmarks: Landmark[];
   incidents: IncidentItem[];
-  rest_areas: RestArea[];
-  fleet: FleetUnit[];
-  spm: SpmMetric[];
   top_ruas: RuasLoad[];
   interventions: Intervention[];
+  social: SocialPulse;
+  official: OfficialPost[];
+  news: NewsArticle[];
+  cctv: CctvFeed[];
+  weather: WeatherZone[];
+  sources: SourceFeed[];
 }

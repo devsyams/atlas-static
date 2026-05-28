@@ -1,7 +1,7 @@
 "use client";
 
 import { AlertTriangle, Coffee, DoorOpen, Layers } from "lucide-react";
-import type { Gate, IncidentItem, RestArea, RouteSegment } from "@/lib/jasamarga/types";
+import type { IncidentItem, Landmark, RouteSegment } from "@/lib/jasamarga/types";
 import { FLOW_COLORS, FLOW_LABEL } from "@/lib/jasamarga/ui";
 import { cn } from "@/lib/utils";
 
@@ -10,18 +10,19 @@ function pct(km: number, max: number) {
   return `${(km / max) * 100}%`;
 }
 
-/** Subway-style live strip of the Jakarta–Cikampek corridor (KM 0 → end). */
+/**
+ * Subway-style live strip of the Jakarta–Cikampek corridor (KM 0 → end).
+ * Speed/flow come from public traffic data; markers are public landmarks.
+ */
 export function RouteRibbon({
   segments,
-  gates,
-  restAreas,
+  landmarks,
   incidents,
   selected,
   onSelect,
 }: {
   segments: RouteSegment[];
-  gates: Gate[];
-  restAreas: RestArea[];
+  landmarks: Landmark[];
   incidents: IncidentItem[];
   selected: number | null;
   onSelect: (index: number | null) => void;
@@ -30,7 +31,6 @@ export function RouteRibbon({
   const elevatedFrom = segments.find((s) => s.elevated)?.km_from;
   const elevatedTo = [...segments].reverse().find((s) => s.elevated)?.km_to;
 
-  // Incident KM markers parsed from "KM 52+400" style strings.
   const incPins = incidents
     .map((i) => ({ inc: i, km: parseFloat(i.km.replace(/[^0-9.]/g, "")) }))
     .filter((p) => !Number.isNaN(p.km) && p.km <= maxKm);
@@ -51,20 +51,12 @@ export function RouteRibbon({
         </div>
       )}
 
-      {/* Incident pins */}
+      {/* Incident pins (from Waze / social / news / official) */}
       <div className="relative h-5 shrink-0">
         {incPins.map(({ inc, km }) => (
-          <div
-            key={inc.id}
-            className="absolute -translate-x-1/2"
-            style={{ left: pct(km, maxKm) }}
-            title={`${inc.km} — ${inc.type}`}
-          >
+          <div key={inc.id} className="absolute -translate-x-1/2" style={{ left: pct(km, maxKm) }} title={`${inc.km} — ${inc.type} (${inc.source})`}>
             <AlertTriangle
-              className={cn(
-                "h-4 w-4",
-                inc.severity >= 7 ? "text-destructive jm-blink" : inc.severity >= 4 ? "text-warning" : "text-primary",
-              )}
+              className={cn("h-4 w-4", inc.severity >= 7 ? "text-destructive jm-blink" : inc.severity >= 4 ? "text-warning" : "text-primary")}
               fill="currentColor"
               fillOpacity={0.18}
             />
@@ -77,7 +69,6 @@ export function RouteRibbon({
         {segments.map((s, i) => {
           const color = FLOW_COLORS[s.status];
           const width = ((s.km_to - s.km_from) / maxKm) * 100;
-          // Free flow ≈ fast stripes (~2.5s); gridlock ≈ near-frozen (~16s).
           const dur = Math.max(2.2, 18 - (s.speed / 90) * 16);
           const active = selected === i;
           return (
@@ -85,22 +76,17 @@ export function RouteRibbon({
               type="button"
               key={`${s.km_from}-${s.km_to}`}
               onClick={() => onSelect(active ? null : i)}
-              title={`${s.label} · ${s.speed} km/j · VCR ${s.vcr}`}
+              title={`${s.label} · ${s.speed} km/j · +${s.delay_min} mnt`}
               className={cn(
                 "group relative h-full border-r border-black/20 transition-[filter] last:border-r-0",
                 active ? "z-10 brightness-125" : "hover:brightness-110",
               )}
               style={{ width: `${width}%`, background: color }}
             >
-              <span
-                className="jm-flow absolute inset-0"
-                style={{ animationDuration: `${dur}s`, opacity: s.status === "lumpuh" ? 0.25 : 0.6 }}
-              />
+              <span className="jm-flow absolute inset-0" style={{ animationDuration: `${dur}s`, opacity: s.status === "lumpuh" ? 0.25 : 0.6 }} />
               {active && <span className="absolute inset-0 ring-2 ring-inset ring-white/70" />}
               {width > 9 && (
-                <span className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-black/70 mix-blend-luminosity">
-                  {s.speed}
-                </span>
+                <span className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-black/70 mix-blend-luminosity">{s.speed}</span>
               )}
             </button>
           );
@@ -110,40 +96,22 @@ export function RouteRibbon({
       {/* KM scale */}
       <div className="relative h-3 shrink-0">
         {segments.map((s) => (
-          <span
-            key={s.km_from}
-            className="absolute -translate-x-1/2 text-[9px] tabular-nums text-muted-foreground"
-            style={{ left: pct(s.km_from, maxKm) }}
-          >
+          <span key={s.km_from} className="absolute -translate-x-1/2 text-[9px] tabular-nums text-muted-foreground" style={{ left: pct(s.km_from, maxKm) }}>
             {s.km_from}
           </span>
         ))}
         <span className="absolute right-0 text-[9px] tabular-nums text-muted-foreground">{maxKm}</span>
       </div>
 
-      {/* Facilities row: gates + rest areas */}
+      {/* Public landmarks: gerbang + rest areas (locations only) */}
       <div className="relative h-6 shrink-0 border-t border-border/30 pt-1">
-        {gates.map((g) => (
-          <div
-            key={g.name}
-            className="absolute -translate-x-1/2"
-            style={{ left: pct(g.km, maxKm) }}
-            title={`${g.name} · antre ${g.queue_m} m · ${g.open_lanes}/${g.total_lanes} gardu`}
-          >
-            <DoorOpen className={cn("h-3.5 w-3.5", g.queue_m > 1000 ? "text-destructive" : "text-foreground/60")} />
-          </div>
-        ))}
-        {restAreas.map((r) => (
-          <div
-            key={r.km}
-            className="absolute translate-x-[-50%] translate-y-[2px]"
-            style={{ left: pct(r.km, maxKm), top: 0 }}
-            title={`${r.name} (Tipe ${r.type}) · okupansi ${Math.round((r.occupancy / r.capacity) * 100)}%`}
-          >
-            <Coffee
-              className="h-3 w-3"
-              style={{ color: FLOW_COLORS[r.status] }}
-            />
+        {landmarks.map((l) => (
+          <div key={`${l.kind}-${l.km}`} className="absolute -translate-x-1/2" style={{ left: pct(l.km, maxKm) }} title={`${l.name} · KM ${l.km}`}>
+            {l.kind === "gerbang" ? (
+              <DoorOpen className="h-3.5 w-3.5 text-foreground/60" />
+            ) : (
+              <Coffee className="h-3 w-3 text-foreground/45" />
+            )}
           </div>
         ))}
       </div>
@@ -162,6 +130,7 @@ export function RouteRibbon({
         <span className="flex items-center gap-1.5">
           <Coffee className="h-3 w-3" /> Rest area
         </span>
+        <span className="ml-auto text-muted-foreground/70">Sumber: Google · Waze · TomTom</span>
       </div>
     </div>
   );

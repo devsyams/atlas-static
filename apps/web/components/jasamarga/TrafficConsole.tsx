@@ -96,6 +96,18 @@ export function TrafficConsole({
           )}
         </div>
         <div className="mt-0.5 text-[10px] text-muted-foreground">{selected.segment}</div>
+        <div className="mt-1.5">
+          <span
+            className={cn(
+              "inline-flex items-center gap-1 rounded-full border px-1.5 py-0.5 text-[9px] font-bold",
+              selected.officially_announced
+                ? "border-success/40 bg-success/10 text-success"
+                : "border-muted-foreground/30 bg-background/40 text-muted-foreground",
+            )}
+          >
+            {selected.officially_announced ? "✓ Sudah diumumkan @PTJASAMARGA" : "Belum diumumkan resmi"}
+          </span>
+        </div>
         <p className="mt-1.5 text-[11.5px] leading-relaxed text-foreground/80">{selected.rationale}</p>
 
         {/* Projected impact */}
@@ -138,14 +150,14 @@ export function TrafficConsole({
               onClick={apply}
               className="inline-flex w-full items-center justify-center gap-1.5 rounded-md border border-success/50 bg-success/15 px-3 py-2 text-[12px] font-bold text-success transition-transform hover:scale-[1.01]"
             >
-              <Play className="h-3.5 w-3.5" /> Terapkan rekayasa
+              <Play className="h-3.5 w-3.5" /> Teruskan rekomendasi ke JMTC
             </button>
           )}
 
           {phase === "applied" && (
             <div className="flex items-center gap-2 rounded-md border border-success/50 bg-success/10 px-3 py-2 text-[12px] font-bold text-success">
               <CheckCircle2 className="h-4 w-4" />
-              <span>Rekayasa diterapkan · memantau dampak…</span>
+              <span>Rekomendasi diteruskan ke JMTC · memantau dampak…</span>
             </div>
           )}
         </div>

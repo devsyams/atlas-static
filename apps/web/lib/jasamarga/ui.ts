@@ -40,17 +40,6 @@ export function speedStatus(speed: number): FlowStatus {
   return "lumpuh";
 }
 
-export function fmtInt(n: number): string {
-  return Math.round(n).toLocaleString("id-ID");
-}
-
-/** Rupiah in compact "Rp x,y M / jt" form for tickers and tiles. */
-export function fmtRupiah(n: number): string {
-  if (n >= 1_000_000_000) return `Rp ${(n / 1_000_000_000).toLocaleString("id-ID", { maximumFractionDigits: 2 })} M`;
-  if (n >= 1_000_000) return `Rp ${(n / 1_000_000).toLocaleString("id-ID", { maximumFractionDigits: 1 })} jt`;
-  return `Rp ${fmtInt(n)}`;
-}
-
 export function riskColor(risk: "rendah" | "sedang" | "tinggi"): string {
   return risk === "tinggi"
     ? "text-destructive"

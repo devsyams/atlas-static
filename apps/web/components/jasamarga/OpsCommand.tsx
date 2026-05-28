@@ -4,42 +4,52 @@ import { useCallback, useEffect, useState, type ComponentType, type ReactNode } 
 import {
   Activity,
   CheckCircle2,
-  Coffee,
+  CloudRain,
   Gauge,
+  Megaphone,
+  MessageCircle,
   MonitorPlay,
+  Newspaper,
   Route,
-  ShieldCheck,
   Siren,
   Sparkles,
   TrafficCone,
   TrendingUp,
-  Truck,
+  Video,
 } from "lucide-react";
 import { Ticker } from "@/components/crisis/Ticker";
 import { PredictionMeters } from "@/components/crisis/PredictionMeters";
 import { ScoreGauge } from "@/components/crisis/ScoreGauge";
 import { CountUp } from "@/components/crisis/CountUp";
 import { BriefingPanel } from "@/components/ai/BriefingPanel";
-import type { Intervention, OpsSnapshot } from "@/lib/jasamarga/types";
-import { fmtRupiah, loadColor } from "@/lib/jasamarga/ui";
+import type { Intervention, OpsSnapshot, WeatherZone } from "@/lib/jasamarga/types";
+import { loadColor } from "@/lib/jasamarga/ui";
 import { cn } from "@/lib/utils";
 import { RouteRibbon } from "./RouteRibbon";
 import { OpsInsight } from "./OpsInsight";
 import { IncidentFeed } from "./IncidentFeed";
 import { TopRuas } from "./TopRuas";
-import { SpmBoard } from "./SpmBoard";
-import { RestAreaPanel } from "./RestAreaPanel";
-import { ResponseFleet } from "./ResponseFleet";
 import { TrafficConsole } from "./TrafficConsole";
 import { CommandWall } from "./CommandWall";
+import { SocialPulse } from "./SocialPulse";
+import { OfficialFeed } from "./OfficialFeed";
+import { NewsCoverage } from "./NewsCoverage";
+import { CctvPanel } from "./CctvPanel";
+import { SourceStatus } from "./SourceStatus";
 
 const BRIEFING_STAGES = [
-  "Menarik telemetri ruas & gardu",
-  "Memetakan insiden & posisi armada",
-  "Mengukur kepatuhan SPM",
+  "Menarik data lalu lintas (Google/Waze)",
+  "Menyapu laporan Waze & media sosial",
+  "Memindai berita & kanal resmi",
   "Memproyeksikan beban lalu lintas",
   "Menyusun laporan piket",
 ];
+
+const IMPACT_CLASS: Record<WeatherZone["impact"], string> = {
+  rendah: "text-success",
+  sedang: "text-warning",
+  tinggi: "text-destructive",
+};
 
 type LiveState = "loading" | "live" | "offline";
 
@@ -49,7 +59,7 @@ export function OpsCommand() {
   const [selectedSegment, setSelectedSegment] = useState<number | null>(null);
   const [briefingOpen, setBriefingOpen] = useState(false);
   const [wallOpen, setWallOpen] = useState(false);
-  const [applied, setApplied] = useState<Intervention | null>(null);
+  const [shared, setShared] = useState<Intervention | null>(null);
 
   const loadData = useCallback(() => {
     setLive("loading");
@@ -77,16 +87,16 @@ export function OpsCommand() {
   return (
     <div>
       {/* Header */}
-      <div className="mb-5 flex flex-wrap items-start justify-between gap-4">
+      <div className="mb-4 flex flex-wrap items-start justify-between gap-4">
         <div>
           <div className="text-[11px] font-bold uppercase tracking-[0.08em] text-primary">
             JasaMarga · Tollroad Ops Command
           </div>
           <h1 className="mt-1 text-2xl font-bold leading-tight sm:text-[28px]">
-            Pusat Kendali Lalu Lintas — {data?.corridor ?? "Jakarta–Cikampek"}
+            Pemantauan Lalu Lintas — {data?.corridor ?? "Jakarta–Cikampek"}
           </h1>
           <p className="mt-1.5 text-[12px] text-muted-foreground">
-            Diperbarui {data?.updated_at ?? "—"} · pemantauan real-time JMTC + analitik Nexorus AI.
+            Diperbarui {data?.updated_at ?? "—"} · 100% dari sumber publik/daring (lalu lintas, Waze, medsos, berita, CCTV, BMKG, kanal resmi) + analitik Nexorus AI.
           </p>
         </div>
         <div className="flex flex-wrap items-center justify-end gap-2">
@@ -117,12 +127,18 @@ export function OpsCommand() {
 
       <Ticker items={data?.ticker ?? []} />
 
-      {applied && (
+      {/* Source provenance strip — answers "where's the data from?" */}
+      {data && (
+        <div className="mb-3 rounded-lg border border-border/50 bg-card/50 px-3 py-2">
+          <SourceStatus sources={data.sources} />
+        </div>
+      )}
+
+      {shared && (
         <div className="mb-4 flex items-center gap-2 rounded-md border border-success/40 bg-success/10 px-3 py-2 text-[12px] font-semibold text-success">
           <CheckCircle2 className="h-4 w-4 shrink-0" />
-          Rekayasa diterapkan: <span className="font-bold">{applied.title}</span> ({applied.segment}) — memantau dampak,
-          proyeksi waktu tempuh {applied.impact_time_pct}%.
-          <button type="button" onClick={() => setApplied(null)} className="ml-auto text-success/70 hover:text-success">
+          Rekomendasi diteruskan ke JMTC: <span className="font-bold">{shared.title}</span> ({shared.segment}) — proyeksi waktu tempuh {shared.impact_time_pct}%.
+          <button type="button" onClick={() => setShared(null)} className="ml-auto text-success/70 hover:text-success">
             ×
           </button>
         </div>
@@ -138,10 +154,10 @@ export function OpsCommand() {
           headerRight={
             seg ? (
               <span className="text-[10px] text-primary">
-                {seg.label} · {seg.speed} km/j · VCR {seg.vcr}
+                {seg.label} · {seg.speed} km/j · +{seg.delay_min} mnt
               </span>
             ) : (
-              <span className="text-[10px] text-muted-foreground">Klik segmen untuk detail</span>
+              <span className="text-[10px] text-muted-foreground">Data Google/Waze · klik segmen</span>
             )
           }
           bodyClassName="p-3"
@@ -149,8 +165,7 @@ export function OpsCommand() {
           {data ? (
             <RouteRibbon
               segments={data.segments}
-              gates={data.gates}
-              restAreas={data.rest_areas}
+              landmarks={data.landmarks}
               incidents={data.incidents}
               selected={selectedSegment}
               onSelect={setSelectedSegment}
@@ -160,8 +175,8 @@ export function OpsCommand() {
           )}
         </Tile>
 
-        {/* Network Load gauge + KPIs */}
-        <Tile title="Indeks Beban Jaringan" icon={Gauge} className="lg:col-span-3" bodyClassName="p-2">
+        {/* Congestion Index gauge + KPIs + weather */}
+        <Tile title="Indeks Kemacetan" icon={Gauge} className="lg:col-span-3" bodyClassName="p-2">
           {data ? (
             <div className="flex h-full flex-col items-center justify-center">
               <ScoreGauge score={data.load_index} />
@@ -175,13 +190,21 @@ export function OpsCommand() {
               </div>
               <div className="mt-3 grid w-full grid-cols-3 gap-1.5 text-center">
                 <Kpi label="km/j" value={<CountUp value={data.avg_speed} />} />
+                <Kpi label="+mnt" value={<CountUp value={data.avg_delay_min} />} />
                 <Kpi label="insiden" value={<CountUp value={data.active_incidents} />} />
-                <Kpi label="kend." value={<CountUp value={data.vehicles_now} />} />
               </div>
-              <div className="mt-2 w-full rounded-md border border-border/50 bg-background/40 px-2 py-1.5 text-center">
-                <div className="text-[9px] uppercase tracking-wide text-muted-foreground">Pendapatan hari ini</div>
-                <div className="text-sm font-extrabold">{fmtRupiah(data.revenue_today)}</div>
-                <div className="text-[9px] text-muted-foreground">target {fmtRupiah(data.revenue_target)}</div>
+              <div className="mt-2 w-full rounded-md border border-border/50 bg-background/40 px-2 py-1.5">
+                <div className="mb-1 flex items-center gap-1 text-[9px] uppercase tracking-wide text-muted-foreground">
+                  <CloudRain className="h-3 w-3" /> Cuaca koridor (BMKG)
+                </div>
+                {data.weather.map((w) => (
+                  <div key={w.zone} className="flex items-center justify-between text-[10px]">
+                    <span className="truncate text-muted-foreground">{w.zone}</span>
+                    <span className={cn("font-semibold", IMPACT_CLASS[w.impact])}>
+                      {w.condition} {w.temp}°
+                    </span>
+                  </div>
+                ))}
               </div>
             </div>
           ) : (
@@ -205,32 +228,37 @@ export function OpsCommand() {
 
         {/* Traffic Engineering Console — the gimmick */}
         <Tile title="Konsol Rekayasa Lalu Lintas" icon={TrafficCone} className="lg:col-span-5" tileClassName="border-primary/30">
-          {data ? <TrafficConsole interventions={data.interventions} onApply={setApplied} /> : <Empty state={live} />}
+          {data ? <TrafficConsole interventions={data.interventions} onApply={setShared} /> : <Empty state={live} />}
         </Tile>
 
-        {/* Live Incident Feed */}
-        <Tile title="Insiden Langsung" icon={Siren} className="lg:col-span-4" bodyClassName="overflow-auto scrollbar-thin p-3" style={{ maxHeight: 360 }}>
+        {/* Live Incident Feed (public reports) */}
+        <Tile title="Insiden (Laporan Publik)" icon={Siren} className="lg:col-span-4" bodyClassName="overflow-auto scrollbar-thin p-3" style={{ maxHeight: 360 }}>
           {data ? <IncidentFeed incidents={data.incidents} /> : <Empty state={live} />}
         </Tile>
 
-        {/* Response Fleet */}
-        <Tile title="Armada Respons" icon={Truck} className="lg:col-span-3">
-          {data ? <ResponseFleet fleet={data.fleet} /> : <Empty state={live} />}
+        {/* Social Pulse */}
+        <Tile title="Sentimen Publik" icon={MessageCircle} className="lg:col-span-3" style={{ maxHeight: 360 }}>
+          {data ? <SocialPulse data={data.social} /> : <Empty state={live} />}
         </Tile>
 
-        {/* SPM Compliance */}
-        <Tile title="Kepatuhan SPM" icon={ShieldCheck} className="lg:col-span-5" style={{ maxHeight: 360 }}>
-          {data ? <SpmBoard metrics={data.spm} overall={data.spm_compliance} /> : <Empty state={live} />}
+        {/* Official Feed */}
+        <Tile title="Kanal Resmi" icon={Megaphone} className="lg:col-span-4" bodyClassName="overflow-auto scrollbar-thin p-3" style={{ maxHeight: 340 }}>
+          {data ? <OfficialFeed posts={data.official} /> : <Empty state={live} />}
+        </Tile>
+
+        {/* News Coverage */}
+        <Tile title="Liputan Media" icon={Newspaper} className="lg:col-span-4" bodyClassName="overflow-auto scrollbar-thin p-3" style={{ maxHeight: 340 }}>
+          {data ? <NewsCoverage articles={data.news} /> : <Empty state={live} />}
+        </Tile>
+
+        {/* Live CCTV */}
+        <Tile title="CCTV Publik (Travoy)" icon={Video} className="lg:col-span-4" bodyClassName="overflow-auto scrollbar-thin p-3" style={{ maxHeight: 340 }}>
+          {data ? <CctvPanel feeds={data.cctv} /> : <Empty state={live} />}
         </Tile>
 
         {/* Top Ruas */}
-        <Tile title="Titik Beban Teratas" icon={Route} className="lg:col-span-4" bodyClassName="overflow-auto scrollbar-thin p-3" style={{ maxHeight: 360 }}>
+        <Tile title="Titik Macet Teratas" icon={Route} className="lg:col-span-12" bodyClassName="p-3">
           {data ? <TopRuas ruas={data.top_ruas} /> : <Empty state={live} />}
-        </Tile>
-
-        {/* Rest Areas */}
-        <Tile title="Okupansi Rest Area" icon={Coffee} className="lg:col-span-3" bodyClassName="overflow-auto scrollbar-thin p-3" style={{ maxHeight: 360 }}>
-          {data ? <RestAreaPanel areas={data.rest_areas} /> : <Empty state={live} />}
         </Tile>
       </div>
 
@@ -242,7 +270,7 @@ export function OpsCommand() {
         title="Laporan Piket AI"
         subtitle="Nexorus Ops Orchestration"
         docTitle="Nexorus AI · Laporan Piket JMTC"
-        docMeta="JasaMarga Ops Command · Jakarta–Cikampek"
+        docMeta="JasaMarga Ops Command · Jakarta–Cikampek (sumber publik)"
       />
 
       <CommandWall open={wallOpen} onClose={() => setWallOpen(false)} data={data} />

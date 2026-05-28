@@ -13,10 +13,6 @@ interface Slide {
   render: () => ReactNode;
 }
 
-function fmt(n: number): string {
-  return n.toLocaleString("id-ID");
-}
-
 function buildSlides(d: OpsSnapshot): Slide[] {
   const slides: Slide[] = [];
   const accent = loadColor(d.load_index);
@@ -34,7 +30,7 @@ function buildSlides(d: OpsSnapshot): Slide[] {
           {d.level}
         </div>
         <div className="mt-6 text-xl text-muted-foreground">
-          {d.corridor} · {d.avg_speed} km/j rata-rata · {d.active_incidents} insiden aktif · {fmt(d.vehicles_now)} kendaraan
+          {d.corridor} · {d.avg_speed} km/j rata-rata · +{d.avg_delay_min} mnt tambahan · {d.active_incidents} insiden aktif
         </div>
       </div>
     ),
@@ -95,7 +91,8 @@ function buildSlides(d: OpsSnapshot): Slide[] {
                     {c.type} <span className="text-lg font-medium text-muted-foreground">· {c.km}</span>
                   </div>
                   <div className="text-base text-muted-foreground">
-                    {c.lanes_blocked}/{c.lanes_total} lajur · {c.status} · {c.unit}
+                    {c.status} · sumber {c.source}
+                    {c.lanes_blocked != null ? ` · ${c.lanes_blocked} lajur tertutup` : ""}
                   </div>
                 </div>
               </div>
