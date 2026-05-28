@@ -494,6 +494,35 @@
   animation-delay: 1.1s;
 }
 
+/* JasaMarga Ops — animated traffic-flow stripes on the route ribbon.
+   Stripe speed is driven per-segment via inline animation-duration (fast = lancar). */
+@keyframes jm-flow {
+  to {
+    background-position: -200% 0;
+  }
+}
+.jm-flow {
+  background-image: repeating-linear-gradient(
+    90deg,
+    transparent 0 7px,
+    oklch(1 0 0 / 0.22) 7px 13px
+  );
+  background-size: 200% 100%;
+  animation: jm-flow linear infinite;
+}
+@keyframes jm-blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+.jm-blink {
+  animation: jm-blink 1.1s ease-in-out infinite;
+}
+
 /* War-Room presentation mode */
 @keyframes war-slide-in {
   from {
