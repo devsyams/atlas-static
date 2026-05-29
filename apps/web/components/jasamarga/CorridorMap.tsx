@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { FeatureGroup, Map as LeafletMap } from "leaflet";
 import "leaflet/dist/leaflet.css";
 import type { IncidentItem, RouteSegment } from "@/lib/jasamarga/types";
@@ -20,10 +20,11 @@ export function CorridorMap({ segments, incidents, selected, onSelect }: Props) 
   const groupRef = useRef<FeatureGroup | null>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const LRef = useRef<any>(null);
+  const [ready, setReady] = useState(false);
 
-  // Keep the latest draw() in a ref so the init effect can call it once.
-  const drawRef = useRef<(() => void) | null>(null);
-  drawRef.current = () => {
+  // Repaint the corridor + incident layers from the latest props. Reads Leaflet
+  // refs (only ever invoked from effects, never during render).
+  const draw = useCallback(() => {
     const L = LRef.current;
     const group = groupRef.current;
     if (!L || !group) return;
@@ -58,7 +59,7 @@ export function CorridorMap({ segments, incidents, selected, onSelect }: Props) 
         )
         .addTo(group);
     });
-  };
+  }, [segments, incidents, selected, onSelect]);
 
   // Init the map once.
   useEffect(() => {
@@ -80,25 +81,26 @@ export function CorridorMap({ segments, incidents, selected, onSelect }: Props) 
       map.fitBounds(corridorPath(), { padding: [28, 28] });
       groupRef.current = L.featureGroup().addTo(map);
       mapRef.current = map;
-      // Draw the first frame now that the map exists.
-      drawRef.current?.();
+      setReady(true);
     })();
     return () => {
       cancelled = true;
       mapRef.current?.remove();
       mapRef.current = null;
       groupRef.current = null;
+      setReady(false);
     };
   }, []);
 
-  // Redraw whenever data or selection changes.
+  // Redraw whenever data/selection changes, once the map is ready.
   useEffect(() => {
-    drawRef.current?.();
-    if (selected != null && mapRef.current && LRef.current) {
+    if (!ready) return;
+    draw();
+    if (selected != null && mapRef.current) {
       const pts = segmentPath(selected);
       mapRef.current.panTo(pts[1], { animate: true });
     }
-  }, [segments, incidents, selected]);
+  }, [ready, draw, selected]);
 
   return <div className="jm-map h-full w-full"><div ref={elRef} className="h-full w-full" /></div>;
 }
