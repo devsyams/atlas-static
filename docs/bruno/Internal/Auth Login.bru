@@ -1,0 +1,50 @@
+meta {
+  name: Auth Login
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/api/v1/auth/login
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "email": "admin@nexorus.io",
+    "password": "your-password"
+  }
+}
+
+docs {
+  # POST /api/v1/auth/login
+
+  Custom session login (not Auth.js). Validates credentials, writes an
+  `auth.login` audit row, and sets an **httpOnly `atlas_session` cookie**.
+  Run this first so the MBG routes below are authorized.
+
+  **Source:** `apps/web/app/api/v1/auth/login/route.ts`
+  **Auth:** none (this is how you get a session). Create a user with `pnpm create-admin`.
+  **Roles:** viewer < analyst < admin.
+
+  ## Request body (zod-validated)
+  | field | type | notes |
+  |---|---|---|
+  | email | string (email) | required |
+  | password | string | min length 1 |
+
+  ## Responses
+  **200** — sets `atlas_session` cookie
+  ```json
+  { "ok": true }
+  ```
+  **400** — malformed body · **401** — wrong credentials
+  ```json
+  { "error": "Email atau kata sandi salah." }
+  ```
+}

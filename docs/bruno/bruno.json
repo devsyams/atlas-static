@@ -1,0 +1,7 @@
+{
+  "version": "1",
+  "name": "ATLAS API",
+  "type": "collection",
+  "ignore": ["node_modules", ".git"],
+  "docs": "Bruno collection for the Nexorus ATLAS project.\n\nCovers the internal BFF routes (apps/web/app/api/v1/*) and the external TomTom Traffic APIs used by the JasaMarga Ops Command lead.\n\nOpen in Bruno (https://www.usebruno.com), select the 'Local' environment, set tomtomKey, then run requests. Most MBG routes need a logged-in session + the local Postgres running; the JasaMarga routes are public and need no setup."
+}

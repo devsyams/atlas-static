@@ -1,0 +1,41 @@
+meta {
+  name: AI Chat (stream)
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{baseUrl}}/api/v1/ai/chat
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "messages": [
+      { "role": "user", "content": "Wilayah mana yang paling memburuk saat ini?" }
+    ]
+  }
+}
+
+docs {
+  # POST /api/v1/ai/chat
+
+  The Nexorus Copilot (⌘K) chat. **Streams** a plain-text response (not JSON):
+  live LLM tokens when configured, otherwise a scripted answer streamed
+  word-by-word. Grounded in the current dashboard data.
+
+  **Source:** `apps/web/app/api/v1/ai/chat/route.ts`
+  **Auth:** none at the route; grounded in dashboard context.
+  **Response:** `Content-Type: text/plain; charset=utf-8`, `Cache-Control: no-store` — a token stream, so Bruno shows it arriving progressively.
+
+  ## Request body
+  ```json
+  { "messages": [ { "role": "user", "content": "..." } ] }
+  ```
+  Only the last message content is used as the question.
+}

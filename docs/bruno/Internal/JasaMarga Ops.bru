@@ -1,0 +1,59 @@
+meta {
+  name: JasaMarga Ops (Japek)
+  type: http
+  seq: 9
+}
+
+get {
+  url: {{baseUrl}}/api/v1/jasamarga-ops
+  body: none
+  auth: none
+}
+
+docs {
+  # GET /api/v1/jasamarga-ops
+
+  The JasaMarga Tollroad Ops Command feed for the Jakarta–Cikampek corridor.
+  **Public** (no auth, no DB) so the lead demo runs with zero setup.
+
+  - When `TOMTOM_API_KEY` is set, the **ribbon segments + incidents are LIVE**
+    from TomTom (Flow Segment Data + Incident Details), cached ~2 min in-process,
+    and the index/insight/top-ruas are derived off them → `traffic_source: "tomtom"`.
+  - Otherwise everything is synthetic, jittered per read → `traffic_source: "synthetic"`.
+
+  **Source:** `apps/web/app/api/v1/jasamarga-ops/route.ts`
+  → `lib/jasamarga/data.ts` (buildSnapshot) + `lib/jasamarga/tomtom.ts` (getLiveTraffic).
+
+  ## Response (200) — `OpsSnapshot` (abridged, live example)
+  ```json
+  {
+    "corridor": "Jakarta–Cikampek (Japek)",
+    "updated_at": "29 Mei, 11.12",
+    "traffic_source": "tomtom",
+    "load_index": 0.9, "level": "Lancar", "emoji": "🟢",
+    "avg_speed": 74, "avg_delay_min": 1, "active_incidents": 6,
+    "insight": { "title": "Lalu lintas Lancar di koridor Jakarta–Cikampek", "text": "...", "action": "..." },
+    "segments": [
+      { "km_from": 0, "km_to": 9, "label": "Halim – Cikunir", "speed": 74, "delay_min": 0, "status": "lancar" }
+    ],
+    "landmarks": [ { "km": 2, "name": "GT Halim Utama", "kind": "gerbang" } ],
+    "incidents": [
+      { "id": "TT-0", "km": "KM 8", "type": "Kemacetan", "severity": 8.4, "status": "Berlangsung", "source": "TomTom Traffic", "source_type": "traffic", "reported": "25 mnt lalu", "detail": "Lalu lintas tidak bergerak. ..." }
+    ],
+    "top_ruas": [ { "name": "...", "km_range": "KM 67–72", "load": 4.6, "speed": 49, "delay_min": 1, "dominant": "Volume tinggi" } ],
+    "predictions": [ { "question": "...", "probability": 72, "answer_label": "Mungkin", "reasoning": "...", "tone": "negative" } ],
+    "interventions": [ { "id": "RKL-1", "title": "Contraflow ...", "impact_time_pct": -38, "impact_clear_min": 45, "risk": "sedang", "recommended": true, "officially_announced": false } ],
+    "social": { "mentions_24h": 3066, "negativity": 7.1, "trend": [ ... ], "top_posts": [ ... ] },
+    "official": [ ... ], "news": [ ... ],
+    "forecast": [ { "hour": "11:00", "load": 0.9, "label": "Sekarang" } ],
+    "travel_times": [ { "route": "Halim → Cikampek Utama", "via": "Layang MBZ (Gol I)", "minutes": 96, "normal_minutes": 55, "trend": "up", "best": true } ],
+    "weather": [ { "zone": "Cikarang – Karawang", "condition": "Hujan ringan", "temp": 27, "impact": "sedang" } ],
+    "sources": [
+      { "name": "Traffic Flow (TomTom)", "type": "traffic", "status": "live", "items_24h": 1440, "last_sync": "baru saja" },
+      { "name": "Media Sosial (X API)", "type": "medsos", "status": "demo", "items_24h": 3066, "last_sync": "—" }
+    ]
+  }
+  ```
+
+  > Note: only Traffic Flow + Incidents are wired to TomTom; social/news/weather/official are `status: "demo"` (fabricated). See the TomTom folder for the upstream calls.
+}

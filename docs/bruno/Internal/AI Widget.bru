@@ -1,0 +1,43 @@
+meta {
+  name: AI Widget
+  type: http
+  seq: 8
+}
+
+post {
+  url: {{baseUrl}}/api/v1/ai/widget
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "widget": "score",
+    "mode": "explain"
+  }
+}
+
+docs {
+  # POST /api/v1/ai/widget
+
+  Per-widget AI explainer. Returns a short answer about a given dashboard widget.
+  Live LLM when configured, else scripted.
+
+  **Source:** `apps/web/app/api/v1/ai/widget/route.ts`
+  **Auth:** none at the route.
+
+  ## Request body
+  | field | values |
+  |---|---|
+  | widget | score · map · actors · leadership · articles · keywords |
+  | mode | explain · drivers · talking |
+
+  ## Response (200)
+  ```json
+  { "answer": "Indeks 6.4/10 (Krisis) mencerminkan 23 dari 128 artikel berstatus krisis tinggi..." }
+  ```
+}

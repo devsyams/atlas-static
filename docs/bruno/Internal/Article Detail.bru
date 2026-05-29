@@ -1,0 +1,44 @@
+meta {
+  name: Article Detail
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{baseUrl}}/api/v1/article-detail?url=https://example.com/berita&title=Contoh berita&source=detik.com&date=2026-05-28&score=7
+  body: none
+  auth: none
+}
+
+params:query {
+  url: https://example.com/berita
+  title: Contoh berita
+  source: detik.com
+  date: 2026-05-28
+  score: 7
+}
+
+docs {
+  # GET /api/v1/article-detail
+
+  Detail view for a single MBG article: AI summary, category, relative time,
+  per-article forecast, and supporting signals.
+
+  **Source:** `apps/web/app/api/v1/article-detail/route.ts`
+  **Auth:** `requireRole("viewer")` (run *Auth Login* first). Needs Postgres.
+
+  ## Query params
+  `url`, `title`, `source`, `date`, `score` — describe the article to expand
+  (the dashboard forwards the clicked article's fields).
+
+  ## Response (200) — `ArticleDetail`
+  ```json
+  {
+    "title": "...", "source": "detik.com", "url": "https://...",
+    "score": 7, "category": "Keamanan Pangan", "relative_time": "3 jam lalu",
+    "summary": "...",
+    "forecast": { "question": "...", "trend": "up", "probability": 64, "timeframe": "7 hari", "reasoning": "...", "recommendation": "..." },
+    "signals": [ { "source": "...", "type": "...", "quote": "..." } ]
+  }
+  ```
+}

@@ -1,0 +1,41 @@
+meta {
+  name: MBG Crisis Dashboard
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/api/v1/mbg-crisis
+  body: none
+  auth: none
+}
+
+docs {
+  # GET /api/v1/mbg-crisis
+
+  The MBG (Makan Bergizi Gratis) crisis dashboard payload. Reads from Postgres
+  (source of truth), cached ~45s in Redis; the live USD/IDR rate is overlaid
+  onto the market ticker after the cache.
+
+  **Source:** `apps/web/app/api/v1/mbg-crisis/route.ts`
+  **Auth:** `requireRole("viewer")` — needs the `atlas_session` cookie (run *Auth Login* first).
+  **Needs:** local Postgres (127.0.0.1:55432) + Redis running.
+
+  ## Response (200) — `DashboardData` (abridged)
+  ```json
+  {
+    "score": 6.4, "emoji": "🟠", "level": "Krisis",
+    "article_count": 128, "high_crisis_count": 23,
+    "updated_at": "28 Mei, 22.10", "ai_status": "ready",
+    "insight": { "title": "...", "text": "...", "action": "..." },
+    "predictions": [ { "question": "...", "probability": 78, "answer_label": "...", "reasoning": "..." } ],
+    "market_ticker": [ { "label": "USD/IDR", "value": "16.250", "delta": 0.3 } ],
+    "top_keywords": [ { "keyword": "keracunan", "count": 42, "sentiment": "negative" } ],
+    "city_map_points": [ { "city_key": "Bekasi|Jawa Barat", "lat": -6.24, "lng": 106.99, "heat": 8, "severity_sum": 24, "article_count": 9, "dominant_issue": "keracunan" } ],
+    "top_cities": [ ... ], "articles": [ ... ],
+    "actor_thread_analysis": { "actors": [ ... ], "summary": { ... } },
+    "leadership_sentiment": { "leaders": [ ... ], "ai_available": true }
+  }
+  ```
+  **401** Unauthorized · **403** Forbidden (role too low)
+}

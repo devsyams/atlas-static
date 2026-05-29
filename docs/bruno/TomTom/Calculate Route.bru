@@ -1,0 +1,57 @@
+meta {
+  name: Calculate Route
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{tomtomBase}}/routing/1/calculateRoute/-6.254,106.90:-6.418,107.455/json?key={{tomtomKey}}&routeType=fastest&traffic=false&travelMode=car
+  body: none
+  auth: none
+}
+
+params:query {
+  key: {{tomtomKey}}
+  routeType: fastest
+  traffic: false
+  travelMode: car
+}
+
+docs {
+  # GET TomTom · Calculate Route
+
+  The Halim→Cikampek toll route geometry. **Not called at runtime** — it was used
+  **once** to derive the on-toll anchor coordinates for the ribbon: sample the
+  returned polyline at each segment midpoint, verify each snaps to FRC0 via Flow
+  Segment Data, then hardcode them into `ANCHORS` (`lib/jasamarga/tomtom.ts`).
+  Kept here so the extraction is reproducible.
+
+  **Path format:** `{startLat},{startLon}:{endLat},{endLon}` in the URL path.
+  **Free tier:** non-tile request.
+
+  ## Example response (real, abridged)
+  ```json
+  {
+    "routes": [
+      {
+        "summary": { "lengthInMeters": 76900, "travelTimeInSeconds": 3600 },
+        "legs": [
+          {
+            "points": [
+              { "latitude": -6.254, "longitude": 106.90 },
+              { "latitude": -6.2566, "longitude": 106.953 },
+              "... ~927 points along the toll ..."
+            ]
+          }
+        ]
+      }
+    ]
+  }
+  ```
+
+  ## How anchors were derived
+  1. Accumulate haversine distance along `legs[].points`.
+  2. For each segment midpoint KM (e.g. KM 4.5, 13, 20.5 …), find the point at
+     `(midKm / 72) * totalDistance`.
+  3. Verify that point's `frc` via Flow Segment Data; keep if FRC0/1/2.
+}

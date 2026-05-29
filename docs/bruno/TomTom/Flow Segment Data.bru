@@ -1,0 +1,56 @@
+meta {
+  name: Flow Segment Data
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{tomtomBase}}/traffic/services/4/flowSegmentData/absolute/10/json?key={{tomtomKey}}&point=-6.2555,106.935&unit=KMPH
+  body: none
+  auth: none
+}
+
+params:query {
+  key: {{tomtomKey}}
+  point: -6.2555,106.935
+  unit: KMPH
+}
+
+docs {
+  # GET TomTom · Flow Segment Data
+
+  Current traffic speed at a single `point` (lat,lon). This is what fills the
+  **Live Network Ribbon** — the server calls it once per corridor segment using
+  the on-toll anchors in `lib/jasamarga/tomtom.ts` (ANCHORS), then keeps the
+  reading only when `frc` is a motorway/trunk/major road (FRC0/1/2).
+
+  **Style/zoom:** `absolute/10` · **unit:** `KMPH`
+  **Used by:** `fetchSegments()` in `lib/jasamarga/tomtom.ts`
+  **Free tier:** non-tile request (~2,500/day). The server caches results ~2 min.
+
+  ## Example response (real, KM 0–9 mainline anchor)
+  ```json
+  {
+    "flowSegmentData": {
+      "frc": "FRC0",
+      "currentSpeed": 74,
+      "freeFlowSpeed": 74,
+      "currentTravelTime": 325,
+      "freeFlowTravelTime": 325,
+      "confidence": 1,
+      "roadClosure": false,
+      "coordinates": { "coordinate": [ { "latitude": -6.2566, "longitude": 106.9090 }, "..." ] }
+    }
+  }
+  ```
+
+  ## Field mapping → `RouteSegment`
+  | TomTom | our field |
+  |---|---|
+  | currentSpeed | `speed` (if `frc` ∈ FRC0/1/2, else baseline) |
+  | freeFlowSpeed | used to compute `delay_min` |
+  | frc | gate: only trust motorway/trunk/major |
+  | roadClosure | forces a near-zero speed |
+
+  `frc` = Functional Road Class: **FRC0** motorway · FRC1 trunk · FRC2 major · FRC3+ smaller roads.
+}
