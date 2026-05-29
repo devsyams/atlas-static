@@ -29,18 +29,23 @@ const LON1 = 107.455;
 const KM_MAX = 72;
 const kmFromLon = (lon: number) => Math.max(0, Math.min(KM_MAX, ((lon - LON0) / (LON1 - LON0)) * KM_MAX));
 
-/** One verified lat/lon per BASE_SEGMENTS entry (same order). Most snap to FRC0–2. */
+/**
+ * One on-toll lat/lon per BASE_SEGMENTS entry (same order). Derived by sampling
+ * the TomTom Routing polyline for Halim→Cikampek at each segment midpoint, then
+ * verified against Flow Segment Data — all snap to the motorway (FRC0/1/2), so
+ * every segment gets a real toll speed (no surface-road snaps).
+ */
 const ANCHORS: [number, number][] = [
-  [-6.254, 106.9], // KM 0–9   FRC0
-  [-6.2685, 106.976], // KM 9–17  Bekasi — snaps off-toll, handled by FRC fallback
-  [-6.281, 107.048], // KM 17–24 FRC0
-  [-6.307, 107.125], // KM 24–31 FRC2
-  [-6.3223, 107.185], // KM 31–37 FRC0
-  [-6.345, 107.26], // KM 37–47 FRC0
-  [-6.38, 107.335], // KM 47–52 FRC0
-  [-6.4, 107.38], // KM 52–62 FRC0
-  [-6.415, 107.425], // KM 62–67 FRC0
-  [-6.418, 107.455], // KM 67–72 FRC1
+  [-6.26016, 106.90546], // KM 0–9   FRC2
+  [-6.24922, 106.98167], // KM 9–17  FRC0
+  [-6.27482, 107.04962], // KM 17–24 FRC0
+  [-6.29894, 107.11235], // KM 24–31 FRC0
+  [-6.33, 107.16787], // KM 31–37 FRC0
+  [-6.35472, 107.2384], // KM 37–47 FRC0
+  [-6.35106, 107.31013], // KM 47–52 FRC0
+  [-6.37793, 107.37669], // KM 52–62 FRC0
+  [-6.42409, 107.42822], // KM 62–67 FRC0
+  [-6.40123, 107.44586], // KM 67–72 FRC1
 ];
 
 /** Road classes we trust as "on the toll mainline". */

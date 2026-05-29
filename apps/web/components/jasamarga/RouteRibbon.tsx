@@ -85,9 +85,9 @@ export function RouteRibbon({
             >
               <span className="jm-flow absolute inset-0" style={{ animationDuration: `${dur}s`, opacity: s.status === "lumpuh" ? 0.25 : 0.6 }} />
               {active && <span className="absolute inset-0 ring-2 ring-inset ring-white/70" />}
-              {width > 9 && (
-                <span className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-black/70 mix-blend-luminosity">{s.speed}</span>
-              )}
+              <span className="absolute inset-0 flex items-center justify-center text-[10px] font-bold leading-none text-black/75 mix-blend-luminosity">
+                {s.speed}
+              </span>
             </button>
           );
         })}
