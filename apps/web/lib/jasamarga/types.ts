@@ -40,6 +40,8 @@ export interface IncidentItem {
   source_type: SourceType;
   reported: string; // relative time
   lanes_blocked?: number; // only when the public report states it
+  lat?: number; // map coordinate (TomTom-supplied or derived from km)
+  lng?: number;
   detail: string;
 }
 
@@ -149,6 +151,24 @@ export interface ConditionChip {
   tone: "good" | "warn" | "bad";
 }
 
+/** One contributing factor to the corridor Safe Meter (points subtracted from 100). */
+export interface SafetyFactor {
+  key: "insiden" | "cuaca" | "volatilitas" | "sentimen";
+  label: string;
+  penalty: number; // points removed from a perfect 100
+}
+
+/** Composite corridor safety headline ("Skor Keselamatan"). Higher = safer. */
+export interface SafetyIndex {
+  score: number; // 0–100
+  level: "Aman" | "Waspada" | "Rawan" | "Bahaya";
+  emoji: string;
+  trend: "up" | "down" | "flat"; // up = improving (safer) vs prior reading
+  delta: number; // score change vs prior reading
+  factors: SafetyFactor[];
+  narrative: string; // one-line plain-language summary
+}
+
 export interface OpsSnapshot {
   corridor: string;
   updated_at: string;
@@ -160,6 +180,7 @@ export interface OpsSnapshot {
   avg_speed: number; // km/h (public traffic)
   avg_delay_min: number; // extra minutes end-to-end vs free-flow
   active_incidents: number;
+  safety: SafetyIndex;
   insight: OpsInsight;
   conditions: ConditionChip[];
   predictions: Prediction[];
