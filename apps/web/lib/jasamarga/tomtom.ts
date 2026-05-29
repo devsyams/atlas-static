@@ -36,7 +36,7 @@ const kmFromLon = (lon: number) => Math.max(0, Math.min(KM_MAX, ((lon - LON0) / 
  * every segment gets a real toll speed (no surface-road snaps).
  */
 const ANCHORS: [number, number][] = [
-  [-6.26016, 106.90546], // KM 0–9   FRC2
+  [-6.2555, 106.935], // KM 0–9   FRC0 (mainline; avoids the Cawang FRC2 connector)
   [-6.24922, 106.98167], // KM 9–17  FRC0
   [-6.27482, 107.04962], // KM 17–24 FRC0
   [-6.29894, 107.11235], // KM 24–31 FRC0
