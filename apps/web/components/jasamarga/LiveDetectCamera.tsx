@@ -3,18 +3,20 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AlertTriangle, Bike, Car, Loader2, Truck, Users } from "lucide-react";
 import { classifyCoco, getAtcsCamera, tallyDetections, type DetectionTally } from "@/lib/jasamarga/atcs";
+import { detectYolo, loadYolo } from "@/lib/jasamarga/yolo";
 import { cn } from "@/lib/utils";
 
-/* The detector libs are large + WebGL-only — they are imported dynamically inside
- * effects so they never run on the server. The model is cached at module scope as a
- * single promise so switching cameras (or re-mounting) never reloads it. */
+/* The detector libs are large + WebGPU/WebGL/WASM-only — they are imported
+ * dynamically inside effects/module functions so they never run on the server.
+ * Models are cached at module scope as single promises so switching cameras (or
+ * re-mounting) never reloads them. */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-let modelPromise: Promise<any> | null = null;
+let cocoPromise: Promise<any> | null = null;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function loadModel(): Promise<any> {
-  if (modelPromise) return modelPromise;
-  modelPromise = (async () => {
+function loadCoco(): Promise<any> {
+  if (cocoPromise) return cocoPromise;
+  cocoPromise = (async () => {
     const tf = await import("@tensorflow/tfjs");
     await tf.ready();
     const cocoSsd = await import("@tensorflow-models/coco-ssd");
@@ -24,10 +26,35 @@ function loadModel(): Promise<any> {
     return cocoSsd.load({ base: "mobilenet_v2" });
   })();
   // If the load fails, drop the cached promise so a retry can try again.
-  modelPromise.catch(() => {
-    modelPromise = null;
+  cocoPromise.catch(() => {
+    cocoPromise = null;
   });
-  return modelPromise;
+  return cocoPromise;
+}
+
+/* The detector abstraction: try YOLO11n first (onnxruntime-web, WebGPU→wasm), and
+ * fall back to COCO-SSD if the YOLO session can't be created (e.g. model fetch /
+ * EP init fails). Cached at module scope so it's resolved once per page load. */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type Detector = { kind: "yolo"; session: any } | { kind: "coco"; model: any };
+
+let detectorPromise: Promise<Detector> | null = null;
+
+function loadDetector(): Promise<Detector> {
+  if (detectorPromise) return detectorPromise;
+  detectorPromise = (async (): Promise<Detector> => {
+    try {
+      const session = await loadYolo();
+      return { kind: "yolo", session };
+    } catch {
+      const model = await loadCoco();
+      return { kind: "coco", model };
+    }
+  })();
+  detectorPromise.catch(() => {
+    detectorPromise = null;
+  });
+  return detectorPromise;
 }
 
 const DETECT_INTERVAL_MS = 450;
@@ -42,12 +69,12 @@ export function LiveDetectCamera({ cameraId }: { cameraId: string }) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const hlsRef = useRef<any>(null);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const modelRef = useRef<any>(null);
+  const modelRef = useRef<Detector | null>(null);
   const rafRef = useRef<number | null>(null);
   const lastDetectRef = useRef(0);
 
   const [modelReady, setModelReady] = useState(false);
+  const [detectorKind, setDetectorKind] = useState<Detector["kind"] | null>(null);
   const [streamReady, setStreamReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [counts, setCounts] = useState<DetectionTally>(EMPTY_TALLY);
@@ -67,10 +94,11 @@ export function LiveDetectCamera({ cameraId }: { cameraId: string }) {
   useEffect(() => {
     if (typeof window === "undefined") return;
     let cancelled = false;
-    loadModel()
-      .then((model) => {
+    loadDetector()
+      .then((detector) => {
         if (cancelled) return;
-        modelRef.current = model;
+        modelRef.current = detector;
+        setDetectorKind(detector.kind);
         setModelReady(true);
       })
       .catch(() => {
@@ -161,8 +189,8 @@ export function LiveDetectCamera({ cameraId }: { cameraId: string }) {
     if (!modelReady || !streamReady || error) return;
     const video = videoRef.current;
     const canvas = canvasRef.current;
-    const model = modelRef.current;
-    if (!video || !canvas || !model) return;
+    const detector = modelRef.current;
+    if (!video || !canvas || !detector) return;
 
     let stopped = false;
     lastDetectRef.current = 0;
@@ -211,9 +239,13 @@ export function LiveDetectCamera({ cameraId }: { cameraId: string }) {
         if (vw && vh) {
           let preds: Prediction[] = [];
           try {
-            // (img, maxNumBoxes, minScore) — pass our lower minScore so the model
-            // returns sub-0.5 detections instead of discarding them internally.
-            preds = (await model.detect(video, MAX_BOXES, SCORE_THRESHOLD)) as Prediction[];
+            // Both paths return {bbox:[x,y,w,h], class, score}[] in source pixels.
+            // For COCO-SSD: (img, maxNumBoxes, minScore) — pass our lower minScore
+            // so it returns sub-0.5 detections instead of discarding them.
+            preds =
+              detector.kind === "yolo"
+                ? await detectYolo(detector.session, video, SCORE_THRESHOLD)
+                : ((await detector.model.detect(video, MAX_BOXES, SCORE_THRESHOLD)) as Prediction[]);
           } catch {
             // A transient detect failure shouldn't kill the loop; skip this frame.
             preds = [];
@@ -301,7 +333,7 @@ export function LiveDetectCamera({ cameraId }: { cameraId: string }) {
         {/* HUD: AI badge (top-right) */}
         <div className="pointer-events-none absolute right-2 top-2">
           <span className="inline-flex items-center gap-1.5 rounded border border-cyan-400/40 bg-black/55 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-cyan-300 backdrop-blur-sm">
-            AI · COCO-SSD
+            AI · {detectorKind === "yolo" ? "YOLO11n" : "COCO-SSD"}
           </span>
         </div>
 
