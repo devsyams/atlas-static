@@ -31,11 +31,6 @@ import { cn } from "@/lib/utils";
 import dynamic from "next/dynamic";
 import { SafeMeter } from "./SafeMeter";
 import { RouteRibbon } from "./RouteRibbon";
-
-const CorridorMap = dynamic(() => import("./CorridorMap").then((m) => m.CorridorMap), {
-  ssr: false,
-  loading: () => <div className="flex h-full items-center justify-center text-[12px] text-muted-foreground">Memuat peta…</div>,
-});
 import { OpsInsight } from "./OpsInsight";
 import { IncidentFeed } from "./IncidentFeed";
 import { TopRuas } from "./TopRuas";
@@ -47,6 +42,11 @@ import { NewsCoverage } from "./NewsCoverage";
 import { ForecastTimeline } from "./ForecastTimeline";
 import { TravelTimeBoard } from "./TravelTimeBoard";
 import { SourceStatus } from "./SourceStatus";
+
+const CorridorMap = dynamic(() => import("./CorridorMap").then((m) => m.CorridorMap), {
+  ssr: false,
+  loading: () => <div className="flex h-full items-center justify-center text-[12px] text-muted-foreground">Memuat peta…</div>,
+});
 
 const BRIEFING_STAGES = [
   "Menarik data lalu lintas (Google/Waze)",
