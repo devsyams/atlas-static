@@ -18,7 +18,10 @@ function loadModel(): Promise<any> {
     const tf = await import("@tensorflow/tfjs");
     await tf.ready();
     const cocoSsd = await import("@tensorflow-models/coco-ssd");
-    return cocoSsd.load({ base: "lite_mobilenet_v2" });
+    // mobilenet_v2 (default) is markedly more accurate than lite_mobilenet_v2 on
+    // small/distant CCTV objects (motorbikes), at a modest speed cost the 450ms
+    // throttle absorbs.
+    return cocoSsd.load({ base: "mobilenet_v2" });
   })();
   // If the load fails, drop the cached promise so a retry can try again.
   modelPromise.catch(() => {
@@ -28,7 +31,8 @@ function loadModel(): Promise<any> {
 }
 
 const DETECT_INTERVAL_MS = 450;
-const SCORE_THRESHOLD = 0.45;
+const SCORE_THRESHOLD = 0.33; // coco-ssd's internal default is 0.5 — lower it to catch small/distant vehicles
+const MAX_BOXES = 40; // dense traffic scenes exceed the default cap of 20
 const EMPTY_TALLY: DetectionTally = { mobil: 0, motor: 0, bus: 0, truk: 0, orang: 0, lainnya: 0, total: 0 };
 
 type Prediction = { bbox: [number, number, number, number]; class: string; score: number };
@@ -207,7 +211,9 @@ export function LiveDetectCamera({ cameraId }: { cameraId: string }) {
         if (vw && vh) {
           let preds: Prediction[] = [];
           try {
-            preds = (await model.detect(video)) as Prediction[];
+            // (img, maxNumBoxes, minScore) — pass our lower minScore so the model
+            // returns sub-0.5 detections instead of discarding them internally.
+            preds = (await model.detect(video, MAX_BOXES, SCORE_THRESHOLD)) as Prediction[];
           } catch {
             // A transient detect failure shouldn't kill the loop; skip this frame.
             preds = [];
