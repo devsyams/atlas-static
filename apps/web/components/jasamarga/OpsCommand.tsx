@@ -198,6 +198,7 @@ export function OpsCommand() {
                 incidents={data.incidents}
                 selected={selectedSegment}
                 onSelect={setSelectedSegment}
+                safetyScore={data.safety.score}
               />
             ) : (
               <div className="p-3">

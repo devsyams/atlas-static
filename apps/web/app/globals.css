@@ -630,6 +630,20 @@
   filter: blur(5px);
 }
 
+/* A single bright pulse that sweeps the entire corridor end-to-end. Travel
+   distance (--sweep-travel) + duration are set inline; color tracks the Safe
+   Meter via the element's `color` (drives the drop-shadow glow + stroke). */
+@keyframes jm-sweep-run {
+  from { stroke-dashoffset: 0; }
+  to { stroke-dashoffset: calc(var(--sweep-travel, 1200) * -1px); }
+}
+.jm-sweep {
+  stroke-linecap: round;
+  animation: jm-sweep-run linear infinite;
+  filter: drop-shadow(0 0 5px currentColor) drop-shadow(0 0 12px currentColor);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .jm-flow { animation: none; }
+  .jm-sweep { animation: none; opacity: 0 !important; }
 }

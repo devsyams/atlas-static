@@ -49,6 +49,16 @@ export function flowDuration(speed: number): number {
   return +Math.max(0.6, Math.min(8, 90 / Math.max(speed, 6))).toFixed(2);
 }
 
+/**
+ * Seconds for one full-corridor "sweep" pulse, reactive to the Safe Meter score
+ * (0–100): a safe corridor sweeps slowly/calmly (~6s), a dangerous one pulses
+ * fast and urgent (~2.5s).
+ */
+export function sweepDuration(score: number): number {
+  const s = Math.max(0, Math.min(100, score));
+  return +(2.5 + (s / 100) * 3.5).toFixed(2);
+}
+
 export function riskColor(risk: "rendah" | "sedang" | "tinggi"): string {
   return risk === "tinggi"
     ? "text-destructive"

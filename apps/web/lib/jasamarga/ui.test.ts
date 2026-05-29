@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { flowDuration } from "./ui";
+import { flowDuration, sweepDuration } from "./ui";
 
 describe("flowDuration", () => {
   it("is faster (shorter) for higher speeds — monotonic", () => {
@@ -19,5 +19,19 @@ describe("flowDuration", () => {
       expect(flowDuration(s)).toBeGreaterThan(0);
       expect(Number.isFinite(flowDuration(s))).toBe(true);
     }
+  });
+});
+
+describe("sweepDuration", () => {
+  it("is slower (calmer) when the corridor is safer", () => {
+    expect(sweepDuration(95)).toBeGreaterThan(sweepDuration(30));
+    expect(sweepDuration(100)).toBeGreaterThan(sweepDuration(0));
+  });
+
+  it("clamps the score and stays in a sane, positive range", () => {
+    expect(sweepDuration(0)).toBeGreaterThan(0);
+    expect(sweepDuration(-50)).toBe(sweepDuration(0)); // clamps low
+    expect(sweepDuration(500)).toBe(sweepDuration(100)); // clamps high
+    expect(sweepDuration(100)).toBeLessThanOrEqual(8);
   });
 });

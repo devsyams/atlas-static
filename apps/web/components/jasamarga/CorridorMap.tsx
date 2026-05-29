@@ -5,16 +5,19 @@ import type { FeatureGroup, Map as LeafletMap } from "leaflet";
 import "leaflet/dist/leaflet.css";
 import type { IncidentItem, RouteSegment } from "@/lib/jasamarga/types";
 import { corridorPath, segmentPath } from "@/lib/jasamarga/geo";
-import { FLOW_COLORS, flowDuration } from "@/lib/jasamarga/ui";
+import { FLOW_COLORS, flowDuration, sweepDuration } from "@/lib/jasamarga/ui";
+import { safetyColor } from "@/lib/jasamarga/safety";
 
 interface Props {
   segments: RouteSegment[];
   incidents: IncidentItem[];
   selected: number | null;
   onSelect: (i: number | null) => void;
+  /** 0–100 Safe Meter score — drives the corridor sweep's color + urgency. */
+  safetyScore: number;
 }
 
-export function CorridorMap({ segments, incidents, selected, onSelect }: Props) {
+export function CorridorMap({ segments, incidents, selected, onSelect, safetyScore }: Props) {
   const elRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<LeafletMap | null>(null);
   const groupRef = useRef<FeatureGroup | null>(null);
@@ -65,6 +68,25 @@ export function CorridorMap({ segments, incidents, selected, onSelect }: Props) 
       if (flowEl) flowEl.style.animationDuration = `${flowDuration(seg.speed)}s`;
     });
 
+    // Full-corridor sweep pulse — color + urgency react to the Safe Meter.
+    const sweepColor = safetyColor(safetyScore);
+    const sweep = L.polyline(corridorPath(), {
+      color: sweepColor,
+      weight: 5,
+      opacity: 0.95,
+      className: "jm-sweep",
+      interactive: false,
+    }).addTo(group);
+    const sweepEl = sweep.getElement() as SVGPathElement | null;
+    if (sweepEl) {
+      const len = sweepEl.getTotalLength();
+      const dash = Math.max(40, len * 0.06);
+      sweepEl.style.color = sweepColor;
+      sweepEl.style.strokeDasharray = `${dash} ${len}`;
+      sweepEl.style.setProperty("--sweep-travel", String(len + dash));
+      sweepEl.style.animationDuration = `${sweepDuration(safetyScore)}s`;
+    }
+
     incidents.forEach((inc) => {
       if (inc.lat == null || inc.lng == null) return;
       const color = inc.severity >= 7 ? FLOW_COLORS.lumpuh : inc.severity >= 4 ? FLOW_COLORS.macet : FLOW_COLORS.padat;
@@ -81,7 +103,7 @@ export function CorridorMap({ segments, incidents, selected, onSelect }: Props) 
         )
         .addTo(group);
     });
-  }, [segments, incidents, selected, onSelect]);
+  }, [segments, incidents, selected, onSelect, safetyScore]);
 
   // Init the map once.
   useEffect(() => {
