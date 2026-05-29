@@ -23,6 +23,7 @@ export function CorridorMap({ segments, incidents, selected, onSelect, safetySco
   const groupRef = useRef<FeatureGroup | null>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const LRef = useRef<any>(null);
+  const seenIncidents = useRef<Set<string>>(new Set());
   const [ready, setReady] = useState(false);
 
   // Repaint the corridor + incident layers from the latest props. Reads Leaflet
@@ -102,6 +103,18 @@ export function CorridorMap({ segments, incidents, selected, onSelect, safetySco
             (inc.lanes_blocked ? `<br/>${inc.lanes_blocked} lajur tertutup` : ""),
         )
         .addTo(group);
+
+      // One-time shockwave ripple the first time an incident appears.
+      if (!seenIncidents.current.has(inc.id)) {
+        seenIncidents.current.add(inc.id);
+        const ring = L.divIcon({
+          className: "",
+          html: `<div class="jm-shock" style="--jm-pin-color:${color}"></div>`,
+          iconSize: [18, 18],
+          iconAnchor: [9, 9],
+        });
+        L.marker([inc.lat, inc.lng], { icon: ring, interactive: false, keyboard: false }).addTo(group);
+      }
     });
   }, [segments, incidents, selected, onSelect, safetyScore]);
 
@@ -122,7 +135,15 @@ export function CorridorMap({ segments, incidents, selected, onSelect, safetySco
         subdomains: "abcd",
         maxZoom: 19,
       }).addTo(map);
-      map.fitBounds(corridorPath(), { padding: [28, 28] });
+      // Cinematic reveal: open tight on Halim, then pull back to the full corridor.
+      const bounds = L.latLngBounds(corridorPath());
+      const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      if (reduce) {
+        map.fitBounds(bounds, { padding: [28, 28] });
+      } else {
+        map.setView(corridorPath()[0], 12, { animate: false });
+        map.flyToBounds(bounds, { padding: [28, 28], duration: 2.6 });
+      }
       groupRef.current = L.featureGroup().addTo(map);
       mapRef.current = map;
       setReady(true);
