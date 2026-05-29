@@ -15,8 +15,14 @@ export interface AtcsCamera {
 }
 
 const TASIK = "atcs.tasikmalayakota.go.id";
+const YOGYA = "cctvjss.jogjakota.go.id"; // Pemkot Yogyakarta JSS (Wowza, master→chunklist HLS)
 
 export const ATCS_CAMERAS: AtcsCamera[] = [
+  // Yogyakarta — Malioboro corridor (busy: motor + pedestrian, great for detection)
+  { id: "jogja-nolkm", name: "Titik Nol Km · Malioboro", city: "Yogyakarta", url: `https://${YOGYA}/malioboro/NolKm_Timur.stream/playlist.m3u8` },
+  { id: "jogja-kepatihan", name: "Malioboro · Kepatihan", city: "Yogyakarta", url: `https://${YOGYA}/malioboro/Malioboro_10_Kepatihan.stream/playlist.m3u8` },
+  { id: "jogja-beringharjo", name: "Pasar Beringharjo", city: "Yogyakarta", url: `https://${YOGYA}/malioboro/Malioboro_30_Pasar_Beringharjo.stream/playlist.m3u8` },
+  // Tasikmalaya — ATCS intersections
   { id: "simpanglima", name: "Simpang Lima", city: "Tasikmalaya", url: `https://${TASIK}/camera/simpanglima.m3u8` },
   { id: "mitrabatik", name: "Simpang Mitra Batik", city: "Tasikmalaya", url: `https://${TASIK}/camera/mitrabatik.m3u8` },
   { id: "bantar", name: "Simpang Bantar", city: "Tasikmalaya", url: `https://${TASIK}/camera/bantar.m3u8` },

@@ -42,6 +42,7 @@ describe("tallyDetections", () => {
 describe("isAllowedAtcsUrl", () => {
   it("allows the registry host and rejects others", () => {
     expect(isAllowedAtcsUrl(getAtcsCamera("simpanglima").url)).toBe(true);
+    expect(isAllowedAtcsUrl(getAtcsCamera("jogja-nolkm").url)).toBe(true);
     expect(isAllowedAtcsUrl("https://evil.example.com/x.ts")).toBe(false);
     expect(isAllowedAtcsUrl("not a url")).toBe(false);
   });

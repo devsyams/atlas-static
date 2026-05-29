@@ -45,7 +45,7 @@ export function LiveDetectModal({ open, onClose }: { open: boolean; onClose: () 
             <div className="min-w-0">
               <div className="text-sm font-bold text-foreground">Deteksi Kendaraan Live · AI</div>
               <div className="text-[11px] leading-snug text-muted-foreground">
-                CCTV ATCS publik (Tasikmalaya) · deteksi on-device (COCO-SSD), bukan rekayasa
+                CCTV publik Yogyakarta (JSS) &amp; Tasikmalaya (ATCS) · deteksi on-device (COCO-SSD), bukan rekayasa
               </div>
             </div>
           </div>
