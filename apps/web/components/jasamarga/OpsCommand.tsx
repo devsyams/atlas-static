@@ -159,7 +159,9 @@ export function OpsCommand() {
                 {seg.label} · {seg.speed} km/j · +{seg.delay_min} mnt
               </span>
             ) : (
-              <span className="text-[10px] text-muted-foreground">Data Google/Waze · klik segmen</span>
+              <span className={cn("text-[10px]", data?.traffic_source === "tomtom" ? "text-success" : "text-muted-foreground")}>
+                {data?.traffic_source === "tomtom" ? "● TomTom live" : "Simulasi"} · klik segmen
+              </span>
             )
           }
           bodyClassName="p-3"

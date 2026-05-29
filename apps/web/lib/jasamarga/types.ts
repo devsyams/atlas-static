@@ -151,6 +151,8 @@ export interface ConditionChip {
 export interface OpsSnapshot {
   corridor: string;
   updated_at: string;
+  /** Whether the ribbon/segments came from a live traffic API or the synthetic demo. */
+  traffic_source: "synthetic" | "tomtom";
   load_index: number; // 0–10 congestion index (high = bad)
   level: string; // Lancar / Padat / Macet / Lumpuh
   emoji: string;

@@ -1,17 +1,21 @@
 import { NextResponse } from "next/server";
 
 import { buildSnapshot } from "@/lib/jasamarga/data";
+import { fetchLiveSegments } from "@/lib/jasamarga/tomtom";
 
 export const dynamic = "force-dynamic";
 
 /**
- * JasaMarga Ops Command demo feed (Jakarta–Cikampek). Synthetic snapshot — not
- * a real telemetry source — regenerated per request so polls feel live.
+ * JasaMarga Ops Command demo feed (Jakarta–Cikampek). Mostly synthetic, but the
+ * Route Ribbon goes LIVE when TOMTOM_API_KEY is set: we pull real per-segment
+ * speeds from TomTom Traffic Flow and recompute the index off them. Any failure
+ * falls back to the synthetic snapshot (graceful degradation).
  *
- * Intentionally public (no requireRole): this is a standalone sales-lead demo
- * with 100% fabricated data and no DB dependency, so it runs with zero setup.
- * If this lead is productized, gate it like /api/v1/mbg-crisis.
+ * Intentionally public (no requireRole): standalone sales-lead demo, no DB
+ * dependency, runs with zero setup. Gate it like /api/v1/mbg-crisis if productized.
  */
 export async function GET() {
-  return NextResponse.json(buildSnapshot());
+  const key = process.env.TOMTOM_API_KEY;
+  const liveSegments = key ? (await fetchLiveSegments(key)) ?? undefined : undefined;
+  return NextResponse.json(buildSnapshot(liveSegments));
 }

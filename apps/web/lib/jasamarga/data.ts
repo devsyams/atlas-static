@@ -13,7 +13,8 @@ import { loadLevel, speedStatus } from "./ui";
 const jit = (base: number, spread: number) => base + (Math.random() - 0.5) * 2 * spread;
 const clamp = (n: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, n));
 
-const BASE_SEGMENTS: Omit<RouteSegment, "status">[] = [
+/** Corridor geometry — exported so the live TomTom connector reuses the same KM layout. */
+export const BASE_SEGMENTS: Omit<RouteSegment, "status">[] = [
   { km_from: 0, km_to: 9, label: "Halim – Cikunir", speed: 68, delay_min: 2 },
   { km_from: 9, km_to: 17, label: "Cikunir – Bekasi Barat", speed: 74, delay_min: 1, elevated: true },
   { km_from: 17, km_to: 24, label: "Bekasi Timur – Cibitung", speed: 61, delay_min: 2, elevated: true },
@@ -26,7 +27,7 @@ const BASE_SEGMENTS: Omit<RouteSegment, "status">[] = [
   { km_from: 67, km_to: 72, label: "Kalihurip – Cikampek Utama", speed: 53, delay_min: 2 },
 ];
 
-export function buildSnapshot(): OpsSnapshot {
+export function buildSnapshot(liveSegments?: RouteSegment[]): OpsSnapshot {
   const now = new Date();
   const updated_at = now.toLocaleString("id-ID", {
     day: "2-digit",
@@ -35,11 +36,14 @@ export function buildSnapshot(): OpsSnapshot {
     minute: "2-digit",
   });
 
-  const segments: RouteSegment[] = BASE_SEGMENTS.map((s) => {
-    const speed = clamp(Math.round(jit(s.speed, 4)), 6, 90);
-    const delay_min = Math.max(0, Math.round(jit(s.delay_min, 1.5)));
-    return { ...s, speed, delay_min, status: speedStatus(speed) };
-  });
+  const isLive = !!liveSegments && liveSegments.length > 0;
+  const segments: RouteSegment[] = isLive
+    ? liveSegments!
+    : BASE_SEGMENTS.map((s) => {
+        const speed = clamp(Math.round(jit(s.speed, 4)), 6, 90);
+        const delay_min = Math.max(0, Math.round(jit(s.delay_min, 1.5)));
+        return { ...s, speed, delay_min, status: speedStatus(speed) };
+      });
 
   const avg_speed = Math.round(segments.reduce((a, s) => a + s.speed, 0) / segments.length);
   const avg_delay_min = Math.round(segments.reduce((a, s) => a + s.delay_min, 0));
@@ -64,6 +68,7 @@ export function buildSnapshot(): OpsSnapshot {
   return {
     corridor: "Jakarta–Cikampek (Japek)",
     updated_at,
+    traffic_source: isLive ? "tomtom" : "synthetic",
     load_index,
     level,
     emoji,
