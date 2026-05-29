@@ -1,4 +1,4 @@
-import type { CorridorPulse, ForecastHour, IncidentItem, OpsInsight, OpsSnapshot, RouteSegment, RuasLoad, WeatherZone } from "./types";
+import type { CctvFeed, CorridorPulse, ForecastHour, IncidentItem, OpsInsight, OpsSnapshot, RouteSegment, RuasLoad, WeatherZone } from "./types";
 import { loadLevel, speedStatus } from "./ui";
 import { computeSafety } from "./safety";
 import { kmToLatLng } from "./geo";
@@ -91,6 +91,75 @@ function genIncidents(c: Corridor, segments: RouteSegment[]): IncidentItem[] {
     };
     if (i === 0) inc.lanes_blocked = 2;
     return inc;
+  });
+}
+
+const WEATHER_RANK = { rendah: 0, sedang: 1, tinggi: 2 } as const;
+
+/**
+ * Simulated AI-vision CCTV feeds for the four busiest hotspots. Vehicle counts
+ * scale with congestion; event flags come from the segment status, any incident
+ * on it, and corridor weather. Synthetic — the "detector" reads public-style
+ * signals, no real video. Coordinates let the map open a segment's camera.
+ */
+function genCctv(c: Corridor, segments: RouteSegment[], incidents: IncidentItem[]): CctvFeed[] {
+  const cams = [...segments].sort((a, b) => segLoad(b) - segLoad(a)).slice(0, 4);
+  const worstWeather = [...c.weather].sort((a, b) => WEATHER_RANK[b.impact] - WEATHER_RANK[a.impact])[0];
+  return cams.map((seg) => {
+    const km = Math.round((seg.km_from + seg.km_to) / 2);
+    const density = clamp((92 - seg.speed) / 92, 0.12, 1); // higher when slower
+    const mobil = Math.max(3, Math.round(8 + density * 48 + jit(0, 3)));
+    const truk = Math.max(0, Math.round(mobil * 0.16 + jit(0, 1)));
+    const motor = Math.max(0, Math.round(mobil * 0.35 + jit(0, 2)));
+
+    const flags: string[] = [];
+    if (seg.status === "lumpuh") flags.push("Antrean panjang (>1 km)");
+    else if (seg.status === "macet") flags.push("Antrean terdeteksi");
+    const onInc = incidents.find((inc) => {
+      const k = incidentKm(inc);
+      return k >= seg.km_from && k <= seg.km_to;
+    });
+    if (onInc) {
+      flags.push(
+        onInc.type.includes("Kecelakaan")
+          ? "Kecelakaan terdeteksi"
+          : onInc.type.includes("mogok")
+            ? "Kendaraan di bahu jalan"
+            : onInc.type.includes("Genangan")
+              ? "Genangan air terdeteksi"
+              : `${onInc.type} terdeteksi`,
+      );
+    }
+    if (worstWeather.impact === "tinggi") flags.push("Jarak pandang menurun");
+    if (!flags.length) flags.push(seg.status === "lancar" ? "Arus lancar" : "Volume normal");
+
+    const confidence = +clamp(0.9 + Math.random() * 0.09, 0.9, 0.99).toFixed(2);
+    const [lat, lng] = kmToLatLng(c, km);
+    return {
+      id: `CAM-${c.id.slice(0, 3).toUpperCase()}-${km}`,
+      km: `KM ${km}`,
+      name: seg.label,
+      status: seg.status,
+      vehicles: { mobil, truk, motor },
+      flags,
+      confidence,
+      lat,
+      lng,
+    };
+  });
+}
+
+/**
+ * Project current segments to a forecast congestion level for the time-machine
+ * scrubber: scale each segment's speed by the current→target load ratio (higher
+ * target load ⇒ slower, worse status; lower ⇒ faster). Pure.
+ */
+export function projectSegments(segments: RouteSegment[], currentLoad: number, targetLoad: number): RouteSegment[] {
+  const ratio = (targetLoad + 1) / (currentLoad + 1);
+  return segments.map((s) => {
+    const speed = clamp(Math.round(s.speed / ratio), 5, 95);
+    const delay_min = Math.max(0, Math.round(s.delay_min * ratio));
+    return { ...s, speed, delay_min, status: speedStatus(speed) };
   });
 }
 
@@ -461,6 +530,9 @@ export function buildSnapshot(
       { name: "Berita Online (RSS)", type: "berita", status: "demo", items_24h: 47, last_sync: "—" },
       { name: "BMKG Cuaca", type: "cuaca", status: "demo", items_24h: 24, last_sync: "—" },
       { name: "Kanal Resmi (@PTJASAMARGA)", type: "resmi", status: "demo", items_24h: 9, last_sync: "—" },
+      { name: "Nexorus Vision (CCTV AI)", type: "traffic", status: "demo", items_24h: 4, last_sync: "—" },
     ],
+
+    cctv: genCctv(c, segments, incidents),
   };
 }

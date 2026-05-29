@@ -179,6 +179,19 @@ export interface CorridorPulse {
   load_index: number; // 0–10 congestion
 }
 
+/** One simulated AI-vision CCTV feed watching a corridor hotspot. */
+export interface CctvFeed {
+  id: string;
+  km: string; // "KM 52"
+  name: string; // segment label
+  status: FlowStatus;
+  vehicles: { mobil: number; truk: number; motor: number }; // detections in frame
+  flags: string[]; // AI event flags (Antrean terdeteksi, Kecelakaan terdeteksi…)
+  confidence: number; // 0–1 detector confidence
+  lat?: number;
+  lng?: number;
+}
+
 export interface OpsSnapshot {
   corridor: string;
   updated_at: string;
@@ -207,4 +220,5 @@ export interface OpsSnapshot {
   travel_times: TravelTime[];
   weather: WeatherZone[];
   sources: SourceFeed[];
+  cctv: CctvFeed[];
 }
