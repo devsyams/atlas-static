@@ -180,6 +180,8 @@ function mapIncident(inc: RawIncident, i: number): IncidentItem | null {
   return {
     id: `TT-${i}`,
     km: `KM ${km}`,
+    lat: coord[1],
+    lng: coord[0],
     direction: p.roadNumbers?.includes("AH2") ? "Tol Japek (AH2)" : p.from ?? "Koridor Japek",
     type: ICON_TYPE[p.iconCategory ?? 0] ?? "Insiden lalu lintas",
     severity,
