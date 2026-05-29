@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { AtSign, ChevronDown, Clock, MapPin, Newspaper, TriangleAlert } from "lucide-react";
+import { AtSign, ChevronDown, Clock, MapPin, Navigation, Newspaper, TriangleAlert } from "lucide-react";
 import type { IncidentItem, SourceType } from "@/lib/jasamarga/types";
 import { cn } from "@/lib/utils";
 
@@ -23,6 +23,7 @@ const SOURCE_ICON: Partial<Record<SourceType, typeof AtSign>> = {
   waze: TriangleAlert,
   berita: Newspaper,
   resmi: AtSign,
+  traffic: Navigation,
 };
 
 /** Live incident log — sourced from public reports (Waze / X / news / official). */

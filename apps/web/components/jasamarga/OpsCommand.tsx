@@ -108,7 +108,7 @@ export function OpsCommand() {
             onClick={() => setBriefingOpen(true)}
             className="inline-flex items-center gap-1.5 rounded-md border border-primary/40 bg-gradient-accent px-2.5 py-1.5 text-[11px] font-bold text-primary-foreground shadow-[0_4px_16px_-4px_oklch(0.55_0.18_280/.5)] transition-transform hover:scale-[1.02]"
           >
-            <Sparkles className="h-3.5 w-3.5" /> Laporan Piket
+            <Sparkles className="h-3.5 w-3.5" /> Briefing
           </button>
           <button
             type="button"
@@ -276,9 +276,9 @@ export function OpsCommand() {
         onClose={() => setBriefingOpen(false)}
         endpoint="/api/v1/jasamarga-ops/briefing"
         stages={BRIEFING_STAGES}
-        title="Laporan Piket AI"
-        subtitle="Nexorus Ops Orchestration"
-        docTitle="Nexorus AI · Laporan Piket JMTC"
+        title="Executive Briefing"
+        subtitle="Nexorus AI Orchestration"
+        docTitle="Nexorus AI · Executive Briefing — JMTC"
         docMeta="JasaMarga Ops Command · Jakarta–Cikampek (sumber publik)"
       />
 
