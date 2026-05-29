@@ -8,11 +8,13 @@ import {
   Clock,
   CloudRain,
   Gauge,
+  Map as MapIcon,
   Megaphone,
   MessageCircle,
   MonitorPlay,
   Newspaper,
   Route,
+  ShieldCheck,
   Siren,
   Sparkles,
   TrafficCone,
@@ -26,7 +28,14 @@ import { BriefingPanel } from "@/components/ai/BriefingPanel";
 import type { Intervention, OpsSnapshot, WeatherZone } from "@/lib/jasamarga/types";
 import { loadColor } from "@/lib/jasamarga/ui";
 import { cn } from "@/lib/utils";
+import dynamic from "next/dynamic";
+import { SafeMeter } from "./SafeMeter";
 import { RouteRibbon } from "./RouteRibbon";
+
+const CorridorMap = dynamic(() => import("./CorridorMap").then((m) => m.CorridorMap), {
+  ssr: false,
+  loading: () => <div className="flex h-full items-center justify-center text-[12px] text-muted-foreground">Memuat peta…</div>,
+});
 import { OpsInsight } from "./OpsInsight";
 import { IncidentFeed } from "./IncidentFeed";
 import { TopRuas } from "./TopRuas";
@@ -59,6 +68,7 @@ export function OpsCommand() {
   const [data, setData] = useState<OpsSnapshot | null>(null);
   const [live, setLive] = useState<LiveState>("loading");
   const [selectedSegment, setSelectedSegment] = useState<number | null>(null);
+  const [heroView, setHeroView] = useState<"peta" | "ribbon">("peta");
   const [briefingOpen, setBriefingOpen] = useState(false);
   const [wallOpen, setWallOpen] = useState(false);
   const [shared, setShared] = useState<Intervention | null>(null);
@@ -148,35 +158,66 @@ export function OpsCommand() {
 
       {/* Grid */}
       <div className="grid grid-cols-1 gap-3 lg:grid-cols-12">
-        {/* Route Ribbon — hero, full width */}
+        {/* Live Network — hero, full width, map/ribbon toggle */}
         <Tile
-          title={`Live Network Ribbon — ${data?.corridor ?? "Jakarta–Cikampek"}`}
-          icon={Route}
+          title={`Live Network — ${data?.corridor ?? "Jakarta–Cikampek"}`}
+          icon={heroView === "peta" ? MapIcon : Route}
           className="lg:col-span-12"
           headerRight={
-            seg ? (
-              <span className="text-[10px] text-primary">
-                {seg.label} · {seg.speed} km/j · +{seg.delay_min} mnt
-              </span>
-            ) : (
-              <span className={cn("text-[10px]", data?.traffic_source === "tomtom" ? "text-success" : "text-muted-foreground")}>
-                {data?.traffic_source === "tomtom" ? "● TomTom live" : "Simulasi"} · klik segmen
-              </span>
-            )
+            <div className="flex items-center gap-2">
+              {seg ? (
+                <span className="text-[10px] text-primary">
+                  {seg.label} · {seg.speed} km/j · +{seg.delay_min} mnt
+                </span>
+              ) : (
+                <span className={cn("text-[10px]", data?.traffic_source === "tomtom" ? "text-success" : "text-muted-foreground")}>
+                  {data?.traffic_source === "tomtom" ? "● TomTom live" : "Simulasi"} · klik segmen
+                </span>
+              )}
+              <div className="flex overflow-hidden rounded-md border border-border/60 text-[10px] font-bold">
+                {(["peta", "ribbon"] as const).map((v) => (
+                  <button
+                    key={v}
+                    type="button"
+                    onClick={() => setHeroView(v)}
+                    className={cn("px-2 py-0.5 capitalize", heroView === v ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground")}
+                  >
+                    {v}
+                  </button>
+                ))}
+              </div>
+            </div>
           }
-          bodyClassName="p-3"
+          bodyClassName="p-0"
+          style={{ height: 380 }}
         >
           {data ? (
-            <RouteRibbon
-              segments={data.segments}
-              landmarks={data.landmarks}
-              incidents={data.incidents}
-              selected={selectedSegment}
-              onSelect={setSelectedSegment}
-            />
+            heroView === "peta" ? (
+              <CorridorMap
+                segments={data.segments}
+                incidents={data.incidents}
+                selected={selectedSegment}
+                onSelect={setSelectedSegment}
+              />
+            ) : (
+              <div className="p-3">
+                <RouteRibbon
+                  segments={data.segments}
+                  landmarks={data.landmarks}
+                  incidents={data.incidents}
+                  selected={selectedSegment}
+                  onSelect={setSelectedSegment}
+                />
+              </div>
+            )
           ) : (
             <Empty state={live} />
           )}
+        </Tile>
+
+        {/* Safe Meter — the headline gimmick */}
+        <Tile title="Safe Meter" icon={ShieldCheck} className="lg:col-span-4" tileClassName="border-primary/40" bodyClassName="p-0">
+          {data ? <SafeMeter safety={data.safety} /> : <Empty state={live} />}
         </Tile>
 
         {/* Congestion Index gauge + KPIs + weather */}
