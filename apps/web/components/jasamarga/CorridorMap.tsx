@@ -5,7 +5,7 @@ import type { FeatureGroup, Map as LeafletMap } from "leaflet";
 import "leaflet/dist/leaflet.css";
 import type { IncidentItem, RouteSegment } from "@/lib/jasamarga/types";
 import { corridorPath, segmentPath } from "@/lib/jasamarga/geo";
-import { FLOW_COLORS } from "@/lib/jasamarga/ui";
+import { FLOW_COLORS, flowDuration } from "@/lib/jasamarga/ui";
 
 interface Props {
   segments: RouteSegment[];
@@ -32,7 +32,9 @@ export function CorridorMap({ segments, incidents, selected, onSelect }: Props) 
 
     segments.forEach((seg, i) => {
       const isSel = selected === i;
-      L.polyline(segmentPath(i), {
+      const path = segmentPath(i);
+      // Base colored road — carries congestion color, click + tooltip.
+      L.polyline(path, {
         color: FLOW_COLORS[seg.status],
         weight: isSel ? 9 : 6,
         opacity: isSel ? 1 : 0.85,
@@ -41,6 +43,17 @@ export function CorridorMap({ segments, incidents, selected, onSelect }: Props) 
         .on("click", () => onSelect(isSel ? null : i))
         .bindTooltip(`${seg.label} · ${seg.speed} km/j · +${seg.delay_min} mnt`, { sticky: true })
         .addTo(group);
+
+      // Animated flow dashes on top — speed-reactive (fast traffic = fast flow).
+      const flow = L.polyline(path, {
+        color: "oklch(0.97 0.02 240)",
+        weight: isSel ? 4 : 3,
+        opacity: 0.85,
+        className: "jm-flow",
+        interactive: false,
+      }).addTo(group);
+      const flowEl = flow.getElement() as SVGPathElement | null;
+      if (flowEl) flowEl.style.animationDuration = `${flowDuration(seg.speed)}s`;
     });
 
     incidents.forEach((inc) => {

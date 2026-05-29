@@ -611,3 +611,19 @@
   .jm-pin::before { animation: none; }
   .jm-sheen::after { animation: none; }
 }
+
+/* Animated traffic-flow dashes streaming along the corridor polyline (toward
+   Cikampek). Per-segment animation-duration is set inline from the live speed. */
+@keyframes jm-flow-dash {
+  to { stroke-dashoffset: -40; }
+}
+.jm-flow {
+  stroke-dasharray: 6 14;
+  stroke-dashoffset: 0;
+  stroke-linecap: round;
+  animation: jm-flow-dash linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .jm-flow { animation: none; }
+}

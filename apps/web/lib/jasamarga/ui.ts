@@ -40,6 +40,15 @@ export function speedStatus(speed: number): FlowStatus {
   return "lumpuh";
 }
 
+/**
+ * Seconds per cycle for the animated traffic-flow dashes on a segment: faster
+ * traffic → faster flow, jammed traffic → near-static. Clamped to a sane range
+ * so free-flow zips (~1s) and gridlock barely crawls (8s).
+ */
+export function flowDuration(speed: number): number {
+  return +Math.max(0.6, Math.min(8, 90 / Math.max(speed, 6))).toFixed(2);
+}
+
 export function riskColor(risk: "rendah" | "sedang" | "tinggi"): string {
   return risk === "tinggi"
     ? "text-destructive"
