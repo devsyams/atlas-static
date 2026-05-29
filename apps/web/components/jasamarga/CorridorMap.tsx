@@ -33,6 +33,15 @@ export function CorridorMap({ segments, incidents, selected, onSelect }: Props) 
     segments.forEach((seg, i) => {
       const isSel = selected === i;
       const path = segmentPath(i);
+      // Neon under-glow in the congestion color (blurred halo beneath the road).
+      L.polyline(path, {
+        color: FLOW_COLORS[seg.status],
+        weight: isSel ? 22 : 17,
+        opacity: isSel ? 0.4 : 0.28,
+        lineCap: "round",
+        className: "jm-glow",
+        interactive: false,
+      }).addTo(group);
       // Base colored road — carries congestion color, click + tooltip.
       L.polyline(path, {
         color: FLOW_COLORS[seg.status],
