@@ -19,13 +19,14 @@ import {
   Sparkles,
   TrafficCone,
   TrendingUp,
+  Video,
 } from "lucide-react";
 import { Ticker } from "@/components/crisis/Ticker";
 import { PredictionMeters } from "@/components/crisis/PredictionMeters";
 import { ScoreGauge } from "@/components/crisis/ScoreGauge";
 import { CountUp } from "@/components/crisis/CountUp";
 import { BriefingPanel } from "@/components/ai/BriefingPanel";
-import type { CorridorPulse, Intervention, OpsSnapshot, WeatherZone } from "@/lib/jasamarga/types";
+import type { CctvFeed, CorridorPulse, Intervention, OpsSnapshot, WeatherZone } from "@/lib/jasamarga/types";
 import { loadColor } from "@/lib/jasamarga/ui";
 import { safetyColor } from "@/lib/jasamarga/safety";
 import { CORRIDORS, getCorridor } from "@/lib/jasamarga/corridors";
@@ -44,6 +45,8 @@ import { NewsCoverage } from "./NewsCoverage";
 import { ForecastTimeline } from "./ForecastTimeline";
 import { TravelTimeBoard } from "./TravelTimeBoard";
 import { SourceStatus } from "./SourceStatus";
+import { VisionWall } from "./VisionWall";
+import { CameraModal } from "./CameraModal";
 
 const CorridorMap = dynamic(() => import("./CorridorMap").then((m) => m.CorridorMap), {
   ssr: false,
@@ -76,6 +79,7 @@ export function OpsCommand() {
   const [wallOpen, setWallOpen] = useState(false);
   const [shared, setShared] = useState<Intervention | null>(null);
   const [pulses, setPulses] = useState<Record<string, CorridorPulse>>({});
+  const [activeCam, setActiveCam] = useState<CctvFeed | null>(null);
 
   const loadData = useCallback(() => {
     setLive("loading");
@@ -124,6 +128,30 @@ export function OpsCommand() {
 
   const accent = data ? loadColor(data.load_index) : undefined;
   const seg = selectedSegment != null ? data?.segments[selectedSegment] : null;
+
+  // Map → camera: select a segment AND pop the nearest CCTV feed (by km midpoint).
+  const handleMapSelect = useCallback(
+    (i: number | null) => {
+      setSelectedSegment(i);
+      if (i == null || !data) return;
+      const s = data.segments[i];
+      if (!s) return;
+      const mid = (s.km_from + s.km_to) / 2;
+      let nearest: CctvFeed | null = null;
+      let best = Infinity;
+      for (const c of data.cctv) {
+        const km = parseFloat(c.km.replace(/[^\d.]/g, ""));
+        if (Number.isNaN(km)) continue;
+        const d = Math.abs(km - mid);
+        if (d < best) {
+          best = d;
+          nearest = c;
+        }
+      }
+      if (nearest) setActiveCam(nearest);
+    },
+    [data],
+  );
 
   return (
     <div>
@@ -257,7 +285,7 @@ export function OpsCommand() {
                 segments={data.segments}
                 incidents={data.incidents}
                 selected={selectedSegment}
-                onSelect={setSelectedSegment}
+                onSelect={handleMapSelect}
                 safetyScore={data.safety.score}
               />
             ) : (
@@ -276,8 +304,21 @@ export function OpsCommand() {
           )}
         </Tile>
 
+        {/* AI Vision — CCTV Vision Wall (headline feature) */}
+        <Tile
+          title="AI Vision — CCTV Koridor"
+          icon={Video}
+          className="lg:col-span-6"
+          tileClassName="border-primary/40"
+          headerRight={<span className="text-[10px] text-muted-foreground">Nexorus Vision · simulasi</span>}
+          bodyClassName="p-2"
+          style={{ minHeight: 300 }}
+        >
+          {data ? <VisionWall cctv={data.cctv} onOpen={setActiveCam} /> : <Empty state={live} />}
+        </Tile>
+
         {/* Safe Meter — the headline gimmick */}
-        <Tile title="Safe Meter" icon={ShieldCheck} className="lg:col-span-4" tileClassName="border-primary/40" bodyClassName="p-0">
+        <Tile title="Safe Meter" icon={ShieldCheck} className="lg:col-span-6" tileClassName="border-primary/40" bodyClassName="p-0">
           {data ? <SafeMeter safety={data.safety} /> : <Empty state={live} />}
         </Tile>
 
@@ -385,6 +426,8 @@ export function OpsCommand() {
       />
 
       <CommandWall open={wallOpen} onClose={() => setWallOpen(false)} data={data} />
+
+      <CameraModal cam={activeCam} onClose={() => setActiveCam(null)} />
     </div>
   );
 }
