@@ -1,5 +1,25 @@
-import type { ForecastHour, IncidentItem, OpsInsight, OpsSnapshot, RouteSegment, RuasLoad } from "./types";
+import type { ForecastHour, IncidentItem, OpsInsight, OpsSnapshot, RouteSegment, RuasLoad, WeatherZone } from "./types";
 import { loadLevel, speedStatus } from "./ui";
+import { computeSafety } from "./safety";
+import { kmToLatLng } from "./geo";
+
+/** Parse a leading KM number out of an incident label ("KM 52+400" → 52). */
+function kmOf(label: string): number {
+  const m = label.match(/(\d+)/);
+  return m ? +m[1] : 0;
+}
+
+/** Ensure every incident carries a map coordinate (live ones already do). */
+function withCoords(incidents: IncidentItem[]): IncidentItem[] {
+  return incidents.map((inc) => {
+    if (inc.lat != null && inc.lng != null) return inc;
+    const [lat, lng] = kmToLatLng(kmOf(inc.km));
+    return { ...inc, lat, lng };
+  });
+}
+
+/** Last computed safety score, kept in-process so the trend arrow is meaningful. */
+let lastSafetyScore: number | undefined;
 
 /**
  * Snapshot of the Jakarta–Cikampek (Japek) corridor for the JasaMarga Ops
@@ -158,7 +178,7 @@ export function buildSnapshot(liveSegments?: RouteSegment[], liveIncidents?: Inc
         return { ...s, speed, delay_min, status: speedStatus(speed) };
       });
 
-  const incidents: IncidentItem[] = liveIncidents !== undefined ? liveIncidents : SYNTHETIC_INCIDENTS;
+  const incidents: IncidentItem[] = withCoords(liveIncidents !== undefined ? liveIncidents : SYNTHETIC_INCIDENTS);
 
   const avg_speed = Math.round(segments.reduce((a, s) => a + s.speed, 0) / segments.length);
   const avg_delay_min = Math.round(segments.reduce((a, s) => a + s.delay_min, 0));
@@ -180,6 +200,15 @@ export function buildSnapshot(liveSegments?: RouteSegment[], liveIncidents?: Inc
   forecast[0].label = "Sekarang";
   if (peakIdx !== 0) forecast[peakIdx].label = "Puncak";
 
+  const weather: WeatherZone[] = [
+    { zone: "Jakarta – Bekasi", condition: "Cerah berawan", temp: 31, impact: "rendah" },
+    { zone: "Cikarang – Karawang", condition: "Hujan ringan", temp: 27, impact: "sedang" },
+    { zone: "Cikampek", condition: "Berawan", temp: 29, impact: "rendah" },
+  ];
+
+  const safety = computeSafety(segments, incidents, weather, negativity, lastSafetyScore);
+  lastSafetyScore = safety.score;
+
   const insight = deriveInsight(segments, incidents, level, avg_delay_min, mentions_24h);
   const top_ruas = deriveTopRuas(segments, incidents);
 
@@ -193,6 +222,7 @@ export function buildSnapshot(liveSegments?: RouteSegment[], liveIncidents?: Inc
     avg_speed,
     avg_delay_min,
     active_incidents: incidents.length,
+    safety,
     insight,
 
     conditions: [
@@ -373,11 +403,7 @@ export function buildSnapshot(liveSegments?: RouteSegment[], liveIncidents?: Inc
       { route: "Jakarta → Cikampek", via: "Arteri Pantura (alt.)", minutes: 135, normal_minutes: 120, trend: "flat" },
     ],
 
-    weather: [
-      { zone: "Jakarta – Bekasi", condition: "Cerah berawan", temp: 31, impact: "rendah" },
-      { zone: "Cikarang – Karawang", condition: "Hujan ringan", temp: 27, impact: "sedang" },
-      { zone: "Cikampek", condition: "Berawan", temp: 29, impact: "rendah" },
-    ],
+    weather,
 
     // Honest provenance: only Traffic + Incidents are actually wired (to TomTom).
     // The rest are sourceable from public APIs but fabricated in this build → "demo".
