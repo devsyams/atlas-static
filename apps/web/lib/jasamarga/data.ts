@@ -237,7 +237,7 @@ export function buildSnapshot(liveSegments?: RouteSegment[], liveIncidents?: Inc
       { label: "Sebutan 24 jam", value: mentions_24h.toLocaleString("id-ID") },
       { label: "Tren teratas", value: "#MacetJapek" },
       { label: "Cuaca Karawang", value: "Hujan ringan" },
-      { label: "Sumber aktif", value: isLive ? "TomTom live" : "7 feed" },
+      { label: "Sumber", value: isLive ? "2 live · 4 demo" : "mode demo" },
     ],
 
     segments,
@@ -379,13 +379,15 @@ export function buildSnapshot(liveSegments?: RouteSegment[], liveIncidents?: Inc
       { zone: "Cikampek", condition: "Berawan", temp: 29, impact: "rendah" },
     ],
 
+    // Honest provenance: only Traffic + Incidents are actually wired (to TomTom).
+    // The rest are sourceable from public APIs but fabricated in this build → "demo".
     sources: [
-      { name: "Traffic Flow (TomTom/HERE)", type: "traffic", status: "live", items_24h: 1440, last_sync: "baru saja" },
-      { name: "Insiden Lalu Lintas (TomTom)", type: "waze", status: "live", items_24h: 86, last_sync: "1 mnt" },
-      { name: "Media Sosial (X API)", type: "medsos", status: "live", items_24h: mentions_24h, last_sync: "baru saja" },
-      { name: "Berita Online (RSS)", type: "berita", status: "live", items_24h: 47, last_sync: "4 mnt" },
-      { name: "BMKG Cuaca", type: "cuaca", status: "delay", items_24h: 24, last_sync: "18 mnt" },
-      { name: "Kanal Resmi (@PTJASAMARGA)", type: "resmi", status: "live", items_24h: 9, last_sync: "8 mnt" },
+      { name: "Traffic Flow (TomTom)", type: "traffic", status: isLive ? "live" : "demo", items_24h: 1440, last_sync: isLive ? "baru saja" : "—" },
+      { name: "Insiden Lalu Lintas (TomTom)", type: "waze", status: isLive ? "live" : "demo", items_24h: incidents.length, last_sync: isLive ? "1 mnt" : "—" },
+      { name: "Media Sosial (X API)", type: "medsos", status: "demo", items_24h: mentions_24h, last_sync: "—" },
+      { name: "Berita Online (RSS)", type: "berita", status: "demo", items_24h: 47, last_sync: "—" },
+      { name: "BMKG Cuaca", type: "cuaca", status: "demo", items_24h: 24, last_sync: "—" },
+      { name: "Kanal Resmi (@PTJASAMARGA)", type: "resmi", status: "demo", items_24h: 9, last_sync: "—" },
     ],
   };
 }

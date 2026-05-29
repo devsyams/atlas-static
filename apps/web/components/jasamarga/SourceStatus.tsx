@@ -23,12 +23,14 @@ const DOT: Record<SourceFeed["status"], string> = {
   live: "bg-success",
   delay: "bg-warning",
   down: "bg-destructive",
+  demo: "bg-muted-foreground/50",
 };
 
 const STATUS_LABEL: Record<SourceFeed["status"], string> = {
   live: "live",
   delay: "tertunda",
   down: "mati",
+  demo: "demo",
 };
 
 /**

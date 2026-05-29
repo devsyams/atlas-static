@@ -115,11 +115,12 @@ export interface WeatherZone {
   impact: "rendah" | "sedang" | "tinggi";
 }
 
-/** A connected online feed, surfaced in the "Sumber Data" status strip. */
+/** A connected online feed, surfaced in the "Sumber Data" status strip.
+ * "demo" = sourceable from public APIs but not wired in this build (fabricated). */
 export interface SourceFeed {
   name: string;
   type: SourceType;
-  status: "live" | "delay" | "down";
+  status: "live" | "delay" | "down" | "demo";
   items_24h: number;
   last_sync: string;
 }
