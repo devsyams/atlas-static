@@ -4,11 +4,13 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { FeatureGroup, Map as LeafletMap } from "leaflet";
 import "leaflet/dist/leaflet.css";
 import type { IncidentItem, RouteSegment } from "@/lib/jasamarga/types";
+import type { Corridor } from "@/lib/jasamarga/corridors";
 import { corridorPath, segmentPath } from "@/lib/jasamarga/geo";
 import { FLOW_COLORS, flowDuration, sweepDuration } from "@/lib/jasamarga/ui";
 import { safetyColor } from "@/lib/jasamarga/safety";
 
 interface Props {
+  corridor: Corridor;
   segments: RouteSegment[];
   incidents: IncidentItem[];
   selected: number | null;
@@ -17,7 +19,7 @@ interface Props {
   safetyScore: number;
 }
 
-export function CorridorMap({ segments, incidents, selected, onSelect, safetyScore }: Props) {
+export function CorridorMap({ corridor, segments, incidents, selected, onSelect, safetyScore }: Props) {
   const elRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<LeafletMap | null>(null);
   const groupRef = useRef<FeatureGroup | null>(null);
@@ -36,7 +38,7 @@ export function CorridorMap({ segments, incidents, selected, onSelect, safetySco
 
     segments.forEach((seg, i) => {
       const isSel = selected === i;
-      const path = segmentPath(i);
+      const path = segmentPath(corridor, i);
       // Neon under-glow in the congestion color (blurred halo beneath the road).
       L.polyline(path, {
         color: FLOW_COLORS[seg.status],
@@ -71,7 +73,7 @@ export function CorridorMap({ segments, incidents, selected, onSelect, safetySco
 
     // Full-corridor sweep pulse — color + urgency react to the Safe Meter.
     const sweepColor = safetyColor(safetyScore);
-    const sweep = L.polyline(corridorPath(), {
+    const sweep = L.polyline(corridorPath(corridor), {
       color: sweepColor,
       weight: 5,
       opacity: 0.95,
@@ -116,7 +118,7 @@ export function CorridorMap({ segments, incidents, selected, onSelect, safetySco
         L.marker([inc.lat, inc.lng], { icon: ring, interactive: false, keyboard: false }).addTo(group);
       }
     });
-  }, [segments, incidents, selected, onSelect, safetyScore]);
+  }, [corridor, segments, incidents, selected, onSelect, safetyScore]);
 
   // Init the map once.
   useEffect(() => {
@@ -136,12 +138,12 @@ export function CorridorMap({ segments, incidents, selected, onSelect, safetySco
         maxZoom: 19,
       }).addTo(map);
       // Cinematic reveal: open tight on Halim, then pull back to the full corridor.
-      const bounds = L.latLngBounds(corridorPath());
+      const bounds = L.latLngBounds(corridorPath(corridor));
       const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
       if (reduce) {
         map.fitBounds(bounds, { padding: [28, 28] });
       } else {
-        map.setView(corridorPath()[0], 12, { animate: false });
+        map.setView(corridorPath(corridor)[0], 12, { animate: false });
         map.flyToBounds(bounds, { padding: [28, 28], duration: 2.6 });
       }
       groupRef.current = L.featureGroup().addTo(map);
@@ -155,6 +157,9 @@ export function CorridorMap({ segments, incidents, selected, onSelect, safetySco
       groupRef.current = null;
       setReady(false);
     };
+    // Mount-once cinematic reveal seeded from the initial corridor; later corridor
+    // changes are handled by the dedicated fly-to effect below.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Redraw whenever data/selection changes, once the map is ready.
@@ -162,10 +167,25 @@ export function CorridorMap({ segments, incidents, selected, onSelect, safetySco
     if (!ready) return;
     draw();
     if (selected != null && mapRef.current) {
-      const pts = segmentPath(selected);
+      const pts = segmentPath(corridor, selected);
       mapRef.current.panTo(pts[1], { animate: true });
     }
-  }, [ready, draw, selected]);
+  }, [ready, draw, selected, corridor]);
+
+  // Fly to a newly selected corridor (after the initial reveal) and let its
+  // incidents shockwave in again.
+  const corridorIdRef = useRef(corridor.id);
+  useEffect(() => {
+    if (!ready) return;
+    if (corridorIdRef.current === corridor.id) return;
+    corridorIdRef.current = corridor.id;
+    seenIncidents.current = new Set();
+    const map = mapRef.current;
+    const L = LRef.current;
+    if (map && L) {
+      map.flyToBounds(L.latLngBounds(corridorPath(corridor)), { padding: [28, 28], duration: 1.8 });
+    }
+  }, [ready, corridor]);
 
   return <div className="jm-map h-full w-full"><div ref={elRef} className="h-full w-full" /></div>;
 }

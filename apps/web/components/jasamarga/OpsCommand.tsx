@@ -27,6 +27,7 @@ import { CountUp } from "@/components/crisis/CountUp";
 import { BriefingPanel } from "@/components/ai/BriefingPanel";
 import type { Intervention, OpsSnapshot, WeatherZone } from "@/lib/jasamarga/types";
 import { loadColor } from "@/lib/jasamarga/ui";
+import { CORRIDORS, getCorridor } from "@/lib/jasamarga/corridors";
 import { cn } from "@/lib/utils";
 import dynamic from "next/dynamic";
 import { SafeMeter } from "./SafeMeter";
@@ -68,6 +69,7 @@ export function OpsCommand() {
   const [data, setData] = useState<OpsSnapshot | null>(null);
   const [live, setLive] = useState<LiveState>("loading");
   const [selectedSegment, setSelectedSegment] = useState<number | null>(null);
+  const [corridorId, setCorridorId] = useState("japek");
   const [heroView, setHeroView] = useState<"peta" | "ribbon">("peta");
   const [briefingOpen, setBriefingOpen] = useState(false);
   const [wallOpen, setWallOpen] = useState(false);
@@ -75,7 +77,7 @@ export function OpsCommand() {
 
   const loadData = useCallback(() => {
     setLive("loading");
-    fetch("/api/v1/jasamarga-ops")
+    fetch(`/api/v1/jasamarga-ops?corridor=${corridorId}`)
       .then((res) => {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         return res.json();
@@ -85,7 +87,14 @@ export function OpsCommand() {
         setLive("live");
       })
       .catch(() => setLive("offline"));
-  }, []);
+  }, [corridorId]);
+
+  const handleCorridorChange = (id: string) => {
+    if (id === corridorId) return;
+    setSelectedSegment(null);
+    setData(null);          // show the loader during the switch
+    setCorridorId(id);
+  };
 
   useEffect(() => {
     loadData();
@@ -156,6 +165,29 @@ export function OpsCommand() {
         </div>
       )}
 
+      {/* Route selector */}
+      <div className="mb-3 flex flex-wrap items-center gap-2">
+        <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-muted-foreground">Ruas Tol</span>
+        {CORRIDORS.map((c) => {
+          const active = c.id === corridorId;
+          return (
+            <button
+              key={c.id}
+              type="button"
+              onClick={() => handleCorridorChange(c.id)}
+              className={cn(
+                "rounded-full border px-3 py-1 text-[11px] font-bold transition-colors",
+                active
+                  ? "border-primary/50 bg-primary/15 text-primary"
+                  : "border-border/60 bg-background/40 text-muted-foreground hover:text-foreground",
+              )}
+            >
+              {c.short}
+            </button>
+          );
+        })}
+      </div>
+
       {/* Grid */}
       <div className="grid grid-cols-1 gap-3 lg:grid-cols-12">
         {/* Live Network — hero, full width, map/ribbon toggle */}
@@ -194,6 +226,7 @@ export function OpsCommand() {
           {data ? (
             heroView === "peta" ? (
               <CorridorMap
+                corridor={getCorridor(corridorId)}
                 segments={data.segments}
                 incidents={data.incidents}
                 selected={selectedSegment}
