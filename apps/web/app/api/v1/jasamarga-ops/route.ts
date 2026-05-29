@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { buildSnapshot } from "@/lib/jasamarga/data";
-import { getLiveTraffic } from "@/lib/jasamarga/tomtom";
+import { defaultSource } from "@/lib/jasamarga/connector";
 
 export const dynamic = "force-dynamic";
 
@@ -16,7 +16,6 @@ export const dynamic = "force-dynamic";
  * dependency, runs with zero setup. Gate it like /api/v1/mbg-crisis if productized.
  */
 export async function GET() {
-  const key = process.env.TOMTOM_API_KEY;
-  const live = key ? await getLiveTraffic(key) : null;
+  const live = await defaultSource().fetchTraffic();
   return NextResponse.json(buildSnapshot(live?.segments, live?.incidents));
 }
