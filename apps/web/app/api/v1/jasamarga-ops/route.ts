@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { buildSnapshot } from "@/lib/jasamarga/data";
 import { defaultSource } from "@/lib/jasamarga/connector";
+import { getCorridor } from "@/lib/jasamarga/corridors";
 
 export const dynamic = "force-dynamic";
 
@@ -15,7 +16,9 @@ export const dynamic = "force-dynamic";
  * Intentionally public (no requireRole): standalone sales-lead demo, no DB
  * dependency, runs with zero setup. Gate it like /api/v1/mbg-crisis if productized.
  */
-export async function GET() {
-  const live = await defaultSource().fetchTraffic();
-  return NextResponse.json(buildSnapshot(live?.segments, live?.incidents));
+export async function GET(req: Request) {
+  const id = new URL(req.url).searchParams.get("corridor");
+  const c = getCorridor(id);
+  const live = await defaultSource().fetchTraffic(c);
+  return NextResponse.json(buildSnapshot(c.id, live?.segments, live?.incidents));
 }

@@ -1,52 +1,40 @@
-import { BASE_SEGMENTS } from "./data";
+import type { Corridor } from "./corridors";
 import type { IncidentItem, RouteSegment, SourceType } from "./types";
 import { speedStatus } from "./ui";
 
 /**
- * Live TomTom connector for the Japek ribbon + incident feed.
+ * Live TomTom connector for a corridor ribbon + incident feed.
  *
  * - Flow Segment Data → per-segment current speed (only trusted when the point
  *   snaps to a motorway/trunk/major road; otherwise we keep the baseline so a
- *   bad snap never shows a misleading surface-road speed).
- * - Incident Details → live incidents on the corridor (filtered to AH2 / Japek).
+ *   bad snap never shows a misleading surface-road speed). Sampled at one anchor
+ *   per corridor segment (`corridor.anchors`).
+ * - Incident Details → live incidents on the corridor (filtered via
+ *   `corridor.roadMatch`).
  *
- * Results are cached in-process (TTL below) so polls and tabs share one fetch
- * and we stay well inside the free tier. Any failure returns null → the route
- * falls back to the synthetic snapshot (graceful degradation).
+ * Results are cached in-process per corridor (TTL below) so polls and tabs share
+ * one fetch and we stay well inside the free tier. Any failure returns null →
+ * the route falls back to the synthetic snapshot (graceful degradation).
  */
 
 const FLOW_URL = "https://api.tomtom.com/traffic/services/4/flowSegmentData/absolute/10/json";
 const INCIDENTS_URL = "https://api.tomtom.com/traffic/services/5/incidentDetails";
 const INCIDENT_FIELDS =
   "{incidents{type,geometry{type,coordinates},properties{iconCategory,magnitudeOfDelay,startTime,from,to,delay,roadNumbers,events{description,code}}}}";
-const BBOX = "106.88,-6.46,107.47,-6.24"; // Japek corridor + approaches
 const TIMEOUT_MS = 4500;
 const CACHE_TTL_MS = 120_000; // 2 min — keeps us inside TomTom's free tier
 
-// KM ↔ longitude mapping for the corridor (Halim ≈ KM0 … Cikampek Utama ≈ KM72).
-const LON0 = 106.9;
-const LON1 = 107.455;
-const KM_MAX = 72;
-const kmFromLon = (lon: number) => Math.max(0, Math.min(KM_MAX, ((lon - LON0) / (LON1 - LON0)) * KM_MAX));
-
 /**
- * One on-toll lat/lon per BASE_SEGMENTS entry (same order). Derived by sampling
- * the TomTom Routing polyline for Halim→Cikampek at each segment midpoint, then
- * verified against Flow Segment Data — all snap to the motorway (FRC0/1/2), so
- * every segment gets a real toll speed (no surface-road snaps).
+ * KM ↔ longitude mapping for a corridor: the start longitude maps to KM0 and the
+ * end longitude maps to the corridor's max KM. (start/end are [lat, lon].)
  */
-const ANCHORS: [number, number][] = [
-  [-6.2555, 106.935], // KM 0–9   FRC0 (mainline; avoids the Cawang FRC2 connector)
-  [-6.24922, 106.98167], // KM 9–17  FRC0
-  [-6.27482, 107.04962], // KM 17–24 FRC0
-  [-6.29894, 107.11235], // KM 24–31 FRC0
-  [-6.33, 107.16787], // KM 31–37 FRC0
-  [-6.35472, 107.2384], // KM 37–47 FRC0
-  [-6.35106, 107.31013], // KM 47–52 FRC0
-  [-6.37793, 107.37669], // KM 52–62 FRC0
-  [-6.42409, 107.42822], // KM 62–67 FRC0
-  [-6.40123, 107.44586], // KM 67–72 FRC1
-];
+function kmFromLon(c: Corridor, lon: number): number {
+  const lon0 = c.start[1];
+  const lon1 = c.end[1];
+  const kmMax = c.segments[c.segments.length - 1].km_to;
+  if (lon1 === lon0) return 0;
+  return Math.max(0, Math.min(kmMax, ((lon - lon0) / (lon1 - lon0)) * kmMax));
+}
 
 /** Road classes we trust as "on the toll mainline". */
 const MOTORWAY_FRC = new Set(["FRC0", "FRC1", "FRC2"]);
@@ -70,7 +58,7 @@ interface CacheEntry {
   at: number;
   data: LiveTraffic;
 }
-let cache: CacheEntry | null = null;
+const cache = new Map<string, CacheEntry>();
 
 export interface LiveTraffic {
   segments: RouteSegment[];
@@ -91,15 +79,15 @@ async function getJson(url: string): Promise<unknown | null> {
   }
 }
 
-async function fetchSegments(key: string): Promise<RouteSegment[] | null> {
+async function fetchSegments(c: Corridor, key: string): Promise<RouteSegment[] | null> {
   const flows = await Promise.all(
-    ANCHORS.map(([lat, lon]) =>
+    c.anchors.map(([lat, lon]) =>
       getJson(`${FLOW_URL}?key=${encodeURIComponent(key)}&point=${lat},${lon}&unit=KMPH`),
     ),
   );
   if (flows.every((f) => f == null)) return null;
 
-  return BASE_SEGMENTS.map((geom, i) => {
+  return c.segments.map((geom, i) => {
     const fsd = (flows[i] as { flowSegmentData?: Record<string, unknown> } | null)?.flowSegmentData;
     const frc = String(fsd?.frc ?? "");
     const onToll = MOTORWAY_FRC.has(frc) && !!fsd;
@@ -115,19 +103,19 @@ async function fetchSegments(key: string): Promise<RouteSegment[] | null> {
   });
 }
 
-async function fetchIncidents(key: string): Promise<IncidentItem[]> {
-  const url = `${INCIDENTS_URL}?key=${encodeURIComponent(key)}&bbox=${BBOX}&fields=${encodeURIComponent(INCIDENT_FIELDS)}&language=id-ID&timeValidityFilter=present`;
+async function fetchIncidents(c: Corridor, key: string): Promise<IncidentItem[]> {
+  const url = `${INCIDENTS_URL}?key=${encodeURIComponent(key)}&bbox=${c.bbox}&fields=${encodeURIComponent(INCIDENT_FIELDS)}&language=id-ID&timeValidityFilter=present`;
   const json = (await getJson(url)) as { incidents?: RawIncident[] } | null;
   if (!json?.incidents) return [];
 
   const onCorridor = json.incidents.filter((inc) => {
     const roads = inc.properties?.roadNumbers ?? [];
-    const text = `${inc.properties?.from ?? ""} ${inc.properties?.to ?? ""}`;
-    return roads.includes("AH2") || /cikampek|japek/i.test(text);
+    const text = `${roads.join(" ")} ${inc.properties?.from ?? ""} ${inc.properties?.to ?? ""}`;
+    return c.roadMatch.test(text);
   });
 
   return onCorridor
-    .map((inc, i) => mapIncident(inc, i))
+    .map((inc, i) => mapIncident(c, inc, i))
     .filter((x): x is IncidentItem => x != null)
     .sort((a, b) => b.severity - a.severity)
     .slice(0, 6);
@@ -162,11 +150,11 @@ function relTime(iso?: string): string {
   return `${Math.round(mins / 60)} jam lalu`;
 }
 
-function mapIncident(inc: RawIncident, i: number): IncidentItem | null {
+function mapIncident(c: Corridor, inc: RawIncident, i: number): IncidentItem | null {
   const p = inc.properties ?? {};
   const coord = firstCoord(inc.geometry);
   if (!coord) return null;
-  const km = Math.round(kmFromLon(coord[0]));
+  const km = Math.round(kmFromLon(c, coord[0]));
   const mag = p.magnitudeOfDelay ?? 0;
   const base = mag === 3 ? 8 : mag === 2 ? 5.5 : mag === 1 ? 3.5 : 4;
   const severity = +Math.max(0, Math.min(10, base + Math.min(2, (p.delay ?? 0) / 300))).toFixed(1);
@@ -182,7 +170,7 @@ function mapIncident(inc: RawIncident, i: number): IncidentItem | null {
     km: `KM ${km}`,
     lat: coord[1],
     lng: coord[0],
-    direction: p.roadNumbers?.includes("AH2") ? "Tol Japek (AH2)" : p.from ?? "Koridor Japek",
+    direction: p.from ?? `Koridor ${c.short}`,
     type: ICON_TYPE[p.iconCategory ?? 0] ?? "Insiden lalu lintas",
     severity,
     status: "Berlangsung",
@@ -193,14 +181,18 @@ function mapIncident(inc: RawIncident, i: number): IncidentItem | null {
   };
 }
 
-/** Cached fetch of live segments + incidents. Returns null if traffic flow can't be read. */
-export async function getLiveTraffic(key: string): Promise<LiveTraffic | null> {
-  if (cache && Date.now() - cache.at < CACHE_TTL_MS) return cache.data;
+/** Cached (per corridor) fetch of live segments + incidents. Returns null if traffic flow can't be read. */
+export async function getLiveTraffic(corridor: Corridor, key: string): Promise<LiveTraffic | null> {
+  const hit = cache.get(corridor.id);
+  if (hit && Date.now() - hit.at < CACHE_TTL_MS) return hit.data;
 
-  const [segments, incidents] = await Promise.all([fetchSegments(key), fetchIncidents(key)]);
+  const [segments, incidents] = await Promise.all([
+    fetchSegments(corridor, key),
+    fetchIncidents(corridor, key),
+  ]);
   if (!segments) return null; // flow failed → fall back to synthetic entirely
 
   const data: LiveTraffic = { segments, incidents };
-  cache = { at: Date.now(), data };
+  cache.set(corridor.id, { at: Date.now(), data });
   return data;
 }

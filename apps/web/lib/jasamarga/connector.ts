@@ -1,3 +1,4 @@
+import type { Corridor } from "./corridors";
 import type { IncidentItem, RouteSegment } from "./types";
 import { getLiveTraffic } from "./tomtom";
 
@@ -14,7 +15,7 @@ export interface CorridorTraffic {
 export interface JasaMargaSource {
   id: string;
   label: string;
-  fetchTraffic(): Promise<CorridorTraffic | null>;
+  fetchTraffic(corridor: Corridor): Promise<CorridorTraffic | null>;
 }
 
 /** Public traffic via TomTom — live when TOMTOM_API_KEY is set, else null. */
@@ -22,8 +23,8 @@ export class TomTomSource implements JasaMargaSource {
   id = "tomtom";
   label = "TomTom Traffic (publik)";
   constructor(private readonly key?: string) {}
-  fetchTraffic(): Promise<CorridorTraffic | null> {
-    return this.key ? getLiveTraffic(this.key) : Promise.resolve(null);
+  fetchTraffic(corridor: Corridor): Promise<CorridorTraffic | null> {
+    return this.key ? getLiveTraffic(corridor, this.key) : Promise.resolve(null);
   }
 }
 
@@ -34,7 +35,7 @@ export class TomTomSource implements JasaMargaSource {
 export class JasaMargaFeedSource implements JasaMargaSource {
   id = "jasamarga";
   label = "JasaMarga Feed (belum tersedia)";
-  fetchTraffic(): Promise<CorridorTraffic | null> {
+  fetchTraffic(_corridor: Corridor): Promise<CorridorTraffic | null> {
     return Promise.resolve(null);
   }
 }

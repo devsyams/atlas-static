@@ -2,6 +2,7 @@ import type { ForecastHour, IncidentItem, OpsInsight, OpsSnapshot, RouteSegment,
 import { loadLevel, speedStatus } from "./ui";
 import { computeSafety } from "./safety";
 import { kmToLatLng } from "./geo";
+import { type Corridor, getCorridor } from "./corridors";
 
 /** Parse a leading KM number out of an incident label ("KM 52+400" → 52). */
 function kmOf(label: string): number {
@@ -10,101 +11,87 @@ function kmOf(label: string): number {
 }
 
 /** Ensure every incident carries a map coordinate (live ones already do). */
-function withCoords(incidents: IncidentItem[]): IncidentItem[] {
+function withCoords(c: Corridor, incidents: IncidentItem[]): IncidentItem[] {
   return incidents.map((inc) => {
     if (inc.lat != null && inc.lng != null) return inc;
-    const [lat, lng] = kmToLatLng(kmOf(inc.km));
+    const [lat, lng] = kmToLatLng(c, kmOf(inc.km));
     return { ...inc, lat, lng };
   });
 }
 
-/** Last computed safety score, kept in-process so the trend arrow is meaningful. */
-let lastSafetyScore: number | undefined;
+/** Last computed safety score per corridor, kept in-process so the trend arrow is meaningful. */
+const lastSafetyScore = new Map<string, number>();
 
 /**
- * Snapshot of the Jakarta–Cikampek (Japek) corridor for the JasaMarga Ops
- * Command demo. Modelled entirely on PUBLIC / online sources (traffic APIs,
- * social, news, BMKG, official channels). When the API route supplies live
- * TomTom segments/incidents we use those and derive the insight/top-ruas from
- * them; otherwise everything is fabricated (jittered per read).
+ * Snapshot of a JasaMarga toll corridor for the Ops Command demo. Modelled
+ * entirely on PUBLIC / online sources (traffic APIs, social, news, BMKG,
+ * official channels) and driven by the corridor registry (`corridors.ts`).
+ * When the API route supplies live TomTom segments/incidents we use those and
+ * derive the insight/top-ruas from them; otherwise everything is fabricated
+ * (jittered per read).
  */
 
 const jit = (base: number, spread: number) => base + (Math.random() - 0.5) * 2 * spread;
 const clamp = (n: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, n));
 
-/** Corridor geometry — exported so the live TomTom connector reuses the same KM layout. */
-export const BASE_SEGMENTS: Omit<RouteSegment, "status">[] = [
-  { km_from: 0, km_to: 9, label: "Halim – Cikunir", speed: 68, delay_min: 2 },
-  { km_from: 9, km_to: 17, label: "Cikunir – Bekasi Barat", speed: 74, delay_min: 1, elevated: true },
-  { km_from: 17, km_to: 24, label: "Bekasi Timur – Cibitung", speed: 61, delay_min: 2, elevated: true },
-  { km_from: 24, km_to: 31, label: "Cikarang Barat – Cikarang Utama", speed: 47, delay_min: 4, elevated: true },
-  { km_from: 31, km_to: 37, label: "Cikarang Pusat – Karawang Barat", speed: 39, delay_min: 5, elevated: true },
-  { km_from: 37, km_to: 47, label: "Karawang Barat – Karawang Timur", speed: 32, delay_min: 8, elevated: true },
-  { km_from: 47, km_to: 52, label: "Karawang Timur – KM 52", speed: 17, delay_min: 12, incident: true },
-  { km_from: 52, km_to: 62, label: "KM 52 – Dawuan", speed: 11, delay_min: 22, incident: true },
-  { km_from: 62, km_to: 67, label: "Dawuan – Kalihurip", speed: 34, delay_min: 5 },
-  { km_from: 67, km_to: 72, label: "Kalihurip – Cikampek Utama", speed: 53, delay_min: 2 },
-];
-
-const SYNTHETIC_INCIDENTS: IncidentItem[] = [
-  {
-    id: "INC-2041",
-    km: "KM 52",
-    direction: "arah Cikampek",
-    type: "Kecelakaan beruntun",
-    severity: 8.6,
-    status: "Terkonfirmasi",
-    source: "@TMCPoldaMetro",
-    source_type: "medsos",
-    reported: "23 mnt lalu",
-    lanes_blocked: 2,
-    detail:
-      "Tabrakan beruntun 4 kendaraan + 1 truk terguling. 2 lajur kanan tertutup. Dikonfirmasi via X @TMCPoldaMetro dan laporan Waze; foto beredar di grup komunitas.",
-  },
-  {
-    id: "INC-2043",
-    km: "KM 38",
-    direction: "arah Cikampek",
-    type: "Kendaraan mogok",
-    severity: 5.1,
-    status: "Berlangsung",
-    source: "Waze (crowdsourced)",
-    source_type: "waze",
-    reported: "8 mnt lalu",
-    lanes_blocked: 1,
-    detail: "Truk mogok di lajur 1 — 14 laporan Waze dalam 6 menit. Belum ada konfirmasi resmi.",
-  },
-  {
-    id: "INC-2039",
-    km: "KM 24",
-    direction: "arah Jakarta",
-    type: "Genangan air",
-    severity: 4.0,
-    status: "Dilaporkan",
-    source: "@PTJASAMARGA",
-    source_type: "resmi",
-    reported: "31 mnt lalu",
-    lanes_blocked: 1,
-    detail: "Imbauan resmi @PTJASAMARGA: genangan akibat hujan, kurangi kecepatan. Petugas dikerahkan.",
-  },
-  {
-    id: "INC-2044",
-    km: "KM 72",
-    direction: "arah Cikampek",
-    type: "Antrean gerbang",
-    severity: 3.4,
-    status: "Berlangsung",
-    source: "detik.com",
-    source_type: "berita",
-    reported: "12 mnt lalu",
-    detail: "Berita online melaporkan antrean panjang di GT Cikampek Utama jelang libur panjang.",
-  },
-];
-
 const segLoad = (s: RouteSegment) => +clamp((80 - s.speed) / 8 + s.delay_min / 8, 0, 10).toFixed(1);
 
 function incidentKm(inc: IncidentItem): number {
   return parseFloat(inc.km.replace(/[^0-9.]/g, "")) || -1;
+}
+
+/** The two endpoint city names of a corridor, inferred from its first/last segment labels. */
+function endpointNames(c: Corridor): { from: string; to: string } {
+  const first = c.segments[0].label;
+  const last = c.segments[c.segments.length - 1].label;
+  const from = first.split("–")[0].trim();
+  const parts = last.split("–");
+  const to = parts[parts.length - 1].trim();
+  return { from, to };
+}
+
+const INC_TYPES = ["Kecelakaan", "Kendaraan mogok", "Genangan air", "Antrean gerbang", "Proyek pemeliharaan"];
+const INC_SOURCES: { source: string; source_type: IncidentItem["source_type"] }[] = [
+  { source: "@TMCPoldaMetro", source_type: "medsos" },
+  { source: "Waze (crowdsourced)", source_type: "waze" },
+  { source: "@PTJASAMARGA", source_type: "resmi" },
+  { source: "detik.com", source_type: "berita" },
+];
+const INC_STATUS = ["Terkonfirmasi", "Berlangsung", "Dilaporkan"];
+
+/**
+ * Build 3–4 plausible incidents placed on the corridor: the 3 slowest segments
+ * plus one mid segment. Severity scales with how loaded the segment is. The
+ * worst one gets 2 lanes blocked. Deterministic-ish (light jitter only).
+ */
+function genIncidents(c: Corridor, segments: RouteSegment[]): IncidentItem[] {
+  const byLoad = [...segments].sort((a, b) => segLoad(b) - segLoad(a));
+  const slowest = byLoad.slice(0, 3);
+  const mid = segments[Math.floor(segments.length / 2)];
+  const chosen = [...slowest];
+  if (!chosen.includes(mid)) chosen.push(mid);
+
+  return chosen.map((seg, i) => {
+    const km = Math.round((seg.km_from + seg.km_to) / 2);
+    const load = segLoad(seg);
+    const severity = +clamp(3 + (load / 10) * 6 + (Math.random() - 0.5) * 0.6, 3, 9).toFixed(1);
+    const src = INC_SOURCES[i % INC_SOURCES.length];
+    const type = INC_TYPES[i % INC_TYPES.length];
+    const inc: IncidentItem = {
+      id: `INC-${c.id.slice(0, 3).toUpperCase()}-${20 + i}`,
+      km: `KM ${km}`,
+      direction: `arah ${endpointNames(c).to}`,
+      type,
+      severity,
+      status: INC_STATUS[i % INC_STATUS.length],
+      source: src.source,
+      source_type: src.source_type,
+      reported: `${Math.round(jit(15, 8))} mnt lalu`,
+      detail: `${type} dilaporkan di ${seg.label} (sekitar KM ${km}) koridor ${c.short}; lalu lintas tersendat, petugas dipantau via ${src.source}.`,
+    };
+    if (i === 0) inc.lanes_blocked = 2;
+    return inc;
+  });
 }
 
 function deriveTopRuas(segments: RouteSegment[], incidents: IncidentItem[]): RuasLoad[] {
@@ -135,6 +122,7 @@ function deriveTopRuas(segments: RouteSegment[], incidents: IncidentItem[]): Rua
 }
 
 function deriveInsight(
+  c: Corridor,
   segments: RouteSegment[],
   incidents: IncidentItem[],
   level: string,
@@ -146,21 +134,29 @@ function deriveInsight(
   const title =
     slowest.speed < 40
       ? `Kemacetan di ${slowest.label} (KM ${slowest.km_from}–${slowest.km_to})`
-      : `Lalu lintas ${level} di koridor Jakarta–Cikampek`;
+      : `Lalu lintas ${level} di koridor ${c.short}`;
   const text =
     `Data lalu lintas publik menunjukkan kecepatan terendah ${slowest.speed} km/j di ${slowest.label}, dengan total tambahan waktu tempuh +${avgDelay} mnt ujung-ke-ujung. ` +
     (incidents.length
       ? `${incidents.length} insiden terpantau${worst ? `, terparah ${worst.type} di ${worst.km} (sumber ${worst.source})` : ""}. `
       : `Tidak ada insiden besar terdeteksi di koridor. `) +
-    `Sebutan media sosial ${mentions.toLocaleString("id-ID")}/24 jam.`;
+    `Sebutan media sosial ${mentions.toLocaleString("id-ID")}/24 jam (${c.hashtag}).`;
+  const divertTo = c.elevatedName ?? c.altRoute;
   const action =
     slowest.speed < 25
-      ? `Prioritaskan ${slowest.label}; pertimbangkan rekayasa lalu lintas & imbauan alih jalur ke Layang MBZ.`
+      ? `Prioritaskan ${slowest.label}; pertimbangkan rekayasa lalu lintas & imbauan alih jalur ke ${divertTo}.`
       : `Pantau ${slowest.label}; siapkan imbauan dini bila kecepatan turun di bawah 20 km/j.`;
   return { title, text, action };
 }
 
-export function buildSnapshot(liveSegments?: RouteSegment[], liveIncidents?: IncidentItem[]): OpsSnapshot {
+export function buildSnapshot(
+  corridorId?: string,
+  liveSegments?: RouteSegment[],
+  liveIncidents?: IncidentItem[],
+): OpsSnapshot {
+  const c = getCorridor(corridorId);
+  const { from: cityFrom, to: cityTo } = endpointNames(c);
+
   const now = new Date();
   const updated_at = now.toLocaleString("id-ID", {
     day: "2-digit",
@@ -172,13 +168,16 @@ export function buildSnapshot(liveSegments?: RouteSegment[], liveIncidents?: Inc
   const isLive = !!liveSegments && liveSegments.length > 0;
   const segments: RouteSegment[] = isLive
     ? liveSegments!
-    : BASE_SEGMENTS.map((s) => {
+    : c.segments.map((s) => {
         const speed = clamp(Math.round(jit(s.speed, 4)), 6, 90);
         const delay_min = Math.max(0, Math.round(jit(s.delay_min, 1.5)));
         return { ...s, speed, delay_min, status: speedStatus(speed) };
       });
 
-  const incidents: IncidentItem[] = withCoords(liveIncidents !== undefined ? liveIncidents : SYNTHETIC_INCIDENTS);
+  const incidents: IncidentItem[] = withCoords(
+    c,
+    liveIncidents !== undefined ? liveIncidents : genIncidents(c, segments),
+  );
 
   const avg_speed = Math.round(segments.reduce((a, s) => a + s.speed, 0) / segments.length);
   const avg_delay_min = Math.round(segments.reduce((a, s) => a + s.delay_min, 0));
@@ -200,20 +199,73 @@ export function buildSnapshot(liveSegments?: RouteSegment[], liveIncidents?: Inc
   forecast[0].label = "Sekarang";
   if (peakIdx !== 0) forecast[peakIdx].label = "Puncak";
 
-  const weather: WeatherZone[] = [
-    { zone: "Jakarta – Bekasi", condition: "Cerah berawan", temp: 31, impact: "rendah" },
-    { zone: "Cikarang – Karawang", condition: "Hujan ringan", temp: 27, impact: "sedang" },
-    { zone: "Cikampek", condition: "Berawan", temp: 29, impact: "rendah" },
-  ];
+  const weather: WeatherZone[] = c.weather;
+  const worstWeather = [...weather].sort(
+    (a, b) => ({ rendah: 0, sedang: 1, tinggi: 2 })[b.impact] - ({ rendah: 0, sedang: 1, tinggi: 2 })[a.impact],
+  )[0];
 
-  const safety = computeSafety(segments, incidents, weather, negativity, lastSafetyScore);
-  lastSafetyScore = safety.score;
+  const prev = lastSafetyScore.get(c.id);
+  const safety = computeSafety(segments, incidents, weather, negativity, prev);
+  lastSafetyScore.set(c.id, safety.score);
 
-  const insight = deriveInsight(segments, incidents, level, avg_delay_min, mentions_24h);
+  const insight = deriveInsight(c, segments, incidents, level, avg_delay_min, mentions_24h);
   const top_ruas = deriveTopRuas(segments, incidents);
 
+  // Travel-time board derived from corridor geometry/speeds.
+  const maxKm = c.segments[c.segments.length - 1].km_to;
+  const fullNormal = Math.round((maxKm / 80) * 60);
+  const fullNow = Math.round(fullNormal + avg_delay_min);
+  const halfSeg = c.segments[Math.floor(c.segments.length / 2)];
+  const halfKm = halfSeg.km_to;
+  const halfNormal = Math.round((halfKm / 80) * 60);
+  const halfNow = Math.round(
+    halfNormal + segments.slice(0, Math.floor(c.segments.length / 2) + 1).reduce((a, s) => a + s.delay_min, 0),
+  );
+  const elevatedNow = c.elevatedName ? Math.round(fullNow * 0.85) : null;
+  const altNormal = Math.round(fullNormal * 1.9);
+  const altNow = Math.round(altNormal * 1.05);
+  const fastest = Math.min(fullNow, elevatedNow ?? Infinity, altNow);
+
+  const interventions: OpsSnapshot["interventions"] = [
+    {
+      id: "RKL-1",
+      title: `Contraflow di sekitar ${slowest.label}`,
+      segment: `KM ${slowest.km_from}–${slowest.km_to} arah ${cityTo}`,
+      rationale: "Bila arah berlawanan lebih lengang, pinjam 1 lajur untuk membuka kapasitas di titik terlambat.",
+      impact_time_pct: -38,
+      impact_clear_min: 45,
+      risk: "sedang",
+      recommended: true,
+      officially_announced: false,
+    },
+    {
+      id: "RKL-2",
+      title: `Imbauan alih jalur (${c.altRoute})`,
+      segment: `Keluar ${cityFrom}`,
+      rationale: `Dorong sebagian kendaraan jarak jauh ke jalur arteri ${c.altRoute} via medsos & VMS.`,
+      impact_time_pct: -15,
+      impact_clear_min: 40,
+      risk: "rendah",
+      recommended: false,
+      officially_announced: false,
+    },
+  ];
+  if (c.elevatedName) {
+    interventions.push({
+      id: "RKL-3",
+      title: `Alihkan Gol I ke ${c.elevatedName}`,
+      segment: `KM ${c.segments[1]?.km_from ?? 10}–${slowest.km_to}`,
+      rationale: `Pindahkan kendaraan kecil ke ${c.elevatedName} agar jalur bawah lebih lega.`,
+      impact_time_pct: -22,
+      impact_clear_min: 30,
+      risk: "rendah",
+      recommended: false,
+      officially_announced: false,
+    });
+  }
+
   return {
-    corridor: "Jakarta–Cikampek (Japek)",
+    corridor: c.name,
     updated_at,
     traffic_source: isLive ? "tomtom" : "synthetic",
     load_index,
@@ -227,8 +279,8 @@ export function buildSnapshot(liveSegments?: RouteSegment[], liveIncidents?: Inc
 
     conditions: [
       { label: "Libur panjang H-1", tone: "warn" },
-      { label: "Hujan ringan Karawang", tone: "warn" },
-      { label: "Layang MBZ normal", tone: "good" },
+      { label: `${worstWeather.condition} ${worstWeather.zone.split("–").pop()?.trim() ?? ""}`.trim(), tone: worstWeather.impact === "tinggi" ? "bad" : "warn" },
+      { label: c.elevatedName ? `${c.elevatedName} normal` : `${c.altRoute} tersedia`, tone: "good" },
       { label: negativity >= 6 ? "Sentimen memburuk" : "Sentimen stabil", tone: negativity >= 6 ? "bad" : "good" },
     ],
 
@@ -237,7 +289,7 @@ export function buildSnapshot(liveSegments?: RouteSegment[], liveIncidents?: Inc
         question: `Macet di ${slowest.label} meluas dalam 2 jam?`,
         probability: Math.round(jit(72, 5)),
         answer_label: "Mungkin",
-        reasoning: "Tren kecepatan dari data publik melandai; inflow sore dari Jakarta belum memuncak.",
+        reasoning: "Tren kecepatan dari data publik melandai; inflow sore belum memuncak.",
         timeframe: "2 jam",
         tone: "negative",
       },
@@ -245,7 +297,7 @@ export function buildSnapshot(liveSegments?: RouteSegment[], liveIncidents?: Inc
         question: "Lonjakan sebutan negatif > 5.000 malam ini?",
         probability: Math.round(jit(64, 4)),
         answer_label: "Mungkin",
-        reasoning: "#MacetJapek naik 3,2 rb dalam 24 jam; akun berita besar mulai mengangkat kondisi koridor.",
+        reasoning: `${c.hashtag} naik 3,2 rb dalam 24 jam; akun berita besar mulai mengangkat kondisi koridor ${c.short}.`,
         timeframe: "malam ini",
         tone: "negative",
       },
@@ -253,7 +305,7 @@ export function buildSnapshot(liveSegments?: RouteSegment[], liveIncidents?: Inc
         question: "Kecepatan rata-rata pulih > 50 km/j malam ini?",
         probability: Math.round(jit(48, 6)),
         answer_label: "Berimbang",
-        reasoning: "Pola historis Google menunjukkan pemulihan setelah puncak sore, bergantung penanganan insiden.",
+        reasoning: "Pola historis menunjukkan pemulihan setelah puncak sore, bergantung penanganan insiden.",
         timeframe: "malam ini",
         tone: "neutral",
       },
@@ -265,91 +317,48 @@ export function buildSnapshot(liveSegments?: RouteSegment[], liveIncidents?: Inc
       { label: "Insiden aktif", value: String(incidents.length), delta: 33.3 },
       { label: "Sentimen publik", value: `${Math.round(negativity * 10)}% negatif`, delta: 9.1 },
       { label: "Sebutan 24 jam", value: mentions_24h.toLocaleString("id-ID") },
-      { label: "Tren teratas", value: "#MacetJapek" },
-      { label: "Cuaca Karawang", value: "Hujan ringan" },
+      { label: "Tren teratas", value: c.hashtag },
+      { label: `Cuaca ${worstWeather.zone.split("–").pop()?.trim() ?? ""}`.trim(), value: worstWeather.condition },
       { label: "Sumber", value: isLive ? "2 live · 4 demo" : "mode demo" },
     ],
 
     segments,
 
-    landmarks: [
-      { km: 2, name: "GT Halim Utama", kind: "gerbang" },
-      { km: 11, name: "GT Bekasi Barat", kind: "gerbang" },
-      { km: 19, name: "Rest Area KM 19", kind: "rest" },
-      { km: 29, name: "GT Cikarang Utama", kind: "gerbang" },
-      { km: 33, name: "Rest Area KM 33", kind: "rest" },
-      { km: 39, name: "Rest Area KM 39", kind: "rest" },
-      { km: 50, name: "Rest Area KM 50", kind: "rest" },
-      { km: 57, name: "Rest Area KM 57", kind: "rest" },
-      { km: 67, name: "Kalihurip JC", kind: "gerbang" },
-      { km: 72, name: "GT Cikampek Utama", kind: "gerbang" },
-    ],
+    landmarks: c.landmarks,
 
     incidents,
     top_ruas,
 
-    interventions: [
-      {
-        id: "RKL-1",
-        title: `Contraflow di sekitar ${slowest.label}`,
-        segment: `KM ${slowest.km_from}–${slowest.km_to} arah Cikampek`,
-        rationale: "Bila arah berlawanan lebih lengang, pinjam 1 lajur untuk membuka kapasitas di titik terlambat.",
-        impact_time_pct: -38,
-        impact_clear_min: 45,
-        risk: "sedang",
-        recommended: true,
-        officially_announced: false,
-      },
-      {
-        id: "RKL-2",
-        title: "Alihkan Gol I ke Layang MBZ",
-        segment: "KM 10–47",
-        rationale: "Pindahkan kendaraan kecil ke jalan layang agar jalur bawah lebih lega.",
-        impact_time_pct: -22,
-        impact_clear_min: 30,
-        risk: "rendah",
-        recommended: false,
-        officially_announced: false,
-      },
-      {
-        id: "RKL-3",
-        title: "Imbauan alih jalur (Pantura)",
-        segment: "Keluar Karawang Barat",
-        rationale: "Dorong sebagian kendaraan jarak jauh ke jalur arteri Pantura via medsos & VMS.",
-        impact_time_pct: -15,
-        impact_clear_min: 40,
-        risk: "rendah",
-        recommended: false,
-        officially_announced: false,
-      },
-    ],
+    interventions,
 
     social: {
       mentions_24h,
       negativity,
       trend: [
-        { keyword: "#MacetJapek", count: 1240, sentiment: "negative" },
-        { keyword: "KM 52", count: 680, sentiment: "negative" },
+        { keyword: c.hashtag, count: 1240, sentiment: "negative" },
+        { keyword: slowest.label.split("–")[0].trim(), count: 680, sentiment: "negative" },
         { keyword: "kecelakaan", count: 510, sentiment: "negative" },
         { keyword: "tarif tol", count: 420, sentiment: "negative" },
         { keyword: "contraflow", count: 305, sentiment: "neutral" },
         { keyword: "mudik", count: 260, sentiment: "neutral" },
-        { keyword: "lubang KM 38", count: 180, sentiment: "negative" },
+        { keyword: c.altRoute, count: 180, sentiment: "neutral" },
         { keyword: "Travoy", count: 140, sentiment: "positive" },
       ],
       top_posts: [
         {
           handle: "@infomudik",
           platform: "X",
-          text: "Hindari Japek arah Cikampek! Macet panjang dari KM 47, ada insiden di depan. Sudah lama belum gerak 😩 #MacetJapek",
+          text: `Hindari ${c.short} arah ${cityTo}! Macet panjang, ada insiden di depan. Sudah lama belum gerak 😩 ${c.hashtag}`,
           sentiment: "negative",
           engagement: 4200,
           time: "17 mnt lalu",
         },
         {
-          handle: "@warga_bekasi",
+          handle: "@warga_lokal",
           platform: "X",
-          text: "Mending lewat Layang MBZ kalo mobil kecil, bawah parah banget. Info dari Travoy lumayan akurat.",
+          text: c.elevatedName
+            ? `Mending lewat ${c.elevatedName} kalo mobil kecil, bawah parah banget. Info dari Travoy lumayan akurat.`
+            : `Mending lewat ${c.altRoute} kalo nggak buru-buru, tol ${c.short} parah banget. Info dari Travoy lumayan akurat.`,
           sentiment: "neutral",
           engagement: 980,
           time: "24 mnt lalu",
@@ -357,7 +366,7 @@ export function buildSnapshot(liveSegments?: RouteSegment[], liveIncidents?: Inc
         {
           handle: "@sopirtruk_id",
           platform: "X",
-          text: "Tarif naik tapi jalan masih sering macet & berlubang. Tolong dong @PTJASAMARGA",
+          text: `Tarif naik tapi ${c.short} masih sering macet & berlubang. Tolong dong @PTJASAMARGA`,
           sentiment: "negative",
           engagement: 1530,
           time: "41 mnt lalu",
@@ -370,37 +379,40 @@ export function buildSnapshot(liveSegments?: RouteSegment[], liveIncidents?: Inc
         time: "14:02",
         category: "Imbauan",
         title: "Pantau kondisi terkini via Travoy",
-        body: "Pengguna jalan diimbau memantau lalu lintas dan CCTV melalui aplikasi Travoy sebelum berangkat; rekayasa lalu lintas situasional diberlakukan bila diperlukan.",
+        body: `Pengguna jalan di koridor ${c.short} diimbau memantau lalu lintas dan CCTV melalui aplikasi Travoy sebelum berangkat; rekayasa lalu lintas situasional diberlakukan bila diperlukan.`,
       },
       {
         time: "13:45",
         category: "Imbauan",
-        title: "Manfaatkan Jalan Layang MBZ",
-        body: "Kendaraan kecil (Gol I) diimbau memanfaatkan Jalan Layang MBZ untuk mengurangi kepadatan di jalur bawah.",
+        title: c.elevatedName ? `Manfaatkan ${c.elevatedName}` : `Pertimbangkan jalur ${c.altRoute}`,
+        body: c.elevatedName
+          ? `Kendaraan kecil (Gol I) diimbau memanfaatkan ${c.elevatedName} untuk mengurangi kepadatan di jalur bawah.`
+          : `Pengguna jarak jauh dapat mempertimbangkan ${c.altRoute} untuk mengurangi kepadatan di tol ${c.short}.`,
       },
       {
         time: "10:20",
         category: "Pemeliharaan",
-        title: "Pekerjaan perkerasan KM 24 arah Jakarta",
-        body: "Pemeliharaan jalan KM 24 dijadwalkan 22:00–05:00; satu lajur ditutup sementara.",
+        title: `Pekerjaan perkerasan ${slowest.label}`,
+        body: `Pemeliharaan jalan di ${slowest.label} dijadwalkan 22:00–05:00; satu lajur ditutup sementara.`,
       },
     ],
 
     news: [
-      { title: "Lalu lintas Tol Japek padat jelang libur panjang", source: "detik.com", time: "18 mnt lalu", sentiment: 7, summary: "Volume kendaraan meningkat; sejumlah titik tersendat ke arah Cikampek." },
-      { title: "Jasa Marga siapkan rekayasa lalu lintas antisipasi lonjakan", source: "Kompas.com", time: "12 mnt lalu", sentiment: 4, summary: "Skema contraflow/one-way disiapkan situasional sesuai kepadatan." },
-      { title: "Volume kendaraan Japek naik 12% jelang libur panjang", source: "Antara", time: "1 jam lalu", sentiment: 5, summary: "Peningkatan lalu lintas terpantau sejak pagi di sejumlah gerbang utama." },
-      { title: "Pengguna keluhkan antrean Gerbang Cikampek Utama", source: "Tribunnews", time: "40 mnt lalu", sentiment: 7, summary: "Antrean panjang dilaporkan; pengguna minta penambahan gardu saat puncak." },
+      { title: `Lalu lintas Tol ${c.short} padat jelang libur panjang`, source: "detik.com", time: "18 mnt lalu", sentiment: 7, summary: `Volume kendaraan meningkat; sejumlah titik tersendat ke arah ${cityTo}.` },
+      { title: `Jasa Marga siapkan rekayasa lalu lintas di koridor ${c.short}`, source: "Kompas.com", time: "12 mnt lalu", sentiment: 4, summary: "Skema contraflow/one-way disiapkan situasional sesuai kepadatan." },
+      { title: `Volume kendaraan ${c.short} naik 12% jelang libur panjang`, source: "Antara", time: "1 jam lalu", sentiment: 5, summary: "Peningkatan lalu lintas terpantau sejak pagi di sejumlah gerbang utama." },
+      { title: `Pengguna keluhkan antrean gerbang di koridor ${c.short}`, source: "Tribunnews", time: "40 mnt lalu", sentiment: 7, summary: "Antrean panjang dilaporkan; pengguna minta penambahan gardu saat puncak." },
     ],
 
     forecast,
 
     travel_times: [
-      { route: "Halim → Cikampek Utama", via: "Tol Japek (bawah)", minutes: 112, normal_minutes: 48, trend: "up" },
-      { route: "Halim → Cikampek Utama", via: "Layang MBZ (Gol I)", minutes: 96, normal_minutes: 55, trend: "up", best: true },
-      { route: "Halim → Karawang Barat", via: "Tol Japek", minutes: 58, normal_minutes: 36, trend: "up" },
-      { route: "Cikarang → Cikampek", via: "Tol Japek", minutes: 41, normal_minutes: 23, trend: "flat" },
-      { route: "Jakarta → Cikampek", via: "Arteri Pantura (alt.)", minutes: 135, normal_minutes: 120, trend: "flat" },
+      { route: `${cityFrom} → ${cityTo}`, via: `Tol ${c.short}`, minutes: fullNow, normal_minutes: fullNormal, trend: "up", best: fullNow === fastest },
+      ...(elevatedNow != null
+        ? [{ route: `${cityFrom} → ${cityTo}`, via: `${c.elevatedName} (Gol I)`, minutes: elevatedNow, normal_minutes: Math.round(fullNormal * 1.1), trend: "up" as const, best: elevatedNow === fastest }]
+        : []),
+      { route: `${cityFrom} → ${halfSeg.label.split("–").pop()?.trim() ?? cityTo}`, via: `Tol ${c.short}`, minutes: halfNow, normal_minutes: halfNormal, trend: "up" },
+      { route: `${cityFrom} → ${cityTo}`, via: `${c.altRoute} (alt.)`, minutes: altNow, normal_minutes: altNormal, trend: "flat", best: altNow === fastest },
     ],
 
     weather,
