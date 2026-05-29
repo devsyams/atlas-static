@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { ChevronLeft, ChevronRight, Pause, Play, Radio, X } from "lucide-react";
 import type { OpsSnapshot } from "@/lib/jasamarga/types";
 import { loadColor } from "@/lib/jasamarga/ui";
+import { safetyColor } from "@/lib/jasamarga/safety";
 import { cn } from "@/lib/utils";
 
 const SLIDE_MS = 7000;
@@ -34,6 +35,33 @@ function buildSlides(d: OpsSnapshot): Slide[] {
         </div>
       </div>
     ),
+  });
+
+  slides.push({
+    label: "Safe Meter",
+    render: () => {
+      const c = safetyColor(d.safety.score);
+      return (
+        <div className="mx-auto max-w-4xl text-center">
+          <div className="text-2xl font-bold uppercase tracking-[0.2em] text-muted-foreground">Skor Keselamatan Koridor</div>
+          <div className="mt-4 text-[12rem] font-extrabold leading-none tabular-nums" style={{ color: c }}>
+            {d.safety.score}
+            <span className="text-6xl text-muted-foreground">/100</span>
+          </div>
+          <div className="mt-2 text-5xl font-bold" style={{ color: c }}>
+            {d.safety.emoji} {d.safety.level}
+          </div>
+          <p className="mx-auto mt-6 max-w-2xl text-2xl leading-relaxed text-muted-foreground">{d.safety.narrative}</p>
+          <div className="mx-auto mt-8 flex max-w-3xl flex-wrap justify-center gap-3">
+            {d.safety.factors.map((f) => (
+              <span key={f.key} className="rounded-xl border border-border/60 bg-card/40 px-5 py-3 text-xl text-muted-foreground">
+                {f.label}: <span className="font-bold text-foreground">−{f.penalty}</span>
+              </span>
+            ))}
+          </div>
+        </div>
+      );
+    },
   });
 
   slides.push({
