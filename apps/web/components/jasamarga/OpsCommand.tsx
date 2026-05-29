@@ -13,6 +13,8 @@ import {
   MessageCircle,
   MonitorPlay,
   Newspaper,
+  Pause,
+  Play,
   Route,
   ShieldCheck,
   Siren,
@@ -27,7 +29,8 @@ import { ScoreGauge } from "@/components/crisis/ScoreGauge";
 import { CountUp } from "@/components/crisis/CountUp";
 import { BriefingPanel } from "@/components/ai/BriefingPanel";
 import type { CctvFeed, CorridorPulse, Intervention, OpsSnapshot, WeatherZone } from "@/lib/jasamarga/types";
-import { loadColor } from "@/lib/jasamarga/ui";
+import { projectSegments } from "@/lib/jasamarga/data";
+import { loadColor, loadLevel } from "@/lib/jasamarga/ui";
 import { safetyColor } from "@/lib/jasamarga/safety";
 import { CORRIDORS, getCorridor } from "@/lib/jasamarga/corridors";
 import { cn } from "@/lib/utils";
@@ -80,6 +83,8 @@ export function OpsCommand() {
   const [shared, setShared] = useState<Intervention | null>(null);
   const [pulses, setPulses] = useState<Record<string, CorridorPulse>>({});
   const [activeCam, setActiveCam] = useState<CctvFeed | null>(null);
+  const [forecastIdx, setForecastIdx] = useState(0); // 0 = now (live)
+  const [playing, setPlaying] = useState(false);
 
   const loadData = useCallback(() => {
     setLive("loading");
@@ -98,6 +103,8 @@ export function OpsCommand() {
   const handleCorridorChange = (id: string) => {
     if (id === corridorId) return;
     setSelectedSegment(null);
+    setForecastIdx(0);      // reset the time machine to "now"
+    setPlaying(false);
     setData(null);          // show the loader during the switch
     setCorridorId(id);
   };
@@ -152,6 +159,27 @@ export function OpsCommand() {
     },
     [data],
   );
+
+  // --- Predictive time machine (map-only forecast scrubber) ---
+  const fc = data?.forecast ?? [];
+  // Guard the index against the current forecast length (corridors may differ).
+  const safeIdx = fc.length ? Math.min(forecastIdx, fc.length - 1) : 0;
+  const projected =
+    data && safeIdx > 0 && fc[safeIdx]
+      ? projectSegments(data.segments, data.load_index, fc[safeIdx].load)
+      : data?.segments ?? [];
+  const fcHour = fc[safeIdx];
+  const fcLevel = fcHour ? loadLevel(fcHour.load) : null;
+  const fcColor = fcHour ? loadColor(fcHour.load) : undefined;
+
+  // Auto-play: advance the scrubber ~every 1.6s, looping back to "now".
+  useEffect(() => {
+    if (!playing || fc.length <= 1) return;
+    const id = setInterval(() => {
+      setForecastIdx((i) => (i + 1) % fc.length);
+    }, 1600);
+    return () => clearInterval(id);
+  }, [playing, fc.length]);
 
   return (
     <div>
@@ -276,18 +304,70 @@ export function OpsCommand() {
             </div>
           }
           bodyClassName="p-0"
-          style={{ height: 380 }}
+          style={{ height: 440 }}
         >
           {data ? (
             heroView === "peta" ? (
-              <CorridorMap
-                corridor={getCorridor(corridorId)}
-                segments={data.segments}
-                incidents={data.incidents}
-                selected={selectedSegment}
-                onSelect={handleMapSelect}
-                safetyScore={data.safety.score}
-              />
+              <div className="relative h-full">
+                <CorridorMap
+                  corridor={getCorridor(corridorId)}
+                  segments={projected}
+                  incidents={data.incidents}
+                  selected={selectedSegment}
+                  onSelect={handleMapSelect}
+                  safetyScore={data.safety.score}
+                />
+                {/* Forecast corner badge — so a screenshot reads as a projection, not live */}
+                {safeIdx > 0 && fcHour && (
+                  <div className="pointer-events-none absolute right-2 top-2 z-[500] flex items-center gap-1.5 rounded-md border border-warning/50 bg-background/80 px-2 py-1 text-[10px] font-bold uppercase tracking-[0.1em] text-warning backdrop-blur">
+                    <Clock className="h-3 w-3" /> Prakiraan · {fcHour.hour}
+                  </div>
+                )}
+                {/* Time-machine control bar — scrub the forecast, recolor the corridor */}
+                <div className="absolute inset-x-2 bottom-2 z-[500] rounded-md border border-border/60 bg-background/70 px-2.5 py-2 backdrop-blur">
+                  <div className="flex items-center gap-2.5">
+                    <button
+                      type="button"
+                      onClick={() => setPlaying((p) => !p)}
+                      title={playing ? "Jeda" : "Putar prakiraan"}
+                      className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-primary/40 bg-primary/15 text-primary transition-colors hover:bg-primary/25"
+                    >
+                      {playing ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />}
+                    </button>
+                    <input
+                      type="range"
+                      min={0}
+                      max={Math.max(0, fc.length - 1)}
+                      value={safeIdx}
+                      onChange={(e) => {
+                        setPlaying(false);
+                        setForecastIdx(Number(e.target.value));
+                      }}
+                      aria-label="Penggeser waktu prakiraan"
+                      className="jm-range h-1 flex-1 cursor-pointer appearance-none rounded-full bg-border/70"
+                    />
+                    <div className="flex shrink-0 flex-col items-end leading-tight">
+                      {safeIdx === 0 ? (
+                        <span className="flex items-center gap-1 text-[11px] font-bold text-success">
+                          <span className="h-1.5 w-1.5 rounded-full bg-success" /> Sekarang
+                        </span>
+                      ) : (
+                        <span className="flex items-center gap-1.5 text-[11px] font-bold text-foreground">
+                          <span className="rounded bg-warning/20 px-1 py-0.5 text-[8px] font-extrabold uppercase tracking-[0.1em] text-warning">
+                            Prakiraan
+                          </span>
+                          {fcHour?.hour}
+                        </span>
+                      )}
+                      {fcLevel && (
+                        <span className="text-[10px] font-semibold" style={{ color: fcColor }}>
+                          {fcLevel.emoji} {fcLevel.label}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
             ) : (
               <div className="p-3">
                 <RouteRibbon
