@@ -10,8 +10,9 @@ export const dynamic = "force-dynamic";
  * in the demo. Same markdown contract the briefing panel renders for MBG.
  * Intentionally public — see ../route.ts for rationale.
  */
-export async function POST() {
-  const d = buildSnapshot();
+export async function POST(req: Request) {
+  const corridorId = new URL(req.url).searchParams.get("corridor") ?? undefined;
+  const d = buildSnapshot(corridorId);
   const rec = d.interventions.find((i) => i.recommended) ?? d.interventions[0];
   const liveSources = d.sources.filter((s) => s.status === "live").map((s) => s.name);
 

@@ -254,7 +254,9 @@ export function CommandWall({ open, onClose, data }: { open: boolean; onClose: (
           </span>
           <div className="leading-tight">
             <div className="text-gradient text-sm font-bold tracking-wide">JMTC · COMMAND WALL</div>
-            <div className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">{slide.label}</div>
+            <div className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+              {data?.corridor ? `${data.corridor} · ` : ""}{slide.label}
+            </div>
           </div>
         </div>
         <div className="flex items-center gap-4">

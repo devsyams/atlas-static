@@ -1,4 +1,4 @@
-import type { ForecastHour, IncidentItem, OpsInsight, OpsSnapshot, RouteSegment, RuasLoad, WeatherZone } from "./types";
+import type { CorridorPulse, ForecastHour, IncidentItem, OpsInsight, OpsSnapshot, RouteSegment, RuasLoad, WeatherZone } from "./types";
 import { loadLevel, speedStatus } from "./ui";
 import { computeSafety } from "./safety";
 import { kmToLatLng } from "./geo";
@@ -147,6 +147,41 @@ function deriveInsight(
       ? `Prioritaskan ${slowest.label}; pertimbangkan rekayasa lalu lintas & imbauan alih jalur ke ${divertTo}.`
       : `Pantau ${slowest.label}; siapkan imbauan dini bila kecepatan turun di bawah 20 km/j.`;
   return { title, text, action };
+}
+
+/**
+ * Lightweight per-corridor pulse for the route-selector status dots. Computes the
+ * current Safe Meter the same way `buildSnapshot` does (same jitter, same incidents,
+ * same load_index) but WITHOUT a prior score and WITHOUT touching the trend Map — so
+ * polling pulses never pollutes the per-corridor trend arrow.
+ */
+export function buildCorridorPulse(corridorId: string): CorridorPulse {
+  const c = getCorridor(corridorId);
+
+  const segments: RouteSegment[] = c.segments.map((s) => {
+    const speed = clamp(Math.round(jit(s.speed, 4)), 6, 90);
+    const delay_min = Math.max(0, Math.round(jit(s.delay_min, 1.5)));
+    return { ...s, speed, delay_min, status: speedStatus(speed) };
+  });
+
+  const incidents = genIncidents(c, segments);
+
+  const avg_speed = Math.round(segments.reduce((a, s) => a + s.speed, 0) / segments.length);
+  const avg_delay_min = Math.round(segments.reduce((a, s) => a + s.delay_min, 0));
+  const load_index = +clamp((80 - avg_speed) / 8 + avg_delay_min / 14, 0, 10).toFixed(1);
+
+  const negativity = +clamp(jit(7.2, 0.4), 0, 10).toFixed(1);
+  const safety = computeSafety(segments, incidents, c.weather, negativity);
+
+  return {
+    id: c.id,
+    short: c.short,
+    name: c.name,
+    score: safety.score,
+    level: safety.level,
+    emoji: safety.emoji,
+    load_index,
+  };
 }
 
 export function buildSnapshot(

@@ -25,8 +25,9 @@ import { PredictionMeters } from "@/components/crisis/PredictionMeters";
 import { ScoreGauge } from "@/components/crisis/ScoreGauge";
 import { CountUp } from "@/components/crisis/CountUp";
 import { BriefingPanel } from "@/components/ai/BriefingPanel";
-import type { Intervention, OpsSnapshot, WeatherZone } from "@/lib/jasamarga/types";
+import type { CorridorPulse, Intervention, OpsSnapshot, WeatherZone } from "@/lib/jasamarga/types";
 import { loadColor } from "@/lib/jasamarga/ui";
+import { safetyColor } from "@/lib/jasamarga/safety";
 import { CORRIDORS, getCorridor } from "@/lib/jasamarga/corridors";
 import { cn } from "@/lib/utils";
 import dynamic from "next/dynamic";
@@ -74,6 +75,7 @@ export function OpsCommand() {
   const [briefingOpen, setBriefingOpen] = useState(false);
   const [wallOpen, setWallOpen] = useState(false);
   const [shared, setShared] = useState<Intervention | null>(null);
+  const [pulses, setPulses] = useState<Record<string, CorridorPulse>>({});
 
   const loadData = useCallback(() => {
     setLive("loading");
@@ -101,6 +103,24 @@ export function OpsCommand() {
     const id = setInterval(loadData, 60 * 1000);
     return () => clearInterval(id);
   }, [loadData]);
+
+  // Per-corridor pulse for the route-selector status dots (independent of selection).
+  useEffect(() => {
+    const loadPulses = () => {
+      fetch("/api/v1/jasamarga-ops/pulse")
+        .then((res) => {
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          return res.json();
+        })
+        .then((list: CorridorPulse[]) => {
+          setPulses(Object.fromEntries(list.map((p) => [p.id, p])));
+        })
+        .catch(() => {});
+    };
+    loadPulses();
+    const id = setInterval(loadPulses, 60 * 1000);
+    return () => clearInterval(id);
+  }, []);
 
   const accent = data ? loadColor(data.load_index) : undefined;
   const seg = selectedSegment != null ? data?.segments[selectedSegment] : null;
@@ -182,6 +202,13 @@ export function OpsCommand() {
                   : "border-border/60 bg-background/40 text-muted-foreground hover:text-foreground",
               )}
             >
+              {pulses[c.id] && (
+                <span
+                  className="mr-1.5 inline-block h-1.5 w-1.5 rounded-full align-middle"
+                  style={{ background: safetyColor(pulses[c.id].score), boxShadow: `0 0 6px ${safetyColor(pulses[c.id].score)}` }}
+                  title={`Skor keselamatan ${pulses[c.id].score} · ${pulses[c.id].level}`}
+                />
+              )}
               {c.short}
             </button>
           );
@@ -349,12 +376,12 @@ export function OpsCommand() {
       <BriefingPanel
         open={briefingOpen}
         onClose={() => setBriefingOpen(false)}
-        endpoint="/api/v1/jasamarga-ops/briefing"
+        endpoint={`/api/v1/jasamarga-ops/briefing?corridor=${corridorId}`}
         stages={BRIEFING_STAGES}
         title="Executive Briefing"
         subtitle="Nexorus AI Orchestration"
         docTitle="Nexorus AI · Executive Briefing — JMTC"
-        docMeta="JasaMarga Ops Command · Jakarta–Cikampek (sumber publik)"
+        docMeta={`JasaMarga Ops Command · ${data?.corridor ?? "Jakarta–Cikampek"} (sumber publik)`}
       />
 
       <CommandWall open={wallOpen} onClose={() => setWallOpen(false)} data={data} />

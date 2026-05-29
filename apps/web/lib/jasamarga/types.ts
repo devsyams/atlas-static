@@ -169,6 +169,16 @@ export interface SafetyIndex {
   narrative: string; // one-line plain-language summary
 }
 
+export interface CorridorPulse {
+  id: string;
+  short: string;
+  name: string;
+  score: number; // 0–100 Safe Meter
+  level: SafetyIndex["level"];
+  emoji: string;
+  load_index: number; // 0–10 congestion
+}
+
 export interface OpsSnapshot {
   corridor: string;
   updated_at: string;
