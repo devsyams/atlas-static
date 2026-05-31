@@ -1,0 +1,35 @@
+meta {
+  name: AI Forecast
+  type: http
+  seq: 7
+}
+
+get {
+  url: {{baseUrl}}/api/v1/ai/forecast
+  body: none
+  auth: none
+}
+
+docs {
+  # GET /api/v1/ai/forecast
+
+  Deterministic early-warning projection (province trajectories + anomalies)
+  derived from severity + volume signals. Powers the bell/notifications menu in
+  the app shell. Zero-cost, no LLM.
+
+  **Source:** `apps/web/app/api/v1/ai/forecast/route.ts`
+  **Auth:** none at the route.
+
+  ## Response (200) — `ForecastResult`
+  ```json
+  {
+    "generated": "28 Mei, 22.10",
+    "provinces": [
+      { "name": "Jawa Barat", "city": "Bekasi", "trajectory": "naik", "probability": 82, "drivers": "isu keracunan, 9 artikel" }
+    ],
+    "anomalies": [
+      { "title": "Lonjakan narasi \"keracunan\"", "detail": "...", "severity": "high" }
+    ]
+  }
+  ```
+}

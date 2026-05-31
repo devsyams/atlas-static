@@ -1,0 +1,32 @@
+meta {
+  name: AI Briefing (MBG)
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{baseUrl}}/api/v1/ai/briefing
+  body: none
+  auth: none
+}
+
+docs {
+  # POST /api/v1/ai/briefing
+
+  Executive SITREP for the MBG dashboard, rendered in the Briefing panel.
+  Uses the LiteLLM-backed engine when configured (`hasLiveAI()`), otherwise a
+  deterministic scripted briefing built from the grounding context. Always
+  cost/token-logged when live.
+
+  **Source:** `apps/web/app/api/v1/ai/briefing/route.ts`
+  **Auth:** none at the route, but the grounding context derives from dashboard data.
+
+  ## Response (200)
+  ```json
+  {
+    "content": "## Ringkasan Eksekutif\n...\n## Insiden Utama\n- ...\n## Rekomendasi\n1. ...",
+    "updated_at": "28 Mei, 22.10"
+  }
+  ```
+  `content` is Markdown (## / ### / - / **bold**) rendered by the panel.
+}

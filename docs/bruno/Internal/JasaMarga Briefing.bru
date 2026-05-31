@@ -1,0 +1,31 @@
+meta {
+  name: JasaMarga Briefing
+  type: http
+  seq: 10
+}
+
+post {
+  url: {{baseUrl}}/api/v1/jasamarga-ops/briefing
+  body: none
+  auth: none
+}
+
+docs {
+  # POST /api/v1/jasamarga-ops/briefing
+
+  The "Executive Briefing" (shift report) for the JasaMarga lead, synthesized
+  deterministically from the snapshot — sections: Ringkasan Operasi, Insiden
+  (Laporan Publik), Titik Macet Teratas, Sentimen Publik, Pengumuman Resmi,
+  Liputan Media, Proyeksi, Rekomendasi. **Public**, no LLM in the demo.
+
+  **Source:** `apps/web/app/api/v1/jasamarga-ops/briefing/route.ts`
+
+  ## Response (200)
+  ```json
+  {
+    "content": "## Ringkasan Operasi\nIndeks kemacetan **0.9/10 (Lancar)** ...\n## Insiden (Laporan Publik)\n- ...\n## Rekomendasi\n1. ...\n\n_Sumber data: Traffic Flow (TomTom) · Insiden Lalu Lintas (TomTom)._",
+    "updated_at": "29 Mei, 11.12"
+  }
+  ```
+  Same Markdown contract the shared `BriefingPanel` renders.
+}

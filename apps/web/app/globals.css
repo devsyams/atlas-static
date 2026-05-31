@@ -494,6 +494,35 @@
   animation-delay: 1.1s;
 }
 
+/* JasaMarga Ops — animated traffic-flow stripes on the route ribbon.
+   Stripe speed is driven per-segment via inline animation-duration (fast = lancar). */
+@keyframes jm-flow {
+  to {
+    background-position: -200% 0;
+  }
+}
+.jm-flow {
+  background-image: repeating-linear-gradient(
+    90deg,
+    transparent 0 7px,
+    oklch(1 0 0 / 0.22) 7px 13px
+  );
+  background-size: 200% 100%;
+  animation: jm-flow linear infinite;
+}
+@keyframes jm-blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+.jm-blink {
+  animation: jm-blink 1.1s ease-in-out infinite;
+}
+
 /* War-Room presentation mode */
 @keyframes war-slide-in {
   from {
@@ -518,4 +547,174 @@
 }
 .war-progress-bar {
   animation: war-progress linear forwards;
+}
+
+/* ── JasaMarga map + Safe Meter gimmicks ───────────────────────────── */
+
+/* Pulsing incident pin on the corridor map */
+@keyframes jm-pin-pulse {
+  0% { transform: scale(0.6); opacity: 0.9; }
+  70% { transform: scale(2.4); opacity: 0; }
+  100% { transform: scale(2.4); opacity: 0; }
+}
+.jm-pin {
+  position: relative;
+  width: 14px;
+  height: 14px;
+}
+.jm-pin::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  background: var(--jm-pin-color, oklch(0.62 0.22 25));
+  animation: jm-pin-pulse 1.8s ease-out infinite;
+}
+.jm-pin::after {
+  content: "";
+  position: absolute;
+  inset: 3px;
+  border-radius: 9999px;
+  background: var(--jm-pin-color, oklch(0.62 0.22 25));
+  box-shadow: 0 0 8px 2px var(--jm-pin-color, oklch(0.62 0.22 25));
+}
+
+/* Dark Leaflet container so attribution/controls fit the theme */
+.jm-map .leaflet-container {
+  background: oklch(0.16 0.02 260);
+  font: inherit;
+}
+.jm-map .leaflet-control-attribution {
+  background: oklch(0.16 0.02 260 / 0.7);
+  color: oklch(0.7 0.02 240);
+}
+.jm-map .leaflet-control-attribution a { color: oklch(0.8 0.06 280); }
+
+/* Safe Meter sheen sweep on the gauge card */
+@keyframes jm-sheen {
+  0% { transform: translateX(-120%); }
+  100% { transform: translateX(220%); }
+}
+.jm-sheen::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 40%;
+  background: linear-gradient(100deg, transparent, oklch(1 0 0 / 0.06), transparent);
+  animation: jm-sheen 4.5s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .jm-pin::before { animation: none; }
+  .jm-sheen::after { animation: none; }
+}
+
+/* Animated traffic-flow dashes streaming along the corridor polyline (toward
+   Cikampek). Per-segment animation-duration is set inline from the live speed. */
+@keyframes jm-flow-dash {
+  to { stroke-dashoffset: -40; }
+}
+.jm-flow {
+  stroke-dasharray: 4 16;
+  stroke-dashoffset: 0;
+  stroke-linecap: round;
+  animation: jm-flow-dash linear infinite;
+  filter: drop-shadow(0 0 3px oklch(0.99 0.02 240)) drop-shadow(0 0 7px oklch(0.85 0.08 250 / 0.75));
+}
+
+/* Soft neon under-glow for the colored road beneath the flow comets. */
+.jm-glow {
+  filter: blur(5px);
+}
+
+/* A single bright pulse that sweeps the entire corridor end-to-end. Travel
+   distance (--sweep-travel) + duration are set inline; color tracks the Safe
+   Meter via the element's `color` (drives the drop-shadow glow + stroke). */
+@keyframes jm-sweep-run {
+  from { stroke-dashoffset: 0; }
+  to { stroke-dashoffset: calc(var(--sweep-travel, 1200) * -1px); }
+}
+.jm-sweep {
+  stroke-linecap: round;
+  animation: jm-sweep-run linear infinite;
+  filter: drop-shadow(0 0 5px currentColor) drop-shadow(0 0 12px currentColor);
+}
+
+/* One-time expanding shockwave ring when an incident first appears. */
+@keyframes jm-shock-ring {
+  0% { transform: scale(0.3); opacity: 0.85; }
+  100% { transform: scale(4.2); opacity: 0; }
+}
+.jm-shock {
+  width: 18px;
+  height: 18px;
+  border-radius: 9999px;
+  border: 2px solid var(--jm-pin-color, oklch(0.85 0.18 25));
+  box-shadow: 0 0 10px 2px var(--jm-pin-color, oklch(0.85 0.18 25));
+  animation: jm-shock-ring 1.7s ease-out forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .jm-flow { animation: none; }
+  .jm-sweep { animation: none; opacity: 0 !important; }
+  .jm-shock { animation: none; opacity: 0; }
+}
+
+/* Time-machine scrubber — thin dark track, primary thumb. */
+.jm-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 9999px;
+  background: var(--primary);
+  border: 2px solid var(--background);
+  box-shadow: 0 0 8px 1px color-mix(in oklab, var(--primary) 70%, transparent);
+  cursor: pointer;
+}
+.jm-range::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 9999px;
+  background: var(--primary);
+  border: 2px solid var(--background);
+  box-shadow: 0 0 8px 1px color-mix(in oklab, var(--primary) 70%, transparent);
+  cursor: pointer;
+}
+.jm-range:focus-visible {
+  outline: 2px solid color-mix(in oklab, var(--primary) 60%, transparent);
+  outline-offset: 2px;
+}
+
+/* ── AI CCTV Vision ───────────────────────────────────────────────── */
+@keyframes jm-cam-veh {
+  0%   { transform: translate(-50%, -10%) scale(0.4); opacity: 0; }
+  12%  { opacity: 0.9; }
+  100% { transform: translate(-50%, 320%) scale(1.25); opacity: 0.95; }
+}
+@keyframes jm-cam-scan {
+  0% { top: 0%; opacity: 0; }
+  10% { opacity: 0.7; }
+  90% { opacity: 0.7; }
+  100% { top: 100%; opacity: 0; }
+}
+@keyframes jm-rec-blink { 0%,100% { opacity: 1; } 50% { opacity: 0.25; } }
+@keyframes jm-cam-lane { from { background-position: 0 0; } to { background-position: 0 -28px; } }
+.jm-cam-veh { animation: jm-cam-veh linear infinite; }
+.jm-cam-scan { animation: jm-cam-scan 3.2s ease-in-out infinite; }
+.jm-rec-blink { animation: jm-rec-blink 1s steps(2, end) infinite; }
+/* Dashed moving center line of the perspective road. */
+.jm-cam-lane {
+  background-image: repeating-linear-gradient(
+    to bottom,
+    oklch(0.92 0.02 90 / 0.7) 0 10px,
+    transparent 10px 28px
+  );
+  animation: jm-cam-lane 0.7s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .jm-cam-veh, .jm-cam-scan, .jm-rec-blink, .jm-cam-lane { animation: none; }
 }

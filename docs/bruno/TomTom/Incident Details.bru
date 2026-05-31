@@ -1,0 +1,65 @@
+meta {
+  name: Incident Details
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{tomtomBase}}/traffic/services/5/incidentDetails?key={{tomtomKey}}&bbox=106.88,-6.46,107.47,-6.24&fields={incidents{type,geometry{type,coordinates},properties{iconCategory,magnitudeOfDelay,startTime,from,to,delay,roadNumbers,events{description,code}}}}&language=id-ID&timeValidityFilter=present
+  body: none
+  auth: none
+}
+
+params:query {
+  key: {{tomtomKey}}
+  bbox: 106.88,-6.46,107.47,-6.24
+  fields: {incidents{type,geometry{type,coordinates},properties{iconCategory,magnitudeOfDelay,startTime,from,to,delay,roadNumbers,events{description,code}}}}
+  language: id-ID
+  timeValidityFilter: present
+}
+
+docs {
+  # GET TomTom · Incident Details (v5)
+
+  Live traffic incidents within a bounding box. Fills the **Insiden (Laporan
+  Publik)** feed. The server filters results to the Japek corridor (roadNumbers
+  includes `AH2`, or text mentions Cikampek/Japek), keeps the top 6 by severity.
+
+  **bbox:** `minLon,minLat,maxLon,maxLat` covering the Japek corridor + approaches.
+  **language:** `id-ID` → descriptions come back in Indonesian.
+  **Used by:** `fetchIncidents()` in `lib/jasamarga/tomtom.ts`
+  **Free tier:** non-tile request; cached ~2 min with the flow data.
+
+  ## Example response (real, abridged)
+  ```json
+  {
+    "incidents": [
+      {
+        "type": "Feature",
+        "geometry": { "type": "LineString", "coordinates": [ [106.8883, -6.2458], "..." ] },
+        "properties": {
+          "iconCategory": 6,
+          "magnitudeOfDelay": 1,
+          "startTime": "2026-05-29T03:14:30Z",
+          "from": "Halim Perdana Kusumah",
+          "to": "Jalan Tol Dalam Kota",
+          "delay": 51,
+          "roadNumbers": ["1", "AH2"],
+          "events": [ { "code": 115, "description": "lalu lintas lambat" } ]
+        }
+      }
+    ]
+  }
+  ```
+
+  ## Field mapping → `IncidentItem`
+  | TomTom | our field |
+  |---|---|
+  | iconCategory | `type` (1 Kecelakaan, 6 Kemacetan, 7/8 ditutup, 9 Perbaikan, 11 Banjir, 14 mogok) |
+  | magnitudeOfDelay (+delay) | `severity` (0–10) |
+  | geometry.coordinates[0] lon | `km` (estimated from longitude) |
+  | events[0].description | `detail` |
+  | (constant) | `source: "TomTom Traffic"` |
+
+  > iconCategory codes: 0 unknown · 1 accident · 6 jam · 7 lane closed · 8 road closed · 9 roadworks · 11 flooding · 14 broken-down vehicle.
+}

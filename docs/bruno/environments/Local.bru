@@ -1,0 +1,18 @@
+vars {
+  baseUrl: http://localhost:3000
+  tomtomBase: https://api.tomtom.com
+  tomtomKey: REPLACE_WITH_YOUR_TOMTOM_KEY
+}
+
+docs {
+  # Local environment
+
+  - **baseUrl** — the Next.js dev/prod server (`pnpm --filter web dev`).
+  - **tomtomBase** — TomTom API host.
+  - **tomtomKey** — your TomTom developer key. Do **not** commit a real key;
+    replace this placeholder locally (or mark it secret in Bruno).
+
+  In the app itself the key lives server-side in `apps/web/.env.local`
+  (`TOMTOM_API_KEY`) — these TomTom requests are only here so you can inspect the
+  raw upstream calls the server makes.
+}
