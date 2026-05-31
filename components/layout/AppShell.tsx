@@ -23,9 +23,11 @@ import {
   Bell,
   LogOut,
   TrafficCone,
+  Landmark,
 } from "lucide-react";
 import { Dropdown } from "@/components/ui/Dropdown";
 import { NexorusCopilot } from "@/components/ai/NexorusCopilot";
+import { parseScope, type Scope } from "@/lib/auth";
 
 type NavItem = {
   to: string;
@@ -37,6 +39,7 @@ type NavItem = {
 const NAV: NavItem[] = [
   { to: "/", label: "MBG Crisis Command", icon: LayoutDashboard, group: "Dashboards" },
   { to: "/jasamarga", label: "JasaMarga Ops Command", icon: TrafficCone, group: "Dashboards" },
+  { to: "/danantara", label: "Danantara Sovereign Command", icon: Landmark, group: "Dashboards" },
 
   { to: "/", label: "Command Center", icon: LayoutDashboard, group: "Operations" },
   { to: "/", label: "Presentation Workspace", icon: Presentation, group: "Operations" },
@@ -55,8 +58,19 @@ const NAV: NavItem[] = [
 
 export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
-  const groups = Array.from(new Set(NAV.map((n) => n.group)));
   const [copilotOpen, setCopilotOpen] = useState(false);
+  const [scope, setScope] = useState<Scope>("all");
+
+  // Read the user's dashboard scope after mount (avoids SSR hydration mismatch).
+  useEffect(() => {
+    const m = document.cookie.match(/(?:^|;\s*)atlas_scope=([^;]+)/);
+    setScope(parseScope(m?.[1]));
+  }, []);
+
+  // Danantara-scoped demo users only ever see their own dashboard.
+  const nav = scope === "danantara" ? NAV.filter((n) => n.to === "/danantara") : NAV;
+  const groups = Array.from(new Set(nav.map((n) => n.group)));
+  const homeHref = scope === "danantara" ? "/danantara" : "/";
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -81,7 +95,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       {/* Top bar — dense command-bar style */}
       <header className="relative z-20 flex h-12 shrink-0 items-center gap-3 border-b border-sidebar-border bg-sidebar/85 px-3 backdrop-blur-xl">
         {/* Brand */}
-        <Link href="/" className="flex items-center">
+        <Link href={homeHref} className="flex items-center">
           <Image
             src="/nexorus-logo.png"
             alt="Nexorus Atlas"
@@ -138,7 +152,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                     <div className="px-2 py-1.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
                       {group}
                     </div>
-                    {NAV.filter((n) => n.group === group).map((item) => {
+                    {nav.filter((n) => n.group === group).map((item) => {
                       const Icon = item.icon;
                       const active =
                         pathname === item.to && (item.to !== "/" || item.label === "MBG Crisis Command");
@@ -162,7 +176,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             )}
           </Dropdown>
 
-          <UserMenu />
+          <UserMenu scope={scope} />
         </div>
       </header>
 
@@ -268,10 +282,13 @@ function NotificationsMenu() {
   );
 }
 
-function UserMenu() {
+function UserMenu({ scope }: { scope: Scope }) {
   const router = useRouter();
-  const displayName = "Operator";
-  const initials = "OP";
+  const isDan = scope === "danantara";
+  const displayName = isDan ? "Danantara Analyst" : "Operator";
+  const initials = isDan ? "DA" : "OP";
+  const roleLabel = isDan ? "Sovereign Analyst" : "Super Admin";
+  const emailLabel = isDan ? "danantara@nexorus.io" : "operator@nexorus.io";
   return (
     <Dropdown
       align="end"
@@ -295,10 +312,10 @@ function UserMenu() {
             <div className="mt-1.5">
               <span className="inline-flex items-center gap-1 rounded-full border border-primary/30 bg-primary/10 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-[0.18em] text-primary">
                 <ShieldCheck className="h-2.5 w-2.5" />
-                Super Admin
+                {roleLabel}
               </span>
             </div>
-            <div className="mt-2 text-[10px] text-muted-foreground">operator@nexorus.io</div>
+            <div className="mt-2 text-[10px] text-muted-foreground">{emailLabel}</div>
           </div>
           <div className="h-px bg-border" />
           <button
@@ -306,6 +323,7 @@ function UserMenu() {
             onClick={() => {
               close();
               document.cookie = "atlas_auth=; path=/; max-age=0; samesite=lax";
+              document.cookie = "atlas_scope=; path=/; max-age=0; samesite=lax";
               router.push("/login");
             }}
             className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs text-muted-foreground hover:bg-sidebar-accent hover:text-foreground"
