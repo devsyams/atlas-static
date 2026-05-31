@@ -1,22 +1,30 @@
 import { NextResponse, type NextRequest } from "next/server";
 
+import { homeForScope, parseScope, scopeAllowsPath } from "@/lib/auth";
+
 /**
- * Lightweight auth gate: every page requires the `atlas_auth` cookie, which the
- * login page sets after the hardcoded credentials check. Unauthenticated
- * requests are redirected to /login; authenticated visits to /login bounce home.
- * (Demo-grade only — the cookie is a presence flag, not a real session.)
+ * Lightweight auth + scope gate. Every page requires the `atlas_auth` cookie set
+ * by the login page; the `atlas_scope` cookie carries the user's dashboard scope.
+ * A `danantara`-scoped demo user is bounced back to /danantara if they try to
+ * open any other dashboard. (Demo-grade only — cookies are presence flags.)
  */
 export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
   const authed = req.cookies.get("atlas_auth")?.value === "1";
+  const scope = parseScope(req.cookies.get("atlas_scope")?.value);
 
   if (pathname === "/login") {
-    if (authed) return NextResponse.redirect(new URL("/", req.url));
+    if (authed) return NextResponse.redirect(new URL(homeForScope(scope), req.url));
     return NextResponse.next();
   }
 
   if (!authed) {
     return NextResponse.redirect(new URL("/login", req.url));
+  }
+
+  // Scoped users can only reach their own dashboard.
+  if (!scopeAllowsPath(scope, pathname)) {
+    return NextResponse.redirect(new URL(homeForScope(scope), req.url));
   }
 
   return NextResponse.next();

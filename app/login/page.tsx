@@ -6,10 +6,7 @@ import { ShieldCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { NeuralIgnition } from "@/components/login/NeuralIgnition";
 import type { DashboardData } from "@/lib/mbg/types";
-
-// Demo-grade hardcoded credentials (visible client-side — not real security).
-const AUTH_EMAIL = "atlasadmin@nexorus.io";
-const AUTH_PASSWORD = "adminatlas";
+import { findUser } from "@/lib/auth";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -17,6 +14,7 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [igniting, setIgniting] = useState(false);
+  const [home, setHome] = useState("/");
   const [crisis, setCrisis] = useState<DashboardData | null>(null);
 
   // Preload the live crisis data for the ignition HUD.
@@ -30,13 +28,17 @@ export default function LoginPage() {
   const submit = (e: FormEvent) => {
     e.preventDefault();
     setError(null);
-    if (email.trim().toLowerCase() !== AUTH_EMAIL || password !== AUTH_PASSWORD) {
+    const user = findUser(email, password);
+    if (!user) {
       setError("Email atau kata sandi salah.");
       return;
     }
     setBusy(true);
-    // Mark the session, then play the ignition which navigates on completion.
-    document.cookie = `atlas_auth=1; path=/; max-age=${60 * 60 * 24}; samesite=lax`;
+    setHome(user.home);
+    // Mark the session + scope, then play the ignition which navigates on completion.
+    const maxAge = 60 * 60 * 24;
+    document.cookie = `atlas_auth=1; path=/; max-age=${maxAge}; samesite=lax`;
+    document.cookie = `atlas_scope=${user.scope}; path=/; max-age=${maxAge}; samesite=lax`;
     setIgniting(true);
   };
 
@@ -109,7 +111,7 @@ export default function LoginPage() {
       </div>
 
       {igniting && (
-        <NeuralIgnition data={crisis} onComplete={() => window.location.assign("/")} />
+        <NeuralIgnition data={crisis} onComplete={() => window.location.assign(home)} />
       )}
     </div>
   );
