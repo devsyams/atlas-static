@@ -23,6 +23,7 @@ import {
   Bell,
   LogOut,
   TrafficCone,
+  Landmark,
 } from "lucide-react";
 import { Dropdown } from "@/components/ui/Dropdown";
 import { NexorusCopilot } from "@/components/ai/NexorusCopilot";
@@ -37,6 +38,7 @@ type NavItem = {
 const NAV: NavItem[] = [
   { to: "/", label: "MBG Crisis Command", icon: LayoutDashboard, group: "Dashboards" },
   { to: "/jasamarga", label: "JasaMarga Ops Command", icon: TrafficCone, group: "Dashboards" },
+  { to: "/danantara", label: "Danantara Sovereign Command", icon: Landmark, group: "Dashboards" },
 
   { to: "/", label: "Command Center", icon: LayoutDashboard, group: "Operations" },
   { to: "/", label: "Presentation Workspace", icon: Presentation, group: "Operations" },

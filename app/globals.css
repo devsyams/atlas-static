@@ -519,3 +519,90 @@
 .war-progress-bar {
   animation: war-progress linear forwards;
 }
+
+/* Danantara — market stress-test scrubber thumb (themed range input) */
+.dn-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 14px;
+  width: 14px;
+  border-radius: 9999px;
+  background: oklch(0.92 0.02 240);
+  border: 2px solid oklch(0.78 0.14 230);
+  box-shadow: 0 0 10px oklch(0.78 0.14 230 / 0.7);
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+.dn-range::-webkit-slider-thumb:hover {
+  transform: scale(1.18);
+}
+.dn-range::-moz-range-thumb {
+  height: 14px;
+  width: 14px;
+  border-radius: 9999px;
+  background: oklch(0.92 0.02 240);
+  border: 2px solid oklch(0.78 0.14 230);
+  box-shadow: 0 0 10px oklch(0.78 0.14 230 / 0.7);
+  cursor: pointer;
+}
+
+/* Danantara — "Nexorus AI Live" ambient insight gimmick */
+@keyframes dn-blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
+}
+.dn-caret {
+  display: inline-block;
+  width: 2px;
+  height: 1em;
+  margin-left: 1px;
+  vertical-align: text-bottom;
+  background: currentColor;
+  animation: dn-blink 1s steps(1) infinite;
+}
+@keyframes dn-slide-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.dn-slide-in {
+  animation: dn-slide-in 0.45s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+@keyframes dn-progress {
+  from {
+    width: 0%;
+  }
+  to {
+    width: 100%;
+  }
+}
+.dn-progress {
+  animation: dn-progress linear forwards;
+}
+@keyframes dn-scan-down {
+  0% {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  30%,
+  70% {
+    opacity: 0.9;
+  }
+  100% {
+    transform: translateY(1100%);
+    opacity: 0;
+  }
+}
+.dn-scan {
+  animation: dn-scan-down 1.1s ease-in-out infinite;
+}
