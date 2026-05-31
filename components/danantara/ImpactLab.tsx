@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Activity, Check, Globe, Landmark, Layers, Lightbulb, Sparkles, TriangleAlert, Waypoints } from "lucide-react";
 import { ProbabilityMeter } from "@/components/crisis/ProbabilityMeter";
 import type { Holding } from "@/lib/danantara/types";
@@ -31,6 +31,8 @@ export function ImpactLab({
   const [multi, setMulti] = useState<Set<string>>(() => new Set([eventId]));
   const [computing, setComputing] = useState(false);
   const [typedHeadline, setTypedHeadline] = useState("");
+  // A slightly longer simulation on the first run per session; refresh → snappy.
+  const firstRunRef = useRef(typeof window !== "undefined" ? sessionStorage.getItem("dn_impact_ran") !== "1" : false);
 
   // External selection (e.g. "Lihat dampak" from the crisis watch) jumps to single.
   useEffect(() => {
@@ -46,11 +48,26 @@ export function ImpactLab({
   );
   const maxAbs = Math.max(5, ...result.entities.map((e) => Math.abs(e.impact_pct)));
 
-  // "AI computing" micro-orchestration whenever the scenario changes.
+  // Monte-Carlo "simulating" animation whenever the scenario changes. The first
+  // run per session runs a touch longer (cold engine); later runs are snappy.
   const sig = mode === "single" ? event.id : [...multi].sort().join(",");
   useEffect(() => {
+    const isFirst = firstRunRef.current;
     setComputing(true);
-    const t = setTimeout(() => setComputing(false), 680);
+    const t = setTimeout(
+      () => {
+        setComputing(false);
+        firstRunRef.current = false;
+        if (isFirst) {
+          try {
+            sessionStorage.setItem("dn_impact_ran", "1");
+          } catch {
+            /* ignore */
+          }
+        }
+      },
+      isFirst ? 2000 : 1300,
+    );
     return () => clearTimeout(t);
   }, [sig, mode]);
 
@@ -159,16 +176,11 @@ export function ImpactLab({
         {/* Transmission bars */}
         <div className="relative min-h-0 flex-1 overflow-auto scrollbar-thin rounded-md border border-border/40 bg-background/20 p-2">
           {computing && (
-            <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 overflow-hidden bg-background/70 backdrop-blur-sm">
-              <span className="dn-scan pointer-events-none absolute inset-x-0 top-0 h-10 bg-gradient-to-b from-primary/30 to-transparent" />
-              <div className="relative h-12 w-12">
-                <span className="syn-ring absolute inset-0 rounded-full" />
-                <div className="syn-core absolute inset-2 flex items-center justify-center rounded-full bg-gradient-accent text-primary-foreground">
-                  <Waypoints className="h-4 w-4" />
-                </div>
-              </div>
-              <span className="text-gradient text-[11px] font-bold uppercase tracking-[0.18em]">Memproyeksikan transmisi…</span>
-            </div>
+            <ComputingOverlay
+              targetPct={result.entities[0]?.impact_pct ?? result.nav_impact_pct}
+              label={result.entities[0]?.short ?? "NAV"}
+              confidence={result.avg_confidence}
+            />
           )}
           <div className="mb-1 px-1 text-[9px] font-bold uppercase tracking-[0.12em] text-muted-foreground">
             Transmisi ke harga · {result.entities.length} entitas terdampak
@@ -176,13 +188,13 @@ export function ImpactLab({
           {result.entities.length === 0 ? (
             <div className="flex h-full min-h-[80px] items-center justify-center text-[11px] text-muted-foreground">Pilih minimal satu peristiwa.</div>
           ) : (
-            <div className="space-y-1">
-              {result.entities.map((e) => {
+            <div key={result.event.id} className="space-y-1">
+              {result.entities.map((e, i) => {
                 const col = changeColor(e.impact_pct);
                 const w = (Math.abs(e.impact_pct) / maxAbs) * 42;
                 const neg = e.impact_pct < 0;
                 return (
-                  <div key={e.id} className="group flex items-center gap-2" title={e.channel}>
+                  <div key={e.id} className="dn-settle group flex items-center gap-2" style={{ animationDelay: `${Math.min(i * 28, 320)}ms` }} title={e.channel}>
                     <span className="w-16 shrink-0 truncate text-right text-[10px] font-bold">{e.short}</span>
                     <div className="relative h-4 flex-1">
                       <div className="absolute inset-y-0 left-1/2 w-px bg-border/70" />
@@ -221,6 +233,148 @@ export function ImpactLab({
           </div>
           <ProbabilityMeter prediction={result.prediction} />
         </div>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Monte-Carlo "simulating" overlay — fans out hundreds of random price paths from
+ * the event, then converges them toward the projected outcome with a confidence
+ * cone, while a counter ticks through "scenarios". Canvas-rendered for smoothness.
+ */
+function ComputingOverlay({ targetPct, label, confidence }: { targetPct: number; label: string; confidence: number }) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [count, setCount] = useState(0);
+  const [done, setDone] = useState(false);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    const W = canvas.parentElement?.clientWidth ?? 460;
+    const H = 168;
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = W * dpr;
+    canvas.height = H * dpr;
+    canvas.style.width = `${W}px`;
+    canvas.style.height = `${H}px`;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const PATHS = 140;
+    const STEPS = 56;
+    const midY = H / 2;
+    const up = targetPct >= 0;
+    const targetY = midY - (Math.max(-9, Math.min(9, targetPct)) / 9) * (H * 0.36);
+    const baseCol = up ? "0.72 0.16 155" : "0.62 0.22 25";
+
+    // Pre-roll random walks that drift to (and tighten around) the target.
+    const paths: number[][] = Array.from({ length: PATHS }, () => {
+      const endJ = (Math.random() * 2 - 1) * H * 0.14;
+      const pts: number[] = [midY];
+      let y = midY;
+      const drift = (targetY - midY) / STEPS;
+      for (let s = 1; s <= STEPS; s++) {
+        const f = s / STEPS;
+        y += drift + (Math.random() * 2 - 1) * H * 0.05 * (1 - f * 0.7);
+        pts.push(y);
+      }
+      pts[STEPS] = targetY + endJ * 0.5;
+      return pts;
+    });
+
+    let raf = 0;
+    const start = performance.now();
+    const dur = reduce ? 0 : 1150;
+
+    const render = (t: number) => {
+      ctx.clearRect(0, 0, W, H);
+      // zero baseline
+      ctx.setLineDash([3, 4]);
+      ctx.strokeStyle = "oklch(0.55 0.02 250 / 0.4)";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(0, midY);
+      ctx.lineTo(W, midY);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      const reveal = Math.max(1, Math.floor(t * STEPS));
+      const fade = 0.05 + 0.05 * (1 - t); // paths thin out as they converge
+      for (let p = 0; p < PATHS; p++) {
+        const pts = paths[p];
+        ctx.beginPath();
+        for (let s = 0; s <= reveal; s++) ctx[s === 0 ? "moveTo" : "lineTo"]((s / STEPS) * W, pts[s]);
+        ctx.strokeStyle = `oklch(${baseCol} / ${fade})`;
+        ctx.lineWidth = 1;
+        ctx.stroke();
+      }
+
+      // median line emphasised as it converges
+      ctx.beginPath();
+      for (let s = 0; s <= reveal; s++) {
+        let sum = 0;
+        for (let p = 0; p < PATHS; p++) sum += paths[p][s];
+        const my = sum / PATHS;
+        ctx[s === 0 ? "moveTo" : "lineTo"]((s / STEPS) * W, my);
+      }
+      ctx.strokeStyle = `oklch(${baseCol} / ${0.4 + 0.55 * t})`;
+      ctx.lineWidth = 2.2;
+      ctx.stroke();
+
+      // endpoint marker on settle
+      if (t > 0.8) {
+        ctx.beginPath();
+        ctx.arc(W - 3, targetY, 3.4, 0, 2 * Math.PI);
+        ctx.fillStyle = `oklch(${baseCol})`;
+        ctx.fill();
+      }
+      setCount(Math.round(t * 10000));
+    };
+
+    if (dur === 0) {
+      render(1);
+      setDone(true);
+      return;
+    }
+    const tick = (now: number) => {
+      const t = Math.min(1, (now - start) / dur);
+      render(t);
+      if (t < 1) raf = requestAnimationFrame(tick);
+      else setDone(true);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [targetPct]);
+
+  const col = changeColor(targetPct);
+
+  return (
+    <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 overflow-hidden bg-background/88 px-4 backdrop-blur-sm">
+      <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
+        <Waypoints className="h-3 w-3 text-primary" />
+        <span className="text-gradient">Simulasi Monte Carlo</span>
+      </div>
+      <div className="relative w-full max-w-[520px]">
+        <canvas ref={canvasRef} className="block w-full" />
+      </div>
+      <div className="font-mono text-[11px] tabular-nums text-muted-foreground">
+        {done ? (
+          <span>
+            Proyeksi <span className="font-bold text-foreground">{label}</span>{" "}
+            <span className="font-bold" style={{ color: col }}>
+              {targetPct >= 0 ? "+" : ""}
+              {targetPct}%
+            </span>{" "}
+            · keyakinan {Math.round(confidence * 100)}%
+          </span>
+        ) : (
+          <span>
+            Mensimulasikan <span className="font-bold text-foreground">{count.toLocaleString("id-ID")}</span> / 10.000 skenario…
+          </span>
+        )}
       </div>
     </div>
   );
