@@ -22,6 +22,7 @@ import {
   Sparkles,
   Bell,
   LogOut,
+  TrafficCone,
 } from "lucide-react";
 import { Dropdown } from "@/components/ui/Dropdown";
 import { NexorusCopilot } from "@/components/ai/NexorusCopilot";
@@ -34,6 +35,9 @@ type NavItem = {
 };
 
 const NAV: NavItem[] = [
+  { to: "/", label: "MBG Crisis Command", icon: LayoutDashboard, group: "Dashboards" },
+  { to: "/jasamarga", label: "JasaMarga Ops Command", icon: TrafficCone, group: "Dashboards" },
+
   { to: "/", label: "Command Center", icon: LayoutDashboard, group: "Operations" },
   { to: "/", label: "Presentation Workspace", icon: Presentation, group: "Operations" },
   { to: "/", label: "Map Workspace", icon: MapIcon, group: "Operations" },
@@ -136,7 +140,8 @@ export function AppShell({ children }: { children: ReactNode }) {
                     </div>
                     {NAV.filter((n) => n.group === group).map((item) => {
                       const Icon = item.icon;
-                      const active = pathname === item.to && item.label === "Command Center";
+                      const active =
+                        pathname === item.to && (item.to !== "/" || item.label === "MBG Crisis Command");
                       return (
                         <Link
                           key={item.label}

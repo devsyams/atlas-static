@@ -71,7 +71,7 @@ function inline(text: string) {
   );
 }
 
-const STAGES = [
+const DEFAULT_STAGES = [
   "Menarik sinyal lintas-wilayah",
   "Memetakan aktor & narasi",
   "Mengukur sentimen kepemimpinan",
@@ -80,7 +80,31 @@ const STAGES = [
 ];
 const STEP_MS = 1100;
 
-export function BriefingPanel({ open, onClose }: { open: boolean; onClose: () => void }) {
+export interface BriefingPanelProps {
+  open: boolean;
+  onClose: () => void;
+  /** POST endpoint returning `{ content, updated_at }`. */
+  endpoint?: string;
+  /** Orchestration pipeline stage labels shown during synthesis. */
+  stages?: string[];
+  title?: string;
+  subtitle?: string;
+  /** Heading + meta used for the printable report. */
+  docTitle?: string;
+  docMeta?: string;
+}
+
+export function BriefingPanel({
+  open,
+  onClose,
+  endpoint = "/api/v1/ai/briefing",
+  stages = DEFAULT_STAGES,
+  title = "Executive Briefing",
+  subtitle = "Nexorus AI Orchestration",
+  docTitle = "Nexorus AI · Executive SITREP",
+  docMeta = "Atlas MBG Crisis Dashboard",
+}: BriefingPanelProps) {
+  const STAGES = stages;
   const [content, setContent] = useState("");
   const [updatedAt, setUpdatedAt] = useState("");
   const [loading, setLoading] = useState(false);
@@ -104,7 +128,7 @@ export function BriefingPanel({ open, onClose }: { open: boolean; onClose: () =>
     setStage(0);
     setAnimDone(false);
 
-    fetch("/api/v1/ai/briefing", { method: "POST" })
+    fetch(endpoint, { method: "POST" })
       .then((r) => r.json())
       .then((d: { content: string; updated_at: string }) => {
         setContent(d.content);
@@ -124,7 +148,7 @@ export function BriefingPanel({ open, onClose }: { open: boolean; onClose: () =>
       }
     }, STEP_MS);
     return () => clearInterval(id);
-  }, [open]);
+  }, [open, endpoint, STAGES.length]);
 
   const copy = async () => {
     await navigator.clipboard.writeText(content).catch(() => {});
@@ -148,7 +172,7 @@ export function BriefingPanel({ open, onClose }: { open: boolean; onClose: () =>
       h1{font-size:22px;border-bottom:2px solid #6d4aff;padding-bottom:8px}
       h2{font-size:16px;margin-top:24px;color:#3a2db5}h3{font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:#555}
       li{margin:4px 0}.meta{color:#888;font-size:12px;margin-bottom:24px}</style></head>
-      <body><h1>Nexorus AI · Executive SITREP</h1><div class="meta">Atlas MBG Crisis Dashboard · diperbarui ${updatedAt}</div>
+      <body><h1>${docTitle}</h1><div class="meta">${docMeta} · diperbarui ${updatedAt}</div>
       <p>${safe}</p></body></html>`);
     w.document.close();
     w.focus();
@@ -173,9 +197,9 @@ export function BriefingPanel({ open, onClose }: { open: boolean; onClose: () =>
               <Sparkles className="h-4 w-4" />
             </span>
             <div className="leading-tight">
-              <div className="text-[15px] font-bold">Executive Briefing</div>
+              <div className="text-[15px] font-bold">{title}</div>
               <div className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
-                Nexorus AI Orchestration
+                {subtitle}
               </div>
             </div>
           </div>
@@ -211,7 +235,7 @@ export function BriefingPanel({ open, onClose }: { open: boolean; onClose: () =>
         {/* body */}
         <div className="scrollbar-thin relative min-h-0 flex-1 overflow-y-auto px-6 py-5">
           {!revealed ? (
-            <Orchestrating stage={stage} loading={loading} />
+            <Orchestrating stage={stage} loading={loading} stages={STAGES} subtitle={subtitle} />
           ) : (
             <>
               <span className="syn-flash pointer-events-none absolute inset-0 z-10 bg-gradient-to-b from-primary/25 via-transparent to-transparent" />
@@ -224,7 +248,18 @@ export function BriefingPanel({ open, onClose }: { open: boolean; onClose: () =>
   );
 }
 
-function Orchestrating({ stage, loading }: { stage: number; loading: boolean }) {
+function Orchestrating({
+  stage,
+  loading,
+  stages,
+  subtitle,
+}: {
+  stage: number;
+  loading: boolean;
+  stages: string[];
+  subtitle: string;
+}) {
+  const STAGES = stages;
   const len = STAGES.length;
   const waiting = stage >= len && loading;
   const allDone = stage >= len && !loading;
@@ -253,7 +288,7 @@ function Orchestrating({ stage, loading }: { stage: number; loading: boolean }) 
 
       {/* title */}
       <div className="text-center">
-        <div className="text-gradient text-sm font-bold tracking-wide">Nexorus AI Orchestration</div>
+        <div className="text-gradient text-sm font-bold tracking-wide">{subtitle}</div>
         <div className="mt-1 text-[11px] text-muted-foreground">
           Mensintesis intelijen dari seluruh widget…
         </div>
