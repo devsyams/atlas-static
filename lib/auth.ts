@@ -32,7 +32,7 @@ export const DEMO_USERS: DemoUser[] = [
   },
   {
     email: "danantara@nexorus.io",
-    password: "danantara2025",
+    password: "danantara2026",
     scope: "danantara",
     home: "/danantara",
     name: "Danantara Analyst",
