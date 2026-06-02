@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { mulberry32, rankBumn, rankIssues, statusOf, velocity, VELOCITY_WINDOW } from "./engine";
-import type { BumnSentiment, CeoIssue } from "./types";
+import { mulberry32, rankBumn, rankIssues, statusOf, tick, velocity, HISTORY_LIMIT, VELOCITY_WINDOW } from "./engine";
+import type { BumnSentiment, CeoIssue, CeoState, EscalationArc } from "./types";
 
 describe("mulberry32 PRNG", () => {
   it("is deterministic for the same seed", () => {
@@ -124,5 +124,93 @@ describe("rankBumn (T3 / AC3)", () => {
       makeBumn({ id: "neutral", sentiment: 0 }),
     ]);
     expect(ranked.map((b) => b.id)).toEqual(["bad", "neutral", "good"]);
+  });
+});
+
+function makeState(issues: CeoIssue[], bumn: BumnSentiment[] = [], tickCount = 0): CeoState {
+  return { tickCount, issues: rankIssues(issues), bumn: rankBumn(bumn) };
+}
+
+describe("tick (T2 / AC2)", () => {
+  it("increments tickCount and grows mentions monotonically", () => {
+    const state = makeState([makeIssue({ id: "a", mentions: 1000, reach: 1_000_000 })]);
+    const next = tick(state, mulberry32(1), []);
+    expect(next.tickCount).toBe(1);
+    expect(next.issues[0].mentions).toBeGreaterThan(1000);
+    expect(next.issues[0].reach).toBeGreaterThan(1_000_000);
+  });
+
+  it("appends to history and caps it at HISTORY_LIMIT", () => {
+    const longHistory = Array.from({ length: 50 }, (_, i) => 100 + i);
+    const state = makeState([makeIssue({ id: "a", history: longHistory })]);
+    const next = tick(state, mulberry32(1), []);
+    expect(next.issues[0].history.length).toBeLessThanOrEqual(HISTORY_LIMIT);
+    expect(next.issues[0].history[next.issues[0].history.length - 1]).toBe(next.issues[0].mentions);
+  });
+
+  it("keeps issues ranked by reach and bumn by sentiment after ticking", () => {
+    const state = makeState(
+      [makeIssue({ id: "a", reach: 100 }), makeIssue({ id: "b", reach: 200 })],
+      [makeBumn({ id: "x", sentiment: 50 }), makeBumn({ id: "y", sentiment: -50 })],
+    );
+    const next = tick(state, mulberry32(1), []);
+    for (let i = 1; i < next.issues.length; i++) {
+      expect(next.issues[i - 1].reach).toBeGreaterThanOrEqual(next.issues[i].reach);
+    }
+    for (let i = 1; i < next.bumn.length; i++) {
+      expect(next.bumn[i - 1].sentiment).toBeLessThanOrEqual(next.bumn[i].sentiment);
+    }
+  });
+
+  it("recomputes velocity and status each tick", () => {
+    const state = makeState([makeIssue({ id: "a" })]);
+    const next = tick(state, mulberry32(1), []);
+    expect(typeof next.issues[0].velocity).toBe("number");
+    expect(["normal", "rising", "escalating"]).toContain(next.issues[0].status);
+  });
+
+  it("is deterministic for the same PRNG seed", () => {
+    const state = makeState([makeIssue({ id: "a" })]);
+    const a = tick(state, mulberry32(99), []);
+    const b = tick(state, mulberry32(99), []);
+    expect(a.issues[0].mentions).toBe(b.issues[0].mentions);
+  });
+
+  it("does not mutate the previous state", () => {
+    const state = makeState([makeIssue({ id: "a", mentions: 1000 })]);
+    tick(state, mulberry32(1), []);
+    expect(state.issues[0].mentions).toBe(1000);
+    expect(state.tickCount).toBe(0);
+  });
+});
+
+describe("scripted escalation arcs (T5 / AC5)", () => {
+  const arc: EscalationArc = { issueId: "target", atTick: 3, rampTicks: 5, growthPerTick: 0.45 };
+
+  it("does not spike before atTick", () => {
+    const state = makeState([makeIssue({ id: "target", mentions: 1000, reach: 6_000_000 })], [], 0);
+    const next = tick(state, mulberry32(1), [arc]);
+    // organic growth only: well under +10% in one tick
+    expect(next.issues[0].mentions).toBeLessThan(1100);
+  });
+
+  it("spikes mentions by growthPerTick while the arc is active", () => {
+    const state = makeState([makeIssue({ id: "target", mentions: 1000, reach: 6_000_000 })], [], 3);
+    const next = tick(state, mulberry32(1), [arc]);
+    // 45% growth ± organic noise
+    expect(next.issues[0].mentions).toBeGreaterThanOrEqual(1400);
+  });
+
+  it("reliably reaches escalating status by the end of the ramp", () => {
+    let state = makeState(
+      [makeIssue({ id: "target", mentions: 1000, reach: 6_000_000, history: [1000, 1000, 1000, 1000, 1000, 1000] })],
+      [],
+      3,
+    );
+    const rand = mulberry32(1);
+    for (let i = 0; i < arc.rampTicks; i++) {
+      state = tick(state, rand, [arc]);
+    }
+    expect(state.issues[0].status).toBe("escalating");
   });
 });
