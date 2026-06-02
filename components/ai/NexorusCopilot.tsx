@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { usePathname } from "next/navigation";
 import { Sparkles, X, ArrowUp, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -9,12 +10,39 @@ interface Msg {
   content: string;
 }
 
-const SUGGESTIONS = [
-  "Ringkas situasi krisis MBG saat ini",
-  "Provinsi mana yang paling memburuk?",
-  "Siapa aktor penggerak sentimen negatif?",
-  "Rekomendasi tindakan untuk pimpinan?",
-];
+/** Which dashboard the copilot is grounded on — keyed by route. */
+type Dashboard = "mbg" | "danantara";
+
+const COPILOT: Record<
+  Dashboard,
+  { subtitle: string; intro: string; suggestions: string[] }
+> = {
+  mbg: {
+    subtitle: "Atlas AI Analyst",
+    intro: "Tanya apa saja tentang data krisis di dasbor — Nexorus AI menjawab berdasarkan sinyal yang sedang tampil.",
+    suggestions: [
+      "Ringkas situasi krisis MBG saat ini",
+      "Provinsi mana yang paling memburuk?",
+      "Siapa aktor penggerak sentimen negatif?",
+      "Rekomendasi tindakan untuk pimpinan?",
+    ],
+  },
+  danantara: {
+    subtitle: "Sovereign AI Analyst",
+    intro: "Tanya apa saja tentang portofolio, pasar, dan reputasi Danantara — Nexorus AI menjawab berdasarkan sinyal yang sedang tampil.",
+    suggestions: [
+      "Ringkas kondisi portofolio Danantara hari ini",
+      "Saham mana yang paling menggerakkan NAV?",
+      "Bagaimana reputasi publik Danantara saat ini?",
+      "Rekomendasi alokasi modal untuk komite investasi?",
+    ],
+  },
+};
+
+function dashboardFromPath(pathname: string | null): Dashboard {
+  if (pathname?.startsWith("/danantara")) return "danantara";
+  return "mbg";
+}
 
 /** Renders **bold** spans; everything else as plain text. */
 function Rich({ text }: { text: string }) {
@@ -35,6 +63,9 @@ function Rich({ text }: { text: string }) {
 }
 
 export function NexorusCopilot({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const pathname = usePathname();
+  const dashboard = dashboardFromPath(pathname);
+  const copy = COPILOT[dashboard];
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
@@ -64,7 +95,10 @@ export function NexorusCopilot({ open, onClose }: { open: boolean; onClose: () =
       const res = await fetch("/api/v1/ai/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: next.filter((m) => m.content).map((m) => ({ role: m.role, content: m.content })) }),
+        body: JSON.stringify({
+          context: dashboard,
+          messages: next.filter((m) => m.content).map((m) => ({ role: m.role, content: m.content })),
+        }),
       });
       const reader = res.body?.getReader();
       if (!reader) throw new Error("no stream");
@@ -105,7 +139,7 @@ export function NexorusCopilot({ open, onClose }: { open: boolean; onClose: () =
             </span>
             <div className="leading-tight">
               <div className="text-gradient text-sm font-bold tracking-wide">Nexorus AI</div>
-              <div className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">Atlas AI Analyst</div>
+              <div className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">{copy.subtitle}</div>
             </div>
           </div>
           <button
@@ -123,10 +157,10 @@ export function NexorusCopilot({ open, onClose }: { open: boolean; onClose: () =
           {messages.length === 0 ? (
             <div className="mt-2">
               <p className="text-[13px] leading-relaxed text-muted-foreground">
-                Tanya apa saja tentang data krisis di dasbor — Nexorus AI menjawab berdasarkan sinyal yang sedang tampil.
+                {copy.intro}
               </p>
               <div className="mt-4 flex flex-col gap-2">
-                {SUGGESTIONS.map((s) => (
+                {copy.suggestions.map((s) => (
                   <button
                     key={s}
                     type="button"
