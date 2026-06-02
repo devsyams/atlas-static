@@ -52,8 +52,8 @@ export function homeForScope(scope: Scope): string {
 /** Whether a given scope may view a page path. (API/_next/static are gated elsewhere.) */
 export function scopeAllowsPath(scope: Scope, pathname: string): boolean {
   if (scope === "all") return true;
-  // Danantara-scoped users only ever see the Danantara dashboard.
-  return pathname === "/danantara" || pathname.startsWith("/danantara/");
+  // Danantara-scoped users only ever see the Danantara dashboards (incl. /danantara-v2).
+  return pathname.startsWith("/danantara");
 }
 
 /** Read the scope cookie value into a typed Scope (client or server). */
