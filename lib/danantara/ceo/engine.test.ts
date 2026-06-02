@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { briefLines, mulberry32, rankBumn, rankIssues, spotlightQueue, statusOf, tick, velocity, HISTORY_LIMIT, VELOCITY_WINDOW, RISING_THRESHOLD, ESCALATING_THRESHOLD, REACH_FLOOR } from "./engine";
+import { briefLines, mulberry32, rankBumn, rankIssues, spotlightQueue, statusOf, tick, velocity, HISTORY_LIMIT, VELOCITY_WINDOW, RISING_THRESHOLD, ESCALATING_THRESHOLD, REACH_FLOOR, REACH_CAP } from "./engine";
 import type { BumnSentiment, CeoIssue, CeoState, EscalationArc } from "./types";
 
 describe("mulberry32 PRNG", () => {
@@ -138,12 +138,15 @@ function makeState(issues: CeoIssue[], bumn: BumnSentiment[] = [], tickCount = 0
 }
 
 describe("tick (T2 / AC2)", () => {
-  it("increments tickCount and grows mentions monotonically", () => {
+  it("increments tickCount and keeps mentions/reach positive and bounded", () => {
     const state = makeState([makeIssue({ id: "a", mentions: 1000, reach: 1_000_000 })]);
     const next = tick(state, mulberry32(1), []);
     expect(next.tickCount).toBe(1);
-    expect(next.issues[0].mentions).toBeGreaterThan(1000);
-    expect(next.issues[0].reach).toBeGreaterThan(1_000_000);
+    expect(next.issues[0].mentions).toBeGreaterThan(0);
+    // organic change is at most ±2%
+    expect(Math.abs(next.issues[0].mentions - 1000)).toBeLessThanOrEqual(20);
+    expect(next.issues[0].reach).toBeGreaterThan(0);
+    expect(next.issues[0].reach).toBeLessThanOrEqual(REACH_CAP);
   });
 
   it("appends to history and caps it at HISTORY_LIMIT", () => {
@@ -187,6 +190,49 @@ describe("tick (T2 / AC2)", () => {
     tick(state, mulberry32(1), []);
     expect(state.issues[0].mentions).toBe(1000);
     expect(state.tickCount).toBe(0);
+  });
+
+  it("keeps numbers believable over a long demo session (200 ticks ≈ 13 min)", () => {
+    let state = makeState([
+      makeIssue({ id: "big", mentions: 12_000, reach: 50_000_000 }),
+      makeIssue({ id: "small", mentions: 1_500, reach: 6_000_000 }),
+    ]);
+    const rand = mulberry32(7);
+    for (let i = 0; i < 200; i++) {
+      state = tick(state, rand, []);
+    }
+    for (const issue of state.issues) {
+      // No unbounded compounding: stays within a sane band of the initial values.
+      expect(issue.reach).toBeLessThanOrEqual(REACH_CAP);
+      expect(issue.mentions).toBeGreaterThan(100);
+      expect(issue.mentions).toBeLessThan(120_000);
+    }
+  });
+});
+
+describe("spotlightQueue concurrent escalation", () => {
+  it("orders the spotlight queue by velocity when two arcs escalate concurrently", () => {
+    const arcs: EscalationArc[] = [
+      { issueId: "fast", atTick: 0, rampTicks: 6, growthPerTick: 0.6 },
+      { issueId: "slow", atTick: 0, rampTicks: 6, growthPerTick: 0.3 },
+    ];
+    let state = makeState([
+      makeIssue({ id: "fast", mentions: 1000, reach: 6_000_000 }),
+      makeIssue({ id: "slow", mentions: 1000, reach: 8_000_000 }),
+      makeIssue({ id: "calm", mentions: 5000, reach: 60_000_000 }),
+    ]);
+    const rand = mulberry32(11);
+    for (let i = 0; i < 6; i++) {
+      state = tick(state, rand, arcs);
+    }
+    const fast = state.issues.find((i) => i.id === "fast")!;
+    const slow = state.issues.find((i) => i.id === "slow")!;
+    expect(fast.status).toBe("escalating");
+    expect(slow.status).toBe("escalating");
+    const queue = spotlightQueue(state.issues);
+    expect(queue[0]).toBe("fast");
+    expect(queue[1]).toBe("slow");
+    expect(queue[2]).toBe("calm");
   });
 });
 

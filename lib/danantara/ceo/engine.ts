@@ -14,6 +14,8 @@ export const RISING_THRESHOLD = 80;
 export const ESCALATING_THRESHOLD = 200;
 /** Minimum reach for a full escalation (filter out small-but-fast issues). */
 export const REACH_FLOOR = 5_000_000;
+/** Hard ceiling on plausible reach (≈ Indonesia's online population). */
+export const REACH_CAP = 250_000_000;
 
 /** Small deterministic PRNG (mulberry32) so ticks are reproducible in tests. */
 export function mulberry32(seed: number): () => number {
@@ -62,11 +64,9 @@ export function rankBumn(rows: BumnSentiment[]): BumnSentiment[] {
 /** Max history entries kept per issue (~24 ticks ≈ 96 s of wall time). */
 export const HISTORY_LIMIT = 24;
 
-/** Organic per-tick mention growth range (0.5%–3%). */
-const ORGANIC_MIN = 0.005;
-const ORGANIC_MAX = 0.03;
-/** Reach grows faster than mentions (each mention reaches many people). */
-const REACH_FACTOR = 3;
+/** Organic per-tick mention change: symmetric random walk (no net drift). */
+const ORGANIC_MIN = -0.02;
+const ORGANIC_MAX = 0.02;
 /** BUMN sentiment random drift per tick (± points). */
 const SENTIMENT_DRIFT = 1.5;
 
@@ -81,8 +81,9 @@ export function tick(state: CeoState, rand: () => number, arcs: EscalationArc[])
     const organic = ORGANIC_MIN + rand() * (ORGANIC_MAX - ORGANIC_MIN);
     const growth = arc ? arc.growthPerTick + organic : organic;
 
-    const mentions = Math.round(issue.mentions * (1 + growth));
-    const reach = Math.round(issue.reach * (1 + growth * REACH_FACTOR));
+    const mentions = Math.max(1, Math.round(issue.mentions * (1 + growth)));
+    const ratio = issue.mentions > 0 ? issue.reach / issue.mentions : 0;
+    const reach = Math.min(REACH_CAP, Math.round(mentions * ratio));
     const history = [...issue.history, mentions].slice(-HISTORY_LIMIT);
     const vel = velocity(history);
     const status = statusOf(vel, reach, issue.status);

@@ -38,7 +38,7 @@ universe in `data.ts`). New files:
   rows built from the existing `Holding` universe (Pertamina, PLN, BRI, Mandiri, Telkom,
   Garuda, MIND ID, Pelindo, KAI, Pupuk…).
 - `engine.ts` — **pure functions** (all unit-tested):
-  - `tick(snapshot, seed)` — advance one simulation step: mentions/reach random-walk, sentiment
+  - `tick(snapshot, seed)` — advance one simulation step: mentions random-walk (reach tracks mentions at a fixed per-issue ratio, capped at a plausible ceiling), sentiment
     drift, re-rank.
   - `velocity(history, window)` — % growth of mentions over the rolling window; the window is
     the **last 6 ticks** (labelled as "2 jam terakhir" in the UI).
