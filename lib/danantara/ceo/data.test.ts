@@ -62,6 +62,15 @@ describe("CEO board data", () => {
     expect(new Set(state.bumn.map((b) => b.id)).size).toBe(20);
   });
 
+  it("every BUMN topIssueId resolves to a real issue", () => {
+    const issueIds = new Set(state.issues.map((i) => i.id));
+    for (const row of state.bumn) {
+      if (row.topIssueId) {
+        expect(issueIds.has(row.topIssueId), `${row.id} -> ${row.topIssueId}`).toBe(true);
+      }
+    }
+  });
+
   it("demo arcs reference real issues with enough reach to escalate (AC5)", () => {
     const byId = new Map(state.issues.map((i) => [i.id, i]));
     expect(DEMO_ARCS.length).toBeGreaterThanOrEqual(2);
