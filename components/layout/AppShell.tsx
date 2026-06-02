@@ -39,7 +39,8 @@ type NavItem = {
 const NAV: NavItem[] = [
   { to: "/", label: "MBG Crisis Command", icon: LayoutDashboard, group: "Dashboards" },
   { to: "/jasamarga", label: "JasaMarga Ops Command", icon: TrafficCone, group: "Dashboards" },
-  { to: "/danantara", label: "Danantara Sovereign Command", icon: Landmark, group: "Dashboards" },
+  { to: "/danantara", label: "Danantara CEO Command", icon: Landmark, group: "Dashboards" },
+  { to: "/danantara-v2", label: "Danantara Sovereign Command (v2)", icon: Landmark, group: "Dashboards" },
 
   { to: "/", label: "Command Center", icon: LayoutDashboard, group: "Operations" },
   { to: "/", label: "Presentation Workspace", icon: Presentation, group: "Operations" },
@@ -68,7 +69,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   }, []);
 
   // Danantara-scoped demo users only ever see their own dashboard.
-  const nav = scope === "danantara" ? NAV.filter((n) => n.to === "/danantara") : NAV;
+  const nav = scope === "danantara" ? NAV.filter((n) => n.to.startsWith("/danantara")) : NAV;
   const groups = Array.from(new Set(nav.map((n) => n.group)));
   const homeHref = scope === "danantara" ? "/danantara" : "/";
 
