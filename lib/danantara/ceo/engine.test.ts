@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { mulberry32, rankBumn, rankIssues, statusOf, tick, velocity, HISTORY_LIMIT, VELOCITY_WINDOW } from "./engine";
+import { briefLines, mulberry32, rankBumn, rankIssues, spotlightQueue, statusOf, tick, velocity, HISTORY_LIMIT, VELOCITY_WINDOW } from "./engine";
 import type { BumnSentiment, CeoIssue, CeoState, EscalationArc } from "./types";
 
 describe("mulberry32 PRNG", () => {
@@ -212,5 +212,46 @@ describe("scripted escalation arcs (T5 / AC5)", () => {
       state = tick(state, rand, [arc]);
     }
     expect(state.issues[0].status).toBe("escalating");
+  });
+});
+
+describe("spotlightQueue", () => {
+  it("returns issue ids in reach order when nothing escalates", () => {
+    const issues = rankIssues([
+      makeIssue({ id: "big", reach: 9000 }),
+      makeIssue({ id: "small", reach: 100 }),
+    ]);
+    expect(spotlightQueue(issues)).toEqual(["big", "small"]);
+  });
+
+  it("pins escalating issues to the front, ordered by velocity", () => {
+    const issues = rankIssues([
+      makeIssue({ id: "big", reach: 9000 }),
+      makeIssue({ id: "esc-slow", reach: 100, status: "escalating", velocity: 210 }),
+      makeIssue({ id: "esc-fast", reach: 50, status: "escalating", velocity: 400 }),
+    ]);
+    expect(spotlightQueue(issues)).toEqual(["esc-fast", "esc-slow", "big"]);
+  });
+});
+
+describe("briefLines", () => {
+  it("includes total mentions and the top issue", () => {
+    const state = makeState(
+      [makeIssue({ id: "a", title: "Isu Utama", mentions: 5000, reach: 9000 })],
+      [makeBumn({ id: "prt", name: "Pertamina", sentiment: -40 })],
+    );
+    const lines = briefLines(state);
+    expect(lines.length).toBeGreaterThanOrEqual(3);
+    expect(lines.join(" ")).toContain("Isu Utama");
+    expect(lines.join(" ")).toContain("Pertamina");
+  });
+
+  it("leads with an escalation warning when an issue is escalating", () => {
+    const state = makeState([
+      makeIssue({ id: "a", title: "Isu Meledak", status: "escalating", velocity: 320, reach: 9_000_000 }),
+    ]);
+    const lines = briefLines(state);
+    expect(lines[0]).toContain("Isu Meledak");
+    expect(lines[0].toUpperCase()).toContain("ESKALASI");
   });
 });
