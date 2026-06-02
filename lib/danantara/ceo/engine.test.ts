@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { briefLines, mulberry32, rankBumn, rankIssues, spotlightQueue, statusOf, tick, velocity, HISTORY_LIMIT, VELOCITY_WINDOW } from "./engine";
+import { briefLines, mulberry32, rankBumn, rankIssues, spotlightQueue, statusOf, tick, velocity, HISTORY_LIMIT, VELOCITY_WINDOW, RISING_THRESHOLD, ESCALATING_THRESHOLD, REACH_FLOOR } from "./engine";
 import type { BumnSentiment, CeoIssue, CeoState, EscalationArc } from "./types";
 
 describe("mulberry32 PRNG", () => {
@@ -44,27 +44,27 @@ describe("velocity (T2)", () => {
 
 describe("statusOf ladder (T4 / AC4)", () => {
   it("normal when velocity is low", () => {
-    expect(statusOf(10, 10_000_000, "normal")).toBe("normal");
+    expect(statusOf(RISING_THRESHOLD - 1, REACH_FLOOR * 2, "normal")).toBe("normal");
   });
 
-  it("rising above +80%", () => {
-    expect(statusOf(81, 1_000_000, "normal")).toBe("rising");
+  it("rising above the rising threshold", () => {
+    expect(statusOf(RISING_THRESHOLD + 1, REACH_FLOOR / 5, "normal")).toBe("rising");
   });
 
-  it("escalating above +200% with reach over the 5M floor", () => {
-    expect(statusOf(201, 5_000_001, "rising")).toBe("escalating");
+  it("escalating above the escalating threshold with reach over the floor", () => {
+    expect(statusOf(ESCALATING_THRESHOLD + 1, REACH_FLOOR + 1, "rising")).toBe("escalating");
   });
 
-  it("NOT escalating above +200% when reach is under the floor", () => {
-    expect(statusOf(300, 4_999_999, "rising")).toBe("rising");
+  it("NOT escalating above the escalating threshold when reach is under the floor", () => {
+    expect(statusOf(ESCALATING_THRESHOLD + 100, REACH_FLOOR - 1, "rising")).toBe("rising");
   });
 
   it("stays escalating while velocity is above the rising threshold (cooldown)", () => {
-    expect(statusOf(120, 6_000_000, "escalating")).toBe("escalating");
+    expect(statusOf(RISING_THRESHOLD + 40, REACH_FLOOR + 1_000_000, "escalating")).toBe("escalating");
   });
 
-  it("cools from escalating to rising-equivalent only below +80%", () => {
-    expect(statusOf(79, 6_000_000, "escalating")).toBe("normal");
+  it("cools from escalating only below the rising threshold", () => {
+    expect(statusOf(RISING_THRESHOLD - 1, REACH_FLOOR + 1_000_000, "escalating")).toBe("normal");
   });
 });
 
@@ -124,6 +124,12 @@ describe("rankBumn (T3 / AC3)", () => {
       makeBumn({ id: "neutral", sentiment: 0 }),
     ]);
     expect(ranked.map((b) => b.id)).toEqual(["bad", "neutral", "good"]);
+  });
+
+  it("does not mutate the input array", () => {
+    const input = [makeBumn({ id: "a", sentiment: 10 }), makeBumn({ id: "b", sentiment: -10 })];
+    rankBumn(input);
+    expect(input.map((b) => b.id)).toEqual(["a", "b"]);
   });
 });
 
