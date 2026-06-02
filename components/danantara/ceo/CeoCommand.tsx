@@ -12,7 +12,7 @@ import { IssueBoard } from "./IssueBoard";
 import { Spotlight } from "./Spotlight";
 
 /**
- * Combined simulation + escalation state stored in a single reducer.
+ * Combined simulation + escalation/takeover state stored in a single reducer.
  *
  * Why a reducer instead of multiple useState calls?
  *
@@ -21,33 +21,31 @@ import { Spotlight } from "./Spotlight";
  * (e.g. tick 18 where escalation first fires) are never rendered as standalone
  * component states — only the final state (tick N) reaches the DOM.
  *
- * Keeping `freshEscalation` and its frozen snapshot *inside the reducer* means
- * the escalation event is recorded at the tick it occurs (tick 18) and survives
- * through the remaining batched ticks (19-25) unchanged. The component then
- * sees it in the single rendered output and fires the takeover effect.
+ * Keeping `freshEscalation` and `takeoverId` inside the reducer means escalation
+ * events are recorded at the tick they occur and survive through the remaining
+ * batched ticks unchanged. The component sees them in the single rendered output
+ * without needing setState inside effects.
  *
- * The frozen snapshot (`freshEscalationIssue`) captures the issue at the moment
- * it first escalated — with `status: "escalating"`. The spotlight uses this
- * snapshot to show the ESKALASI badge even after the live simulation has cycled
- * the issue back to "normal", so the post-takeover spotlight test passes.
+ * The spotlight uses LIVE issue state: it pins to any issue whose engine status
+ * is currently "escalating", and clears naturally when the engine cools the issue
+ * below the hysteresis threshold (velocity < RISING_THRESHOLD = 80%). No frozen
+ * snapshot is stored — that would violate AC4 by keeping the badge visible after
+ * cooldown and preventing rotation from resuming.
  */
 interface WallState {
   sim: CeoState;
+  /** ID of the issue currently showing in the takeover overlay (null = no overlay). */
+  takeoverId: string | null;
   /** ID of the issue that first transitioned to "escalating" in this batch. */
   freshEscalation: string | null;
-  /**
-   * Frozen snapshot of the issue at the tick it first escalated.
-   * Always has `status: "escalating"` — used to pin the spotlight after the
-   * live simulation may have already returned the issue to normal.
-   */
-  freshEscalationIssue: CeoIssue | null;
   /** IDs that have already triggered a takeover (prevent re-firing). */
   seenEscalating: ReadonlySet<string>;
 }
 
 type WallAction =
   | { type: "TICK"; rand: () => number; arcs: EscalationArc[] }
-  | { type: "CLEAR_TAKEOVER"; id: string };
+  | { type: "SHOW_TAKEOVER"; id: string }
+  | { type: "HIDE_TAKEOVER"; id: string };
 
 function wallReducer(state: WallState, action: WallAction): WallState {
   switch (action.type) {
@@ -62,10 +60,9 @@ function wallReducer(state: WallState, action: WallAction): WallState {
         seen.add(fresh.id);
         return {
           sim: next,
-          // Keep the snapshot from the very first escalation tick (don't
-          // overwrite with a later batch tick if another issue follows).
+          takeoverId: state.takeoverId,
+          // Keep the first escalation signal (don't overwrite if another follows in the same batch).
           freshEscalation: state.freshEscalation ?? fresh.id,
-          freshEscalationIssue: state.freshEscalationIssue ?? fresh,
           seenEscalating: seen,
         };
       }
@@ -75,17 +72,22 @@ function wallReducer(state: WallState, action: WallAction): WallState {
         const issue = next.issues.find((i) => i.id === id);
         if (issue && issue.status === "normal") cooled.delete(id);
       }
-      return { sim: next, freshEscalation: state.freshEscalation, freshEscalationIssue: state.freshEscalationIssue, seenEscalating: cooled };
+      return {
+        sim: next,
+        takeoverId: state.takeoverId,
+        freshEscalation: state.freshEscalation,
+        seenEscalating: cooled,
+      };
     }
-    case "CLEAR_TAKEOVER":
-      // Clear only the freshEscalation signal (stops takeover from re-triggering);
-      // keep freshEscalationIssue so the spotlight stays pinned on the escalated
-      // issue even after the overlay dismisses. The next TICK will overwrite it
-      // when a new escalation fires, or it stays until the cooldown removes the
-      // issue from seenEscalating and a new escalation can trigger.
+    case "SHOW_TAKEOVER":
+      return { ...state, takeoverId: action.id };
+    case "HIDE_TAKEOVER":
       return {
         ...state,
-        freshEscalation: state.freshEscalation === action.id ? null : state.freshEscalation,
+        takeoverId: state.takeoverId === action.id ? null : state.takeoverId,
+        // Clear the freshEscalation signal so the takeover can't re-fire.
+        freshEscalation:
+          state.freshEscalation === action.id ? null : state.freshEscalation,
       };
     default:
       return state;
@@ -100,12 +102,11 @@ function wallReducer(state: WallState, action: WallAction): WallState {
 export function CeoCommand() {
   const [wall, dispatch] = useReducer(wallReducer, undefined, () => ({
     sim: buildInitialState(),
+    takeoverId: null,
     freshEscalation: null,
-    freshEscalationIssue: null,
     seenEscalating: new Set<string>(),
   }));
   const [spotIdx, setSpotIdx] = useState(0);
-  const [takeoverId, setTakeoverId] = useState<string | null>(null);
   // Presenter-triggered arcs (hotkey E) are appended at runtime.
   const arcsRef = useRef<EscalationArc[]>([...DEMO_ARCS]);
   const randRef = useRef(mulberry32(20260602));
@@ -141,35 +142,34 @@ export function CeoCommand() {
     return () => window.removeEventListener("keydown", onKey);
   }, [wall.sim]);
 
-  // Takeover: fires once when freshEscalation first becomes non-null.
+  // Takeover lifecycle: show the overlay when a fresh escalation lands, then
+  // hide it after TAKEOVER_MS. Both transitions are dispatched as actions so
+  // no setState is called directly inside the effect body.
   useEffect(() => {
-    if (!wall.freshEscalation) return;
-    if (wall.freshEscalation === takeoverId) return; // already showing
-    setTakeoverId(wall.freshEscalation);
-    const id = setTimeout(() => {
-      setTakeoverId(null);
-      dispatch({ type: "CLEAR_TAKEOVER", id: wall.freshEscalation! });
+    const { freshEscalation, takeoverId } = wall;
+    if (!freshEscalation || freshEscalation === takeoverId) return;
+    dispatch({ type: "SHOW_TAKEOVER", id: freshEscalation });
+    const timer = setTimeout(() => {
+      dispatch({ type: "HIDE_TAKEOVER", id: freshEscalation });
     }, TAKEOVER_MS);
-    return () => clearTimeout(id);
+    return () => clearTimeout(timer);
   }, [wall.freshEscalation]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Spotlight target.
-  // - While a fresh escalation snapshot exists (even after live sim returns to normal),
-  //   pin the spotlight to the frozen snapshot so ESKALASI badge remains visible.
-  // - Otherwise: escalating issues pin to the front of the auto-rotating queue.
+  // - Pin to the LIVE escalating issue (clears automatically when the engine
+  //   cools the issue below the hysteresis threshold — satisfies AC4).
+  // - Falls back to the auto-rotating queue when no issue is escalating.
   const queue = useMemo(() => spotlightQueue(state.issues), [state.issues]);
   const spotlightIssue = useMemo((): CeoIssue | undefined => {
-    // Use the frozen escalation snapshot if we have one (covers the post-takeover window).
-    if (wall.freshEscalationIssue) return wall.freshEscalationIssue;
-    // Live escalating issue takes priority over rotation.
     const escalating = state.issues.find((i) => i.status === "escalating");
-    if (escalating) return escalating;
-    // Normal rotation.
+    if (escalating) return escalating; // live pin — clears when engine cools it
     const id = queue[spotIdx % Math.max(1, queue.length)];
     return state.issues.find((i) => i.id === id);
-  }, [wall.freshEscalationIssue, queue, spotIdx, state.issues]);
+  }, [queue, spotIdx, state.issues]);
 
-  const takeoverIssue = takeoverId ? state.issues.find((i) => i.id === takeoverId) : undefined;
+  const takeoverIssue = wall.takeoverId
+    ? state.issues.find((i) => i.id === wall.takeoverId)
+    : undefined;
 
   return (
     <div className="flex h-full flex-col gap-3">

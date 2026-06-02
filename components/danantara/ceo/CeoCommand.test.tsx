@@ -37,20 +37,25 @@ describe("CeoCommand (T1 / AC1)", () => {
     expect(screen.getByTestId("ceo-takeover")).toBeInTheDocument();
   });
 
-  it("clears the takeover after TAKEOVER_MS and pins the escalating issue in the spotlight", () => {
+  it("pins the live escalating issue in the spotlight, then clears the pin after cooldown (AC4)", () => {
     render(<CeoCommand />);
+    // Reach escalation (~tick 18) and stay inside the escalating window (tick 19).
     act(() => {
-      vi.advanceTimersByTime(TICK_MS * 25);
+      vi.advanceTimersByTime(TICK_MS * 19);
     });
     expect(screen.getByTestId("ceo-takeover")).toBeInTheDocument();
-    // Let the takeover timeout elapse (no further ticks needed: 5s < 4s*2)
+    // Clear the takeover overlay (5s timeout; also advances ~1 more tick — still escalating).
     act(() => {
       vi.advanceTimersByTime(5_000);
     });
     expect(screen.queryByTestId("ceo-takeover")).not.toBeInTheDocument();
-    // The escalating issue stays pinned in the spotlight
-    const spotlight = screen.getByTestId("ceo-spotlight");
-    expect(spotlight.textContent).toContain("ESKALASI");
+    // The LIVE escalating issue is pinned in the spotlight.
+    expect(screen.getByTestId("ceo-spotlight").textContent).toContain("ESKALASI");
+    // Advance well past cooldown (issue cools ~tick 23) — the pin must clear (AC4) and rotation resume.
+    act(() => {
+      vi.advanceTimersByTime(TICK_MS * 6);
+    });
+    expect(screen.getByTestId("ceo-spotlight").textContent).not.toContain("ESKALASI");
   });
 
   it("force-fires escalation with the presenter hotkey E (AC5)", () => {
