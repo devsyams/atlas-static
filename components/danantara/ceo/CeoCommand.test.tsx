@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { act, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { TICK_MS } from "@/lib/danantara/ceo/data";
+import { TAKEOVER_MS, TICK_MS } from "@/lib/danantara/ceo/data";
 import { CeoCommand } from "./CeoCommand";
 
 describe("CeoCommand (T1 / AC1)", () => {
@@ -75,5 +75,32 @@ describe("CeoCommand (T1 / AC1)", () => {
     const wall = screen.getByTestId("ceo-wall");
     expect(wall.className).toContain("grid-cols-1");
     expect(wall.className).toMatch(/xl:grid-cols-/);
+  });
+
+  it("queues takeovers when two escalations happen close together (hotkey spam)", () => {
+    render(<CeoCommand />);
+    // Press E twice quickly — two different issues get arcs.
+    act(() => {
+      window.dispatchEvent(new KeyboardEvent("keydown", { key: "e" }));
+    });
+    act(() => {
+      vi.advanceTimersByTime(TICK_MS); // one tick so the first arc's target is no longer available for 2nd press
+    });
+    act(() => {
+      window.dispatchEvent(new KeyboardEvent("keydown", { key: "e" }));
+    });
+    // Let both arcs ramp to escalation.
+    act(() => {
+      vi.advanceTimersByTime(TICK_MS * 10);
+    });
+    // First takeover showing.
+    const first = screen.getByTestId("ceo-takeover").textContent;
+    // Dismiss it (TAKEOVER_MS) — the queued second takeover must then appear.
+    act(() => {
+      vi.advanceTimersByTime(TAKEOVER_MS);
+    });
+    const second = screen.queryByTestId("ceo-takeover");
+    expect(second).toBeInTheDocument();
+    expect(second!.textContent).not.toBe(first);
   });
 });

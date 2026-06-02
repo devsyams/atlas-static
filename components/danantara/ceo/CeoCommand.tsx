@@ -21,10 +21,19 @@ import { Spotlight } from "./Spotlight";
  * (e.g. tick 18 where escalation first fires) are never rendered as standalone
  * component states — only the final state (tick N) reaches the DOM.
  *
- * Keeping `freshEscalation` and `takeoverId` inside the reducer means escalation
+ * Keeping `pendingTakeovers` and `takeoverId` inside the reducer means escalation
  * events are recorded at the tick they occur and survive through the remaining
  * batched ticks unchanged. The component sees them in the single rendered output
  * without needing setState inside effects.
+ *
+ * Queue-based takeover design:
+ * - TICK finds ALL issues that newly transitioned to "escalating" and appends
+ *   their ids to `pendingTakeovers` (FIFO). None are silently dropped.
+ * - Two effects handle the lifecycle with honest deps (no eslint-disable):
+ *   Effect 1 — when the queue is non-empty and no overlay is showing, dispatches
+ *   SHOW_TAKEOVER for the head of the queue (which also dequeues it).
+ *   Effect 2 — when an overlay is showing, schedules its HIDE_TAKEOVER after
+ *   TAKEOVER_MS. After dismissal, Effect 1 re-runs and shows the next queued id.
  *
  * The spotlight uses LIVE issue state: it pins to any issue whose engine status
  * is currently "escalating", and clears naturally when the engine cools the issue
@@ -36,8 +45,8 @@ interface WallState {
   sim: CeoState;
   /** ID of the issue currently showing in the takeover overlay (null = no overlay). */
   takeoverId: string | null;
-  /** ID of the issue that first transitioned to "escalating" in this batch. */
-  freshEscalation: string | null;
+  /** FIFO queue of issue ids waiting to show the takeover overlay. */
+  pendingTakeovers: readonly string[];
   /** IDs that have already triggered a takeover (prevent re-firing). */
   seenEscalating: ReadonlySet<string>;
 }
@@ -51,18 +60,18 @@ function wallReducer(state: WallState, action: WallAction): WallState {
   switch (action.type) {
     case "TICK": {
       const next = tick(state.sim, action.rand, action.arcs);
-      // Detect the first issue that NEWLY transitions to "escalating".
-      const fresh = next.issues.find(
+      // Detect ALL issues that NEWLY transition to "escalating" this tick.
+      const newlyEscalating = next.issues.filter(
         (i) => i.status === "escalating" && !state.seenEscalating.has(i.id),
       );
-      if (fresh) {
+      if (newlyEscalating.length > 0) {
         const seen = new Set(state.seenEscalating);
-        seen.add(fresh.id);
+        for (const issue of newlyEscalating) seen.add(issue.id);
         return {
           sim: next,
           takeoverId: state.takeoverId,
-          // Keep the first escalation signal (don't overwrite if another follows in the same batch).
-          freshEscalation: state.freshEscalation ?? fresh.id,
+          // Append all newly-escalating ids to the FIFO queue.
+          pendingTakeovers: [...state.pendingTakeovers, ...newlyEscalating.map((i) => i.id)],
           seenEscalating: seen,
         };
       }
@@ -75,19 +84,21 @@ function wallReducer(state: WallState, action: WallAction): WallState {
       return {
         sim: next,
         takeoverId: state.takeoverId,
-        freshEscalation: state.freshEscalation,
+        pendingTakeovers: state.pendingTakeovers,
         seenEscalating: cooled,
       };
     }
     case "SHOW_TAKEOVER":
-      return { ...state, takeoverId: action.id };
+      return {
+        ...state,
+        takeoverId: action.id,
+        // Dequeue the head of the queue (the id we are now showing).
+        pendingTakeovers: state.pendingTakeovers.filter((id) => id !== action.id),
+      };
     case "HIDE_TAKEOVER":
       return {
         ...state,
         takeoverId: state.takeoverId === action.id ? null : state.takeoverId,
-        // Clear the freshEscalation signal so the takeover can't re-fire.
-        freshEscalation:
-          state.freshEscalation === action.id ? null : state.freshEscalation,
       };
     default:
       return state;
@@ -103,13 +114,19 @@ export function CeoCommand() {
   const [wall, dispatch] = useReducer(wallReducer, undefined, () => ({
     sim: buildInitialState(),
     takeoverId: null,
-    freshEscalation: null,
+    pendingTakeovers: [] as readonly string[],
     seenEscalating: new Set<string>(),
   }));
   const [spotIdx, setSpotIdx] = useState(0);
   // Presenter-triggered arcs (hotkey E) are appended at runtime.
   const arcsRef = useRef<EscalationArc[]>([...DEMO_ARCS]);
   const randRef = useRef(mulberry32(20260602));
+  // Ref so the hotkey listener can read current sim without re-subscribing.
+  const simRef = useRef(wall.sim);
+  // Sync inside an effect so we don't mutate during render (react-hooks/refs).
+  useEffect(() => {
+    simRef.current = wall.sim;
+  });
 
   const state = wall.sim;
 
@@ -128,32 +145,43 @@ export function CeoCommand() {
   }, []);
 
   // Presenter hotkey: E force-fires an escalation arc on the biggest calm issue.
+  // Subscribed once ([] deps); reads current sim through simRef to avoid
+  // re-subscribing on every tick.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key.toLowerCase() !== "e" || e.metaKey || e.ctrlKey || e.altKey) return;
+      const sim = simRef.current;
+      // Exclude issues that already have a pending arc so each E press targets a different issue.
+      const arcedIds = new Set(arcsRef.current.map((a) => a.issueId));
       const target =
-        wall.sim.issues.find((i) => i.status === "normal" && i.reach >= REACH_FLOOR) ?? wall.sim.issues[0];
+        sim.issues.find((i) => i.status === "normal" && i.reach >= REACH_FLOOR && !arcedIds.has(i.id)) ??
+        sim.issues[0];
       arcsRef.current = [
         ...arcsRef.current,
-        { issueId: target.id, atTick: wall.sim.tickCount, rampTicks: 6, growthPerTick: 0.5 },
+        { issueId: target.id, atTick: sim.tickCount, rampTicks: 6, growthPerTick: 0.5 },
       ];
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [wall.sim]);
+  }, []);
 
-  // Takeover lifecycle: show the overlay when a fresh escalation lands, then
-  // hide it after TAKEOVER_MS. Both transitions are dispatched as actions so
-  // no setState is called directly inside the effect body.
+  // Takeover lifecycle — two effects with honest deps, no eslint-disable needed.
+  //
+  // Effect 1: when the queue is non-empty and no overlay is active, show the next one.
   useEffect(() => {
-    const { freshEscalation, takeoverId } = wall;
-    if (!freshEscalation || freshEscalation === takeoverId) return;
-    dispatch({ type: "SHOW_TAKEOVER", id: freshEscalation });
-    const timer = setTimeout(() => {
-      dispatch({ type: "HIDE_TAKEOVER", id: freshEscalation });
-    }, TAKEOVER_MS);
+    if (wall.takeoverId === null && wall.pendingTakeovers.length > 0) {
+      dispatch({ type: "SHOW_TAKEOVER", id: wall.pendingTakeovers[0] });
+    }
+  }, [wall.takeoverId, wall.pendingTakeovers]);
+
+  // Effect 2: while an overlay is showing, schedule its dismissal after TAKEOVER_MS.
+  // When takeoverId goes null, Effect 1 re-runs and shows the next queued id (if any).
+  useEffect(() => {
+    if (wall.takeoverId === null) return;
+    const id = wall.takeoverId;
+    const timer = setTimeout(() => dispatch({ type: "HIDE_TAKEOVER", id }), TAKEOVER_MS);
     return () => clearTimeout(timer);
-  }, [wall.freshEscalation]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [wall.takeoverId]);
 
   // Spotlight target.
   // - Pin to the LIVE escalating issue (clears automatically when the engine
