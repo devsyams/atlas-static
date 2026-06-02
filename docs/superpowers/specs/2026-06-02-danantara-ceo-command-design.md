@@ -40,10 +40,13 @@ universe in `data.ts`). New files:
 - `engine.ts` — **pure functions** (all unit-tested):
   - `tick(snapshot, seed)` — advance one simulation step: mentions/reach random-walk, sentiment
     drift, re-rank.
-  - `velocity(history, window)` — % growth of mentions over a rolling window.
+  - `velocity(history, window)` — % growth of mentions over the rolling window; the window is
+    the **last 6 ticks** (labelled as "2 jam terakhir" in the UI).
   - `statusOf(issue)` — ladder: `normal` → `rising` (velocity > +80%) → `escalating`
-    (velocity > +200% **and** reach > threshold); cooldown back down when velocity drops.
-  - `rankIssues(issues)` — by reach; `rankBumn(rows)` — by net sentiment.
+    (velocity > +200% **and** reach > **5 M** estimated audience); cooldown back down when
+    velocity drops below the rising threshold.
+  - `rankIssues(issues)` — descending by reach; `rankBumn(rows)` — **most-negative sentiment
+    first** (the CEO's job is spotting problems, so problems lead).
   - `spotlightQueue(snapshot)` — rotation order; an `escalating` issue pins to front.
   - `scriptedArcs` — deterministic escalation arcs: one fires ~60 s after load, a second
     ~4 min in, so a live demo always shows the takeover. Presenter hotkey `E` force-fires one.

@@ -280,8 +280,8 @@ itself on a TV).
 **Acceptance criteria:**
 - **AC1** — *Given* `/danantara` loads, *When* no user interaction occurs, *Then* the top-20 issue board, top-20 BUMN sentiment board, auto-rotating spotlight, and AI brief ticker all render and animate on their own.
 - **AC2** — *Given* the issue board, *When* the simulation ticks, *Then* issues stay ranked by reach with live re-rank animation, per-row sparkline, velocity %, and status badge.
-- **AC3** — *Given* the BUMN board, *When* rendered, *Then* exactly 20 BUMN tiles show net sentiment (−100..100) as a green↔red heatmap with trend spark.
-- **AC4** — *Given* an issue's mention velocity exceeds +200% over the rolling window with reach above threshold, *When* the tick evaluates status, *Then* a full-screen breaking-news takeover fires (~5 s), the issue pins to the spotlight with an ESCALATING badge, and its board row pulses until velocity cools.
+- **AC3** — *Given* the BUMN board, *When* rendered, *Then* exactly 20 BUMN tiles show net sentiment (−100..100) as a green↔red heatmap with trend spark, sorted most-negative first.
+- **AC4** — *Given* an issue's mention velocity exceeds +200% over the rolling window (last 6 ticks) with reach above 5 M, *When* the tick evaluates status, *Then* a full-screen breaking-news takeover fires (~5 s), the issue pins to the spotlight with an ESCALATING badge, and its board row pulses until velocity cools below +80%.
 - **AC5** — *Given* a live demo session, *When* ~60 s pass after load, *Then* a scripted escalation arc reliably triggers AC4 without manual intervention (plus presenter hotkey `E` to force one).
 - **AC6** — *Given* the old dashboard, *When* `/danantara-v2` is opened, *Then* the full Sovereign Command experience works exactly as it does today.
 - **AC7** — *Given* a phone-width viewport, *When* `/danantara` loads, *Then* the layout stacks (header → spotlight → issues → BUMN) and stays zero-click.
