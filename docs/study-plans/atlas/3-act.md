@@ -261,3 +261,59 @@ learn a high-severity incident just landed. Push-based updates for the ticker an
 | Version | Date | Change |
 |---|---|---|
 | 1.0 | 2026-05-25 | Initial plan from architecture spec |
+
+---
+
+### A7. Danantara CEO Command Wall (zero-click demo)
+
+- **Version:** 1.0 · **Stage:** 3-act · **Sprint:** demo · **Status:** Planned · **Spec ref:** `docs/superpowers/specs/2026-06-02-danantara-ceo-command-design.md` · **Owner:** Dev A
+
+#### PM
+**Background (why):** Client feedback on the Danantara demo: the real audience is the **CEO**, who
+"doesn't have time for clicking". The current `/danantara` (Sovereign Command) is operator-grade —
+tabs, draggable grid, modals — and dies in a CEO demo. The CEO wants three things surfaced
+automatically: the **top 20 issues** around Danantara, the **top 20 BUMN by public sentiment**, and
+an **unmissable warning when an issue escalates** (mentions/reach spiking abnormally fast). A
+zero-click command wall is also the strongest possible demo artifact (screenshot-shareable, runs
+itself on a TV).
+
+**Acceptance criteria:**
+- **AC1** — *Given* `/danantara` loads, *When* no user interaction occurs, *Then* the top-20 issue board, top-20 BUMN sentiment board, auto-rotating spotlight, and AI brief ticker all render and animate on their own.
+- **AC2** — *Given* the issue board, *When* the simulation ticks, *Then* issues stay ranked by reach with live re-rank animation, per-row sparkline, velocity %, and status badge.
+- **AC3** — *Given* the BUMN board, *When* rendered, *Then* exactly 20 BUMN tiles show net sentiment (−100..100) as a green↔red heatmap with trend spark.
+- **AC4** — *Given* an issue's mention velocity exceeds +200% over the rolling window with reach above threshold, *When* the tick evaluates status, *Then* a full-screen breaking-news takeover fires (~5 s), the issue pins to the spotlight with an ESCALATING badge, and its board row pulses until velocity cools.
+- **AC5** — *Given* a live demo session, *When* ~60 s pass after load, *Then* a scripted escalation arc reliably triggers AC4 without manual intervention (plus presenter hotkey `E` to force one).
+- **AC6** — *Given* the old dashboard, *When* `/danantara-v2` is opened, *Then* the full Sovereign Command experience works exactly as it does today.
+- **AC7** — *Given* a phone-width viewport, *When* `/danantara` loads, *Then* the layout stacks (header → spotlight → issues → BUMN) and stays zero-click.
+
+#### Architecture
+**Impact — files add/change:**
+- `change` `app/danantara/page.tsx` → render new `CeoCommand` (in `AppShell`)
+- `add` `app/danantara-v2/page.tsx` → render existing `SovereignCommand` (pure move)
+- `add` `lib/danantara/ceo/types.ts` — `CeoIssue`, `BumnSentiment`, `EscalationEvent`, `CeoSnapshot`
+- `add` `lib/danantara/ceo/data.ts` — 20 curated issues + 20 BUMN sentiment rows (public sources only)
+- `add` `lib/danantara/ceo/engine.ts` — pure sim/rank/velocity/status/spotlight/scripted-arc functions
+- `add` `components/danantara/ceo/{CeoCommand,HeaderStrip,IssueBoard,BumnHeatboard,Spotlight,BreakingTakeover,AiBriefTicker}.tsx`
+- `add` `lib/danantara/ceo/engine.test.ts` + component smoke tests (vitest)
+
+**Data-model / API changes:** none (static demo; no DB/API). Production wiring is A1/A2 scope.
+**Reuse:** `AppShell`, existing `lib/danantara/types.ts` (`Holding` universe, `CrisisSignal` velocity concept), `lib/ai/scripted.ts` narration pattern, command-center design tokens.
+**Risks:** demo must never miss the escalation moment → deterministic scripted arcs + hotkey; 40 live-animating items on TV → throttle to one shared 4 s tick, CSS-transform-only animations.
+
+#### QA
+| # | Maps to | Test case | Type |
+|---|---|---|---|
+| T1 | AC1 | snapshot render: all four zones present, no interaction handlers required | component |
+| T2 | AC2 | `rankIssues` orders by reach; `tick` preserves order invariant; sparkline/velocity data present | unit |
+| T3 | AC3 | `rankBumn` returns exactly 20 sorted by net sentiment | unit |
+| T4 | AC4 | `statusOf` ladder: normal→rising→escalating thresholds + cooldown; takeover renders on `escalating` | unit + component |
+| T5 | AC5 | scripted arc fires at its configured tick; hotkey `E` force-fires | unit |
+| T6 | AC6 | `/danantara-v2` page renders `SovereignCommand` | component |
+| T7 | AC7 | stacked layout below `md` breakpoint | component |
+
+**Governance edge cases:** all data from public/open sources (no client-internal figures); AI ticker is deterministic scripted fallback (no live LLM call, no provider key client-side); demo banner identifies synthetic data; no auth change (`AppShell` login gate reused as-is).
+
+#### Revision history
+| Version | Date | Change |
+|---|---|---|
+| 1.0 | 2026-06-02 | Initial plan from CEO feedback (zero-click rebuild; old dashboard → /danantara-v2) |
