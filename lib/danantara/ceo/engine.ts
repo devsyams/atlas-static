@@ -122,6 +122,24 @@ export function groupBumnBySentiment(rows: BumnSentiment[]): {
   };
 }
 
+/**
+ * The leading positive and negative topic linked to a BUMN (AC16). A topic is
+ * "linked" when it lists the BUMN in `relatedBumn`; tone uses the same rule as
+ * groupIssuesBySentiment (positive = posMentions > negMentions, ties negative);
+ * within each tone the highest-reach topic wins. Returns null for a tone with
+ * no linked topic. Pure — does not mutate the input.
+ */
+export function topicsForBumn(
+  bumnId: string,
+  issues: CeoIssue[],
+): { positive: CeoIssue | null; negative: CeoIssue | null } {
+  const linked = issues.filter((i) => i.relatedBumn.includes(bumnId));
+  const byReachDesc = (a: CeoIssue, b: CeoIssue) => b.reach - a.reach;
+  const positive = linked.filter((i) => i.posMentions > i.negMentions).sort(byReachDesc)[0] ?? null;
+  const negative = linked.filter((i) => i.posMentions <= i.negMentions).sort(byReachDesc)[0] ?? null;
+  return { positive, negative };
+}
+
 /** Aggregate pos/neg/neutral mention counts across a board's items (AC14 pie). */
 export function sentimentTotals(
   items: ReadonlyArray<Pick<CeoIssue, "mentions" | "posMentions" | "negMentions">>,
@@ -181,7 +199,7 @@ export function tick(state: CeoState, rand: () => number, arcs: EscalationArc[])
   return { tickCount, issues: rankedIssues, bumn: rankedBumn };
 }
 
-/** Deterministic Indonesian narration for the AI brief ticker (no LLM — scripted fallback pattern). */
+/** Deterministic English narration for the AI brief ticker (no LLM — scripted fallback pattern). */
 export function briefLines(state: CeoState): string[] {
   const lines: string[] = [];
   const totalMentions = state.issues.reduce((a, i) => a + i.mentions, 0);
@@ -192,21 +210,21 @@ export function briefLines(state: CeoState): string[] {
 
   for (const issue of escalating) {
     lines.push(
-      `⚠ ESKALASI: "${issue.title}" naik ${Math.round(issue.velocity)}% dalam 2 jam — jangkauan ${(issue.reach / 1_000_000).toFixed(1)} jt akun.`,
+      `⚠ ESCALATING: "${issue.title}" up ${Math.round(issue.velocity)}% in 2 hours — reach ${(issue.reach / 1_000_000).toFixed(1)}M accounts.`,
     );
   }
   lines.push(
-    `Nexorus AI memantau ${state.issues.length} isu utama · total ${totalMentions.toLocaleString("id-ID")} sebutan publik.`,
+    `Nexorus AI is monitoring ${state.issues.length} key issues · ${totalMentions.toLocaleString("en-US")} public mentions in total.`,
   );
   if (topIssue) {
-    lines.push(`Isu terbesar hari ini: "${topIssue.title}" (jangkauan ${(topIssue.reach / 1_000_000).toFixed(1)} jt).`);
+    lines.push(`Biggest issue today: "${topIssue.title}" (reach ${(topIssue.reach / 1_000_000).toFixed(1)}M).`);
   }
   if (rising.length > 0) {
-    lines.push(`${rising.length} isu berstatus NAIK: ${rising.map((i) => `"${i.title}"`).join(", ")}.`);
+    lines.push(`${rising.length} issue(s) marked RISING: ${rising.map((i) => `"${i.title}"`).join(", ")}.`);
   }
   if (worstBumn) {
     lines.push(
-      `Sentimen BUMN paling tertekan: ${worstBumn.name} (${Math.round(worstBumn.sentiment)}). Perlu perhatian komunikasi publik.`,
+      `Most pressured BUMN sentiment: ${worstBumn.name} (${Math.round(worstBumn.sentiment)}). Needs public-communications attention.`,
     );
   }
   return lines;

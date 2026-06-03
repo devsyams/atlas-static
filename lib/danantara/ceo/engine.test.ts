@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { briefLines, groupBumnBySentiment, groupIssuesBySentiment, mulberry32, rankBumn, rankIssues, sentimentTotals, statusOf, tick, velocity, HISTORY_LIMIT, VELOCITY_WINDOW, RISING_THRESHOLD, ESCALATING_THRESHOLD, REACH_FLOOR, REACH_CAP, NEUTRAL_SHARE, rankMovement, sentimentBreakdown } from "./engine";
+import { briefLines, groupBumnBySentiment, groupIssuesBySentiment, mulberry32, rankBumn, rankIssues, sentimentTotals, statusOf, tick, topicsForBumn, velocity, HISTORY_LIMIT, VELOCITY_WINDOW, RISING_THRESHOLD, ESCALATING_THRESHOLD, REACH_FLOOR, REACH_CAP, NEUTRAL_SHARE, rankMovement, sentimentBreakdown } from "./engine";
 import { makeBumn, makeIssue } from "./test-fixtures";
 import type { BumnSentiment, CeoIssue, CeoState, EscalationArc } from "./types";
 
@@ -253,7 +253,7 @@ describe("briefLines", () => {
     ]);
     const lines = briefLines(state);
     expect(lines[0]).toContain("Isu Meledak");
-    expect(lines[0].toUpperCase()).toContain("ESKALASI");
+    expect(lines[0].toUpperCase()).toContain("ESCALATING");
   });
 });
 
@@ -376,6 +376,42 @@ describe("groupBumnBySentiment (T13 / AC13)", () => {
     const input = [makeBumn({ id: "a", sentiment: 10 }), makeBumn({ id: "b", sentiment: 50 })];
     groupBumnBySentiment(input);
     expect(input.map((b) => b.id)).toEqual(["a", "b"]);
+  });
+});
+
+describe("topicsForBumn (T16 / AC16)", () => {
+  const issues = [
+    makeIssue({ id: "pos-big", relatedBumn: ["x"], posMentions: 900, negMentions: 100, reach: 9_000_000 }),
+    makeIssue({ id: "pos-small", relatedBumn: ["x"], posMentions: 800, negMentions: 200, reach: 2_000_000 }),
+    makeIssue({ id: "neg-big", relatedBumn: ["x"], posMentions: 100, negMentions: 900, reach: 8_000_000 }),
+    makeIssue({ id: "neg-small", relatedBumn: ["x"], posMentions: 200, negMentions: 800, reach: 1_000_000 }),
+    makeIssue({ id: "other", relatedBumn: ["y"], posMentions: 900, negMentions: 100, reach: 99_000_000 }),
+  ];
+
+  it("picks the highest-reach linked positive and negative topic", () => {
+    const { positive, negative } = topicsForBumn("x", issues);
+    expect(positive?.id).toBe("pos-big");
+    expect(negative?.id).toBe("neg-big");
+  });
+
+  it("ignores topics not linked to the BUMN", () => {
+    const { positive, negative } = topicsForBumn("y", issues);
+    expect(positive?.id).toBe("other");
+    expect(negative).toBeNull();
+  });
+
+  it("returns null for a tone with no linked topic", () => {
+    const onlyPositive = [makeIssue({ id: "p", relatedBumn: ["z"], posMentions: 900, negMentions: 100 })];
+    const { positive, negative } = topicsForBumn("z", onlyPositive);
+    expect(positive?.id).toBe("p");
+    expect(negative).toBeNull();
+  });
+
+  it("classifies a tie (pos == neg) as negative, like groupIssuesBySentiment", () => {
+    const tie = [makeIssue({ id: "t", relatedBumn: ["w"], posMentions: 500, negMentions: 500 })];
+    const { positive, negative } = topicsForBumn("w", tie);
+    expect(positive).toBeNull();
+    expect(negative?.id).toBe("t");
   });
 });
 
