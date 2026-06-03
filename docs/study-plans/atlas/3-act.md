@@ -266,7 +266,7 @@ learn a high-severity incident just landed. Push-based updates for the ticker an
 
 ### A7. Danantara CEO Command Wall (zero-click demo)
 
-- **Version:** 5.0 · **Stage:** 3-act · **Sprint:** demo · **Status:** Built · **Spec ref:** `docs/superpowers/specs/2026-06-02-danantara-ceo-command-design.md` · **Owner:** Dev A
+- **Version:** 6.0 · **Stage:** 3-act · **Sprint:** demo · **Status:** In progress · **Spec ref:** `docs/superpowers/specs/2026-06-02-danantara-ceo-command-design.md` · **Owner:** Dev A
 
 #### PM
 **Background (why):** Client feedback on the Danantara demo: the real audience is the **CEO**, who
@@ -289,6 +289,11 @@ one aggregate per panel — the CEO reads item-by-item, and a per-item pie answe
 one*" at a glance. And the positive / negative groups should sit **side by side** (two sub-columns
 inside each panel), not stacked, so good vs bad is a single horizontal comparison.
 
+*(v6.0)* The CEO is **60 years old**. The wall's type scale (9–13px, designed for analyst-grade
+density) is illegible to him at desk/TV distance — the entire artifact fails if the one person it's
+built for can't read it. Readability becomes a hard requirement: **nothing below 16px**, names at
+20px, key numbers larger still. All 20 items per board are kept; panels scroll vertically.
+
 **Acceptance criteria:**
 - **AC1** *(amended v4.0)* — *Given* `/danantara` loads, *When* no user interaction occurs, *Then* the issue board, BUMN sentiment board, and AI brief ticker all render and animate on their own. *(Spotlight removed in v4.0.)*
 - **AC2** *(amended v4.0)* — *Given* the issue board, *When* the simulation ticks, *Then* issues stay live-ranked **within their sentiment group** with re-rank animation, per-row sparkline, velocity %, and status badge.
@@ -304,6 +309,7 @@ inside each panel), not stacked, so good vs bad is a single horizontal compariso
 - **AC12** *(v4.0, amended v5.0)* — *Given* the topic board, *When* it renders, *Then* topics are split into a **TOPIK POSITIF** sub-column (positive mentions > negative mentions) and a **TOPIK NEGATIF** sub-column (otherwise), rendered **side by side**, each ranked by reach (largest first), with counts shown; a topic moves between sub-columns live when its sentiment flips.
 - **AC13** *(v4.0, amended v5.0)* — *Given* the BUMN board, *When* it renders, *Then* BUMN are split into a **SENTIMEN POSITIF** sub-column (net sentiment ≥ 0) and a **SENTIMEN NEGATIF** sub-column (net sentiment < 0), rendered **side by side**, positive ranked most-positive first, negative ranked most-negative first, with counts shown; a BUMN moves between sub-columns live when its net sentiment flips sign.
 - **AC14** *(v4.0, amended v5.0)* — *Given* any topic row or BUMN tile, *When* it renders, *Then* it carries its **own pie/donut chart** of that item's positive / negative / neutral **mention share** with % labels, updating live with the tick. There is **no** panel-level aggregate pie.
+- **AC15** *(v6.0)* — *Given* the CEO wall (boards, header, ticker, and the detail modal), *When* any text renders, *Then* **no text is smaller than 16px**; topic titles and BUMN names are **at least 20px**; key numbers (sentiment scores, header metrics) are **at least 24px**. Lists keep all 20 items and scroll vertically.
 
 #### Architecture
 **Impact — files add/change:**
@@ -325,6 +331,7 @@ inside each panel), not stacked, so good vs bad is a single horizontal compariso
 - *(v5.0)* `change` `components/danantara/ceo/SentimentPie.tsx` — add `mini` variant (per-row donut + inline pos/neg % labels)
 - *(v5.0)* `change` `components/danantara/ceo/{IssueBoard,BumnHeatboard}.tsx` — positive/negative groups become side-by-side sub-columns; rows/tiles swap the SentimentSplit bar for the mini pie; panel-level pie removed
 - *(v5.0)* `keep` `components/danantara/ceo/SentimentSplit.tsx` — full variant still used by the detail modal
+- *(v6.0)* `change` all CEO wall components — readability type scale: `{IssueBoard,BumnHeatboard,SentimentPie,HeaderStrip,AiBriefTicker,RankBadge,Sparkline,DetailModal,SentimentSplit}.tsx` (16px floor / 20px names / 24px key numbers; pies & sparklines scaled up to match)
 
 **Data-model / API changes:** none (static demo; no DB/API). Production wiring is A1/A2 scope.
 **Reuse:** `AppShell`, existing `lib/danantara/types.ts` (`Holding` universe, `CrisisSignal` velocity concept), `lib/ai/scripted.ts` narration pattern, command-center design tokens.
@@ -347,6 +354,7 @@ inside each panel), not stacked, so good vs bad is a single horizontal compariso
 | T12 | AC12 | `groupIssuesBySentiment`: pos>neg → positive group, tie/neg → negative group; within-group order by reach desc; both sub-columns render **side by side** with counts; flipping sentiment moves the row | unit + component |
 | T13 | AC13 | `groupBumnBySentiment`: sentiment ≥ 0 → positive, < 0 → negative; positive sorted desc, negative sorted asc; sub-columns side by side; flipping sign moves the tile | unit + component |
 | T14 | AC14 | mini pie renders **on every row/tile** with one segment per non-zero share + % labels; no panel-level pie; updates after tick | unit + component |
+| T15 | AC15 | governance scan: rendered wall (and open detail modal) contains **no element with a text class under 16px** (`text-xs`, `text-sm`, `text-[<16px]`); titles/names use ≥ 20px classes; key numbers ≥ 24px | component |
 
 **Governance edge cases:** all data from public/open sources (no client-internal figures); AI ticker is deterministic scripted fallback (no live LLM call, no provider key client-side); demo banner identifies synthetic data; no auth change (`AppShell` login gate reused as-is).
 
@@ -360,3 +368,4 @@ inside each panel), not stacked, so good vs bad is a single horizontal compariso
 | 3.0 | 2026-06-03 | Client: + AC10 click-to-detail on every issue & BUMN (optional drill-down; zero-click flow unchanged). Status → Built (93 tests green, cross-navigation verified live). Backlog: modal focus-trap/role="dialog" for keyboard a11y |
 | 4.0 | 2026-06-03 | Client: sentiment becomes the organizing principle. Two-column wall (topics left / BUMN right) grouped into positive/negative sections + per-panel sentiment pie (AC11–AC14). Spotlight, breaking takeover & hotkey removed (AC4/AC5 retired; AC1/AC2/AC3/AC7/AC10 amended). Status → Built (118 tests green, build verified) |
 | 5.0 | 2026-06-03 | Client refinement on v4.0: pie chart moves **onto every topic/BUMN** (panel aggregate pie removed) and positive/negative groups render **side by side** as sub-columns (AC9/AC12/AC13/AC14 amended). Status → Built (124 tests green, build verified) |
+| 6.0 | 2026-06-03 | Client constraint: CEO is 60 — current type illegible. + AC15 readability scale: 16px floor, 20px names, 24px key numbers, across boards/header/ticker/modal; pies & sparklines scaled up. Status → In progress |
