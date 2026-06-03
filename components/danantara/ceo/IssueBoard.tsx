@@ -1,7 +1,7 @@
 "use client";
 
 import { Flame, TrendingDown, TrendingUp } from "lucide-react";
-import { ESCALATING_THRESHOLD, groupIssuesBySentiment, RISING_THRESHOLD } from "@/lib/danantara/ceo/engine";
+import { groupIssuesBySentiment } from "@/lib/danantara/ceo/engine";
 import { pieTotals, sentimentTint } from "@/lib/danantara/ceo/format";
 import { RankBadge } from "./RankBadge";
 import { SentimentPie } from "./SentimentPie";
@@ -15,8 +15,8 @@ const STATUS_BADGE: Record<CeoIssue["status"], { label: string; cls: string }> =
 
 /**
  * One topic, as a stacked card (AC12 v9.0): the full title gets its own line —
- * the whole column width — above a compact meta line (pie + velocity), so a long
- * title wraps cleanly instead of colliding with the pie in the narrow column.
+ * the whole column width — above a compact meta line (reach left, pie right), so
+ * a long title wraps cleanly instead of colliding with the pie in the narrow column.
  */
 function IssueRow({ issue, rank, onSelect }: { issue: CeoIssue; rank: number; onSelect?: (id: string) => void }) {
   const badge = STATUS_BADGE[issue.status];
@@ -46,21 +46,13 @@ function IssueRow({ issue, rank, onSelect }: { issue: CeoIssue; rank: number; on
               </span>
             )}
           </div>
-          {/* Meta line: pie on the left, reach · velocity aligned right. */}
+          {/* Meta line: reach on the left, sentiment pie at the right (AC2/AC14 v13.0). */}
           <div className="mt-2 flex items-center gap-3">
-            <SentimentPie totals={pieTotals(issue)} variant="mini" />
-            <span className="ml-auto flex shrink-0 items-center gap-2 text-base text-muted-foreground">
-              <span className="tabular-nums">{(issue.reach / 1_000_000).toFixed(1)}M reach</span>
-              <span aria-hidden className="opacity-50">·</span>
-              <span
-                className={`flex items-center gap-1 font-mono tabular-nums ${
-                  issue.velocity >= ESCALATING_THRESHOLD ? "text-destructive" : issue.velocity >= RISING_THRESHOLD ? "text-warning" : "text-muted-foreground"
-                }`}
-              >
-                <TrendingUp className="h-4 w-4" />
-                {issue.velocity >= 0 ? "+" : ""}
-                {Math.round(issue.velocity)}%
-              </span>
+            <span className="text-base tabular-nums text-muted-foreground">
+              {(issue.reach / 1_000_000).toFixed(1)}M reach
+            </span>
+            <span className="ml-auto shrink-0">
+              <SentimentPie totals={pieTotals(issue)} variant="mini" />
             </span>
           </div>
         </div>
