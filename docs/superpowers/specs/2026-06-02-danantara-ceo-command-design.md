@@ -78,6 +78,21 @@ success/warning/destructive tints). Escalation uses the destructive/deep-red pal
 pulse/siren animations. Number roll-ups and re-rank transitions via CSS transforms +
 `framer-motion`-free FLIP (no new deps).
 
+## v2.0 additions (client feedback after first viewing)
+
+1. **League-table rank movement (AC8).** Every issue row and BUMN tile carries a movement
+   indicator comparing its current rank with its rank one rolling window ago (6 ticks ≙ "2 jam"):
+   green **▲n** (climbed n positions), red **▼n** (dropped n), neutral **=** (unchanged).
+   Engine: per-item `rankHistory` (capped like mention history) + derived `rankDelta`;
+   UI: shared `RankBadge` component.
+
+2. **Explicit sentiment breakdown (AC9).** Net sentiment alone is not enough — each issue and
+   BUMN shows its **positive and negative mention counts** (and the spotlight shows the full
+   pos/neutral/neg split bar with numbers). Engine: pure `sentimentBreakdown(sentiment, mentions)`
+   → `{ pos, neg, neu }` where counts sum to mentions and `pos − neg` keeps the sign/proportion of
+   net sentiment (neutral share fixed at 30%); derived per item each tick. UI: shared
+   `SentimentSplit` component (compact split-pill on rows/tiles, full labeled bar in the spotlight).
+
 ## Testing (vitest, TDD)
 
 All engine logic is pure and tested first: ranking, velocity windowing, status-ladder
