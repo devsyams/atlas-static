@@ -31,7 +31,7 @@ export function HeaderStrip({ state }: { state: CeoState }) {
         <Landmark className="h-7 w-7 text-primary" />
         <div>
           <div className="text-xl font-semibold leading-tight">Danantara — CEO Command</div>
-          <div className="text-base uppercase tracking-[0.2em] text-muted-foreground">Intelijen Media &amp; Sentimen BUMN</div>
+          <div className="text-base uppercase tracking-[0.2em] text-muted-foreground">Media Intelligence &amp; BUMN Sentiment</div>
         </div>
       </div>
 
@@ -39,15 +39,15 @@ export function HeaderStrip({ state }: { state: CeoState }) {
         <Radio className="h-4 w-4 animate-pulse" /> Live
       </span>
 
-      <Metric label="Total Sebutan" value={totalMentions.toLocaleString("id-ID")} />
+      <Metric label="Total Mentions" value={totalMentions.toLocaleString("en-US")} />
       <Metric
-        label="Sentimen Bersih BUMN"
+        label="Net BUMN Sentiment"
         value={`${netSentiment > 0 ? "+" : ""}${netSentiment}`}
         tone={netSentiment >= 10 ? "text-success" : netSentiment <= -10 ? "text-destructive" : "text-warning"}
       />
       <div className={escalating ? "ceo-siren rounded-md" : undefined}>
         <Metric
-          label="Peringatan Aktif"
+          label="Active Alerts"
           value={String(alerts)}
           tone={escalating ? "text-destructive" : alerts > 0 ? "text-warning" : "text-success"}
           icon={escalating ? <Siren className="h-5 w-5 text-destructive" /> : undefined}

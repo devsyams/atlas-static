@@ -49,7 +49,7 @@ export function CeoCommand() {
           <IssueBoard issues={state.issues} onSelect={(id) => setDetail({ type: "issue", id })} />
         </div>
         <div className="min-h-0">
-          <BumnHeatboard rows={state.bumn} onSelect={(id) => setDetail({ type: "bumn", id })} />
+          <BumnHeatboard rows={state.bumn} issues={state.issues} onSelect={(id) => setDetail({ type: "bumn", id })} />
         </div>
       </div>
 

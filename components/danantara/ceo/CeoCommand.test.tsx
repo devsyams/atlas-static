@@ -45,17 +45,18 @@ describe("CeoCommand two-column sentiment wall (v5.0)", () => {
     expect(screen.getAllByTestId(/^bumn-tile-/)).toHaveLength(20);
   });
 
-  it("renders a mini sentiment pie on every row and tile, no panel pie (AC9, AC14 v5.0)", () => {
+  it("renders mini pies on topic rows and BUMN topic cells, no panel pie (AC14 v10.0)", () => {
     render(<CeoCommand />);
-    // 20 issue rows + 20 BUMN tiles, each with its own pie
-    expect(screen.getAllByTestId("sentiment-pie-mini")).toHaveLength(40);
+    // 20 topic rows each carry a pie, plus one per present BUMN topic cell (> 20 total).
+    expect(screen.getAllByTestId("sentiment-pie-mini").length).toBeGreaterThan(20);
     expect(screen.queryByTestId("sentiment-pie")).not.toBeInTheDocument();
   });
 
-  it("renders positive|negative sub-columns side by side in both panels (AC12, AC13 v5.0)", () => {
+  it("topics use side-by-side sub-columns; BUMN is a single per-row list (AC12 v9.0, AC16 v7.0)", () => {
     render(<CeoCommand />);
     expect(screen.getByTestId("issue-groups").className).toContain("grid-cols-2");
-    expect(screen.getByTestId("bumn-groups").className).toContain("grid-cols-2");
+    expect(screen.getByTestId("bumn-list")).toBeInTheDocument();
+    expect(screen.queryByTestId("bumn-groups")).not.toBeInTheDocument();
   });
 
   it("escalating issues still badge on the board when the scripted arc fires (AC2)", () => {
@@ -63,7 +64,7 @@ describe("CeoCommand two-column sentiment wall (v5.0)", () => {
     act(() => {
       vi.advanceTimersByTime(TICK_MS * 19);
     });
-    expect(screen.getByTestId("ceo-issues").textContent).toContain("ESKALASI");
+    expect(screen.getByTestId("ceo-issues").textContent).toContain("ESCALATING");
   });
 
   it("shows rank movement badges on issue rows and BUMN tiles (AC8)", () => {

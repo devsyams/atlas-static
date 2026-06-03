@@ -11,14 +11,14 @@ const issues = [
   makeIssue({ id: "bad-small", title: "PHK massal", posMentions: 200, negMentions: 800, reach: 1_000_000 }),
 ];
 
-describe("IssueBoard grouped by sentiment (T12 / AC12)", () => {
+describe("IssueBoard grouped by sentiment (T12 / AC12 v9.0)", () => {
   it("renders a positive and a negative section with counts", () => {
     render(<IssueBoard issues={issues} />);
     const pos = screen.getByTestId("issue-group-positive");
     const neg = screen.getByTestId("issue-group-negative");
-    expect(pos.textContent).toContain("TOPIK POSITIF");
+    expect(pos.textContent).toContain("POSITIVE TOPICS");
     expect(pos.textContent).toContain("(2)");
-    expect(neg.textContent).toContain("TOPIK NEGATIF");
+    expect(neg.textContent).toContain("NEGATIVE TOPICS");
     expect(neg.textContent).toContain("(2)");
   });
 
@@ -50,7 +50,7 @@ describe("IssueBoard grouped by sentiment (T12 / AC12)", () => {
     ]);
   });
 
-  it("renders the positive and negative sections side by side (AC12 v5.0)", () => {
+  it("renders the positive and negative sections side by side", () => {
     render(<IssueBoard issues={issues} />);
     const columns = screen.getByTestId("issue-groups");
     expect(columns.className).toContain("grid-cols-2");
@@ -58,10 +58,22 @@ describe("IssueBoard grouped by sentiment (T12 / AC12)", () => {
     expect(columns.contains(screen.getByTestId("issue-group-negative"))).toBe(true);
   });
 
-  it("shows a mini sentiment pie on every row and no panel-level pie (AC14 v5.0)", () => {
+  it("keeps a mini sentiment pie on every row and no panel-level pie", () => {
     render(<IssueBoard issues={issues} />);
     expect(screen.getAllByTestId("sentiment-pie-mini")).toHaveLength(issues.length);
     expect(screen.queryByTestId("sentiment-pie")).not.toBeInTheDocument();
+  });
+
+  it("renders no per-row sparkline (AC2 v7.0)", () => {
+    const { container } = render(<IssueBoard issues={issues} />);
+    expect(container.querySelector("polyline")).toBeNull();
+  });
+
+  it("renders topic titles in full, never truncated (AC12 v7.0)", () => {
+    render(<IssueBoard issues={issues} />);
+    for (const title of screen.getAllByTestId("issue-title")) {
+      expect(title.className).not.toContain("truncate");
+    }
   });
 
   it("still fires onSelect when a row is clicked (AC10)", () => {
@@ -75,6 +87,6 @@ describe("IssueBoard grouped by sentiment (T12 / AC12)", () => {
     render(<IssueBoard issues={[issues[0]]} />);
     const neg = screen.getByTestId("issue-group-negative");
     expect(neg.textContent).toContain("(0)");
-    expect(neg.textContent).toContain("Tidak ada");
+    expect(neg.textContent).toContain("No ");
   });
 });

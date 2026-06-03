@@ -31,9 +31,9 @@ interface Segment {
 
 function buildSlices({ pos, neg, neu, total }: Totals): Slice[] {
   return [
-    { key: "pos", label: "Positif", value: pos, color: SOV_COLORS.strong, text: "text-success" },
-    { key: "neu", label: "Netral", value: neu, color: NEUTRAL_COLOR, text: "text-muted-foreground" },
-    { key: "neg", label: "Negatif", value: neg, color: SOV_COLORS.weak, text: "text-destructive" },
+    { key: "pos", label: "Positive", value: pos, color: SOV_COLORS.strong, text: "text-success" },
+    { key: "neu", label: "Neutral", value: neu, color: NEUTRAL_COLOR, text: "text-muted-foreground" },
+    { key: "neg", label: "Negative", value: neg, color: SOV_COLORS.weak, text: "text-destructive" },
   ].map((s) => ({ ...s, pct: total > 0 ? Math.round((s.value / total) * 100) : 0 }));
 }
 

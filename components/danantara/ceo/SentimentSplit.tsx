@@ -55,7 +55,7 @@ export function SentimentSplit({
   return (
     <div data-testid="sentiment-split-full" className="space-y-2">
       <div className="flex items-center justify-between text-lg">
-        <span className="font-semibold uppercase tracking-[0.18em] text-muted-foreground">Sentimen Publik</span>
+        <span className="font-semibold uppercase tracking-[0.18em] text-muted-foreground">Public Sentiment</span>
       </div>
       <div className="flex h-3.5 w-full overflow-hidden rounded-full bg-muted/30">
         <span className="h-full bg-success" style={{ width: `${posPctBar}%` }} />
@@ -64,14 +64,14 @@ export function SentimentSplit({
       </div>
       <div className="flex items-center justify-between font-mono text-lg tabular-nums">
         <span className="flex items-center gap-1 text-success">
-          <ThumbsUp className="h-5 w-5" /> Positif {posPct}%
+          <ThumbsUp className="h-5 w-5" /> Positive {posPct}%
           <span className="text-success/60">({fmtCount(pos)})</span>
         </span>
         <span className="text-muted-foreground">
-          Netral {neuPct}% <span className="opacity-60">({fmtCount(neu)})</span>
+          Neutral {neuPct}% <span className="opacity-60">({fmtCount(neu)})</span>
         </span>
         <span className="flex items-center gap-1 text-destructive">
-          <ThumbsDown className="h-5 w-5" /> Negatif {negPct}%
+          <ThumbsDown className="h-5 w-5" /> Negative {negPct}%
           <span className="text-destructive/60">({fmtCount(neg)})</span>
         </span>
       </div>

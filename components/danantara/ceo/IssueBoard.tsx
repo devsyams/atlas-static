@@ -2,72 +2,68 @@
 
 import { Flame, TrendingDown, TrendingUp } from "lucide-react";
 import { ESCALATING_THRESHOLD, groupIssuesBySentiment, RISING_THRESHOLD } from "@/lib/danantara/ceo/engine";
-import { Sparkline } from "./Sparkline";
+import { pieTotals, sentimentTint } from "@/lib/danantara/ceo/format";
 import { RankBadge } from "./RankBadge";
 import { SentimentPie } from "./SentimentPie";
 import type { CeoIssue } from "@/lib/danantara/ceo/types";
-import { SOV_COLORS } from "@/lib/danantara/ui";
 
 const STATUS_BADGE: Record<CeoIssue["status"], { label: string; cls: string }> = {
   normal: { label: "", cls: "" },
-  rising: { label: "NAIK", cls: "bg-warning/15 text-warning border-warning/40" },
-  escalating: { label: "ESKALASI", cls: "bg-destructive/15 text-destructive border-destructive/50 ceo-siren" },
+  rising: { label: "RISING", cls: "bg-warning/15 text-warning border-warning/40" },
+  escalating: { label: "ESCALATING", cls: "bg-destructive/15 text-destructive border-destructive/50 ceo-siren" },
 };
 
+/**
+ * One topic, as a stacked card (AC12 v9.0): the full title gets its own line —
+ * the whole column width — above a compact meta line (pie + velocity), so a long
+ * title wraps cleanly instead of colliding with the pie in the narrow column.
+ */
 function IssueRow({ issue, rank, onSelect }: { issue: CeoIssue; rank: number; onSelect?: (id: string) => void }) {
   const badge = STATUS_BADGE[issue.status];
   return (
     <li
       data-testid={`issue-row-${issue.id}`}
       className={`border-b border-border/40 last:border-b-0 ${issue.status === "escalating" ? "ceo-flash" : ""}`}
+      style={{ backgroundColor: sentimentTint(issue.sentiment) }}
     >
       <button
         type="button"
         data-testid={`btn-issue-row-${issue.id}`}
         onClick={() => onSelect?.(issue.id)}
-        className="ceo-row flex w-full cursor-pointer items-center gap-3 px-3 py-2.5 text-left hover:bg-card/80"
+        className="ceo-row flex w-full cursor-pointer items-start gap-2.5 px-3 py-2.5 text-left hover:bg-card/40"
       >
-        <div className="flex w-10 shrink-0 flex-col items-end gap-0.5">
+        <div className="flex w-8 shrink-0 flex-col items-end gap-0.5 pt-0.5">
           <span className="font-mono text-xl tabular-nums text-muted-foreground">{rank}</span>
           <RankBadge delta={issue.rankDelta} />
         </div>
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
-            <span data-testid="issue-title" className="truncate text-xl font-medium leading-snug">{issue.title}</span>
+          {/* Title owns the full column width — wraps cleanly, never truncates. */}
+          <div className="flex items-start gap-2">
+            <span data-testid="issue-title" className="text-xl font-medium leading-snug text-balance">{issue.title}</span>
             {badge.label && (
-              <span className={`shrink-0 rounded border px-1.5 py-px text-base font-bold tracking-wider ${badge.cls}`}>
+              <span className={`mt-0.5 shrink-0 rounded border px-1.5 py-px text-base font-bold tracking-wider ${badge.cls}`}>
                 {badge.label}
               </span>
             )}
           </div>
-          <div className="mt-1 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-base text-muted-foreground">
-            <span>{(issue.reach / 1_000_000).toFixed(1)} jt jangkauan</span>
-            <span>·</span>
-            {/* Per-topic sentiment pie (AC14 v5.0). */}
-            <SentimentPie
-              totals={{
-                pos: issue.posMentions,
-                neg: issue.negMentions,
-                neu: Math.max(0, issue.mentions - issue.posMentions - issue.negMentions),
-                total: issue.mentions,
-              }}
-              variant="mini"
-            />
+          {/* Meta line: pie on the left, reach · velocity aligned right. */}
+          <div className="mt-2 flex items-center gap-3">
+            <SentimentPie totals={pieTotals(issue)} variant="mini" />
+            <span className="ml-auto flex shrink-0 items-center gap-2 text-base text-muted-foreground">
+              <span className="tabular-nums">{(issue.reach / 1_000_000).toFixed(1)}M reach</span>
+              <span aria-hidden className="opacity-50">·</span>
+              <span
+                className={`flex items-center gap-1 font-mono tabular-nums ${
+                  issue.velocity >= ESCALATING_THRESHOLD ? "text-destructive" : issue.velocity >= RISING_THRESHOLD ? "text-warning" : "text-muted-foreground"
+                }`}
+              >
+                <TrendingUp className="h-4 w-4" />
+                {issue.velocity >= 0 ? "+" : ""}
+                {Math.round(issue.velocity)}%
+              </span>
+            </span>
           </div>
         </div>
-        <Sparkline
-          data={issue.history}
-          stroke={issue.status === "escalating" ? SOV_COLORS.weak : issue.status === "rising" ? SOV_COLORS.watch : SOV_COLORS.strong}
-        />
-        <span
-          className={`flex w-24 shrink-0 items-center justify-end gap-1 font-mono text-lg tabular-nums ${
-            issue.velocity >= ESCALATING_THRESHOLD ? "text-destructive" : issue.velocity >= RISING_THRESHOLD ? "text-warning" : "text-muted-foreground"
-          }`}
-        >
-          <TrendingUp className="h-4 w-4" />
-          {issue.velocity >= 0 ? "+" : ""}
-          {Math.round(issue.velocity)}%
-        </span>
       </button>
     </li>
   );
@@ -93,13 +89,13 @@ function IssueGroup({
       >
         <Icon className="h-4 w-4" />
         <span className="text-lg font-bold tracking-[0.18em]">
-          {positive ? "TOPIK POSITIF" : "TOPIK NEGATIF"}
+          {positive ? "POSITIVE TOPICS" : "NEGATIVE TOPICS"}
         </span>
         <span className="font-mono text-lg tabular-nums">({issues.length})</span>
       </div>
       {issues.length === 0 ? (
         <p className="px-3 py-3 text-base text-muted-foreground">
-          Tidak ada topik {positive ? "positif" : "negatif"} saat ini.
+          No {positive ? "positive" : "negative"} topics right now.
         </p>
       ) : (
         <ol>
@@ -113,9 +109,10 @@ function IssueGroup({
 }
 
 /**
- * Danantara topics grouped by dominant sentiment (AC12 v5.0): positive and
- * negative sub-columns side by side, each ranked by reach, with a per-topic
- * sentiment pie on every row (AC14 v5.0).
+ * Danantara topic board (AC12 v9.0): topics grouped by dominant sentiment into a
+ * POSITIVE TOPICS and a NEGATIVE TOPICS sub-column, rendered side by side, each
+ * ranked by reach. Every row is a stacked card (title over a pie + velocity meta
+ * line) carrying a green↔red sentiment tint and its own per-topic pie.
  */
 export function IssueBoard({ issues, onSelect }: { issues: CeoIssue[]; onSelect?: (id: string) => void }) {
   const { positive, negative } = groupIssuesBySentiment(issues);
@@ -124,9 +121,9 @@ export function IssueBoard({ issues, onSelect }: { issues: CeoIssue[]; onSelect?
     <div data-testid="ceo-issues" className="panel flex h-full flex-col overflow-hidden">
       <div className="flex items-center gap-2 border-b border-border px-3 py-2.5">
         <Flame className="h-5 w-5 text-primary" />
-        <span className="text-xl font-semibold uppercase tracking-[0.18em]">Isu Danantara</span>
+        <span className="text-xl font-semibold uppercase tracking-[0.18em]">Danantara Issues</span>
         <span className="ml-auto text-base uppercase tracking-widest text-muted-foreground">
-          {issues.length} topik · positif vs negatif
+          {issues.length} topics · positive vs negative
         </span>
       </div>
       <div

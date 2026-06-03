@@ -11,18 +11,18 @@ describe("SentimentSplit (T9 / AC9)", () => {
     expect(el.textContent).toContain("30%");
     expect(el.textContent).toContain("55%");
     // counts are NOT shown in compact mode
-    expect(el.textContent).not.toContain("rb");
+    expect(el.textContent).not.toContain("K");
   });
 
   it("full: renders labeled percentages with counts as secondary detail", () => {
     render(<SentimentSplit pos={4200} neg={7700} total={14000} variant="full" />);
     const el = screen.getByTestId("sentiment-split-full");
-    expect(el.textContent).toContain("Positif 30%");
-    expect(el.textContent).toContain("Negatif 55%");
-    expect(el.textContent).toContain("Netral 15%");
+    expect(el.textContent).toContain("Positive 30%");
+    expect(el.textContent).toContain("Negative 55%");
+    expect(el.textContent).toContain("Neutral 15%");
     // counts still visible as secondary detail
-    expect(el.textContent).toContain("4,2 rb");
-    expect(el.textContent).toContain("7,7 rb");
+    expect(el.textContent).toContain("4.2K");
+    expect(el.textContent).toContain("7.7K");
   });
 
   it("handles zero totals without NaN", () => {

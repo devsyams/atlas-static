@@ -22,9 +22,9 @@ const CATEGORY_LABEL: Record<string, string> = {
 
 const STATUS_BADGE: Record<string, { label: string; cls: string }> = {
   normal: { label: "", cls: "" },
-  rising: { label: "NAIK", cls: "bg-warning/15 text-warning border-warning/40" },
+  rising: { label: "RISING", cls: "bg-warning/15 text-warning border-warning/40" },
   escalating: {
-    label: "ESKALASI",
+    label: "ESCALATING",
     cls: "bg-destructive/15 text-destructive border-destructive/50 ceo-siren",
   },
 };
@@ -91,7 +91,7 @@ export function DetailModal({
               <button
                 type="button"
                 data-testid="ceo-detail-close"
-                aria-label="Tutup"
+                aria-label="Close"
                 onClick={onClose}
                 className="ml-1 shrink-0 rounded p-1 text-muted-foreground hover:bg-white/5 hover:text-foreground"
               >
@@ -104,11 +104,11 @@ export function DetailModal({
               {/* Stats row */}
               <div className="flex flex-wrap gap-x-4 gap-y-1 font-mono text-lg tabular-nums">
                 <span className="text-muted-foreground">
-                  <span className="font-semibold text-foreground">{(issue.reach / 1_000_000).toFixed(1)} jt</span>{" "}
-                  jangkauan
+                  <span className="font-semibold text-foreground">{(issue.reach / 1_000_000).toFixed(1)}M</span>{" "}
+                  reach
                 </span>
                 <span className="text-muted-foreground">
-                  <span className="font-semibold text-foreground">{fmtCount(issue.mentions)}</span> sebutan
+                  <span className="font-semibold text-foreground">{fmtCount(issue.mentions)}</span> mentions
                 </span>
                 <span
                   className={`flex items-center gap-0.5 font-semibold ${
@@ -138,7 +138,7 @@ export function DetailModal({
               {/* Headlines */}
               <div>
                 <div className="mb-2 text-lg font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                  Pemberitaan Utama
+                  Top Coverage
                 </div>
                 <div className="space-y-1.5">
                   {issue.headlines.map((h) => (
@@ -157,7 +157,7 @@ export function DetailModal({
               {relatedBumn.length > 0 && (
                 <div>
                   <div className="mb-2 text-lg font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                    BUMN Terkait
+                    Related BUMN
                   </div>
                   <div className="flex flex-wrap gap-1.5">
                     {relatedBumn.map((b) => (
@@ -224,7 +224,7 @@ export function DetailModal({
             <button
               type="button"
               data-testid="ceo-detail-close"
-              aria-label="Tutup"
+              aria-label="Close"
               onClick={onClose}
               className="ml-1 shrink-0 rounded p-1 text-muted-foreground hover:bg-white/5 hover:text-foreground"
             >
@@ -237,7 +237,7 @@ export function DetailModal({
             {/* Stats row */}
             <div className="flex flex-wrap gap-x-4 gap-y-1 font-mono text-lg tabular-nums">
               <span className="text-muted-foreground">
-                Sentimen bersih:{" "}
+                Net sentiment:{" "}
                 <span
                   className={`font-bold ${bumn.sentiment < 0 ? "text-destructive" : bumn.sentiment > 0 ? "text-success" : "text-warning"}`}
                 >
@@ -246,13 +246,13 @@ export function DetailModal({
                 </span>
               </span>
               <span className="text-muted-foreground">
-                <span className="font-semibold text-foreground">{fmtCount(bumn.mentions)}</span> sebutan
+                <span className="font-semibold text-foreground">{fmtCount(bumn.mentions)}</span> mentions
               </span>
-              <span className="text-muted-foreground">Sektor: {SECTOR_LABEL[bumn.sector]}</span>
+              <span className="text-muted-foreground">Sector: {SECTOR_LABEL[bumn.sector]}</span>
             </div>
 
             {/* Sentiment trend chart */}
-            <TrendChart history={bumn.trend} escalating={false} className="h-40 w-full" label="Tren Sentimen" />
+            <TrendChart history={bumn.trend} escalating={false} className="h-40 w-full" label="Sentiment Trend" />
 
             {/* Sentiment split */}
             <SentimentSplit pos={bumn.posMentions} neg={bumn.negMentions} total={bumn.mentions} variant="full" />
@@ -261,7 +261,7 @@ export function DetailModal({
             {sortedIssues.length > 0 && (
               <div>
                 <div className="mb-2 text-lg font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                  Isu Terkait
+                  Related Issues
                 </div>
                 <div className="space-y-1.5">
                   {sortedIssues.map((issue) => {
@@ -277,7 +277,7 @@ export function DetailModal({
                       >
                         {isTop && (
                           <span className="shrink-0 rounded border border-primary/40 bg-primary/10 px-1 py-px text-base font-bold uppercase tracking-wider text-primary">
-                            Isu Utama
+                            Top Issue
                           </span>
                         )}
                         <span className="min-w-0 flex-1 truncate font-medium">{issue.title}</span>
@@ -289,7 +289,7 @@ export function DetailModal({
                           </span>
                         )}
                         <span className="shrink-0 font-mono text-base tabular-nums text-muted-foreground">
-                          {(issue.reach / 1_000_000).toFixed(1)} jt
+                          {(issue.reach / 1_000_000).toFixed(1)}M
                         </span>
                       </button>
                     );

@@ -10,9 +10,9 @@ describe("SentimentPie (T14 / AC14)", () => {
   it("renders positive, negative and neutral percentage labels", () => {
     render(<SentimentPie totals={totals} />);
     const el = screen.getByTestId("sentiment-pie");
-    expect(el.textContent).toContain("Positif 50%");
-    expect(el.textContent).toContain("Negatif 30%");
-    expect(el.textContent).toContain("Netral 20%");
+    expect(el.textContent).toContain("Positive 50%");
+    expect(el.textContent).toContain("Negative 30%");
+    expect(el.textContent).toContain("Neutral 20%");
   });
 
   it("renders one donut segment per non-zero share", () => {
@@ -51,8 +51,8 @@ describe("SentimentPie mini variant (T14 / AC14 v5.0 — per-row pie)", () => {
     expect(el.textContent).toContain("62%");
     expect(el.textContent).toContain("10%");
     // mini omits the long labels — % only
-    expect(el.textContent).not.toContain("Positif");
-    expect(el.textContent).not.toContain("Negatif");
+    expect(el.textContent).not.toContain("Positive");
+    expect(el.textContent).not.toContain("Negative");
   });
 
   it("renders one donut segment per non-zero share", () => {
