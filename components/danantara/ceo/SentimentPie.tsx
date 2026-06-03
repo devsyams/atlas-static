@@ -91,11 +91,11 @@ export function SentimentPie({ totals, variant = "full" }: { totals: Totals; var
     const pos = slices.find((s) => s.key === "pos")!;
     const neg = slices.find((s) => s.key === "neg")!;
     return (
-      // Green (pos) and red (neg) % grouped as a matched pair, donut on the right.
+      // value% · donut · value% — green (pos) left, donut centered, red (neg) right.
       <span data-testid="sentiment-pie-mini" className="inline-flex items-center gap-1.5">
         <span className={`font-mono text-base tabular-nums ${pos.text}`}>{pos.pct}%</span>
-        <span className={`font-mono text-base tabular-nums ${neg.text}`}>{neg.pct}%</span>
         <Donut segments={segments} r={R} stroke={6} />
+        <span className={`font-mono text-base tabular-nums ${neg.text}`}>{neg.pct}%</span>
       </span>
     );
   }
