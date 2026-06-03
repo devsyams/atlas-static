@@ -1,10 +1,10 @@
 import { AppShell } from "@/components/layout/AppShell";
-import { CeoCommand } from "@/components/danantara/ceo/CeoCommand";
+import { SovereignCommand } from "@/components/danantara/SovereignCommand";
 
 export default function Page() {
   return (
     <AppShell>
-      <CeoCommand />
+      <SovereignCommand />
     </AppShell>
   );
 }

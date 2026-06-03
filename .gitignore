@@ -46,6 +46,10 @@ yarn-error.log*
 # superpowers brainstorm mockups
 .superpowers/
 
+# stray local build artifacts (monorepo experiment + turbo cache)
+/apps/
+/.turbo/
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

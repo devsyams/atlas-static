@@ -697,3 +697,33 @@
 .dn-boot-bar {
   animation: dn-boot-bar 1.7s cubic-bezier(0.3, 0.6, 0.2, 1) forwards;
 }
+
+/* ===== Danantara CEO command wall ===== */
+
+@keyframes ceo-siren {
+  0%, 100% { box-shadow: 0 0 0 0 oklch(0.62 0.22 25 / 0.55); }
+  50% { box-shadow: 0 0 0 10px oklch(0.62 0.22 25 / 0); }
+}
+.ceo-siren { animation: ceo-siren 1.2s ease-in-out infinite; }
+
+@keyframes ceo-takeover-in {
+  0% { opacity: 0; transform: scale(1.04); }
+  100% { opacity: 1; transform: scale(1); }
+}
+.ceo-takeover { animation: ceo-takeover-in 0.35s ease-out; }
+
+@keyframes ceo-flash {
+  0%, 100% { background-color: transparent; }
+  50% { background-color: oklch(0.62 0.22 25 / 0.18); }
+}
+.ceo-flash { animation: ceo-flash 1.6s ease-in-out infinite; }
+
+@keyframes ceo-ticker-slide {
+  0% { opacity: 0; transform: translateY(8px); }
+  8%, 92% { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(-8px); }
+}
+.ceo-ticker-line { animation: ceo-ticker-slide 6s ease-in-out infinite; }
+
+/* Row re-rank: rows animate via CSS transition on transform */
+.ceo-row { transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1); }

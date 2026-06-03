@@ -261,3 +261,72 @@ learn a high-severity incident just landed. Push-based updates for the ticker an
 | Version | Date | Change |
 |---|---|---|
 | 1.0 | 2026-05-25 | Initial plan from architecture spec |
+
+---
+
+### A7. Danantara CEO Command Wall (zero-click demo)
+
+- **Version:** 3.0 · **Stage:** 3-act · **Sprint:** demo · **Status:** Built · **Spec ref:** `docs/superpowers/specs/2026-06-02-danantara-ceo-command-design.md` · **Owner:** Dev A
+
+#### PM
+**Background (why):** Client feedback on the Danantara demo: the real audience is the **CEO**, who
+"doesn't have time for clicking". The current `/danantara` (Sovereign Command) is operator-grade —
+tabs, draggable grid, modals — and dies in a CEO demo. The CEO wants three things surfaced
+automatically: the **top 20 issues** around Danantara, the **top 20 BUMN by public sentiment**, and
+an **unmissable warning when an issue escalates** (mentions/reach spiking abnormally fast). A
+zero-click command wall is also the strongest possible demo artifact (screenshot-shareable, runs
+itself on a TV).
+
+**Acceptance criteria:**
+- **AC1** — *Given* `/danantara` loads, *When* no user interaction occurs, *Then* the top-20 issue board, top-20 BUMN sentiment board, auto-rotating spotlight, and AI brief ticker all render and animate on their own.
+- **AC2** — *Given* the issue board, *When* the simulation ticks, *Then* issues stay ranked by reach with live re-rank animation, per-row sparkline, velocity %, and status badge.
+- **AC3** — *Given* the BUMN board, *When* rendered, *Then* exactly 20 BUMN tiles show net sentiment (−100..100) as a green↔red heatmap with trend spark, sorted most-negative first.
+- **AC4** — *Given* an issue's mention velocity exceeds +200% over the rolling window (last 6 ticks) with reach above 5 M, *When* the tick evaluates status, *Then* a full-screen breaking-news takeover fires (~5 s), the issue pins to the spotlight with an ESCALATING badge, and its board row pulses until velocity cools below +80%.
+- **AC5** — *Given* a live demo session, *When* ~60 s pass after load, *Then* a scripted escalation arc reliably triggers AC4 without manual intervention (plus presenter hotkey `E` to force one).
+- **AC6** — *Given* the old dashboard, *When* `/danantara-v2` is opened, *Then* the full Sovereign Command experience works exactly as it does today.
+- **AC7** — *Given* a phone-width viewport, *When* `/danantara` loads, *Then* the layout stacks (header → spotlight → issues → BUMN) and stays zero-click.
+- **AC8** — *Given* the issue board or the BUMN board, *When* an item's rank differs from its rank one rolling window ago (6 ticks ≙ "2 jam"), *Then* the row/tile shows a green ▲ with positions gained, a red ▼ with positions lost, or a neutral "=" stay indicator when unchanged (league-table style).
+- **AC9** — *Given* any issue or BUMN, *When* it renders on a board or in the spotlight, *Then* its sentiment is shown as explicit positive and negative **percentages** (green/red split bar with % labels), not just a net score or chart; the spotlight additionally shows the underlying mention counts; positive + negative + neutral shares sum to 100%.
+- **AC10** — *Given* any issue row or BUMN tile, *When* it is clicked/tapped, *Then* a detail panel opens with the full picture (live trend chart, sentiment % + counts, rank movement, velocity/reach/mention stats, headlines for issues / related issues for BUMN, related-BUMN chips for issues / top issue for BUMN), closable via Esc, the ✕ button, or clicking the overlay; the simulation keeps ticking underneath and a breaking takeover still renders above everything. Clicking remains optional — the zero-click experience (AC1) is unchanged.
+
+#### Architecture
+**Impact — files add/change:**
+- `change` `app/danantara/page.tsx` → render new `CeoCommand` (in `AppShell`)
+- `add` `app/danantara-v2/page.tsx` → render existing `SovereignCommand` (pure move)
+- `add` `lib/danantara/ceo/types.ts` — `CeoIssue`, `BumnSentiment`, `EscalationEvent`, `CeoSnapshot`
+- `add` `lib/danantara/ceo/data.ts` — 20 curated issues + 20 BUMN sentiment rows (public sources only)
+- `add` `lib/danantara/ceo/engine.ts` — pure sim/rank/velocity/status/spotlight/scripted-arc functions
+- `add` `components/danantara/ceo/{CeoCommand,HeaderStrip,IssueBoard,BumnHeatboard,Spotlight,BreakingTakeover,AiBriefTicker}.tsx`
+- `add` `lib/danantara/ceo/engine.test.ts` + component smoke tests (vitest)
+- *(v2.0)* `change` `lib/danantara/ceo/{types,engine,data}.ts` — rank history/delta tracking + sentiment breakdown (pos/neg/neutral counts)
+- *(v2.0)* `add` `components/danantara/ceo/{RankBadge,SentimentSplit}.tsx`; `change` `IssueBoard`, `BumnHeatboard`, `Spotlight` to show both
+- *(v3.0)* `add` `components/danantara/ceo/DetailModal.tsx` (issue + BUMN variants); `change` `IssueBoard`/`BumnHeatboard` rows/tiles become clickable buttons; `CeoCommand` owns selection state
+
+**Data-model / API changes:** none (static demo; no DB/API). Production wiring is A1/A2 scope.
+**Reuse:** `AppShell`, existing `lib/danantara/types.ts` (`Holding` universe, `CrisisSignal` velocity concept), `lib/ai/scripted.ts` narration pattern, command-center design tokens.
+**Risks:** demo must never miss the escalation moment → deterministic scripted arcs + hotkey; 40 live-animating items on TV → throttle to one shared 4 s tick, CSS-transform-only animations.
+
+#### QA
+| # | Maps to | Test case | Type |
+|---|---|---|---|
+| T1 | AC1 | snapshot render: all four zones present, no interaction handlers required | component |
+| T2 | AC2 | `rankIssues` orders by reach; `tick` preserves order invariant; sparkline/velocity data present | unit |
+| T3 | AC3 | `rankBumn` returns exactly 20 sorted by net sentiment | unit |
+| T4 | AC4 | `statusOf` ladder: normal→rising→escalating thresholds + cooldown; takeover renders on `escalating` | unit + component |
+| T5 | AC5 | scripted arc fires at its configured tick; hotkey `E` force-fires | unit |
+| T6 | AC6 | `/danantara-v2` page renders `SovereignCommand` | component |
+| T7 | AC7 | stacked layout below `md` breakpoint | component |
+| T8 | AC8 | `rankDelta` = rank window-ago − current rank; ▲/▼/= rendered per delta sign on both boards | unit + component |
+| T9 | AC9 | breakdown: pos+neg+neutral = mentions, net sign matches sentiment sign; counts rendered on rows, tiles & spotlight | unit + component |
+| T10 | AC10 | click issue row → issue detail opens; click BUMN tile → BUMN detail opens; Esc / ✕ / overlay closes; detail shows live data; takeover renders above modal | component |
+
+**Governance edge cases:** all data from public/open sources (no client-internal figures); AI ticker is deterministic scripted fallback (no live LLM call, no provider key client-side); demo banner identifies synthetic data; no auth change (`AppShell` login gate reused as-is).
+
+#### Revision history
+| Version | Date | Change |
+|---|---|---|
+| 1.0 | 2026-06-02 | Initial plan from CEO feedback (zero-click rebuild; old dashboard → /danantara-v2) |
+| 1.1 | 2026-06-03 | Status → Built (55 tests green, build verified). Review-driven refinements: bounded simulation growth (reach tracks mentions, capped), 21→20 issue trim, live spotlight pin per AC4, queued concurrent takeovers, /danantara-v2 middleware scope fix |
+| 2.0 | 2026-06-03 | Client feedback after first viewing: + AC8 (league-table rank movement arrows ▲▼= on both boards) and AC9 (explicit positive/negative sentiment counts, not just net score). Status → In progress |
+| 2.1 | 2026-06-03 | AC9 refined during build (client): percentages primary, counts secondary (spotlight only). Split bar kept over pie chart — length comparison beats angle comparison across 40 items. Status → Built (83 tests green, build + live visual verification on TV/phone viewports) |
+| 3.0 | 2026-06-03 | Client: + AC10 click-to-detail on every issue & BUMN (optional drill-down; zero-click flow unchanged). Status → Built (93 tests green, cross-navigation verified live). Backlog: modal focus-trap/role="dialog" for keyboard a11y |
