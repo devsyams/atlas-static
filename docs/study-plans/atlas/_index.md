@@ -35,7 +35,7 @@
 | **A4** | AI assistant — copilot chat | 3-act | S5 | E7 | 1.0 | Planned |
 | **A5** | AI assistant — briefing, forecast & per-widget ask | 3-act | S5 | E7 | 1.0 | Planned |
 | **A6** | Real-time ticker, alerts & War Room | 3-act | S5–S6 | E8 | 1.0 | Planned |
-| **A7** | Danantara CEO Command Wall (zero-click demo) | 3-act | demo | — | 3.0 | Built |
+| **A7** | Danantara CEO Command Wall (zero-click demo) | 3-act | demo | — | 4.0 | In progress |
 
 **Totals:** 24 features · 7 platform · 5 watch · 5 understand · 7 act.
 
@@ -57,3 +57,4 @@
 | 1.1 | 2026-05-25 | Added W5 (initial recent-window backfill) after the light-backfill decision; 22→23 features |
 | 1.2 | 2026-06-02 | Added A7 (Danantara CEO Command Wall) from client CEO feedback; 23→24 features |
 | 1.3 | 2026-06-03 | A7 → v2.0 In progress (rank-movement arrows + explicit pos/neg sentiment counts) |
+| 1.4 | 2026-06-03 | A7 → v4.0 In progress (two-column sentiment-grouped wall + per-panel pie; spotlight/takeover removed) |

@@ -266,7 +266,7 @@ learn a high-severity incident just landed. Push-based updates for the ticker an
 
 ### A7. Danantara CEO Command Wall (zero-click demo)
 
-- **Version:** 3.0 · **Stage:** 3-act · **Sprint:** demo · **Status:** Built · **Spec ref:** `docs/superpowers/specs/2026-06-02-danantara-ceo-command-design.md` · **Owner:** Dev A
+- **Version:** 4.0 · **Stage:** 3-act · **Sprint:** demo · **Status:** In progress · **Spec ref:** `docs/superpowers/specs/2026-06-02-danantara-ceo-command-design.md` · **Owner:** Dev A
 
 #### PM
 **Background (why):** Client feedback on the Danantara demo: the real audience is the **CEO**, who
@@ -277,17 +277,28 @@ an **unmissable warning when an issue escalates** (mentions/reach spiking abnorm
 zero-click command wall is also the strongest possible demo artifact (screenshot-shareable, runs
 itself on a TV).
 
+*(v4.0)* Client direction after the v3.0 viewing: the CEO reads the wall as **"what is good vs what
+is bad"** — they want sentiment to be the organizing principle, not rank. The wall becomes **two
+columns**: **left = Danantara topics grouped into positive / negative**, **right = BUMN names grouped
+into positive / negative**, each panel headed by a **pie chart** of overall sentiment share. The
+rotating Spotlight and the breaking-news takeover are dropped — the grouping itself now carries the
+"what's wrong" signal, and the takeover competed with it for attention.
+
 **Acceptance criteria:**
-- **AC1** — *Given* `/danantara` loads, *When* no user interaction occurs, *Then* the top-20 issue board, top-20 BUMN sentiment board, auto-rotating spotlight, and AI brief ticker all render and animate on their own.
-- **AC2** — *Given* the issue board, *When* the simulation ticks, *Then* issues stay ranked by reach with live re-rank animation, per-row sparkline, velocity %, and status badge.
-- **AC3** — *Given* the BUMN board, *When* rendered, *Then* exactly 20 BUMN tiles show net sentiment (−100..100) as a green↔red heatmap with trend spark, sorted most-negative first.
-- **AC4** — *Given* an issue's mention velocity exceeds +200% over the rolling window (last 6 ticks) with reach above 5 M, *When* the tick evaluates status, *Then* a full-screen breaking-news takeover fires (~5 s), the issue pins to the spotlight with an ESCALATING badge, and its board row pulses until velocity cools below +80%.
-- **AC5** — *Given* a live demo session, *When* ~60 s pass after load, *Then* a scripted escalation arc reliably triggers AC4 without manual intervention (plus presenter hotkey `E` to force one).
+- **AC1** *(amended v4.0)* — *Given* `/danantara` loads, *When* no user interaction occurs, *Then* the issue board, BUMN sentiment board, and AI brief ticker all render and animate on their own. *(Spotlight removed in v4.0.)*
+- **AC2** *(amended v4.0)* — *Given* the issue board, *When* the simulation ticks, *Then* issues stay live-ranked **within their sentiment group** with re-rank animation, per-row sparkline, velocity %, and status badge.
+- **AC3** *(amended v4.0)* — *Given* the BUMN board, *When* rendered, *Then* exactly 20 BUMN tiles show net sentiment (−100..100) as a green↔red heatmap with trend spark, **grouped by sentiment sign** (see AC13).
+- **AC4** — *(removed in v4.0 — breaking-news takeover and spotlight pin dropped; escalating issues keep their ESKALASI badge and row pulse on the board.)*
+- **AC5** — *(removed in v4.0 — scripted arcs still drive board badges, but no takeover to trigger; presenter hotkey `E` dropped.)*
 - **AC6** — *Given* the old dashboard, *When* `/danantara-v2` is opened, *Then* the full Sovereign Command experience works exactly as it does today.
-- **AC7** — *Given* a phone-width viewport, *When* `/danantara` loads, *Then* the layout stacks (header → spotlight → issues → BUMN) and stays zero-click.
+- **AC7** *(amended v4.0)* — *Given* a phone-width viewport, *When* `/danantara` loads, *Then* the layout stacks (header → ticker → issues → BUMN) and stays zero-click.
 - **AC8** — *Given* the issue board or the BUMN board, *When* an item's rank differs from its rank one rolling window ago (6 ticks ≙ "2 jam"), *Then* the row/tile shows a green ▲ with positions gained, a red ▼ with positions lost, or a neutral "=" stay indicator when unchanged (league-table style).
 - **AC9** — *Given* any issue or BUMN, *When* it renders on a board or in the spotlight, *Then* its sentiment is shown as explicit positive and negative **percentages** (green/red split bar with % labels), not just a net score or chart; the spotlight additionally shows the underlying mention counts; positive + negative + neutral shares sum to 100%.
-- **AC10** — *Given* any issue row or BUMN tile, *When* it is clicked/tapped, *Then* a detail panel opens with the full picture (live trend chart, sentiment % + counts, rank movement, velocity/reach/mention stats, headlines for issues / related issues for BUMN, related-BUMN chips for issues / top issue for BUMN), closable via Esc, the ✕ button, or clicking the overlay; the simulation keeps ticking underneath and a breaking takeover still renders above everything. Clicking remains optional — the zero-click experience (AC1) is unchanged.
+- **AC10** *(amended v4.0)* — *Given* any issue row or BUMN tile, *When* it is clicked/tapped, *Then* a detail panel opens with the full picture (live trend chart, sentiment % + counts, rank movement, velocity/reach/mention stats, headlines for issues / related issues for BUMN, related-BUMN chips for issues / top issue for BUMN), closable via Esc, the ✕ button, or clicking the overlay; the simulation keeps ticking underneath. Clicking remains optional — the zero-click experience (AC1) is unchanged.
+- **AC11** *(v4.0)* — *Given* `/danantara` on a desktop/TV viewport, *When* it renders, *Then* the wall is **two columns**: Danantara topics on the left, BUMN sentiment on the right — no third (Spotlight) column and no takeover overlay.
+- **AC12** *(v4.0)* — *Given* the topic board, *When* it renders, *Then* topics are split into a **TOPIK POSITIF** section (positive mentions > negative mentions) and a **TOPIK NEGATIF** section (otherwise), each section ranked by reach (largest first), with section counts shown; a topic moves between sections live when its sentiment flips.
+- **AC13** *(v4.0)* — *Given* the BUMN board, *When* it renders, *Then* BUMN are split into a **SENTIMEN POSITIF** section (net sentiment ≥ 0) and a **SENTIMEN NEGATIF** section (net sentiment < 0), positive section ranked most-positive first, negative section ranked most-negative first, with section counts shown; a BUMN moves between sections live when its net sentiment flips sign.
+- **AC14** *(v4.0)* — *Given* either panel, *When* it renders, *Then* a **pie/donut chart** at the top of the panel shows the aggregate positive / negative / neutral **mention share** across all items in that panel (left: all 20 topics; right: all 20 BUMN), with % labels, and it updates live with the tick.
 
 #### Architecture
 **Impact — files add/change:**
@@ -301,6 +312,11 @@ itself on a TV).
 - *(v2.0)* `change` `lib/danantara/ceo/{types,engine,data}.ts` — rank history/delta tracking + sentiment breakdown (pos/neg/neutral counts)
 - *(v2.0)* `add` `components/danantara/ceo/{RankBadge,SentimentSplit}.tsx`; `change` `IssueBoard`, `BumnHeatboard`, `Spotlight` to show both
 - *(v3.0)* `add` `components/danantara/ceo/DetailModal.tsx` (issue + BUMN variants); `change` `IssueBoard`/`BumnHeatboard` rows/tiles become clickable buttons; `CeoCommand` owns selection state
+- *(v4.0)* `change` `lib/danantara/ceo/engine.ts` — add pure grouping selectors `groupIssuesBySentiment()` / `groupBumnBySentiment()` + `sentimentTotals()` aggregate for the pies
+- *(v4.0)* `add` `components/danantara/ceo/SentimentPie.tsx` — hand-rolled SVG donut (follows `SectorDonut` pattern; no chart dependency)
+- *(v4.0)* `change` `components/danantara/ceo/{IssueBoard,BumnHeatboard}.tsx` — render two grouped sections + `SentimentPie` header
+- *(v4.0)* `change` `components/danantara/ceo/CeoCommand.tsx` — 2-column grid; remove Spotlight / BreakingTakeover / hotkey wiring (takeover queue state deleted from reducer)
+- *(v4.0)* `delete` `components/danantara/ceo/{Spotlight,BreakingTakeover}.tsx`
 
 **Data-model / API changes:** none (static demo; no DB/API). Production wiring is A1/A2 scope.
 **Reuse:** `AppShell`, existing `lib/danantara/types.ts` (`Holding` universe, `CrisisSignal` velocity concept), `lib/ai/scripted.ts` narration pattern, command-center design tokens.
@@ -312,13 +328,17 @@ itself on a TV).
 | T1 | AC1 | snapshot render: all four zones present, no interaction handlers required | component |
 | T2 | AC2 | `rankIssues` orders by reach; `tick` preserves order invariant; sparkline/velocity data present | unit |
 | T3 | AC3 | `rankBumn` returns exactly 20 sorted by net sentiment | unit |
-| T4 | AC4 | `statusOf` ladder: normal→rising→escalating thresholds + cooldown; takeover renders on `escalating` | unit + component |
-| T5 | AC5 | scripted arc fires at its configured tick; hotkey `E` force-fires | unit |
+| T4 | AC4 | *(retired in v4.0 — takeover/spotlight removed; `statusOf` ladder unit tests kept for board badges)* | unit |
+| T5 | AC5 | *(retired in v4.0 — hotkey removed; scripted-arc tick test kept)* | unit |
 | T6 | AC6 | `/danantara-v2` page renders `SovereignCommand` | component |
-| T7 | AC7 | stacked layout below `md` breakpoint | component |
+| T7 | AC7 | stacked layout below `md` breakpoint (header → ticker → issues → BUMN) | component |
 | T8 | AC8 | `rankDelta` = rank window-ago − current rank; ▲/▼/= rendered per delta sign on both boards | unit + component |
-| T9 | AC9 | breakdown: pos+neg+neutral = mentions, net sign matches sentiment sign; counts rendered on rows, tiles & spotlight | unit + component |
-| T10 | AC10 | click issue row → issue detail opens; click BUMN tile → BUMN detail opens; Esc / ✕ / overlay closes; detail shows live data; takeover renders above modal | component |
+| T9 | AC9 | breakdown: pos+neg+neutral = mentions, net sign matches sentiment sign; counts rendered on rows & tiles | unit + component |
+| T10 | AC10 | click issue row → issue detail opens; click BUMN tile → BUMN detail opens; Esc / ✕ / overlay closes; detail shows live data | component |
+| T11 | AC11 | wall grid has exactly two columns; `Spotlight` and `BreakingTakeover` are not rendered and files removed from the bundle | component |
+| T12 | AC12 | `groupIssuesBySentiment`: pos>neg → positive group, tie/neg → negative group; within-group order by reach desc; both sections render with counts; flipping sentiment moves the row | unit + component |
+| T13 | AC13 | `groupBumnBySentiment`: sentiment ≥ 0 → positive, < 0 → negative; positive sorted desc, negative sorted asc; flipping sign moves the tile | unit + component |
+| T14 | AC14 | `sentimentTotals` sums pos/neg/neutral across items (= sum of mentions); pie renders one segment per non-zero share with % labels; updates after tick | unit + component |
 
 **Governance edge cases:** all data from public/open sources (no client-internal figures); AI ticker is deterministic scripted fallback (no live LLM call, no provider key client-side); demo banner identifies synthetic data; no auth change (`AppShell` login gate reused as-is).
 
@@ -330,3 +350,4 @@ itself on a TV).
 | 2.0 | 2026-06-03 | Client feedback after first viewing: + AC8 (league-table rank movement arrows ▲▼= on both boards) and AC9 (explicit positive/negative sentiment counts, not just net score). Status → In progress |
 | 2.1 | 2026-06-03 | AC9 refined during build (client): percentages primary, counts secondary (spotlight only). Split bar kept over pie chart — length comparison beats angle comparison across 40 items. Status → Built (83 tests green, build + live visual verification on TV/phone viewports) |
 | 3.0 | 2026-06-03 | Client: + AC10 click-to-detail on every issue & BUMN (optional drill-down; zero-click flow unchanged). Status → Built (93 tests green, cross-navigation verified live). Backlog: modal focus-trap/role="dialog" for keyboard a11y |
+| 4.0 | 2026-06-03 | Client: sentiment becomes the organizing principle. Two-column wall (topics left / BUMN right) grouped into positive/negative sections + per-panel sentiment pie (AC11–AC14). Spotlight, breaking takeover & hotkey removed (AC4/AC5 retired; AC1/AC2/AC3/AC7/AC10 amended). Status → In progress |
