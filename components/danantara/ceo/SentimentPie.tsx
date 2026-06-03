@@ -85,15 +85,16 @@ export function SentimentPie({ totals, variant = "full" }: { totals: Totals; var
   const slices = buildSlices(totals);
 
   if (variant === "mini") {
-    const R = 7;
+    // Readability scale (AC15): 16px labels, donut sized to match.
+    const R = 11;
     const segments = buildSegments(slices, totals.total, 2 * Math.PI * R);
     const pos = slices.find((s) => s.key === "pos")!;
     const neg = slices.find((s) => s.key === "neg")!;
     return (
-      <span data-testid="sentiment-pie-mini" className="inline-flex items-center gap-1.5">
-        <span className={`font-mono text-[10px] tabular-nums ${pos.text}`}>{pos.pct}%</span>
-        <Donut segments={segments} r={R} stroke={4} />
-        <span className={`font-mono text-[10px] tabular-nums ${neg.text}`}>{neg.pct}%</span>
+      <span data-testid="sentiment-pie-mini" className="inline-flex items-center gap-2">
+        <span className={`font-mono text-base tabular-nums ${pos.text}`}>{pos.pct}%</span>
+        <Donut segments={segments} r={R} stroke={6} />
+        <span className={`font-mono text-base tabular-nums ${neg.text}`}>{neg.pct}%</span>
       </span>
     );
   }
@@ -105,12 +106,12 @@ export function SentimentPie({ totals, variant = "full" }: { totals: Totals; var
       <Donut segments={segments} r={R} stroke={10} />
       <div className="min-w-0 flex-1 space-y-0.5">
         {slices.map((s) => (
-          <div key={s.key} className="flex items-center gap-1.5 text-[11px]">
-            <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: s.color }} />
+          <div key={s.key} className="flex items-center gap-1.5 text-base">
+            <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: s.color }} />
             <span className={`font-semibold tabular-nums ${s.text}`}>
               {s.label} {s.pct}%
             </span>
-            <span className="truncate text-[10px] text-muted-foreground">({fmtCount(s.value)})</span>
+            <span className="truncate text-base text-muted-foreground">({fmtCount(s.value)})</span>
           </div>
         ))}
       </div>

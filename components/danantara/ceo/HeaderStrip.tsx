@@ -4,7 +4,10 @@ import { Landmark, Radio, Siren } from "lucide-react";
 import { useEffect, useState } from "react";
 import type { CeoState } from "@/lib/danantara/ceo/types";
 
-/** Headline strip: identity, LIVE badge, totals, alert count, Jakarta clock. Zero-click. */
+/**
+ * Headline strip: identity, LIVE badge, totals, alert count, Jakarta clock.
+ * Zero-click. Type sizes follow the CEO readability scale (AC15).
+ */
 export function HeaderStrip({ state }: { state: CeoState }) {
   const totalMentions = state.issues.reduce((a, i) => a + i.mentions, 0);
   const netSentiment = Math.round(state.bumn.reduce((a, b) => a + b.sentiment, 0) / Math.max(1, state.bumn.length));
@@ -24,16 +27,16 @@ export function HeaderStrip({ state }: { state: CeoState }) {
 
   return (
     <div data-testid="ceo-header" className="panel flex flex-wrap items-center gap-x-6 gap-y-2 px-4 py-3">
-      <div className="flex items-center gap-2">
-        <Landmark className="h-5 w-5 text-primary" />
+      <div className="flex items-center gap-2.5">
+        <Landmark className="h-7 w-7 text-primary" />
         <div>
-          <div className="text-sm font-semibold leading-tight">Danantara — CEO Command</div>
-          <div className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">Intelijen Media &amp; Sentimen BUMN</div>
+          <div className="text-xl font-semibold leading-tight">Danantara — CEO Command</div>
+          <div className="text-base uppercase tracking-[0.2em] text-muted-foreground">Intelijen Media &amp; Sentimen BUMN</div>
         </div>
       </div>
 
-      <span className="flex items-center gap-1.5 rounded-full border border-success/40 bg-success/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-widest text-success">
-        <Radio className="h-3 w-3 animate-pulse" /> Live
+      <span className="flex items-center gap-1.5 rounded-full border border-success/40 bg-success/10 px-3 py-1 text-base font-semibold uppercase tracking-widest text-success">
+        <Radio className="h-4 w-4 animate-pulse" /> Live
       </span>
 
       <Metric label="Total Sebutan" value={totalMentions.toLocaleString("id-ID")} />
@@ -47,13 +50,13 @@ export function HeaderStrip({ state }: { state: CeoState }) {
           label="Peringatan Aktif"
           value={String(alerts)}
           tone={escalating ? "text-destructive" : alerts > 0 ? "text-warning" : "text-success"}
-          icon={escalating ? <Siren className="h-4 w-4 text-destructive" /> : undefined}
+          icon={escalating ? <Siren className="h-5 w-5 text-destructive" /> : undefined}
         />
       </div>
 
       <div className="ml-auto text-right">
-        <div className="font-mono text-lg tabular-nums leading-tight">{clock || "--:--:--"}</div>
-        <div className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">WIB · Jakarta</div>
+        <div data-testid="metric-value" className="font-mono text-2xl tabular-nums leading-tight">{clock || "--:--:--"}</div>
+        <div className="text-base uppercase tracking-[0.2em] text-muted-foreground">WIB · Jakarta</div>
       </div>
     </div>
   );
@@ -64,8 +67,8 @@ function Metric({ label, value, tone, icon }: { label: string; value: string; to
     <div className="flex items-center gap-2 px-2">
       {icon}
       <div>
-        <div className={`font-mono text-lg font-semibold tabular-nums leading-tight ${tone ?? ""}`}>{value}</div>
-        <div className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">{label}</div>
+        <div data-testid="metric-value" className={`font-mono text-2xl font-semibold tabular-nums leading-tight ${tone ?? ""}`}>{value}</div>
+        <div className="text-base uppercase tracking-[0.18em] text-muted-foreground">{label}</div>
       </div>
     </div>
   );

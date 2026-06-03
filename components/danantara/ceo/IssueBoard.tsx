@@ -25,22 +25,22 @@ function IssueRow({ issue, rank, onSelect }: { issue: CeoIssue; rank: number; on
         type="button"
         data-testid={`btn-issue-row-${issue.id}`}
         onClick={() => onSelect?.(issue.id)}
-        className="ceo-row flex w-full cursor-pointer items-center gap-2.5 px-3 py-2 text-left hover:bg-card/80"
+        className="ceo-row flex w-full cursor-pointer items-center gap-3 px-3 py-2.5 text-left hover:bg-card/80"
       >
-        <div className="flex w-8 shrink-0 flex-col items-end gap-0.5">
-          <span className="font-mono text-sm tabular-nums text-muted-foreground">{rank}</span>
+        <div className="flex w-10 shrink-0 flex-col items-end gap-0.5">
+          <span className="font-mono text-xl tabular-nums text-muted-foreground">{rank}</span>
           <RankBadge delta={issue.rankDelta} />
         </div>
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-1.5">
-            <span className="truncate text-[13px] font-medium leading-snug">{issue.title}</span>
+          <div className="flex items-center gap-2">
+            <span data-testid="issue-title" className="truncate text-xl font-medium leading-snug">{issue.title}</span>
             {badge.label && (
-              <span className={`shrink-0 rounded border px-1 py-px text-[9px] font-bold tracking-wider ${badge.cls}`}>
+              <span className={`shrink-0 rounded border px-1.5 py-px text-base font-bold tracking-wider ${badge.cls}`}>
                 {badge.label}
               </span>
             )}
           </div>
-          <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[10px] text-muted-foreground">
+          <div className="mt-1 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-base text-muted-foreground">
             <span>{(issue.reach / 1_000_000).toFixed(1)} jt jangkauan</span>
             <span>·</span>
             {/* Per-topic sentiment pie (AC14 v5.0). */}
@@ -60,11 +60,11 @@ function IssueRow({ issue, rank, onSelect }: { issue: CeoIssue; rank: number; on
           stroke={issue.status === "escalating" ? SOV_COLORS.weak : issue.status === "rising" ? SOV_COLORS.watch : SOV_COLORS.strong}
         />
         <span
-          className={`flex w-16 shrink-0 items-center justify-end gap-0.5 font-mono text-xs tabular-nums ${
+          className={`flex w-24 shrink-0 items-center justify-end gap-1 font-mono text-lg tabular-nums ${
             issue.velocity >= ESCALATING_THRESHOLD ? "text-destructive" : issue.velocity >= RISING_THRESHOLD ? "text-warning" : "text-muted-foreground"
           }`}
         >
-          <TrendingUp className="h-3 w-3" />
+          <TrendingUp className="h-4 w-4" />
           {issue.velocity >= 0 ? "+" : ""}
           {Math.round(issue.velocity)}%
         </span>
@@ -87,18 +87,18 @@ function IssueGroup({
   return (
     <section data-testid={`issue-group-${variant}`}>
       <div
-        className={`sticky top-0 z-10 flex items-center gap-1.5 border-y border-border/60 bg-card px-3 py-1.5 ${
+        className={`sticky top-0 z-10 flex items-center gap-2 border-y border-border/60 bg-card px-3 py-2 ${
           positive ? "text-success" : "text-destructive"
         }`}
       >
-        <Icon className="h-3 w-3" />
-        <span className="text-[10px] font-bold tracking-[0.18em]">
+        <Icon className="h-4 w-4" />
+        <span className="text-lg font-bold tracking-[0.18em]">
           {positive ? "TOPIK POSITIF" : "TOPIK NEGATIF"}
         </span>
-        <span className="font-mono text-[10px] tabular-nums">({issues.length})</span>
+        <span className="font-mono text-lg tabular-nums">({issues.length})</span>
       </div>
       {issues.length === 0 ? (
-        <p className="px-3 py-3 text-[11px] text-muted-foreground">
+        <p className="px-3 py-3 text-base text-muted-foreground">
           Tidak ada topik {positive ? "positif" : "negatif"} saat ini.
         </p>
       ) : (
@@ -122,10 +122,10 @@ export function IssueBoard({ issues, onSelect }: { issues: CeoIssue[]; onSelect?
 
   return (
     <div data-testid="ceo-issues" className="panel flex h-full flex-col overflow-hidden">
-      <div className="flex items-center gap-2 border-b border-border px-3 py-2">
-        <Flame className="h-3.5 w-3.5 text-primary" />
-        <span className="text-[11px] font-semibold uppercase tracking-[0.18em]">Isu Danantara</span>
-        <span className="ml-auto text-[10px] uppercase tracking-widest text-muted-foreground">
+      <div className="flex items-center gap-2 border-b border-border px-3 py-2.5">
+        <Flame className="h-5 w-5 text-primary" />
+        <span className="text-xl font-semibold uppercase tracking-[0.18em]">Isu Danantara</span>
+        <span className="ml-auto text-base uppercase tracking-widest text-muted-foreground">
           {issues.length} topik · positif vs negatif
         </span>
       </div>

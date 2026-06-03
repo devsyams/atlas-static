@@ -28,13 +28,13 @@ function BumnTile({ row, onSelect }: { row: BumnSentiment; onSelect?: (id: strin
         onClick={() => onSelect?.(row.id)}
         className="flex h-full w-full cursor-pointer flex-col justify-between rounded-md p-2 text-left hover:ring-1 hover:ring-primary/40"
       >
-        <div className="flex items-start justify-between gap-1">
-          <span className="flex items-center gap-1">
+        <div className="flex items-start justify-between gap-2">
+          <span className="flex items-center gap-1.5">
             <RankBadge delta={row.rankDelta} />
-            <span className="truncate text-[12px] font-semibold leading-tight">{row.short}</span>
+            <span data-testid="bumn-name" className="truncate text-xl font-semibold leading-tight">{row.short}</span>
           </span>
           <span
-            className={`font-mono text-sm font-bold tabular-nums ${
+            className={`font-mono text-2xl font-bold tabular-nums ${
               row.sentiment <= -20 ? "text-destructive" : row.sentiment >= 20 ? "text-success" : "text-warning"
             }`}
           >
@@ -42,7 +42,7 @@ function BumnTile({ row, onSelect }: { row: BumnSentiment; onSelect?: (id: strin
             {Math.round(row.sentiment)}
           </span>
         </div>
-        <div className="mt-1 flex items-end justify-between gap-1">
+        <div className="mt-1.5 flex items-end justify-between gap-2">
           {/* Per-BUMN sentiment pie (AC14 v5.0). */}
           <SentimentPie
             totals={{
@@ -53,7 +53,7 @@ function BumnTile({ row, onSelect }: { row: BumnSentiment; onSelect?: (id: strin
             }}
             variant="mini"
           />
-          <Sparkline data={row.trend} width={36} height={14} stroke="oklch(0.85 0.02 250 / 0.8)" />
+          <Sparkline data={row.trend} width={56} height={22} stroke="oklch(0.85 0.02 250 / 0.8)" />
         </div>
       </button>
     </div>
@@ -74,18 +74,18 @@ function BumnGroup({
   return (
     <section data-testid={`bumn-group-${variant}`}>
       <div
-        className={`sticky top-0 z-10 flex items-center gap-1.5 border-y border-border/60 bg-card px-3 py-1.5 ${
+        className={`sticky top-0 z-10 flex items-center gap-2 border-y border-border/60 bg-card px-3 py-2 ${
           positive ? "text-success" : "text-destructive"
         }`}
       >
-        <Icon className="h-3 w-3" />
-        <span className="text-[10px] font-bold tracking-[0.18em]">
+        <Icon className="h-4 w-4" />
+        <span className="text-lg font-bold tracking-[0.18em]">
           {positive ? "SENTIMEN POSITIF" : "SENTIMEN NEGATIF"}
         </span>
-        <span className="font-mono text-[10px] tabular-nums">({rows.length})</span>
+        <span className="font-mono text-lg tabular-nums">({rows.length})</span>
       </div>
       {rows.length === 0 ? (
-        <p className="px-3 py-3 text-[11px] text-muted-foreground">
+        <p className="px-3 py-3 text-base text-muted-foreground">
           Tidak ada BUMN dengan sentimen {positive ? "positif" : "negatif"} saat ini.
         </p>
       ) : (
@@ -110,10 +110,10 @@ export function BumnHeatboard({ rows, onSelect }: { rows: BumnSentiment[]; onSel
 
   return (
     <div data-testid="ceo-bumn" className="panel flex h-full flex-col overflow-hidden">
-      <div className="flex items-center gap-2 border-b border-border px-3 py-2">
-        <Building2 className="h-3.5 w-3.5 text-primary" />
-        <span className="text-[11px] font-semibold uppercase tracking-[0.18em]">Sentimen BUMN</span>
-        <span className="ml-auto text-[10px] uppercase tracking-widest text-muted-foreground">
+      <div className="flex items-center gap-2 border-b border-border px-3 py-2.5">
+        <Building2 className="h-5 w-5 text-primary" />
+        <span className="text-xl font-semibold uppercase tracking-[0.18em]">Sentimen BUMN</span>
+        <span className="ml-auto text-base uppercase tracking-widest text-muted-foreground">
           {rows.length} BUMN · positif vs negatif
         </span>
       </div>

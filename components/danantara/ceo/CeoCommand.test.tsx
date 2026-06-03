@@ -106,6 +106,59 @@ describe("CeoCommand two-column sentiment wall (v5.0)", () => {
     expect(screen.getByTestId("ceo-detail-bumn")).toBeInTheDocument();
   });
 
+  /**
+   * AC15 (v6.0): the CEO is 60 — nothing on the wall may render below 16px.
+   * Forbidden classes: text-xs (12px), text-sm (14px), text-[<16px].
+   */
+  const TINY_TEXT = /text-(?:xs|sm)(?![\w-])|text-\[(?:[1-9]|1[0-5])(?:\.\d+)?px\]/;
+
+  function tinyTextOffenders(container: HTMLElement): string[] {
+    return [...container.querySelectorAll("*")]
+      .map((el) => el.getAttribute("class") ?? "")
+      .filter((cls) => TINY_TEXT.test(cls));
+  }
+
+  it("renders no text smaller than 16px anywhere on the wall (T15 / AC15)", () => {
+    const { container } = render(<CeoCommand />);
+    expect(tinyTextOffenders(container)).toEqual([]);
+  });
+
+  it("renders no text smaller than 16px inside the open issue detail modal (T15 / AC15)", () => {
+    const { container } = render(<CeoCommand />);
+    act(() => {
+      fireEvent.click(screen.getAllByTestId(/^btn-issue-row-/)[0]);
+    });
+    expect(screen.getByTestId("ceo-detail-issue")).toBeInTheDocument();
+    expect(tinyTextOffenders(container)).toEqual([]);
+  });
+
+  it("renders no text smaller than 16px inside the open BUMN detail modal (T15 / AC15)", () => {
+    const { container } = render(<CeoCommand />);
+    act(() => {
+      fireEvent.click(screen.getAllByTestId(/^btn-bumn-tile-/)[0]);
+    });
+    expect(screen.getByTestId("ceo-detail-bumn")).toBeInTheDocument();
+    expect(tinyTextOffenders(container)).toEqual([]);
+  });
+
+  it("topic titles and BUMN names are at least 20px (T15 / AC15)", () => {
+    render(<CeoCommand />);
+    const titles = [...screen.getAllByTestId("issue-title"), ...screen.getAllByTestId("bumn-name")];
+    expect(titles.length).toBe(40);
+    for (const el of titles) {
+      expect(el.className).toMatch(/text-(?:xl|2xl|3xl)/);
+    }
+  });
+
+  it("header key numbers are at least 24px (T15 / AC15)", () => {
+    render(<CeoCommand />);
+    const metrics = screen.getAllByTestId("metric-value");
+    expect(metrics.length).toBeGreaterThanOrEqual(2);
+    for (const el of metrics) {
+      expect(el.className).toMatch(/text-(?:2xl|3xl|4xl)/);
+    }
+  });
+
   it("keeps ticking while a detail modal is open (T10 / AC10)", () => {
     render(<CeoCommand />);
     act(() => {

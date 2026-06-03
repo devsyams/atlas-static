@@ -3,8 +3,8 @@
 /** Tiny inline-SVG sparkline; no chart deps. */
 export function Sparkline({
   data,
-  width = 64,
-  height = 20,
+  width = 80,
+  height = 28,
   stroke = "oklch(0.78 0.14 230)",
 }: {
   data: number[];

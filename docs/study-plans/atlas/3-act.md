@@ -266,7 +266,7 @@ learn a high-severity incident just landed. Push-based updates for the ticker an
 
 ### A7. Danantara CEO Command Wall (zero-click demo)
 
-- **Version:** 6.0 · **Stage:** 3-act · **Sprint:** demo · **Status:** In progress · **Spec ref:** `docs/superpowers/specs/2026-06-02-danantara-ceo-command-design.md` · **Owner:** Dev A
+- **Version:** 6.0 · **Stage:** 3-act · **Sprint:** demo · **Status:** Built · **Spec ref:** `docs/superpowers/specs/2026-06-02-danantara-ceo-command-design.md` · **Owner:** Dev A
 
 #### PM
 **Background (why):** Client feedback on the Danantara demo: the real audience is the **CEO**, who
@@ -368,4 +368,4 @@ built for can't read it. Readability becomes a hard requirement: **nothing below
 | 3.0 | 2026-06-03 | Client: + AC10 click-to-detail on every issue & BUMN (optional drill-down; zero-click flow unchanged). Status → Built (93 tests green, cross-navigation verified live). Backlog: modal focus-trap/role="dialog" for keyboard a11y |
 | 4.0 | 2026-06-03 | Client: sentiment becomes the organizing principle. Two-column wall (topics left / BUMN right) grouped into positive/negative sections + per-panel sentiment pie (AC11–AC14). Spotlight, breaking takeover & hotkey removed (AC4/AC5 retired; AC1/AC2/AC3/AC7/AC10 amended). Status → Built (118 tests green, build verified) |
 | 5.0 | 2026-06-03 | Client refinement on v4.0: pie chart moves **onto every topic/BUMN** (panel aggregate pie removed) and positive/negative groups render **side by side** as sub-columns (AC9/AC12/AC13/AC14 amended). Status → Built (124 tests green, build verified) |
-| 6.0 | 2026-06-03 | Client constraint: CEO is 60 — current type illegible. + AC15 readability scale: 16px floor, 20px names, 24px key numbers, across boards/header/ticker/modal; pies & sparklines scaled up. Status → In progress |
+| 6.0 | 2026-06-03 | Client constraint: CEO is 60 — current type illegible. + AC15 readability scale: 16px floor, 20px names, 24px key numbers, across boards/header/ticker/modal; pies & sparklines scaled up. Status → Built (129 tests green, build verified) |
