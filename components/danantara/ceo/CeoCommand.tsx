@@ -7,6 +7,7 @@ import type { CeoIssue, CeoState, EscalationArc } from "@/lib/danantara/ceo/type
 import { AiBriefTicker } from "./AiBriefTicker";
 import { BreakingTakeover } from "./BreakingTakeover";
 import { BumnHeatboard } from "./BumnHeatboard";
+import { DetailModal, type DetailSelection } from "./DetailModal";
 import { HeaderStrip } from "./HeaderStrip";
 import { IssueBoard } from "./IssueBoard";
 import { Spotlight } from "./Spotlight";
@@ -118,6 +119,7 @@ export function CeoCommand() {
     seenEscalating: new Set<string>(),
   }));
   const [spotIdx, setSpotIdx] = useState(0);
+  const [detail, setDetail] = useState<DetailSelection | null>(null);
   // Presenter-triggered arcs (hotkey E) are appended at runtime.
   const arcsRef = useRef<EscalationArc[]>([...DEMO_ARCS]);
   const randRef = useRef(mulberry32(20260602));
@@ -208,14 +210,26 @@ export function CeoCommand() {
         className="grid min-h-0 flex-1 grid-cols-1 gap-3 xl:grid-cols-[1.2fr_1.6fr_1fr]"
       >
         {/* Phone order: spotlight hero first, then issues, then BUMN (AC7). */}
-        <div className="order-2 min-h-0 xl:order-1"><IssueBoard issues={state.issues} /></div>
+        <div className="order-2 min-h-0 xl:order-1">
+          <IssueBoard issues={state.issues} onSelect={(id) => setDetail({ type: "issue", id })} />
+        </div>
         <div className="order-1 min-h-0 xl:order-2"><Spotlight issue={spotlightIssue} bumn={state.bumn} /></div>
-        <div className="order-3 min-h-0"><BumnHeatboard rows={state.bumn} /></div>
+        <div className="order-3 min-h-0">
+          <BumnHeatboard rows={state.bumn} onSelect={(id) => setDetail({ type: "bumn", id })} />
+        </div>
       </div>
 
       <AiBriefTicker state={state} />
 
       {takeoverIssue && <BreakingTakeover issue={takeoverIssue} />}
+      {detail && (
+        <DetailModal
+          selection={detail}
+          state={state}
+          onClose={() => setDetail(null)}
+          onNavigate={setDetail}
+        />
+      )}
     </div>
   );
 }

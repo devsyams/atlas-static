@@ -15,7 +15,7 @@ function heatColor(sentiment: number): string {
 }
 
 /** Top-20 BUMN by net public sentiment, most-negative first. */
-export function BumnHeatboard({ rows }: { rows: BumnSentiment[] }) {
+export function BumnHeatboard({ rows, onSelect }: { rows: BumnSentiment[]; onSelect?: (id: string) => void }) {
   return (
     <div data-testid="ceo-bumn" className="panel flex h-full flex-col overflow-hidden">
       <div className="flex items-center gap-2 border-b border-border px-3 py-2">
@@ -28,27 +28,34 @@ export function BumnHeatboard({ rows }: { rows: BumnSentiment[] }) {
           <div
             key={row.id}
             data-testid={`bumn-tile-${row.id}`}
-            className="flex flex-col justify-between rounded-md border border-border/60 p-2"
+            className="rounded-md border border-border/60"
             style={{ backgroundColor: heatColor(row.sentiment) }}
           >
-            <div className="flex items-start justify-between gap-1">
-              <span className="flex items-center gap-1">
-                <RankBadge delta={row.rankDelta} />
-                <span className="truncate text-[12px] font-semibold leading-tight">{row.short}</span>
-              </span>
-              <span
-                className={`font-mono text-sm font-bold tabular-nums ${
-                  row.sentiment <= -20 ? "text-destructive" : row.sentiment >= 20 ? "text-success" : "text-warning"
-                }`}
-              >
-                {row.sentiment > 0 ? "+" : ""}
-                {Math.round(row.sentiment)}
-              </span>
-            </div>
-            <div className="mt-1 flex items-end justify-between gap-1">
-              <SentimentSplit pos={row.posMentions} neg={row.negMentions} total={row.mentions} />
-              <Sparkline data={row.trend} width={36} height={14} stroke="oklch(0.85 0.02 250 / 0.8)" />
-            </div>
+            <button
+              type="button"
+              data-testid={`btn-bumn-tile-${row.id}`}
+              onClick={() => onSelect?.(row.id)}
+              className="flex h-full w-full cursor-pointer flex-col justify-between rounded-md p-2 text-left hover:ring-1 hover:ring-primary/40"
+            >
+              <div className="flex items-start justify-between gap-1">
+                <span className="flex items-center gap-1">
+                  <RankBadge delta={row.rankDelta} />
+                  <span className="truncate text-[12px] font-semibold leading-tight">{row.short}</span>
+                </span>
+                <span
+                  className={`font-mono text-sm font-bold tabular-nums ${
+                    row.sentiment <= -20 ? "text-destructive" : row.sentiment >= 20 ? "text-success" : "text-warning"
+                  }`}
+                >
+                  {row.sentiment > 0 ? "+" : ""}
+                  {Math.round(row.sentiment)}
+                </span>
+              </div>
+              <div className="mt-1 flex items-end justify-between gap-1">
+                <SentimentSplit pos={row.posMentions} neg={row.negMentions} total={row.mentions} />
+                <Sparkline data={row.trend} width={36} height={14} stroke="oklch(0.85 0.02 250 / 0.8)" />
+              </div>
+            </button>
           </div>
         ))}
       </div>

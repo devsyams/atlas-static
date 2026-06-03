@@ -15,7 +15,7 @@ const STATUS_BADGE: Record<CeoIssue["status"], { label: string; cls: string }> =
 };
 
 /** Top-20 issues ranked by reach. Rows re-rank live; zero interaction needed. */
-export function IssueBoard({ issues }: { issues: CeoIssue[] }) {
+export function IssueBoard({ issues, onSelect }: { issues: CeoIssue[]; onSelect?: (id: string) => void }) {
   return (
     <div data-testid="ceo-issues" className="panel flex h-full flex-col overflow-hidden">
       <div className="flex items-center gap-2 border-b border-border px-3 py-2">
@@ -30,42 +30,47 @@ export function IssueBoard({ issues }: { issues: CeoIssue[] }) {
             <li
               key={issue.id}
               data-testid={`issue-row-${issue.id}`}
-              className={`ceo-row flex items-center gap-2.5 border-b border-border/40 px-3 py-2 last:border-b-0 ${
-                issue.status === "escalating" ? "ceo-flash" : ""
-              }`}
+              className={`border-b border-border/40 last:border-b-0 ${issue.status === "escalating" ? "ceo-flash" : ""}`}
             >
-              <div className="flex w-8 shrink-0 flex-col items-end gap-0.5">
-                <span className="font-mono text-sm tabular-nums text-muted-foreground">{rank + 1}</span>
-                <RankBadge delta={issue.rankDelta} />
-              </div>
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-1.5">
-                  <span className="truncate text-[13px] font-medium leading-snug">{issue.title}</span>
-                  {badge.label && (
-                    <span className={`shrink-0 rounded border px-1 py-px text-[9px] font-bold tracking-wider ${badge.cls}`}>
-                      {badge.label}
-                    </span>
-                  )}
-                </div>
-                <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[10px] text-muted-foreground">
-                  <span>{(issue.reach / 1_000_000).toFixed(1)} jt jangkauan</span>
-                  <span>·</span>
-                  <SentimentSplit pos={issue.posMentions} neg={issue.negMentions} total={issue.mentions} />
-                </div>
-              </div>
-              <Sparkline
-                data={issue.history}
-                stroke={issue.status === "escalating" ? SOV_COLORS.weak : issue.status === "rising" ? SOV_COLORS.watch : SOV_COLORS.strong}
-              />
-              <span
-                className={`flex w-16 shrink-0 items-center justify-end gap-0.5 font-mono text-xs tabular-nums ${
-                  issue.velocity >= ESCALATING_THRESHOLD ? "text-destructive" : issue.velocity >= RISING_THRESHOLD ? "text-warning" : "text-muted-foreground"
-                }`}
+              <button
+                type="button"
+                data-testid={`btn-issue-row-${issue.id}`}
+                onClick={() => onSelect?.(issue.id)}
+                className="ceo-row flex w-full cursor-pointer items-center gap-2.5 px-3 py-2 text-left hover:bg-card/80"
               >
-                <TrendingUp className="h-3 w-3" />
-                {issue.velocity >= 0 ? "+" : ""}
-                {Math.round(issue.velocity)}%
-              </span>
+                <div className="flex w-8 shrink-0 flex-col items-end gap-0.5">
+                  <span className="font-mono text-sm tabular-nums text-muted-foreground">{rank + 1}</span>
+                  <RankBadge delta={issue.rankDelta} />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-1.5">
+                    <span className="truncate text-[13px] font-medium leading-snug">{issue.title}</span>
+                    {badge.label && (
+                      <span className={`shrink-0 rounded border px-1 py-px text-[9px] font-bold tracking-wider ${badge.cls}`}>
+                        {badge.label}
+                      </span>
+                    )}
+                  </div>
+                  <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[10px] text-muted-foreground">
+                    <span>{(issue.reach / 1_000_000).toFixed(1)} jt jangkauan</span>
+                    <span>·</span>
+                    <SentimentSplit pos={issue.posMentions} neg={issue.negMentions} total={issue.mentions} />
+                  </div>
+                </div>
+                <Sparkline
+                  data={issue.history}
+                  stroke={issue.status === "escalating" ? SOV_COLORS.weak : issue.status === "rising" ? SOV_COLORS.watch : SOV_COLORS.strong}
+                />
+                <span
+                  className={`flex w-16 shrink-0 items-center justify-end gap-0.5 font-mono text-xs tabular-nums ${
+                    issue.velocity >= ESCALATING_THRESHOLD ? "text-destructive" : issue.velocity >= RISING_THRESHOLD ? "text-warning" : "text-muted-foreground"
+                  }`}
+                >
+                  <TrendingUp className="h-3 w-3" />
+                  {issue.velocity >= 0 ? "+" : ""}
+                  {Math.round(issue.velocity)}%
+                </span>
+              </button>
             </li>
           );
         })}

@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { act, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { TAKEOVER_MS, TICK_MS } from "@/lib/danantara/ceo/data";
 import { CeoCommand } from "./CeoCommand";
@@ -116,5 +116,43 @@ describe("CeoCommand (T1 / AC1)", () => {
     expect(screen.getAllByTestId("sentiment-split").length).toBeGreaterThanOrEqual(40);
     // full split in the spotlight
     expect(screen.getByTestId("sentiment-split-full")).toBeInTheDocument();
+  });
+
+  it("opens issue detail when a row is clicked, closes with Esc (T10 / AC10)", () => {
+    render(<CeoCommand />);
+    expect(screen.queryByTestId("ceo-detail")).not.toBeInTheDocument();
+    const firstRowBtn = screen.getAllByTestId(/^btn-issue-row-/)[0];
+    act(() => {
+      fireEvent.click(firstRowBtn);
+    });
+    expect(screen.getByTestId("ceo-detail-issue")).toBeInTheDocument();
+    act(() => {
+      fireEvent.keyDown(window, { key: "Escape" });
+    });
+    expect(screen.queryByTestId("ceo-detail")).not.toBeInTheDocument();
+  });
+
+  it("opens BUMN detail when a tile is clicked (T10 / AC10)", () => {
+    render(<CeoCommand />);
+    const firstTileBtn = screen.getAllByTestId(/^btn-bumn-tile-/)[0];
+    act(() => {
+      fireEvent.click(firstTileBtn);
+    });
+    expect(screen.getByTestId("ceo-detail-bumn")).toBeInTheDocument();
+  });
+
+  it("keeps ticking and fires the takeover above an open detail modal (T10 / AC10)", () => {
+    render(<CeoCommand />);
+    act(() => {
+      fireEvent.click(screen.getAllByTestId(/^btn-issue-row-/)[0]);
+    });
+    expect(screen.getByTestId("ceo-detail")).toBeInTheDocument();
+    // Scripted arc escalates ~tick 18; advance past it with the modal open.
+    act(() => {
+      vi.advanceTimersByTime(TICK_MS * 25);
+    });
+    // Both visible: takeover (z-50) above modal (z-40)
+    expect(screen.getByTestId("ceo-takeover")).toBeInTheDocument();
+    expect(screen.getByTestId("ceo-detail")).toBeInTheDocument();
   });
 });
