@@ -3,6 +3,8 @@
 import { Flame, TrendingUp } from "lucide-react";
 import { ESCALATING_THRESHOLD, RISING_THRESHOLD } from "@/lib/danantara/ceo/engine";
 import { Sparkline } from "./Sparkline";
+import { RankBadge } from "./RankBadge";
+import { SentimentSplit } from "./SentimentSplit";
 import type { CeoIssue } from "@/lib/danantara/ceo/types";
 import { SOV_COLORS } from "@/lib/danantara/ui";
 
@@ -32,7 +34,10 @@ export function IssueBoard({ issues }: { issues: CeoIssue[] }) {
                 issue.status === "escalating" ? "ceo-flash" : ""
               }`}
             >
-              <span className="w-6 shrink-0 text-right font-mono text-sm tabular-nums text-muted-foreground">{rank + 1}</span>
+              <div className="flex w-8 shrink-0 flex-col items-end gap-0.5">
+                <span className="font-mono text-sm tabular-nums text-muted-foreground">{rank + 1}</span>
+                <RankBadge delta={issue.rankDelta} />
+              </div>
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-1.5">
                   <span className="truncate text-[13px] font-medium leading-snug">{issue.title}</span>
@@ -42,10 +47,10 @@ export function IssueBoard({ issues }: { issues: CeoIssue[] }) {
                     </span>
                   )}
                 </div>
-                <div className="mt-0.5 flex items-center gap-2 text-[10px] text-muted-foreground">
+                <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[10px] text-muted-foreground">
                   <span>{(issue.reach / 1_000_000).toFixed(1)} jt jangkauan</span>
                   <span>·</span>
-                  <span>{issue.mentions.toLocaleString("id-ID")} sebutan</span>
+                  <SentimentSplit pos={issue.posMentions} neg={issue.negMentions} total={issue.mentions} />
                 </div>
               </div>
               <Sparkline

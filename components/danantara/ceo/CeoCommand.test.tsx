@@ -103,4 +103,18 @@ describe("CeoCommand (T1 / AC1)", () => {
     expect(second).toBeInTheDocument();
     expect(second!.textContent).not.toBe(first);
   });
+
+  it("shows rank movement badges on issue rows and BUMN tiles (AC8)", () => {
+    render(<CeoCommand />);
+    // At load everything is "stay" (rankDelta 0 by construction).
+    expect(screen.getAllByTestId("rank-stay").length).toBeGreaterThanOrEqual(40); // 20 issues + 20 BUMN
+  });
+
+  it("shows positive/negative sentiment counts on rows, tiles and spotlight (AC9)", () => {
+    render(<CeoCommand />);
+    // compact splits on 20 issue rows + 20 bumn tiles
+    expect(screen.getAllByTestId("sentiment-split").length).toBeGreaterThanOrEqual(40);
+    // full split in the spotlight
+    expect(screen.getByTestId("sentiment-split-full")).toBeInTheDocument();
+  });
 });

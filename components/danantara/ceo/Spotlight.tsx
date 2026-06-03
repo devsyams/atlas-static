@@ -4,6 +4,7 @@ import { Newspaper, ScanEye, Siren, Sparkles } from "lucide-react";
 import { ESCALATING_THRESHOLD, RISING_THRESHOLD } from "@/lib/danantara/ceo/engine";
 import type { BumnSentiment, CeoIssue } from "@/lib/danantara/ceo/types";
 import { SOV_COLORS, withAlpha } from "@/lib/danantara/ui";
+import { SentimentSplit } from "./SentimentSplit";
 
 /** Mention-trend area chart (inline SVG, no deps). */
 function TrendChart({ history, escalating }: { history: number[]; escalating: boolean }) {
@@ -65,6 +66,8 @@ export function Spotlight({ issue, bumn }: { issue: CeoIssue | undefined; bumn: 
           <Sparkles className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
           <p className="text-[13px] leading-relaxed">{issue.aiLine}</p>
         </div>
+
+        <SentimentSplit pos={issue.posMentions} neg={issue.negMentions} total={issue.mentions} variant="full" />
 
         <div className="space-y-1.5">
           {issue.headlines.map((headline) => (

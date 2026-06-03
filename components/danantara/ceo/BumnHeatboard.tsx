@@ -2,6 +2,8 @@
 
 import { Building2 } from "lucide-react";
 import { Sparkline } from "./Sparkline";
+import { RankBadge } from "./RankBadge";
+import { SentimentSplit } from "./SentimentSplit";
 import type { BumnSentiment } from "@/lib/danantara/ceo/types";
 
 /** Sentiment −100..100 → tile background (red ↔ green via oklch). */
@@ -30,7 +32,10 @@ export function BumnHeatboard({ rows }: { rows: BumnSentiment[] }) {
             style={{ backgroundColor: heatColor(row.sentiment) }}
           >
             <div className="flex items-start justify-between gap-1">
-              <span className="truncate text-[12px] font-semibold leading-tight">{row.short}</span>
+              <span className="flex items-center gap-1">
+                <RankBadge delta={row.rankDelta} />
+                <span className="truncate text-[12px] font-semibold leading-tight">{row.short}</span>
+              </span>
               <span
                 className={`font-mono text-sm font-bold tabular-nums ${
                   row.sentiment <= -20 ? "text-destructive" : row.sentiment >= 20 ? "text-success" : "text-warning"
@@ -41,8 +46,8 @@ export function BumnHeatboard({ rows }: { rows: BumnSentiment[] }) {
               </span>
             </div>
             <div className="mt-1 flex items-end justify-between gap-1">
-              <span className="truncate text-[9px] text-muted-foreground">{row.mentions.toLocaleString("id-ID")} sebutan</span>
-              <Sparkline data={row.trend} width={40} height={14} stroke="oklch(0.85 0.02 250 / 0.8)" />
+              <SentimentSplit pos={row.posMentions} neg={row.negMentions} total={row.mentions} />
+              <Sparkline data={row.trend} width={36} height={14} stroke="oklch(0.85 0.02 250 / 0.8)" />
             </div>
           </div>
         ))}
