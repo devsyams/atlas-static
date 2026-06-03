@@ -1,4 +1,4 @@
-import { rankBumn, rankIssues } from "./engine";
+import { rankBumn, rankIssues, sentimentBreakdown } from "./engine";
 import type { BumnSentiment, CeoIssue, CeoState, EscalationArc, IssueCategory, IssueHeadline } from "./types";
 
 /** Wall-clock between simulation ticks (ms). */
@@ -10,7 +10,7 @@ export const TAKEOVER_MS = 5_000;
 
 /* ----------------------------- 20 BUMN ----------------------------- */
 
-type BumnSeed = Omit<BumnSentiment, "trend">;
+type BumnSeed = Omit<BumnSentiment, "trend" | "rankHistory" | "rankDelta" | "posMentions" | "negMentions">;
 
 const BUMN_SEEDS: BumnSeed[] = [
   { id: "garuda", name: "Garuda Indonesia", short: "GIAA", sector: "infrastruktur", sentiment: -52, mentions: 8400, topIssueId: "isu-garuda" },
@@ -342,19 +342,49 @@ function flatHistory(mentions: number, n = 8): number[] {
 
 /** Initial board state: 20 issues + 20 BUMN, ranked, all calm. */
 export function buildInitialState(): CeoState {
-  const issues: CeoIssue[] = ISSUE_SEEDS.map((seed) => ({
+  const rawIssues: CeoIssue[] = ISSUE_SEEDS.map((seed) => ({
     ...seed,
     history: flatHistory(seed.mentions),
     velocity: 0,
     status: "normal" as const,
+    rankHistory: [],
+    rankDelta: 0,
+    posMentions: 0,
+    negMentions: 0,
   }));
 
-  const bumn: BumnSentiment[] = BUMN_SEEDS.map((seed) => ({
+  const issues = rankIssues(rawIssues).map((issue, idx) => {
+    const { pos, neg } = sentimentBreakdown(issue.sentiment, issue.mentions);
+    return {
+      ...issue,
+      rankHistory: Array.from({ length: 8 }, () => idx + 1), // flat: starts with zero movement
+      rankDelta: 0,
+      posMentions: pos,
+      negMentions: neg,
+    };
+  });
+
+  const rawBumn: BumnSentiment[] = BUMN_SEEDS.map((seed) => ({
     ...seed,
     trend: Array.from({ length: 8 }, () => seed.sentiment),
+    rankHistory: [],
+    rankDelta: 0,
+    posMentions: 0,
+    negMentions: 0,
   }));
 
-  return { tickCount: 0, issues: rankIssues(issues), bumn: rankBumn(bumn) };
+  const bumn = rankBumn(rawBumn).map((row, idx) => {
+    const { pos, neg } = sentimentBreakdown(row.sentiment, row.mentions);
+    return {
+      ...row,
+      rankHistory: Array.from({ length: 8 }, () => idx + 1),
+      rankDelta: 0,
+      posMentions: pos,
+      negMentions: neg,
+    };
+  });
+
+  return { tickCount: 0, issues, bumn };
 }
 
 /**

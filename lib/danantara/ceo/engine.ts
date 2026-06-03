@@ -64,6 +64,33 @@ export function rankBumn(rows: BumnSentiment[]): BumnSentiment[] {
 /** Max history entries kept per issue (~24 ticks ≈ 96 s of wall time). */
 export const HISTORY_LIMIT = 24;
 
+/** Share of mentions that are neutral (neither positive nor negative). */
+export const NEUTRAL_SHARE = 0.3;
+
+/**
+ * Split total mentions into positive/negative/neutral counts from net sentiment
+ * (−100..100). pos − neg keeps the sign and proportion of the net score; counts
+ * always sum exactly to mentions.
+ */
+export function sentimentBreakdown(
+  sentiment: number,
+  mentions: number,
+): { pos: number; neg: number; neu: number } {
+  const spread = 1 - NEUTRAL_SHARE;
+  const posShare = spread / 2 + (sentiment / 100) * (spread / 2);
+  const pos = Math.round(mentions * posShare);
+  const neg = Math.round(mentions * (spread - posShare));
+  const neu = mentions - pos - neg;
+  return { pos, neg, neu };
+}
+
+/** Rank movement vs the rolling window: positive = climbed (rank number got smaller). */
+export function rankMovement(rankHistory: number[], window = VELOCITY_WINDOW): number {
+  const slice = rankHistory.slice(-window);
+  if (slice.length < 2) return 0;
+  return slice[0] - slice[slice.length - 1];
+}
+
 /** Organic per-tick mention change: symmetric random walk (no net drift). */
 const ORGANIC_MIN = -0.02;
 const ORGANIC_MAX = 0.02;
@@ -98,7 +125,19 @@ export function tick(state: CeoState, rand: () => number, arcs: EscalationArc[])
     return { ...row, sentiment, trend };
   });
 
-  return { tickCount, issues: rankIssues(issues), bumn: rankBumn(bumn) };
+  const rankedIssues = rankIssues(issues).map((issue, idx) => {
+    const rankHistory = [...issue.rankHistory, idx + 1].slice(-HISTORY_LIMIT);
+    const { pos, neg } = sentimentBreakdown(issue.sentiment, issue.mentions);
+    return { ...issue, rankHistory, rankDelta: rankMovement(rankHistory), posMentions: pos, negMentions: neg };
+  });
+
+  const rankedBumn = rankBumn(bumn).map((row, idx) => {
+    const rankHistory = [...row.rankHistory, idx + 1].slice(-HISTORY_LIMIT);
+    const { pos, neg } = sentimentBreakdown(row.sentiment, row.mentions);
+    return { ...row, rankHistory, rankDelta: rankMovement(rankHistory), posMentions: pos, negMentions: neg };
+  });
+
+  return { tickCount, issues: rankedIssues, bumn: rankedBumn };
 }
 
 /** Spotlight rotation order: escalating issues pin first (fastest spike first). */

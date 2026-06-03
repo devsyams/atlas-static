@@ -90,4 +90,27 @@ describe("CEO board data", () => {
     expect(DEMO_ARCS[0].atTick * TICK_MS).toBeGreaterThanOrEqual(40_000);
     expect(DEMO_ARCS[0].atTick * TICK_MS).toBeLessThanOrEqual(80_000);
   });
+
+  it("initializes rank tracking and sentiment breakdown on every item (AC8, AC9)", () => {
+    for (const issue of state.issues) {
+      expect(issue.rankDelta).toBe(0); // no movement at load
+      expect(issue.rankHistory.length).toBeGreaterThanOrEqual(2);
+      expect(issue.posMentions + issue.negMentions).toBeLessThanOrEqual(issue.mentions);
+      expect(issue.posMentions).toBeGreaterThanOrEqual(0);
+      expect(issue.negMentions).toBeGreaterThanOrEqual(0);
+    }
+    for (const row of state.bumn) {
+      expect(row.rankDelta).toBe(0);
+      expect(row.posMentions + row.negMentions).toBeLessThanOrEqual(row.mentions);
+    }
+  });
+
+  it("rank history matches each item's actual position at load", () => {
+    state.issues.forEach((issue, idx) => {
+      expect(issue.rankHistory[issue.rankHistory.length - 1]).toBe(idx + 1);
+    });
+    state.bumn.forEach((row, idx) => {
+      expect(row.rankHistory[row.rankHistory.length - 1]).toBe(idx + 1);
+    });
+  });
 });

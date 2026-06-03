@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { briefLines, mulberry32, rankBumn, rankIssues, spotlightQueue, statusOf, tick, velocity, HISTORY_LIMIT, VELOCITY_WINDOW, RISING_THRESHOLD, ESCALATING_THRESHOLD, REACH_FLOOR, REACH_CAP } from "./engine";
+import { briefLines, mulberry32, rankBumn, rankIssues, spotlightQueue, statusOf, tick, velocity, HISTORY_LIMIT, VELOCITY_WINDOW, RISING_THRESHOLD, ESCALATING_THRESHOLD, REACH_FLOOR, REACH_CAP, NEUTRAL_SHARE, rankMovement, sentimentBreakdown } from "./engine";
 import type { BumnSentiment, CeoIssue, CeoState, EscalationArc } from "./types";
 
 describe("mulberry32 PRNG", () => {
@@ -82,6 +82,10 @@ export function makeIssue(over: Partial<CeoIssue> & { id: string }): CeoIssue {
     aiLine: "",
     velocity: 0,
     status: "normal",
+    rankHistory: [1, 1, 1, 1, 1, 1],
+    rankDelta: 0,
+    posMentions: 350,
+    negMentions: 350,
     ...over,
   };
 }
@@ -95,6 +99,10 @@ export function makeBumn(over: Partial<BumnSentiment> & { id: string }): BumnSen
     sentiment: 0,
     mentions: 100,
     trend: [0, 0, 0],
+    rankHistory: [1, 1, 1, 1, 1, 1],
+    rankDelta: 0,
+    posMentions: 350,
+    negMentions: 350,
     ...over,
   };
 }
@@ -305,5 +313,106 @@ describe("briefLines", () => {
     const lines = briefLines(state);
     expect(lines[0]).toContain("Isu Meledak");
     expect(lines[0].toUpperCase()).toContain("ESKALASI");
+  });
+});
+
+describe("sentimentBreakdown (T9 / AC9)", () => {
+  it("counts sum exactly to mentions", () => {
+    for (const s of [-100, -42, 0, 18, 100]) {
+      const { pos, neg, neu } = sentimentBreakdown(s, 12_345);
+      expect(pos + neg + neu).toBe(12_345);
+    }
+  });
+
+  it("net sign follows sentiment sign", () => {
+    expect(sentimentBreakdown(-42, 10_000).neg).toBeGreaterThan(sentimentBreakdown(-42, 10_000).pos);
+    expect(sentimentBreakdown(42, 10_000).pos).toBeGreaterThan(sentimentBreakdown(42, 10_000).neg);
+  });
+
+  it("balanced when sentiment is 0", () => {
+    const { pos, neg } = sentimentBreakdown(0, 10_000);
+    expect(pos).toBe(neg);
+  });
+
+  it("extreme sentiment pushes one side to ~0", () => {
+    expect(sentimentBreakdown(-100, 10_000).pos).toBe(0);
+    expect(sentimentBreakdown(100, 10_000).neg).toBe(0);
+  });
+
+  it("neutral share stays fixed at NEUTRAL_SHARE", () => {
+    const { neu } = sentimentBreakdown(0, 10_000);
+    expect(neu).toBe(Math.round(10_000 * NEUTRAL_SHARE));
+  });
+});
+
+describe("rankMovement (T8 / AC8)", () => {
+  it("positive when the item climbed (rank number decreased)", () => {
+    expect(rankMovement([5, 5, 4, 3, 2, 1])).toBe(4);
+  });
+
+  it("negative when the item dropped", () => {
+    expect(rankMovement([1, 1, 2, 3, 3, 4])).toBe(-3);
+  });
+
+  it("zero when unchanged or too little history", () => {
+    expect(rankMovement([2, 2, 2, 2, 2, 2])).toBe(0);
+    expect(rankMovement([7])).toBe(0);
+    expect(rankMovement([])).toBe(0);
+  });
+
+  it("only considers the rolling window", () => {
+    expect(rankMovement([20, 20, 1, 1, 1, 1, 1, 1])).toBe(0);
+  });
+});
+
+describe("tick rank tracking (T8 / AC8)", () => {
+  it("appends current rank to rankHistory each tick", () => {
+    const state = makeState([
+      makeIssue({ id: "top", reach: 9_000_000 }),
+      makeIssue({ id: "bottom", reach: 1_000_000 }),
+    ]);
+    const next = tick(state, mulberry32(1), []);
+    const top = next.issues.find((i) => i.id === "top")!;
+    const bottom = next.issues.find((i) => i.id === "bottom")!;
+    expect(top.rankHistory[top.rankHistory.length - 1]).toBe(1);
+    expect(bottom.rankHistory[bottom.rankHistory.length - 1]).toBe(2);
+  });
+
+  it("an issue spiked by an arc climbs the ranks with a positive rankDelta", () => {
+    // "underdog" starts last on reach; the arc multiplies its mentions (and reach tracks mentions),
+    // so within the window it should overtake and report a positive rankDelta.
+    const issues = [
+      makeIssue({ id: "leader", mentions: 5000, reach: 8_000_000, rankHistory: [1, 1, 1, 1, 1, 1] }),
+      makeIssue({ id: "underdog", mentions: 1000, reach: 6_000_000, rankHistory: [2, 2, 2, 2, 2, 2] }),
+    ];
+    const arc: EscalationArc = { issueId: "underdog", atTick: 0, rampTicks: 6, growthPerTick: 0.5 };
+    let state = makeState(issues);
+    const rand = mulberry32(5);
+    for (let i = 0; i < 5; i++) state = tick(state, rand, [arc]);
+    const underdog = state.issues.find((i) => i.id === "underdog")!;
+    expect(state.issues[0].id).toBe("underdog"); // overtook on reach
+    expect(underdog.rankDelta).toBeGreaterThan(0); // climbed
+    const leader = state.issues.find((i) => i.id === "leader")!;
+    expect(leader.rankDelta).toBeLessThan(0); // dropped
+  });
+
+  it("computes pos/neg mention counts on every tick", () => {
+    const state = makeState([makeIssue({ id: "a", sentiment: -42, mentions: 10_000 })]);
+    const next = tick(state, mulberry32(1), []);
+    const a = next.issues[0];
+    expect(a.posMentions + a.negMentions).toBeLessThanOrEqual(a.mentions);
+    expect(a.negMentions).toBeGreaterThan(a.posMentions); // negative sentiment
+  });
+
+  it("tracks BUMN ranks and breakdown too", () => {
+    const state = makeState(
+      [makeIssue({ id: "i" })],
+      [makeBumn({ id: "worse", sentiment: -50, mentions: 1000 }), makeBumn({ id: "better", sentiment: 50, mentions: 1000 })],
+    );
+    const next = tick(state, mulberry32(1), []);
+    const worse = next.bumn.find((b) => b.id === "worse")!;
+    expect(worse.rankHistory[worse.rankHistory.length - 1]).toBe(1); // most negative = rank 1
+    expect(worse.negMentions).toBeGreaterThan(worse.posMentions);
+    expect(typeof worse.rankDelta).toBe("number");
   });
 });

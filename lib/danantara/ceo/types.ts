@@ -26,6 +26,10 @@ export interface CeoIssue {
   aiLine: string; // one-line AI read for the spotlight
   velocity: number; // % mention growth over the rolling window (derived)
   status: IssueStatus; // derived
+  rankHistory: number[]; // 1-based rank per tick, oldest → newest, capped at HISTORY_LIMIT (derived)
+  rankDelta: number; // rank one window ago − current rank; positive = climbed (derived)
+  posMentions: number; // positive-tone mention count (derived)
+  negMentions: number; // negative-tone mention count (derived)
 }
 
 /** One of the top-20 BUMN, scored by net public sentiment. */
@@ -38,6 +42,10 @@ export interface BumnSentiment {
   mentions: number;
   trend: number[]; // sentiment history for the spark, oldest → newest
   topIssueId?: string; // dominant CeoIssue id
+  rankHistory: number[]; // 1-based rank per tick, oldest → newest, capped at HISTORY_LIMIT (derived)
+  rankDelta: number; // rank one window ago − current rank; positive = climbed (derived)
+  posMentions: number; // positive-tone mention count (derived)
+  negMentions: number; // negative-tone mention count (derived)
 }
 
 /** A scripted mention-spike so a live demo reliably triggers the takeover (AC5). */
