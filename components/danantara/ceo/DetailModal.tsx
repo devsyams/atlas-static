@@ -22,9 +22,9 @@ const CATEGORY_LABEL: Record<string, string> = {
 
 const STATUS_BADGE: Record<string, { label: string; cls: string }> = {
   normal: { label: "", cls: "" },
-  rising: { label: "NAIK", cls: "bg-warning/15 text-warning border-warning/40" },
+  rising: { label: "RISING", cls: "bg-warning/15 text-warning border-warning/40" },
   escalating: {
-    label: "ESKALASI",
+    label: "ESCALATING",
     cls: "bg-destructive/15 text-destructive border-destructive/50 ceo-siren",
   },
 };
@@ -77,10 +77,10 @@ export function DetailModal({
             {/* Header */}
             <div className="flex shrink-0 items-center gap-2 border-b border-border px-4 py-3">
               <AlertTriangle className="h-4 w-4 shrink-0 text-primary" />
-              <span className="min-w-0 flex-1 truncate text-[15px] font-semibold">{issue.title}</span>
+              <span className="min-w-0 flex-1 truncate text-2xl font-semibold">{issue.title}</span>
               {badge.label && (
                 <span
-                  className={`shrink-0 rounded border px-1.5 py-0.5 text-[9px] font-bold tracking-wider ${badge.cls}`}
+                  className={`shrink-0 rounded border px-2 py-0.5 text-base font-bold tracking-wider ${badge.cls}`}
                 >
                   {badge.label}
                 </span>
@@ -91,7 +91,7 @@ export function DetailModal({
               <button
                 type="button"
                 data-testid="ceo-detail-close"
-                aria-label="Tutup"
+                aria-label="Close"
                 onClick={onClose}
                 className="ml-1 shrink-0 rounded p-1 text-muted-foreground hover:bg-white/5 hover:text-foreground"
               >
@@ -102,13 +102,13 @@ export function DetailModal({
             {/* Scrollable body */}
             <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-4">
               {/* Stats row */}
-              <div className="flex flex-wrap gap-x-4 gap-y-1 font-mono text-sm tabular-nums">
+              <div className="flex flex-wrap gap-x-4 gap-y-1 font-mono text-lg tabular-nums">
                 <span className="text-muted-foreground">
-                  <span className="font-semibold text-foreground">{(issue.reach / 1_000_000).toFixed(1)} jt</span>{" "}
-                  jangkauan
+                  <span className="font-semibold text-foreground">{(issue.reach / 1_000_000).toFixed(1)}M</span>{" "}
+                  reach
                 </span>
                 <span className="text-muted-foreground">
-                  <span className="font-semibold text-foreground">{fmtCount(issue.mentions)}</span> sebutan
+                  <span className="font-semibold text-foreground">{fmtCount(issue.mentions)}</span> mentions
                 </span>
                 <span
                   className={`flex items-center gap-0.5 font-semibold ${
@@ -137,15 +137,15 @@ export function DetailModal({
 
               {/* Headlines */}
               <div>
-                <div className="mb-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                  Pemberitaan Utama
+                <div className="mb-2 text-lg font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                  Top Coverage
                 </div>
                 <div className="space-y-1.5">
                   {issue.headlines.map((h) => (
-                    <div key={h.title} className="flex items-start gap-2 text-[12px]">
+                    <div key={h.title} className="flex items-start gap-2 text-lg">
                       <Newspaper className="mt-0.5 h-3 w-3 shrink-0 text-muted-foreground" />
                       <span className="min-w-0 flex-1 leading-snug">{h.title}</span>
-                      <span className="shrink-0 text-[10px] text-muted-foreground">
+                      <span className="shrink-0 text-base text-muted-foreground">
                         {h.source} · {h.time}
                       </span>
                     </div>
@@ -156,8 +156,8 @@ export function DetailModal({
               {/* Related BUMN chips */}
               {relatedBumn.length > 0 && (
                 <div>
-                  <div className="mb-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                    BUMN Terkait
+                  <div className="mb-2 text-lg font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                    Related BUMN
                   </div>
                   <div className="flex flex-wrap gap-1.5">
                     {relatedBumn.map((b) => (
@@ -166,7 +166,7 @@ export function DetailModal({
                         type="button"
                         data-testid={`related-bumn-${b.id}`}
                         onClick={() => onNavigate({ type: "bumn", id: b.id })}
-                        className="rounded-full border border-border bg-background/40 px-2.5 py-0.5 text-[11px] font-medium hover:border-primary/50 hover:bg-primary/10"
+                        className="rounded-full border border-border bg-background/40 px-3 py-1 text-base font-medium hover:border-primary/50 hover:bg-primary/10"
                       >
                         {b.short}{" "}
                         <span className={b.sentiment < 0 ? "text-destructive" : "text-success"}>
@@ -214,8 +214,8 @@ export function DetailModal({
           {/* Header */}
           <div className="flex shrink-0 items-center gap-2 border-b border-border px-4 py-3">
             <Building2 className="h-4 w-4 shrink-0 text-primary" />
-            <span className="min-w-0 flex-1 truncate text-[15px] font-semibold">{bumn.name}</span>
-            <span className="shrink-0 rounded border border-border bg-background/40 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+            <span className="min-w-0 flex-1 truncate text-2xl font-semibold">{bumn.name}</span>
+            <span className="shrink-0 rounded border border-border bg-background/40 px-2 py-0.5 text-base font-medium uppercase tracking-wider text-muted-foreground">
               {SECTOR_LABEL[bumn.sector]}
             </span>
             <span className="shrink-0">
@@ -224,7 +224,7 @@ export function DetailModal({
             <button
               type="button"
               data-testid="ceo-detail-close"
-              aria-label="Tutup"
+              aria-label="Close"
               onClick={onClose}
               className="ml-1 shrink-0 rounded p-1 text-muted-foreground hover:bg-white/5 hover:text-foreground"
             >
@@ -235,9 +235,9 @@ export function DetailModal({
           {/* Scrollable body */}
           <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-4">
             {/* Stats row */}
-            <div className="flex flex-wrap gap-x-4 gap-y-1 font-mono text-sm tabular-nums">
+            <div className="flex flex-wrap gap-x-4 gap-y-1 font-mono text-lg tabular-nums">
               <span className="text-muted-foreground">
-                Sentimen bersih:{" "}
+                Net sentiment:{" "}
                 <span
                   className={`font-bold ${bumn.sentiment < 0 ? "text-destructive" : bumn.sentiment > 0 ? "text-success" : "text-warning"}`}
                 >
@@ -246,13 +246,13 @@ export function DetailModal({
                 </span>
               </span>
               <span className="text-muted-foreground">
-                <span className="font-semibold text-foreground">{fmtCount(bumn.mentions)}</span> sebutan
+                <span className="font-semibold text-foreground">{fmtCount(bumn.mentions)}</span> mentions
               </span>
-              <span className="text-muted-foreground">Sektor: {SECTOR_LABEL[bumn.sector]}</span>
+              <span className="text-muted-foreground">Sector: {SECTOR_LABEL[bumn.sector]}</span>
             </div>
 
             {/* Sentiment trend chart */}
-            <TrendChart history={bumn.trend} escalating={false} className="h-40 w-full" label="Tren Sentimen" />
+            <TrendChart history={bumn.trend} escalating={false} className="h-40 w-full" label="Sentiment Trend" />
 
             {/* Sentiment split */}
             <SentimentSplit pos={bumn.posMentions} neg={bumn.negMentions} total={bumn.mentions} variant="full" />
@@ -260,8 +260,8 @@ export function DetailModal({
             {/* Related issues */}
             {sortedIssues.length > 0 && (
               <div>
-                <div className="mb-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                  Isu Terkait
+                <div className="mb-2 text-lg font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                  Related Issues
                 </div>
                 <div className="space-y-1.5">
                   {sortedIssues.map((issue) => {
@@ -273,23 +273,23 @@ export function DetailModal({
                         type="button"
                         data-testid={`related-issue-${issue.id}`}
                         onClick={() => onNavigate({ type: "issue", id: issue.id })}
-                        className="flex w-full items-center gap-2 rounded border border-border/50 bg-background/20 px-3 py-2 text-left text-[12px] hover:bg-card/80"
+                        className="flex w-full items-center gap-2 rounded border border-border/50 bg-background/20 px-3 py-2.5 text-left text-lg hover:bg-card/80"
                       >
                         {isTop && (
-                          <span className="shrink-0 rounded border border-primary/40 bg-primary/10 px-1 py-px text-[9px] font-bold uppercase tracking-wider text-primary">
-                            Isu Utama
+                          <span className="shrink-0 rounded border border-primary/40 bg-primary/10 px-1 py-px text-base font-bold uppercase tracking-wider text-primary">
+                            Top Issue
                           </span>
                         )}
                         <span className="min-w-0 flex-1 truncate font-medium">{issue.title}</span>
                         {badge.label && (
                           <span
-                            className={`shrink-0 rounded border px-1 py-px text-[9px] font-bold tracking-wider ${badge.cls}`}
+                            className={`shrink-0 rounded border px-1.5 py-px text-base font-bold tracking-wider ${badge.cls}`}
                           >
                             {badge.label}
                           </span>
                         )}
-                        <span className="shrink-0 font-mono text-[11px] tabular-nums text-muted-foreground">
-                          {(issue.reach / 1_000_000).toFixed(1)} jt
+                        <span className="shrink-0 font-mono text-base tabular-nums text-muted-foreground">
+                          {(issue.reach / 1_000_000).toFixed(1)}M
                         </span>
                       </button>
                     );

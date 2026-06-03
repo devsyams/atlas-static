@@ -35,7 +35,7 @@
 | **A4** | AI assistant — copilot chat | 3-act | S5 | E7 | 1.0 | Planned |
 | **A5** | AI assistant — briefing, forecast & per-widget ask | 3-act | S5 | E7 | 1.0 | Planned |
 | **A6** | Real-time ticker, alerts & War Room | 3-act | S5–S6 | E8 | 1.0 | Planned |
-| **A7** | Danantara CEO Command Wall (zero-click demo) | 3-act | demo | — | 3.0 | Built |
+| **A7** | Danantara CEO Command Wall (zero-click demo) | 3-act | demo | — | 12.0 | Built |
 
 **Totals:** 24 features · 7 platform · 5 watch · 5 understand · 7 act.
 
@@ -57,3 +57,12 @@
 | 1.1 | 2026-05-25 | Added W5 (initial recent-window backfill) after the light-backfill decision; 22→23 features |
 | 1.2 | 2026-06-02 | Added A7 (Danantara CEO Command Wall) from client CEO feedback; 23→24 features |
 | 1.3 | 2026-06-03 | A7 → v2.0 In progress (rank-movement arrows + explicit pos/neg sentiment counts) |
+| 1.4 | 2026-06-03 | A7 → v4.0 In progress (two-column sentiment-grouped wall + per-panel pie; spotlight/takeover removed) |
+| 1.5 | 2026-06-03 | A7 → v5.0 In progress (per-item pie charts; positive/negative groups side by side) |
+| 1.6 | 2026-06-03 | A7 → v6.0 In progress (AC15 readability type scale for 60-year-old CEO: 16px floor) |
+| 1.7 | 2026-06-03 | A7 → v7.0 Built (topic rows drop sparkline + pie to trailing + full titles; BUMN single-list with leading positive/negative topic per row — AC16) |
+| 1.8 | 2026-06-03 | A7 → v8.0 Built (topic board → single full-width list like BUMN, most-negative first + sentiment tint, pie kept; fixes messy multi-line titles; side-by-side topic sub-columns retired) |
+| 1.9 | 2026-06-03 | A7 → v9.0 Built (restore side-by-side TOPIK POSITIF/NEGATIF columns; stacked row card keeps titles legible; pie + tint kept) |
+| 1.10 | 2026-06-03 | A7 → v10.0 Built (mini pie per BUMN topic cell; net-score tooltip; tidied Isu Danantara pie/meta layout; shared pieTotals) |
+| 1.11 | 2026-06-03 | A7 → v11.0 Built (BUMN board: remove net-score number, add sequential rank number, add per-topic reach + sentiment %) |
+| 1.12 | 2026-06-03 | A7 → v12.0 Built (localize UI chrome to English; content/taxonomy stays Indonesian — AC17) |

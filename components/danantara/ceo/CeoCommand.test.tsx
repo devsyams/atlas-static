@@ -1,10 +1,10 @@
 // @vitest-environment jsdom
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { TAKEOVER_MS, TICK_MS } from "@/lib/danantara/ceo/data";
+import { TICK_MS } from "@/lib/danantara/ceo/data";
 import { CeoCommand } from "./CeoCommand";
 
-describe("CeoCommand (T1 / AC1)", () => {
+describe("CeoCommand two-column sentiment wall (v5.0)", () => {
   beforeEach(() => {
     vi.useFakeTimers();
   });
@@ -12,96 +12,59 @@ describe("CeoCommand (T1 / AC1)", () => {
     vi.useRealTimers();
   });
 
-  it("renders all five zones with zero interaction", () => {
+  it("renders all four zones with zero interaction (T1 / AC1)", () => {
     render(<CeoCommand />);
     expect(screen.getByTestId("ceo-header")).toBeInTheDocument();
+    expect(screen.getByTestId("ceo-ticker")).toBeInTheDocument();
     expect(screen.getByTestId("ceo-issues")).toBeInTheDocument();
     expect(screen.getByTestId("ceo-bumn")).toBeInTheDocument();
-    expect(screen.getByTestId("ceo-spotlight")).toBeInTheDocument();
-    expect(screen.getByTestId("ceo-ticker")).toBeInTheDocument();
   });
 
-  it("renders 20 issue rows and 20 BUMN tiles (AC2, AC3)", () => {
+  it("renders no spotlight and never fires a takeover (T11 / AC11)", () => {
+    render(<CeoCommand />);
+    expect(screen.queryByTestId("ceo-spotlight")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("ceo-takeover")).not.toBeInTheDocument();
+    // Even after the scripted demo arc escalates an issue (~tick 18), no overlay interrupts.
+    act(() => {
+      vi.advanceTimersByTime(TICK_MS * 25);
+    });
+    expect(screen.queryByTestId("ceo-takeover")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("ceo-spotlight")).not.toBeInTheDocument();
+  });
+
+  it("uses a two-column wall on xl, stacked on phone (T11 / AC11, T7 / AC7)", () => {
+    render(<CeoCommand />);
+    const wall = screen.getByTestId("ceo-wall");
+    expect(wall.className).toContain("grid-cols-1");
+    expect(wall.className).toContain("xl:grid-cols-2");
+  });
+
+  it("renders 20 issue rows and 20 BUMN tiles across the sentiment groups (AC2, AC3)", () => {
     render(<CeoCommand />);
     expect(screen.getAllByTestId(/^issue-row-/)).toHaveLength(20);
     expect(screen.getAllByTestId(/^bumn-tile-/)).toHaveLength(20);
   });
 
-  it("fires the breaking takeover when the scripted arc escalates an issue (T4 / AC4, AC5)", () => {
+  it("renders mini pies on topic rows and BUMN topic cells, no panel pie (AC14 v10.0)", () => {
     render(<CeoCommand />);
-    expect(screen.queryByTestId("ceo-takeover")).not.toBeInTheDocument();
-    // Advance past the first demo arc (atTick 15 + rampTicks 5) plus margin.
-    act(() => {
-      vi.advanceTimersByTime(TICK_MS * 25);
-    });
-    expect(screen.getByTestId("ceo-takeover")).toBeInTheDocument();
+    // 20 topic rows each carry a pie, plus one per present BUMN topic cell (> 20 total).
+    expect(screen.getAllByTestId("sentiment-pie-mini").length).toBeGreaterThan(20);
+    expect(screen.queryByTestId("sentiment-pie")).not.toBeInTheDocument();
   });
 
-  it("pins the live escalating issue in the spotlight, then clears the pin after cooldown (AC4)", () => {
+  it("topics use side-by-side sub-columns; BUMN is a single per-row list (AC12 v9.0, AC16 v7.0)", () => {
     render(<CeoCommand />);
-    // Reach escalation (~tick 18) and stay inside the escalating window (tick 19).
+    expect(screen.getByTestId("issue-groups").className).toContain("grid-cols-2");
+    expect(screen.getByTestId("bumn-list")).toBeInTheDocument();
+    expect(screen.queryByTestId("bumn-groups")).not.toBeInTheDocument();
+  });
+
+  it("escalating issues still badge on the board when the scripted arc fires (AC2)", () => {
+    render(<CeoCommand />);
     act(() => {
       vi.advanceTimersByTime(TICK_MS * 19);
     });
-    expect(screen.getByTestId("ceo-takeover")).toBeInTheDocument();
-    // Clear the takeover overlay (5s timeout; also advances ~1 more tick — still escalating).
-    act(() => {
-      vi.advanceTimersByTime(5_000);
-    });
-    expect(screen.queryByTestId("ceo-takeover")).not.toBeInTheDocument();
-    // The LIVE escalating issue is pinned in the spotlight.
-    expect(screen.getByTestId("ceo-spotlight").textContent).toContain("ESKALASI");
-    // Advance well past cooldown (issue cools ~tick 23) — the pin must clear (AC4) and rotation resume.
-    act(() => {
-      vi.advanceTimersByTime(TICK_MS * 6);
-    });
-    expect(screen.getByTestId("ceo-spotlight").textContent).not.toContain("ESKALASI");
-  });
-
-  it("force-fires escalation with the presenter hotkey E (AC5)", () => {
-    render(<CeoCommand />);
-    expect(screen.queryByTestId("ceo-takeover")).not.toBeInTheDocument();
-    act(() => {
-      window.dispatchEvent(new KeyboardEvent("keydown", { key: "e" }));
-    });
-    act(() => {
-      vi.advanceTimersByTime(TICK_MS * 8); // spiked ticks fill the velocity window
-    });
-    expect(screen.getByTestId("ceo-takeover")).toBeInTheDocument();
-  });
-
-  it("uses a stacked-to-3-column responsive wall (T7 / AC7)", () => {
-    render(<CeoCommand />);
-    const wall = screen.getByTestId("ceo-wall");
-    expect(wall.className).toContain("grid-cols-1");
-    expect(wall.className).toMatch(/xl:grid-cols-/);
-  });
-
-  it("queues takeovers when two escalations happen close together (hotkey spam)", () => {
-    render(<CeoCommand />);
-    // Press E twice quickly — two different issues get arcs.
-    act(() => {
-      window.dispatchEvent(new KeyboardEvent("keydown", { key: "e" }));
-    });
-    act(() => {
-      vi.advanceTimersByTime(TICK_MS); // one tick so the first arc's target is no longer available for 2nd press
-    });
-    act(() => {
-      window.dispatchEvent(new KeyboardEvent("keydown", { key: "e" }));
-    });
-    // Let both arcs ramp to escalation.
-    act(() => {
-      vi.advanceTimersByTime(TICK_MS * 10);
-    });
-    // First takeover showing.
-    const first = screen.getByTestId("ceo-takeover").textContent;
-    // Dismiss it (TAKEOVER_MS) — the queued second takeover must then appear.
-    act(() => {
-      vi.advanceTimersByTime(TAKEOVER_MS);
-    });
-    const second = screen.queryByTestId("ceo-takeover");
-    expect(second).toBeInTheDocument();
-    expect(second!.textContent).not.toBe(first);
+    expect(screen.getByTestId("ceo-issues").textContent).toContain("ESCALATING");
   });
 
   it("shows rank movement badges on issue rows and BUMN tiles (AC8)", () => {
@@ -110,12 +73,15 @@ describe("CeoCommand (T1 / AC1)", () => {
     expect(screen.getAllByTestId("rank-stay").length).toBeGreaterThanOrEqual(40); // 20 issues + 20 BUMN
   });
 
-  it("shows positive/negative sentiment counts on rows, tiles and spotlight (AC9)", () => {
+  it("detail modal keeps the labeled sentiment split bar (AC9 v5.0)", () => {
     render(<CeoCommand />);
-    // compact splits on 20 issue rows + 20 bumn tiles
-    expect(screen.getAllByTestId("sentiment-split").length).toBeGreaterThanOrEqual(40);
-    // full split in the spotlight
+    act(() => {
+      fireEvent.click(screen.getAllByTestId(/^btn-issue-row-/)[0]);
+    });
     expect(screen.getByTestId("sentiment-split-full")).toBeInTheDocument();
+    act(() => {
+      fireEvent.keyDown(window, { key: "Escape" });
+    });
   });
 
   it("opens issue detail when a row is clicked, closes with Esc (T10 / AC10)", () => {
@@ -141,18 +107,70 @@ describe("CeoCommand (T1 / AC1)", () => {
     expect(screen.getByTestId("ceo-detail-bumn")).toBeInTheDocument();
   });
 
-  it("keeps ticking and fires the takeover above an open detail modal (T10 / AC10)", () => {
+  /**
+   * AC15 (v6.0): the CEO is 60 — nothing on the wall may render below 16px.
+   * Forbidden classes: text-xs (12px), text-sm (14px), text-[<16px].
+   */
+  const TINY_TEXT = /text-(?:xs|sm)(?![\w-])|text-\[(?:[1-9]|1[0-5])(?:\.\d+)?px\]/;
+
+  function tinyTextOffenders(container: HTMLElement): string[] {
+    return [...container.querySelectorAll("*")]
+      .map((el) => el.getAttribute("class") ?? "")
+      .filter((cls) => TINY_TEXT.test(cls));
+  }
+
+  it("renders no text smaller than 16px anywhere on the wall (T15 / AC15)", () => {
+    const { container } = render(<CeoCommand />);
+    expect(tinyTextOffenders(container)).toEqual([]);
+  });
+
+  it("renders no text smaller than 16px inside the open issue detail modal (T15 / AC15)", () => {
+    const { container } = render(<CeoCommand />);
+    act(() => {
+      fireEvent.click(screen.getAllByTestId(/^btn-issue-row-/)[0]);
+    });
+    expect(screen.getByTestId("ceo-detail-issue")).toBeInTheDocument();
+    expect(tinyTextOffenders(container)).toEqual([]);
+  });
+
+  it("renders no text smaller than 16px inside the open BUMN detail modal (T15 / AC15)", () => {
+    const { container } = render(<CeoCommand />);
+    act(() => {
+      fireEvent.click(screen.getAllByTestId(/^btn-bumn-tile-/)[0]);
+    });
+    expect(screen.getByTestId("ceo-detail-bumn")).toBeInTheDocument();
+    expect(tinyTextOffenders(container)).toEqual([]);
+  });
+
+  it("topic titles and BUMN names are at least 20px (T15 / AC15)", () => {
+    render(<CeoCommand />);
+    const titles = [...screen.getAllByTestId("issue-title"), ...screen.getAllByTestId("bumn-name")];
+    expect(titles.length).toBe(40);
+    for (const el of titles) {
+      expect(el.className).toMatch(/text-(?:xl|2xl|3xl)/);
+    }
+  });
+
+  it("header key numbers are at least 24px (T15 / AC15)", () => {
+    render(<CeoCommand />);
+    const metrics = screen.getAllByTestId("metric-value");
+    expect(metrics.length).toBeGreaterThanOrEqual(2);
+    for (const el of metrics) {
+      expect(el.className).toMatch(/text-(?:2xl|3xl|4xl)/);
+    }
+  });
+
+  it("keeps ticking while a detail modal is open (T10 / AC10)", () => {
     render(<CeoCommand />);
     act(() => {
       fireEvent.click(screen.getAllByTestId(/^btn-issue-row-/)[0]);
     });
     expect(screen.getByTestId("ceo-detail")).toBeInTheDocument();
-    // Scripted arc escalates ~tick 18; advance past it with the modal open.
     act(() => {
-      vi.advanceTimersByTime(TICK_MS * 25);
+      vi.advanceTimersByTime(TICK_MS * 5);
     });
-    // Both visible: takeover (z-50) above modal (z-40)
-    expect(screen.getByTestId("ceo-takeover")).toBeInTheDocument();
+    // Modal still open and the wall is still live underneath.
     expect(screen.getByTestId("ceo-detail")).toBeInTheDocument();
+    expect(screen.getAllByTestId(/^issue-row-/)).toHaveLength(20);
   });
 });

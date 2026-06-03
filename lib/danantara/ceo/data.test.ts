@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { REACH_FLOOR, VELOCITY_WINDOW } from "./engine";
-import { buildInitialState, DEMO_ARCS, SPOTLIGHT_MS, TAKEOVER_MS, TICK_MS } from "./data";
+import { buildInitialState, DEMO_ARCS, TICK_MS } from "./data";
 
 describe("CEO board data", () => {
   const state = buildInitialState();
@@ -44,8 +44,6 @@ describe("CEO board data", () => {
 
   it("pins the spec-mandated timing constants", () => {
     expect(TICK_MS).toBe(4_000);
-    expect(SPOTLIGHT_MS).toBe(10_000);
-    expect(TAKEOVER_MS).toBe(5_000);
   });
 
   it("BUMN sentiment values are within -100..100", () => {
@@ -78,7 +76,7 @@ describe("CEO board data", () => {
     }
   });
 
-  it("demo arcs reference real issues with enough reach to escalate (AC5)", () => {
+  it("demo arcs reference real issues with enough reach to escalate (board badges, AC2)", () => {
     const byId = new Map(state.issues.map((i) => [i.id, i]));
     expect(DEMO_ARCS.length).toBeGreaterThanOrEqual(2);
     for (const arc of DEMO_ARCS) {
