@@ -14,9 +14,9 @@ const STATUS_BADGE: Record<CeoIssue["status"], { label: string; cls: string }> =
 };
 
 /**
- * One topic, as a stacked card (AC12 v9.0): the full title gets its own line —
- * the whole column width — above a compact meta line (reach left, pie right), so
- * a long title wraps cleanly instead of colliding with the pie in the narrow column.
+ * One topic row (AC12/AC14 v14.0): rank + full title on the left (title wraps,
+ * never truncates), with the sentiment pie stacked over the reach value on the
+ * right.
  */
 function IssueRow({ issue, rank, onSelect }: { issue: CeoIssue; rank: number; onSelect?: (id: string) => void }) {
   const badge = STATUS_BADGE[issue.status];
@@ -32,29 +32,26 @@ function IssueRow({ issue, rank, onSelect }: { issue: CeoIssue; rank: number; on
         onClick={() => onSelect?.(issue.id)}
         className="ceo-row flex w-full cursor-pointer items-start gap-2.5 px-3 py-2.5 text-left hover:bg-card/40"
       >
+        {/* Rank number + movement badge. */}
         <div className="flex w-8 shrink-0 flex-col items-end gap-0.5 pt-0.5">
           <span className="font-mono text-xl tabular-nums text-muted-foreground">{rank}</span>
           <RankBadge delta={issue.rankDelta} />
         </div>
-        <div className="min-w-0 flex-1">
-          {/* Title owns the full column width — wraps cleanly, never truncates. */}
-          <div className="flex items-start gap-2">
-            <span data-testid="issue-title" className="text-xl font-medium leading-snug text-balance">{issue.title}</span>
-            {badge.label && (
-              <span className={`mt-0.5 shrink-0 rounded border px-1.5 py-px text-base font-bold tracking-wider ${badge.cls}`}>
-                {badge.label}
-              </span>
-            )}
-          </div>
-          {/* Meta line: reach on the left, sentiment pie at the right (AC2/AC14 v13.0). */}
-          <div className="mt-2 flex items-center gap-3">
-            <span className="text-base tabular-nums text-muted-foreground">
-              {(issue.reach / 1_000_000).toFixed(1)}M reach
+        {/* Left: full title (wraps, never truncates) + status badge. */}
+        <div className="flex min-w-0 flex-1 items-start gap-2 pt-0.5">
+          <span data-testid="issue-title" className="text-xl font-medium leading-snug text-balance">{issue.title}</span>
+          {badge.label && (
+            <span className={`mt-0.5 shrink-0 rounded border px-1.5 py-px text-base font-bold tracking-wider ${badge.cls}`}>
+              {badge.label}
             </span>
-            <span className="ml-auto shrink-0">
-              <SentimentPie totals={pieTotals(issue)} variant="mini" />
-            </span>
-          </div>
+          )}
+        </div>
+        {/* Right: sentiment pie stacked over the reach value (AC14 v14.0). */}
+        <div className="flex shrink-0 flex-col items-end gap-1 pt-0.5">
+          <SentimentPie totals={pieTotals(issue)} variant="mini" />
+          <span className="text-base tabular-nums text-muted-foreground">
+            {(issue.reach / 1_000_000).toFixed(1)}M reach
+          </span>
         </div>
       </button>
     </li>
