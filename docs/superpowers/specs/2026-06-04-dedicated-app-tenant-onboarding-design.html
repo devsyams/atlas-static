@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Dedicated-App Tenant Onboarding — Variant B</title>
+<link href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Sora:wght@300;400;500;600;700;800&display=swap');
+
+  :root {
+    --bg:      #080c12;
+    --bg2:     #0d1219;
+    --bg3:     #111820;
+    --border:  #1a2535;
+    --border2: #243040;
+    --text:    #c8d8e8;
+    --muted:   #4a6080;
+    --dim:     #2a3a50;
+    --bright:  #e8f4ff;
+    --blue:    #3b9eff;
+    --cyan:    #22d3ee;
+    --green:   #22c55e;
+    --amber:   #f59e0b;
+    --red:     #ef4444;
+    --purple:  #a78bfa;
+    --font-body: 'Sora', sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body { background: var(--bg); color: var(--text); font-family: var(--font-body); font-size: 15px; line-height: 1.65; }
+  a { color: var(--blue); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  strong { color: var(--bright); }
+  em { color: var(--cyan); font-style: normal; }
+  code:not([class*="language-"]) { font-family: var(--font-mono); font-size: 0.85em; background: var(--bg); padding: 1px 5px; border-radius: 4px; color: var(--amber); border: 1px solid var(--border); }
+
+  /* ── SIDEBAR ── */
+  #sidebar {
+    position: fixed; top: 0; left: 0; width: 290px; height: 100vh; overflow-y: auto;
+    background: #0a0f16; border-right: 1px solid var(--border); padding: 26px 0 60px;
+    scrollbar-width: thin;
+  }
+  #sidebar .logo { padding: 0 24px 20px; border-bottom: 1px solid var(--border); margin-bottom: 14px; }
+  #sidebar .logo .t { font-size: 18px; font-weight: 800; color: var(--bright); letter-spacing: -0.3px; }
+  #sidebar .logo .t span { color: var(--blue); }
+  #sidebar .logo .s { font-family: var(--font-mono); font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); margin-top: 4px; }
+  #sidebar .variant { margin: 12px 24px 0; padding: 8px 10px; background: #0c1a2c; border: 1px solid var(--border2); border-radius: 7px; font-family: var(--font-mono); font-size: 10px; color: var(--muted); line-height: 1.5; }
+  #sidebar .variant b { color: var(--blue); font-weight: 700; }
+  .nav-group { margin: 16px 0 4px; }
+  .nav-group > .gl { font-family: var(--font-mono); font-size: 10px; font-weight: 600; letter-spacing: 1.8px; text-transform: uppercase; color: var(--dim); padding: 0 24px; margin-bottom: 6px; }
+  .nav-link { display: block; padding: 6px 24px 6px 24px; font-size: 13px; color: var(--muted); border-left: 2px solid transparent; transition: all .12s; }
+  .nav-link:hover { color: var(--text); text-decoration: none; background: #0d141d; }
+  .nav-link.active { color: var(--blue); border-left-color: var(--blue); background: #0c1a2c; }
+
+  /* ── CONTENT ── */
+  #content { margin-left: 290px; padding: 0 0 160px; }
+  .hero {
+    padding: 56px clamp(28px, 5vw, 72px) 40px; border-bottom: 1px solid var(--border);
+    background: linear-gradient(160deg, #080c12 0%, #0a1426 65%, #080c12 100%); position: relative; overflow: hidden;
+  }
+  .hero::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse 700px 320px at 85% 30%, #18407318, transparent); pointer-events: none; }
+  .hero .tag { font-family: var(--font-mono); font-size: 11px; letter-spacing: 3px; text-transform: uppercase; color: var(--blue); margin-bottom: 14px; }
+  .hero h1 { font-size: clamp(30px, 5vw, 50px); font-weight: 800; color: var(--bright); letter-spacing: -1px; line-height: 1.05; }
+  .hero h1 span { color: var(--blue); }
+  .hero p { font-size: 16px; color: var(--muted); max-width: 760px; margin-top: 14px; }
+  .hero .meta { font-family: var(--font-mono); font-size: 11px; color: var(--muted); margin-top: 22px; letter-spacing: 0.5px; }
+  .hero .meta b { color: var(--text); font-weight: 500; }
+
+  section.doc { padding: 40px clamp(28px, 5vw, 72px) 8px; max-width: 1180px; scroll-margin-top: 20px; }
+  section.doc > .sn { font-family: var(--font-mono); font-size: 11px; letter-spacing: 2px; color: var(--blue); text-transform: uppercase; margin-bottom: 6px; }
+  section.doc > h2 { font-size: 27px; font-weight: 700; color: var(--bright); letter-spacing: -0.4px; margin-bottom: 8px; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
+  section.doc h3 { font-size: 17px; font-weight: 600; color: var(--bright); margin: 26px 0 10px; }
+  section.doc p { margin-bottom: 12px; color: var(--text); }
+  section.doc p.lead { font-size: 16px; color: #b6cbe2; }
+  .muted { color: var(--muted); }
+
+  ul.list, ol.list { margin: 8px 0 14px; padding-left: 0; list-style: none; display: flex; flex-direction: column; gap: 8px; counter-reset: li; }
+  ul.list li, ol.list li { position: relative; padding-left: 26px; color: var(--text); font-size: 14.5px; }
+  ul.list li::before { content: ''; position: absolute; left: 4px; top: 9px; width: 6px; height: 6px; border-radius: 2px; background: var(--blue); }
+  ol.list li { counter-increment: li; }
+  ol.list li::before { content: counter(li); position: absolute; left: 0; top: 0; font-family: var(--font-mono); font-size: 11px; color: var(--blue); font-weight: 700; background: #0c1a2c; border: 1px solid var(--border2); width: 18px; height: 18px; border-radius: 4px; display: flex; align-items: center; justify-content: center; }
+  ul.list li b, ol.list li b { color: var(--bright); }
+
+  /* callouts */
+  .note { border-left: 3px solid var(--blue); background: var(--bg2); border-radius: 0 8px 8px 0; padding: 12px 16px; margin: 16px 0; font-size: 14px; }
+  .note.warn { border-color: var(--amber); }
+  .note.good { border-color: var(--green); }
+  .note .l { font-family: var(--font-mono); font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); display: block; margin-bottom: 4px; }
+
+  /* cards */
+  .cards { display: grid; gap: 12px; margin: 16px 0; }
+  .cards.c2 { grid-template-columns: repeat(2, 1fr); }
+  .cards.c3 { grid-template-columns: repeat(3, 1fr); }
+  .cards.c4 { grid-template-columns: repeat(4, 1fr); }
+  .ic { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; }
+  .ic h4 { font-size: 14px; color: var(--bright); margin-bottom: 4px; }
+  .ic h4 code { font-size: 12px; }
+  .ic p { font-size: 12.5px; color: #7e98b6; margin: 0; line-height: 1.55; }
+
+  /* phase lanes */
+  .lanes3 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; margin: 16px 0; }
+  .lane { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+  .lane .h { font-family: var(--font-mono); font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; padding: 11px 14px; border-bottom: 1px solid var(--border); }
+  .lane.develop .h { color: var(--blue); border-top: 3px solid var(--blue); }
+  .lane.reconcile .h { color: var(--green); border-top: 3px solid var(--green); }
+  .lane ul { list-style: none; padding: 12px 14px; display: flex; flex-direction: column; gap: 6px; }
+  .lane li { font-size: 12.8px; color: var(--text); line-height: 1.4; }
+  .lane li span { color: var(--muted); }
+
+  /* definition list */
+  dl.defs { margin: 14px 0; }
+  dl.defs dt { font-weight: 600; color: var(--bright); font-size: 14.5px; margin-top: 14px; }
+  dl.defs dd { color: #8ba6c2; font-size: 14px; margin: 2px 0 0; padding-left: 0; }
+
+  /* diagrams */
+  .diagram { background: #f4f7fb; border: 1px solid var(--border2); border-radius: 12px; padding: 18px; margin: 16px 0; text-align: center; overflow: auto; cursor: zoom-in; position: relative; }
+  .diagram::after { content: 'click to enlarge'; position: absolute; top: 8px; right: 12px; font-family: var(--font-mono); font-size: 10px; color: #5b7da6; opacity: 0; transition: opacity .15s; pointer-events: none; }
+  .diagram:hover::after { opacity: .8; }
+  .diagram .mermaid { display: inline-block; min-width: 0; }
+  .diagram.tall { max-height: none; }
+  .dcap { font-family: var(--font-mono); font-size: 11.5px; color: var(--muted); margin-top: -4px; margin-bottom: 18px; }
+
+  /* code */
+  pre[class*="language-"] { border: 1px solid var(--border2); border-radius: 10px; padding: 16px 18px !important; margin: 14px 0; font-size: 12.5px; overflow: auto; max-height: 620px; }
+  code[class*="language-"] { font-family: var(--font-mono); font-size: 12.5px; }
+
+  /* tables */
+  table.tb { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 13.5px; }
+  table.tb th, table.tb td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  table.tb th { font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); }
+  table.tb td code { white-space: nowrap; }
+  table.tb td b { color: var(--bright); }
+  table.tb .yes { color: var(--green); }
+  table.tb .no { color: var(--muted); }
+
+  #totop { position: fixed; right: 22px; bottom: 22px; z-index: 40; background: var(--bg2); border: 1px solid var(--border2); color: var(--text); border-radius: 9px; padding: 9px 13px; font-family: var(--font-mono); font-size: 11px; cursor: pointer; opacity: 0; pointer-events: none; transition: opacity .2s; }
+  #totop.show { opacity: 1; pointer-events: auto; }
+  #totop:hover { border-color: var(--blue); color: var(--blue); }
+
+  /* lightbox */
+  #lightbox { position: fixed; inset: 0; z-index: 300; background: rgba(4,7,11,.94); display: none; align-items: center; justify-content: center; padding: 4vh 3vw; }
+  #lightbox.show { display: flex; }
+  #lightbox .lb-card { background: #f4f7fb; border-radius: 14px; padding: 22px; max-width: 96vw; max-height: 92vh; overflow: auto; box-shadow: 0 24px 90px rgba(0,0,0,.6); }
+  #lightbox .lb-card svg { display: block; }
+  #lb-close { position: fixed; top: 18px; right: 22px; z-index: 301; background: var(--bg2); border: 1px solid var(--border2); color: var(--text); border-radius: 8px; padding: 8px 13px; font-family: var(--font-mono); font-size: 12px; cursor: pointer; }
+  #lb-close:hover { border-color: var(--blue); color: var(--blue); }
+  #lb-hint { position: fixed; bottom: 16px; left: 0; right: 0; text-align: center; font-family: var(--font-mono); font-size: 11px; color: var(--muted); pointer-events: none; }
+
+  @media (max-width: 940px) {
+    #sidebar { position: static; width: 100%; height: auto; border-right: none; border-bottom: 1px solid var(--border); }
+    #content { margin-left: 0; }
+    .cards.c2, .cards.c3, .cards.c4, .lanes3 { grid-template-columns: 1fr; }
+  }
+  @media print {
+    #sidebar, #totop { display: none; }
+    #content { margin-left: 0; }
+    body { background: #fff; color: #111; }
+    section.doc { page-break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+
+<nav id="sidebar">
+  <div class="logo">
+    <div class="t">Atlas <span>&middot;</span> Tenants</div>
+    <div class="s">Dedicated-App Onboarding</div>
+  </div>
+  <div class="variant">
+    <b>VARIANT B</b><br/>One dedicated app per tenant. See Variant A for the federated-widget alternative.
+  </div>
+
+  <div class="nav-group">
+    <div class="gl">Overview</div>
+    <a class="nav-link" href="#overview">Overview</a>
+    <a class="nav-link" href="#decisions">Locked Decisions</a>
+  </div>
+  <div class="nav-group">
+    <div class="gl">Architecture</div>
+    <a class="nav-link" href="#topology">System Topology</a>
+    <a class="nav-link" href="#monorepo">Code Plane &mdash; Monorepo</a>
+    <a class="nav-link" href="#manifest">Tenant Manifest</a>
+    <a class="nav-link" href="#data-model">Data Model</a>
+  </div>
+  <div class="nav-group">
+    <div class="gl">Operations</div>
+    <a class="nav-link" href="#onboarding">Onboarding Pipeline</a>
+    <a class="nav-link" href="#day2">Blueprints &amp; Day-2</a>
+  </div>
+  <div class="nav-group">
+    <div class="gl">Security</div>
+    <a class="nav-link" href="#auth">Auth &amp; Isolation</a>
+  </div>
+  <div class="nav-group">
+    <div class="gl">Delivery</div>
+    <a class="nav-link" href="#testing">Testing</a>
+    <a class="nav-link" href="#risks">Risks</a>
+    <a class="nav-link" href="#variant-a">Relationship to Variant A</a>
+    <a class="nav-link" href="#implementation">Implementation Plan</a>
+  </div>
+</nav>
+
+<main id="content">
+
+  <header class="hero">
+    <div class="tag">Nexorus &middot; Architecture Spec &middot; Variant B</div>
+    <h1><span>Dedicated-App</span> tenant onboarding</h1>
+    <p>An alternative to federated-widget multitenancy: each tenant dashboard is its own dedicated application, deployed on shared Kubernetes with namespace isolation, optionally connecting to a shared PostgreSQL instance isolated by schema per tenant. Git is the control plane.</p>
+    <div class="meta"><b>Status:</b> Approved (design) &nbsp;&middot;&nbsp; <b>Date:</b> 2026-06-04 &nbsp;&middot;&nbsp; <b>Variant of:</b> 2026-06-03 federated-widget design &nbsp;&middot;&nbsp; <b>Audience:</b> Engineering</div>
+  </header>
+
+  <!-- OVERVIEW -->
+  <section class="doc" id="overview">
+    <div class="sn">01</div>
+    <h2>Overview</h2>
+    <p class="lead"><strong>One dedicated app per tenant. Namespace for isolation. Shared Postgres, schema per tenant &mdash; but only when the app needs it. Onboarding is a Git merge.</strong></p>
+    <p>This is a <strong>variant</strong> of the multitenant onboarding architecture. Instead of one runtime-configurable app loading federated widgets per tenant, <strong>each tenant dashboard is its own dedicated application</strong> &mdash; a separately built and deployed Next.js app &mdash; running on shared Kubernetes, isolated by namespace. When an app needs persistence it connects to a <strong>shared PostgreSQL instance</strong> where data is isolated <strong>by schema per tenant</strong>.</p>
+    <div class="note"><span class="l">When to choose this variant</span>Variant B fits when tenants are <strong>highly bespoke</strong>, the team is <strong>small</strong>, and the tenant count is <strong>modest</strong> (roughly &le; 15&ndash;20). It trades fleet-wide leverage for simplicity: no widget registry, no model gateway, and no control-plane service to build or operate.</div>
+
+    <h3>Goals</h3>
+    <ul class="list">
+      <li>Each tenant runs an <b>independent, separately-versioned application</b>.</li>
+      <li>Tenants are isolated by <b>Kubernetes namespace</b>.</li>
+      <li>Apps that need a database connect to a <b>shared Postgres instance</b>, isolated by <b>schema per tenant</b> (<code>tenant_&lt;slug&gt;</code>) via a scoped role.</li>
+      <li>Onboarding is <b>declarative and auditable</b> via Git (GitOps), starting from a scaffold CLI.</li>
+      <li>Code is reused at <b>build time</b> through a shared-package monorepo.</li>
+    </ul>
+
+    <h3>Non-goals (out of scope)</h3>
+    <ul class="list">
+      <li>Runtime widget federation / a widget registry CDN <span class="muted">(that is Variant A)</span>.</li>
+      <li>A control-plane API/service or a <code>control</code> DB schema &mdash; Git is the control plane.</li>
+      <li>A per-tenant model gateway &mdash; apps that use AI call a shared gateway if/when added.</li>
+      <li>Migrating the <code>atlas-static</code> demo repo itself into the monorepo.</li>
+    </ul>
+  </section>
+
+  <!-- DECISIONS -->
+  <section class="doc" id="decisions">
+    <div class="sn">02</div>
+    <h2>Locked Decisions</h2>
+    <table class="tb">
+      <thead><tr><th>Decision</th><th>Choice</th></tr></thead>
+      <tbody>
+        <tr><td><b>App model</b></td><td><strong>One dedicated app per tenant</strong>, one Docker image + Helm release each</td></tr>
+        <tr><td><b>Isolation</b></td><td>Kubernetes <strong>namespace per tenant</strong></td></tr>
+        <tr><td><b>Database</b></td><td><strong>Shared Postgres instance</strong>, <strong>schema per tenant</strong>, per-schema scoped role; <strong>only provisioned when the app needs it</strong></td></tr>
+        <tr><td><b>Code reuse</b></td><td><strong>Monorepo + shared packages</strong> (<code>widgets</code>, <code>ui</code>, <code>bff-core</code>), Turbo build orchestration</td></tr>
+        <tr><td><b>Auth</b></td><td><strong>Central IdP (OIDC / Keycloak)</strong>, one OIDC client + org per app; per-tenant SSO federation possible later</td></tr>
+        <tr><td><b>Onboarding</b></td><td><strong>Scaffold CLI + GitOps</strong> &mdash; merge a PR; CI/CD reconciles infra declaratively</td></tr>
+        <tr><td><b>Tenant config authority</b></td><td><strong>Git</strong> (<code>infra/tenants/&lt;slug&gt;.yaml</code>) is the source of truth</td></tr>
+        <tr><td><b>Version upgrades</b></td><td><strong>Per-app, pinned, opt-in</strong> &mdash; a tenant gets a change when its app is rebuilt</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- TOPOLOGY -->
+  <section class="doc" id="topology">
+    <div class="sn">03</div>
+    <h2>System Topology</h2>
+    <p class="lead">Two planes in one cluster: a <strong>thin platform plane</strong> and many <strong>dedicated tenant apps</strong>, separated by namespace, all able to reach one shared Postgres instance.</p>
+    <div class="diagram tall"><div class="mermaid">
+flowchart TB
+    Users(["Tenant users"])
+    Ingress["Ingress &mdash; wildcard TLS *.nexorus.io<br/>routes subdomain to tenant namespace"]
+
+    subgraph Platform["ns: platform (thin)"]
+        IdP["Central IdP (Keycloak)"]
+        CD["CD controller (ArgoCD)"]
+        Mon["Monitoring / logs"]
+    end
+
+    subgraph Dana["ns: tenant-danantara"]
+        DApp["danantara-app<br/>(dedicated Next.js: UI + BFF)"]
+    end
+    subgraph Pert["ns: tenant-pertamina"]
+        PApp["pertamina-app<br/>(dedicated Next.js: UI + BFF)"]
+    end
+
+    subgraph PG["Shared PostgreSQL instance"]
+        SD[("tenant_danantara &mdash; danantara role RW")]
+        SP[("tenant_pertamina &mdash; pertamina role RW")]
+        SH[("shared (optional) &mdash; app roles RO")]
+    end
+
+    Users -->|*.nexorus.io| Ingress
+    Ingress --> DApp
+    Ingress --> PApp
+    DApp -->|OIDC| IdP
+    PApp -->|OIDC| IdP
+    CD -.->|reconciles infra/tenants/*.yaml| Dana
+    CD -.->|reconciles| Pert
+    DApp -->|scoped role, only if app needs DB| SD
+    PApp -->|scoped role| SP
+    DApp -.->|RO if opted in| SH
+    PApp -.->|RO if opted in| SH
+    </div></div>
+    <div class="dcap">Platform plane is thin: IdP + CD + monitoring. Each tenant namespace runs exactly one dedicated app. Postgres access is per-schema and conditional.</div>
+
+    <h3>Key points</h3>
+    <ul class="list">
+      <li><b>Platform namespace is thin:</b> central IdP, the CD controller, observability. No widget registry, no control-plane API, no model gateway, no <code>control</code> schema.</li>
+      <li><b>Each tenant namespace runs exactly one dedicated app</b> (its own image), plus <code>NetworkPolicy</code> and <code>ResourceQuota</code>. The app bundles both its UI and its BFF.</li>
+      <li><b>Shared Postgres, schema-per-tenant:</b> an app that persists data connects with a role scoped to its own <code>tenant_&lt;slug&gt;</code> only. Apps that don't need a DB get no schema, no role, no credentials.</li>
+      <li><b>Optional <code>shared</code> schema:</b> common market/reference data lives once with read-only grants. Omitted entirely if unused.</li>
+    </ul>
+
+    <h3>How this differs from Variant A</h3>
+    <table class="tb">
+      <thead><tr><th>Concern</th><th>Variant A (federated widgets)</th><th>Variant B (dedicated apps)</th></tr></thead>
+      <tbody>
+        <tr><td>App</td><td>One configurable app, widgets at runtime</td><td><b>One dedicated app per tenant</b></td></tr>
+        <tr><td>Widget reuse</td><td>Runtime federation via registry/CDN</td><td><b>Build-time</b> via shared packages</td></tr>
+        <tr><td>Tenant config</td><td><code>control</code> DB, rendered into namespace</td><td><b>Git manifest</b>, reconciled by CD</td></tr>
+        <tr><td>Control plane</td><td>Onboarding API service</td><td><b>Git + CD controller</b></td></tr>
+        <tr><td>Database</td><td>Always per-tenant schema</td><td>Per-tenant schema <b>only if the app needs it</b></td></tr>
+        <tr><td>Best for</td><td>Many tenants, mostly common widgets</td><td>Few, highly bespoke tenants</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- MONOREPO -->
+  <section class="doc" id="monorepo">
+    <div class="sn">04</div>
+    <h2>Code Plane &mdash; the Monorepo</h2>
+    <p>All tenant apps and shared code live in <strong>one monorepo</strong>, built with Turbo.</p>
+<pre class="language-bash"><code class="language-bash">nexorus-tenants/
+├── apps/
+│   ├── _template/            # scaffold baseline for a new tenant app
+│   ├── danantara/            # dedicated app — bespoke pages, widgets, branding
+│   │   ├── app/              # Next.js routes + BFF (/api/v1/*)
+│   │   ├── widgets/          # tenant-bespoke widgets (compiled only here)
+│   │   └── Dockerfile        # → registry.nexorus.io/danantara-app
+│   └── pertamina/
+├── packages/
+│   ├── widgets/              # shared widget library (build-time reuse)
+│   ├── ui/                   # design system / theme tokens
+│   └── bff-core/             # OIDC client, schema-scoped DB client, API helpers, RBAC
+├── infra/
+│   ├── chart/                # ONE parameterized Helm chart for every tenant app
+│   └── tenants/              # &lt;slug&gt;.yaml — the tenant manifest (GitOps source of truth)
+└── turbo.json                # build orchestration (only changed apps rebuild)</code></pre>
+
+    <div class="cards c2">
+      <div class="ic"><h4>Build-time reuse, pinned per app</h4><p>An app imports <code>@nexorus/widgets</code>, <code>@nexorus/ui</code>, <code>@nexorus/bff-core</code>. A shared improvement reaches a tenant only when <em>that tenant's app is rebuilt and redeployed</em> &mdash; the same opt-in upgrade property Variant A gets from pinned widget versions, here via the dependency graph + per-app image tags.</p></div>
+      <div class="ic"><h4>Bespoke code is physically isolated</h4><p>A tenant's custom widgets live inside its own <code>apps/&lt;slug&gt;/widgets</code> folder; no other tenant's build ever compiles or ships them. Isolation at the build layer, before any runtime control even applies.</p></div>
+    </div>
+  </section>
+
+  <!-- MANIFEST -->
+  <section class="doc" id="manifest">
+    <div class="sn">05</div>
+    <h2>Tenant Manifest</h2>
+    <p class="lead">Everything environment-specific about a tenant is one declarative, version-controlled file. <strong>Git is the source of truth</strong> &mdash; there is no control-plane database.</p>
+<pre class="language-yaml"><code class="language-yaml">slug: danantara
+displayName: Danantara Indonesia
+subdomain: danantara                 # → danantara.nexorus.io
+locale: id-ID
+image:
+  repository: registry.nexorus.io/danantara-app
+  tag: "1.4.0"                       # pinned per tenant; bump to roll out a change
+database:
+  required: true                     # ← the "if the tenant requires DB access" flag
+  schema: tenant_danantara
+  sharedReadOnly: true               # also grant RO on the shared schema
+identity:
+  org: danantara                     # IdP org / realm
+  client: danantara-app              # OIDC client id
+resources:
+  quota: standard                    # maps to a ResourceQuota/LimitRange preset
+status: active                       # active | suspended</code></pre>
+    <div class="note"><span class="l">Git is the control plane</span>The CD controller reconciles this file into cluster state. <strong>Git history is the audit trail; <code>git revert</code> is the rollback.</strong> This file replaces Variant A's control-plane DB row.</div>
+  </section>
+
+  <!-- DATA MODEL -->
+  <section class="doc" id="data-model">
+    <div class="sn">06</div>
+    <h2>Data Model</h2>
+    <p>Same dividing principle as Variant A &mdash; <strong>public facts are shared; a tenant's lens on them is private</strong> &mdash; but simpler, because config lives in Git, not the database.</p>
+    <table class="tb">
+      <thead><tr><th>Schema</th><th>Exists when</th><th>Contents</th><th>Access</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><b><code>tenant_&lt;slug&gt;</code></b></td>
+          <td><code>database.required: true</code></td>
+          <td>All of that tenant's private, derived data (analytics, AI artifacts, audit, saved views)</td>
+          <td><b>RW</b> by that tenant's role only; no cross-tenant grant</td>
+        </tr>
+        <tr>
+          <td><b><code>shared</code></b> <span class="muted">(optional)</span></td>
+          <td>Multiple apps need common data</td>
+          <td>Market/reference data (IDX, forex, commodities, entity master)</td>
+          <td><b>RO</b> to roles that opt in (<code>sharedReadOnly: true</code>); written only by central ingestion</td>
+        </tr>
+        <tr>
+          <td><b><code>control</code></b></td>
+          <td class="no">&mdash; not used</td>
+          <td class="muted">Tenant config is in Git, not the database</td>
+          <td class="no">&mdash;</td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="note good"><span class="l">Conditional provisioning</span>When <code>database.required</code> is <strong>false</strong>, the pipeline skips schema/role/secret creation entirely &mdash; the app runs stateless or against its own external store. When <strong>true</strong>, a provisioning Job creates the schema, a login role scoped to it (and a RO grant on <code>shared</code> if requested), and writes the credentials into the tenant namespace as a Secret.</div>
+  </section>
+
+  <!-- ONBOARDING -->
+  <section class="doc" id="onboarding">
+    <div class="sn">07</div>
+    <h2>Onboarding Pipeline</h2>
+    <p class="lead">Two phases: humans develop the app, then merging the PR drives all infrastructure declaratively. There is <strong>no orchestrator service</strong> &mdash; CI/CD plus the CD controller reconcile Git state into the cluster.</p>
+
+    <div class="lanes3">
+      <div class="lane develop">
+        <div class="h">Phase 1 &mdash; Develop (engineers)</div>
+        <ul>
+          <li><b>1 &middot; Scaffold</b> &mdash; <code>pnpm new-tenant pertamina --blueprint=soe --db</code> <span>&rarr; apps/pertamina (from _template) + infra/tenants/pertamina.yaml</span></li>
+          <li><b>2 &middot; Customize</b> &mdash; branding, pages, bespoke widgets; pick shared widgets from packages/widgets</li>
+          <li><b>3 &middot; PR</b> &mdash; open pull request &rarr; review &rarr; merge to main</li>
+        </ul>
+      </div>
+      <div class="lane reconcile">
+        <div class="h">Phase 2 &mdash; Reconcile (automation)</div>
+        <ul>
+          <li><b>4 &middot; CI build</b> &mdash; turbo build (changed app only) &rarr; push <code>pertamina-app:1.0.0</code></li>
+          <li><b>5 &middot; CD reconcile</b> &mdash; namespace, DB (if required), IdP, deploy, smoke test</li>
+          <li><b>6 &middot; Live</b> &mdash; pertamina.nexorus.io serving; status in CD UI</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="diagram tall"><div class="mermaid">
+flowchart TB
+    Start(["pnpm new-tenant pertamina<br/>--blueprint=soe --db"])
+    Scaffold["SCAFFOLD<br/>apps/pertamina (from _template)<br/>+ infra/tenants/pertamina.yaml"]
+    Customize["CUSTOMIZE<br/>branding, pages, bespoke widgets,<br/>pick shared widgets"]
+    PR["PR &rarr; review &rarr; merge to main"]
+    CI["CI BUILD<br/>turbo build (changed app)<br/>docker push pertamina-app:1.0.0"]
+
+    subgraph CDR["CD RECONCILE infra/tenants/pertamina.yaml"]
+        NS["a &middot; NAMESPACE<br/>ns + ResourceQuota + NetworkPolicy + RBAC"]
+        DB{"b &middot; database.required?"}
+        DBJob["Job: CREATE SCHEMA tenant_pertamina<br/>scoped role (+ RO on shared)<br/>creds &rarr; Secret"]
+        IDP["c &middot; IDENTITY<br/>IdP org + OIDC client<br/>client secret &rarr; Secret"]
+        Deploy["d &middot; DEPLOY (Helm from infra/chart)<br/>app + Service + Ingress + TLS"]
+        Smoke{"e &middot; SMOKE TEST<br/>app up? OIDC ok? r/w schema? 200?"}
+    end
+
+    Live(["pertamina.nexorus.io live"])
+    Degraded["CD reports degraded<br/>fix forward or git revert"]
+
+    Start --> Scaffold --> Customize --> PR --> CI --> NS
+    NS --> DB
+    DB -->|yes| DBJob --> IDP
+    DB -->|no| IDP
+    IDP --> Deploy --> Smoke
+    Smoke -->|pass| Live
+    Smoke -.->|fail| Degraded
+
+    style Live fill:#dcfce7,stroke:#22c55e
+    style Degraded fill:#fef2f2,stroke:#ef4444
+    style DBJob fill:#fffbeb,stroke:#f59e0b
+    </div></div>
+    <div class="dcap">Every reconcile step is idempotent &mdash; re-running converges to the same state, so a failed sync is safe to retry once the cause is fixed.</div>
+  </section>
+
+  <!-- DAY 2 -->
+  <section class="doc" id="day2">
+    <div class="sn">08</div>
+    <h2>Blueprints &amp; Day-2 Operations</h2>
+
+    <h3>Blueprints</h3>
+    <p><code>--blueprint=&lt;name&gt;</code> selects which <code>_template</code> variant and which default <code>packages/widgets</code> set the scaffold wires in (e.g. <code>soe</code> / <code>sovereign-wealth</code> bundles reputation + portfolio + briefing widgets and the <code>--db</code> flag). Blueprints are <strong>curated</strong>; per-tenant deviation happens by editing the scaffolded app, not by forking the template.</p>
+
+    <h3>Day-2 operations</h3>
+    <div class="cards c2">
+      <div class="ic"><h4>App update / shared-widget fix</h4><p>Rebuild that tenant's app, bump <code>image.tag</code> in its yaml, merge &rarr; CD rolls it out. Each tenant adopts on its own schedule.</p></div>
+      <div class="ic"><h4>Config change</h4><p>Quota, enable shared RO, SSO &mdash; edit the yaml, merge.</p></div>
+      <div class="ic"><h4>Suspend</h4><p><code>status: suspended</code> &rarr; CD scales the deployment to zero, keeps data.</p></div>
+      <div class="ic"><h4>Offboard</h4><p>Delete the app folder + yaml; a Job archives then drops the schema; Git history retains the full audit trail.</p></div>
+    </div>
+  </section>
+
+  <!-- AUTH -->
+  <section class="doc" id="auth">
+    <div class="sn">09</div>
+    <h2>Auth &amp; Isolation</h2>
+    <p>Central Keycloak; <strong>each app is its own OIDC client in its own org</strong>. The subdomain is never trusted on its own &mdash; the <code>org</code> claim is the authority.</p>
+    <div class="diagram tall"><div class="mermaid">
+sequenceDiagram
+    autonumber
+    actor U as Tenant user
+    participant App as pertamina-app (UI + BFF)
+    participant IdP as Central IdP (Keycloak)
+    participant PG as Shared Postgres
+
+    U->>App: open pertamina.nexorus.io
+    App->>IdP: redirect (OIDC, client=pertamina-app)
+    IdP->>IdP: authenticate against org=pertamina
+    IdP-->>App: token with org + role
+    App->>App: validate token signature
+    App->>App: assert org claim == this app org
+    App->>App: enforce RBAC per route
+    alt app uses a database
+        App->>PG: query as pertamina role
+        PG-->>App: tenant_pertamina (RW) + shared (RO)
+    end
+    App-->>U: render dashboard
+    </div></div>
+    <p>Per-tenant enterprise SSO federates in later as an alternate connection on that org, with <strong>no app code change</strong>.</p>
+
+    <h3>Isolation &mdash; defense in depth</h3>
+    <ol class="list">
+      <li><b>Build:</b> bespoke tenant code is in separate app folders; other apps never compile it.</li>
+      <li><b>Network:</b> <code>NetworkPolicy</code> allows egress only to the IdP, shared Postgres, and required platform endpoints; cross-tenant traffic denied.</li>
+      <li><b>Database:</b> per-schema login role; RW on own <code>tenant_&lt;slug&gt;</code> only, optional RO on <code>shared</code>, <b>no grant</b> to any other tenant schema.</li>
+      <li><b>Identity:</b> org-scoped tokens; the BFF rejects a token whose <code>org</code> &ne; the app's org.</li>
+      <li><b>Secrets:</b> DB creds and OIDC client secret live only in the tenant namespace.</li>
+      <li><b>Quotas:</b> <code>ResourceQuota</code>/<code>LimitRange</code> per namespace contain noisy neighbors.</li>
+    </ol>
+    <div class="note good"><span class="l">Graceful degradation</span>Shared data stale/down &rarr; app serves cached last-known; an app that uses AI falls back to a deterministic scripted path (as the demo's <code>lib/ai/scripted.ts</code> already does).</div>
+  </section>
+
+  <!-- TESTING -->
+  <section class="doc" id="testing">
+    <div class="sn">10</div>
+    <h2>Testing Strategy</h2>
+    <div class="cards c2">
+      <div class="ic"><h4>Unit / integration</h4><p><b>vitest</b> on shared packages (<code>widgets</code>, <code>ui</code>, <code>bff-core</code> &mdash; OIDC validation, RBAC, schema-scoped DB client) plus per-app tests. Turbo runs only the <b>affected</b> projects on each change.</p></div>
+      <div class="ic"><h4>Onboarding smoke test</h4><p>The pipeline's smoke-test Job (step 5e) runs on every provision and is the gate before a tenant is considered live.</p></div>
+      <div class="ic"><h4>Cross-tenant isolation suite</h4><p>NetworkPolicy egress, cross-schema query attempts, and <code>org</code>-mismatch tokens must all <b>fail closed</b>.</p></div>
+      <div class="ic"><h4>Conditional-DB tests</h4><p>A <code>database.required: false</code> tenant must provision with <b>no</b> schema, role, or DB secret created.</p></div>
+    </div>
+  </section>
+
+  <!-- RISKS -->
+  <section class="doc" id="risks">
+    <div class="sn">11</div>
+    <h2>Risks</h2>
+    <table class="tb">
+      <thead><tr><th>Risk</th><th>Mitigation</th></tr></thead>
+      <tbody>
+        <tr><td><b>Fan-out maintenance</b> &mdash; a shared fix needs N app rebuilds/redeploys</td><td>Turbo affected-only builds; pinned per-app tags make rollout deliberate; revisit Variant A when tenant count grows</td></tr>
+        <tr><td><b>Drift between apps</b> as they diverge</td><td>Keep logic in <code>packages/*</code>; <code>_template</code> stays current; periodic &ldquo;sync&rdquo; PRs to bump shared deps</td></tr>
+        <tr><td>Provisioning partial failure</td><td>Every CD reconcile step idempotent; CD reports degraded; fix-forward or <code>git revert</code></td></tr>
+        <tr><td>Shared Postgres as a single point of contention</td><td>Connection limits + quotas per role; &ldquo;dedicated tier&rdquo; = move a hot tenant to its own instance (config-only change to its yaml)</td></tr>
+        <tr><td>Image sprawl in the registry</td><td>Retention policy on tenant image tags; one chart, not one chart per tenant</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- VARIANT A -->
+  <section class="doc" id="variant-a">
+    <div class="sn">12</div>
+    <h2>Relationship to Variant A &amp; Migration Path</h2>
+    <p>Variant B is the <strong>lower-investment starting point</strong> and a natural <strong>stepping stone</strong> to the federated-widget platform.</p>
+    <ul class="list">
+      <li>Start here while tenants are few and bespoke &mdash; no platform services to build.</li>
+      <li><code>packages/widgets</code> is the <b>seed</b> of Variant A's widget registry; <code>infra/tenants/*.yaml</code> maps directly onto Variant A's tenant manifest; the central IdP and schema-per-tenant model are <b>identical</b> across both variants.</li>
+      <li>When tenant count and widget commonality justify it, promote the shared widget library into a federated registry and the Git manifests into a control-plane DB &mdash; migrate to Variant A <b>without rethinking auth or data isolation</b>.</li>
+    </ul>
+    <table class="tb">
+      <thead><tr><th>Dimension</th><th>Variant B wins</th><th>Variant A wins</th></tr></thead>
+      <tbody>
+        <tr><td>Bespoke tenants</td><td class="yes">&check; natural fit</td><td>forced through &ldquo;custom widgets&rdquo;</td></tr>
+        <tr><td>Team size / infra to build</td><td class="yes">&check; no control plane, no registry</td><td>needs both built + operated</td></tr>
+        <tr><td>Tenant count</td><td>fine to ~15&ndash;20</td><td class="yes">&check; scales: tenant = config row</td></tr>
+        <tr><td>Fleet-wide fix</td><td>N rebuilds/redeploys</td><td class="yes">&check; one manifest change</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- IMPLEMENTATION -->
+  <section class="doc" id="implementation">
+    <div class="sn">13</div>
+    <h2>Implementation Plan</h2>
+    <p>Separate <strong>spec &rarr; plan &rarr; build</strong> cycles, in dependency order:</p>
+    <table class="tb">
+      <thead><tr><th>#</th><th>Work package</th><th>Scope</th><th>Why this order</th></tr></thead>
+      <tbody>
+        <tr><td><b>1</b></td><td><code>monorepo-foundation</code></td><td>Turbo monorepo, <code>packages/{ui,widgets,bff-core}</code>, <code>_template</code> app, <code>new-tenant</code> scaffold CLI</td><td>Everything else builds on the shared code + scaffold</td></tr>
+        <tr><td><b>2</b></td><td><code>tenant-helm-chart</code></td><td>One parameterized chart + the <code>infra/tenants/&lt;slug&gt;.yaml</code> schema; namespace, quota, NetworkPolicy, ingress/TLS</td><td>Defines the deploy target the pipeline reconciles into</td></tr>
+        <tr><td><b>3</b></td><td><code>db-provisioning</code></td><td>Conditional schema/role/secret provisioning Job + the schema-scoped DB client in <code>bff-core</code></td><td>The conditional-DB flag needs both the Job and the client</td></tr>
+        <tr><td><b>4</b></td><td><code>gitops-cd</code></td><td>CD wiring (CI build &rarr; image; controller reconciles tenant yamls) + smoke-test Job + isolation test suite</td><td>Composes all of the above into the end-to-end flow</td></tr>
+      </tbody>
+    </table>
+    <div class="note"><span class="l">Revision history</span><b>v1.0</b> &mdash; 2026-06-04 &mdash; Initial approved design (Variant B &mdash; dedicated apps per tenant).</div>
+  </section>
+
+</main>
+
+<div id="lightbox">
+  <button id="lb-close">&times; close</button>
+  <div class="lb-card" id="lb-card"></div>
+  <div id="lb-hint">click outside or press Esc to close</div>
+</div>
+
+<button id="totop" title="Back to top">&uarr; Top</button>
+
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-core.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-clike.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-javascript.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-typescript.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-bash.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-yaml.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-json.min.js"></script>
+<script>
+  if (window.mermaid) {
+    mermaid.initialize({ startOnLoad: true, theme: 'default', securityLevel: 'loose',
+      flowchart: { useMaxWidth: true, htmlLabels: true }, sequence: { useMaxWidth: true } });
+  }
+  if (window.Prism) { Prism.highlightAll(); }
+
+  (function () {
+    var links = Array.prototype.slice.call(document.querySelectorAll('.nav-link'));
+    var map = {};
+    links.forEach(function (l) { map[l.getAttribute('href').slice(1)] = l; });
+    var sections = Array.prototype.slice.call(document.querySelectorAll('section.doc'));
+
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        if (e.isIntersecting) {
+          links.forEach(function (l) { l.classList.remove('active'); });
+          var a = map[e.target.id]; if (a) { a.classList.add('active'); }
+        }
+      });
+    }, { rootMargin: '-15% 0px -75% 0px', threshold: 0 });
+    sections.forEach(function (s) { io.observe(s); });
+
+    var totop = document.getElementById('totop');
+    window.addEventListener('scroll', function () {
+      totop.classList.toggle('show', window.scrollY > 600);
+    });
+    totop.addEventListener('click', function () { window.scrollTo({ top: 0, behavior: 'smooth' }); });
+  })();
+</script>
+<script>
+  (function () {
+    var lb = document.getElementById('lightbox');
+    var lbCard = document.getElementById('lb-card');
+    function openLightbox(svg) {
+      lbCard.innerHTML = '';
+      var clone = svg.cloneNode(true);
+      clone.removeAttribute('width');
+      clone.removeAttribute('height');
+      clone.style.maxWidth = 'none';
+      clone.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+      var vb = (clone.getAttribute('viewBox') || '').split(/\s+/);
+      var ratio = (vb.length === 4 && parseFloat(vb[3])) ? (parseFloat(vb[2]) / parseFloat(vb[3])) : 1.4;
+      var availW = window.innerWidth * 0.9;
+      var availH = window.innerHeight * 0.84;
+      if (ratio > availW / availH) { clone.style.width = availW + 'px'; clone.style.height = 'auto'; }
+      else { clone.style.height = availH + 'px'; clone.style.width = 'auto'; }
+      lbCard.appendChild(clone);
+      lb.classList.add('show');
+      document.body.style.overflow = 'hidden';
+    }
+    function closeLightbox() { lb.classList.remove('show'); lbCard.innerHTML = ''; document.body.style.overflow = ''; }
+
+    Array.prototype.forEach.call(document.querySelectorAll('.diagram'), function (d) {
+      d.addEventListener('click', function () {
+        var svg = d.querySelector('svg');
+        if (svg) openLightbox(svg);
+      });
+    });
+    lb.addEventListener('click', function (e) { if (e.target === lb || e.target.id === 'lb-close') closeLightbox(); });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeLightbox(); });
+  })();
+</script>
+</body>
+</html>
