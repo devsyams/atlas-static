@@ -266,7 +266,7 @@ learn a high-severity incident just landed. Push-based updates for the ticker an
 
 ### A7. Danantara CEO Command Wall (zero-click demo)
 
-- **Version:** 6.0 · **Stage:** 3-act · **Sprint:** demo · **Status:** Built · **Spec ref:** `docs/superpowers/specs/2026-06-02-danantara-ceo-command-design.md` · **Owner:** Dev A
+- **Version:** 12.0 · **Stage:** 3-act · **Sprint:** demo · **Status:** Built · **Spec ref:** `docs/superpowers/specs/2026-06-02-danantara-ceo-command-design.md` · **Owner:** Dev A
 
 #### PM
 **Background (why):** Client feedback on the Danantara demo: the real audience is the **CEO**, who
@@ -294,10 +294,61 @@ density) is illegible to him at desk/TV distance — the entire artifact fails i
 built for can't read it. Readability becomes a hard requirement: **nothing below 16px**, names at
 20px, key numbers larger still. All 20 items per board are kept; panels scroll vertically.
 
+*(v12.0)* The demo audience for this build is English-speaking, so the wall's **UI chrome is
+localized to English** — panel headings, section/column labels, badges (RISING / ESCALATING), metric
+labels, the AI ticker narration templates, detail-modal labels, and units (reach in `M`, counts in
+`K`/`M`, "reach"/"mentions"). The **content stays Indonesian** as instructed: topic titles, BUMN
+names, headlines + their timestamps, the AI lines, and the category/sector taxonomy tags (the latter
+also shared read-only with the Sovereign Command build). So a row reads as an English frame around an
+Indonesian story — e.g. *POSITIVE TOPICS · "Hilirisasi nikel & investasi smelter" · 34.0M reach*.
+
+*(v11.0)* BUMN-board metric rework. The abstract **−100…+100 net-sentiment score is removed** (even
+with the tooltip it read as jargon to the CEO; the green↔red row tint already carries the sign). In
+its place the board gains the metrics the CEO actually scans: a **sequential rank number** per row
+(1…20, beside the existing movement arrow — matching the topic board), and, inside **each topic
+cell**, that topic's **reach value (jt jangkauan) and sentiment %** (the pie's label) — so every named
+good/bad story shows how far it travelled and how lopsided it is. (BUMN carry no reach of their own;
+the figure is the linked topic's reach.)
+
+*(v10.0)* Polish pass. (1) The BUMN rows name a positive and a negative topic but show no *strength*
+of each — so each topic cell now carries its **own mini sentiment pie** (same per-item pie used on the
+topic board), making "how positive / how negative is this story" legible per cell. (2) The net-score
+number beside each BUMN name was unlabeled and drew a "what is this?" — it gets a **tooltip** ("Skor
+sentimen bersih −100…+100"). (3) The Isu Danantara per-row **pie + meta line is tidied** (consistent
+alignment: pie left, reach · velocity right) and the pie-totals construction is factored into one
+shared helper so both boards build pies identically.
+
+*(v9.0)* On review, the v8.0 single list lost something the CEO relied on: the **explicit TOPIK
+POSITIF / TOPIK NEGATIF split**. For topics the labeled good-vs-bad columns matter more than visual
+parity with the BUMN list, so the **two side-by-side sub-columns return**. The v7.0 messy-title
+problem is solved a different way this time: instead of widening the column (which forced the flat
+list), each row now **stacks the title on its own line above a compact meta line** (pie + velocity),
+so the title owns the full column width and wraps cleanly (balanced) rather than colliding with the
+pie. Pie stays on every row.
+
+*(v8.0)* Client liked the v7.0 BUMN single-row list and wants the **topic board to match it**: one
+full-width list, one topic per row, **but the per-topic pie chart stays** (it is the topic board's
+sentiment read). This also fixes a v7.0 side-effect — in the cramped side-by-side sub-columns the now
+un-truncated titles wrapped across 2–3 lines and looked messy. A single full-width list gives each
+title the whole panel width, so it reads on one line (long ones wrap cleanly, balanced). The
+side-by-side **TOPIK POSITIF / TOPIK NEGATIF** sub-columns are retired; the list instead **leads with
+the most-negative topics** (problems first, mirroring the BUMN list) and carries the same green↔red
+per-row sentiment tint.
+
+*(v7.0)* Two refinements from the latest viewing. **Topic board:** the per-row sparkline is
+**noise** to the CEO — he reads the headline and the sentiment, not a 6-point trend squiggle — so it
+is dropped, and the per-row sentiment **pie takes the sparkline's trailing slot** (the eye already
+goes there for the "how bad is this" read). Topic **titles must show in full** — truncating the one
+piece of text the CEO actually reads is self-defeating; titles wrap. **BUMN board:** the side-by-side
+positive/negative sub-columns are replaced by a **single full-width list, one BUMN per row**, and
+each row answers the CEO's real question directly — *for this company, what's the good story and
+what's the bad story* — by naming its **leading positive topic and leading negative topic** instead
+of an abstract pie. One BUMN, one positive topic, one negative topic, per line.
+
 **Acceptance criteria:**
 - **AC1** *(amended v4.0)* — *Given* `/danantara` loads, *When* no user interaction occurs, *Then* the issue board, BUMN sentiment board, and AI brief ticker all render and animate on their own. *(Spotlight removed in v4.0.)*
-- **AC2** *(amended v4.0)* — *Given* the issue board, *When* the simulation ticks, *Then* issues stay live-ranked **within their sentiment group** with re-rank animation, per-row sparkline, velocity %, and status badge.
-- **AC3** *(amended v4.0)* — *Given* the BUMN board, *When* rendered, *Then* exactly 20 BUMN tiles show net sentiment (−100..100) as a green↔red heatmap with trend spark, **grouped by sentiment sign** (see AC13).
+- **AC2** *(amended v4.0, v7.0)* — *Given* the issue board, *When* the simulation ticks, *Then* issues stay live-ranked **within their sentiment group** with re-rank animation, velocity %, and status badge. *(v7.0: the per-row sparkline is removed; the per-row sentiment pie moves to the trailing slot it vacated.)*
+- **AC3** *(amended v4.0, v7.0, v11.0)* — *Given* the BUMN board, *When* rendered, *Then* all 20 BUMN render as a **single full-width list, one BUMN per row** (most-negative first), each row prefixed with a **sequential rank number** (1…20) plus its rank-movement badge, with net sentiment encoded as a **green↔red row tint** (the explicit −100..100 score number is removed in v11.0). *(v7.0: replaces the grouped heatmap tiles; see AC16.)*
 - **AC4** — *(removed in v4.0 — breaking-news takeover and spotlight pin dropped; escalating issues keep their ESKALASI badge and row pulse on the board.)*
 - **AC5** — *(removed in v4.0 — scripted arcs still drive board badges, but no takeover to trigger; presenter hotkey `E` dropped.)*
 - **AC6** — *Given* the old dashboard, *When* `/danantara-v2` is opened, *Then* the full Sovereign Command experience works exactly as it does today.
@@ -306,10 +357,12 @@ built for can't read it. Readability becomes a hard requirement: **nothing below
 - **AC9** *(amended v5.0)* — *Given* any issue or BUMN, *When* it renders on a board, *Then* its sentiment is shown as a **mini pie chart** with explicit positive and negative **% labels** (green/red), not just a net score; positive + negative + neutral shares sum to 100%. The detail modal keeps the labeled split bar with counts.
 - **AC10** *(amended v4.0)* — *Given* any issue row or BUMN tile, *When* it is clicked/tapped, *Then* a detail panel opens with the full picture (live trend chart, sentiment % + counts, rank movement, velocity/reach/mention stats, headlines for issues / related issues for BUMN, related-BUMN chips for issues / top issue for BUMN), closable via Esc, the ✕ button, or clicking the overlay; the simulation keeps ticking underneath. Clicking remains optional — the zero-click experience (AC1) is unchanged.
 - **AC11** *(v4.0)* — *Given* `/danantara` on a desktop/TV viewport, *When* it renders, *Then* the wall is **two columns**: Danantara topics on the left, BUMN sentiment on the right — no third (Spotlight) column and no takeover overlay.
-- **AC12** *(v4.0, amended v5.0)* — *Given* the topic board, *When* it renders, *Then* topics are split into a **TOPIK POSITIF** sub-column (positive mentions > negative mentions) and a **TOPIK NEGATIF** sub-column (otherwise), rendered **side by side**, each ranked by reach (largest first), with counts shown; a topic moves between sub-columns live when its sentiment flips.
-- **AC13** *(v4.0, amended v5.0)* — *Given* the BUMN board, *When* it renders, *Then* BUMN are split into a **SENTIMEN POSITIF** sub-column (net sentiment ≥ 0) and a **SENTIMEN NEGATIF** sub-column (net sentiment < 0), rendered **side by side**, positive ranked most-positive first, negative ranked most-negative first, with counts shown; a BUMN moves between sub-columns live when its net sentiment flips sign.
-- **AC14** *(v4.0, amended v5.0)* — *Given* any topic row or BUMN tile, *When* it renders, *Then* it carries its **own pie/donut chart** of that item's positive / negative / neutral **mention share** with % labels, updating live with the tick. There is **no** panel-level aggregate pie.
+- **AC12** *(v4.0, amended v5.0, v7.0, v8.0, v9.0)* — *Given* the topic board, *When* it renders, *Then* topics are split into a **TOPIK POSITIF** sub-column (positive mentions > negative) and a **TOPIK NEGATIF** sub-column (otherwise), rendered **side by side**, each ranked by reach (largest first) with counts shown; a topic moves between sub-columns live when its sentiment flips. Each row **stacks the full topic title on its own line** (wraps cleanly/balanced, never truncates) **above** a compact meta line carrying the per-topic pie + velocity %, plus the status badge — so the title owns the full column width and never collides with the pie. *(v9.0 restores the v5–v7 side-by-side columns retired in v8.0, with the stacked-row fix for title legibility.)*
+- **AC13** *(v4.0, amended v5.0, retired v7.0)* — *(retired in v7.0 — the BUMN board no longer groups into side-by-side positive/negative sub-columns; it is a single per-row list, see AC16. Net-sentiment grouping is still available via `groupBumnBySentiment`, used by the detail modal / kept for reuse.)*
+- **AC14** *(v4.0, amended v5.0, v7.0, v10.0)* — *Given* any **topic row** or any **present BUMN topic cell** (positive/negative), *When* it renders, *Then* it carries its **own pie/donut chart** of that topic's positive / negative / neutral **mention share** with % labels, updating live with the tick. There is **no** panel-level aggregate pie. *(v10.0: pies return to the BUMN board — now one per topic cell, not one per BUMN tile.)*
 - **AC15** *(v6.0)* — *Given* the CEO wall (boards, header, ticker, and the detail modal), *When* any text renders, *Then* **no text is smaller than 16px**; topic titles and BUMN names are **at least 20px**; key numbers (sentiment scores, header metrics) are **at least 24px**. Lists keep all 20 items and scroll vertically.
+- **AC17** *(v12.0)* — *Given* the CEO wall (boards, header, ticker, detail modal), *When* any **UI chrome** renders, *Then* it is in **English** (panel/section/column headings, status badges RISING/ESCALATING, metric labels, AI-ticker narration templates, modal labels, and units — reach in `M`, counts in `K`/`M`). *Given* any **content** (topic title, BUMN name, headline + timestamp, AI line, category/sector tag), *Then* it remains **Indonesian**. This supersedes the Indonesian label strings quoted in earlier ACs/QA (e.g. "TOPIK POSITIF" → "POSITIVE TOPICS", "Tidak ada…" → "No …", "jt"/"jangkauan" → "M"/"reach").
+- **AC16** *(v7.0, amended v10.0, v11.0)* — *Given* the BUMN board, *When* a BUMN row renders, *Then* it shows, in one row: the BUMN (sequential **rank number**, rank-movement badge, name — **no net-sentiment score**, v11.0), its **leading positive topic** and its **leading negative topic** — each being the highest-reach `CeoIssue` linked to that BUMN (via `relatedBumn`) whose tone is positive (positive mentions > negative) / negative (otherwise). Each **present topic cell** carries its own mini sentiment pie (AC14) **plus that topic's reach value (jt jangkauan) and sentiment %** (v11.0). When a BUMN has no linked topic of a given tone, that cell shows a *"Tidak ada topik …"* placeholder (no pie). Titles wrap; topic cells are color-coded green/red. Clicking the row still opens the BUMN detail (AC10 unchanged).
 
 #### Architecture
 **Impact — files add/change:**
@@ -332,6 +385,20 @@ built for can't read it. Readability becomes a hard requirement: **nothing below
 - *(v5.0)* `change` `components/danantara/ceo/{IssueBoard,BumnHeatboard}.tsx` — positive/negative groups become side-by-side sub-columns; rows/tiles swap the SentimentSplit bar for the mini pie; panel-level pie removed
 - *(v5.0)* `keep` `components/danantara/ceo/SentimentSplit.tsx` — full variant still used by the detail modal
 - *(v6.0)* `change` all CEO wall components — readability type scale: `{IssueBoard,BumnHeatboard,SentimentPie,HeaderStrip,AiBriefTicker,RankBadge,Sparkline,DetailModal,SentimentSplit}.tsx` (16px floor / 20px names / 24px key numbers; pies & sparklines scaled up to match)
+- *(v7.0)* `add` `lib/danantara/ceo/engine.ts` → `topicsForBumn(bumnId, issues)` pure selector (leading positive / negative linked topic by reach)
+- *(v7.0)* `change` `components/danantara/ceo/IssueBoard.tsx` — drop per-row `Sparkline`; move the mini `SentimentPie` into the vacated trailing slot; topic title wraps (remove `truncate`)
+- *(v7.0)* `change` `components/danantara/ceo/BumnHeatboard.tsx` — replace grouped tiles with a single per-row list; each row shows BUMN identity + leading positive topic + leading negative topic (no per-tile pie/sparkline)
+- *(v7.0)* `change` `components/danantara/ceo/CeoCommand.tsx` — pass `issues={state.issues}` to `BumnHeatboard` so rows can resolve their linked topics
+- *(v7.0)* `keep` `lib/danantara/ceo/engine.ts` `groupBumnBySentiment` + `components/.../Sparkline.tsx` (still used elsewhere / by the topic detail)
+- *(v8.0)* `add` `lib/danantara/ceo/format.ts` → `sentimentTint(sentiment, alpha)` shared green↔red row tint
+- *(v8.0)* `change` `components/danantara/ceo/IssueBoard.tsx` — single full-width list (drop side-by-side `IssueGroup` sub-columns); order most-negative first via `groupIssuesBySentiment`; per-row tint; keep pie/velocity/badge; balanced title wrap
+- *(v8.0)* `change` `components/danantara/ceo/BumnHeatboard.tsx` — use shared `sentimentTint` (was a local `heatColor`)
+- *(v9.0)* `change` `components/danantara/ceo/IssueBoard.tsx` — restore side-by-side `IssueGroup` TOPIK POSITIF / TOPIK NEGATIF sub-columns (`issue-groups` grid-cols-2); redesign `IssueRow` to a stacked card (title line over a pie+velocity meta line) so narrow-column titles stay legible; keep per-row tint + pie
+- *(v10.0)* `add` `lib/danantara/ceo/format.ts` → `pieTotals(item)` shared SentimentPie-totals builder
+- *(v10.0)* `change` `components/danantara/ceo/BumnHeatboard.tsx` — `TopicCell` stacks a mini `SentimentPie` under the topic title; net-score span gets a `title` tooltip; grid rows top-align
+- *(v10.0)* `change` `components/danantara/ceo/IssueBoard.tsx` — tidy meta line (pie left, reach · velocity right) via shared `pieTotals`
+- *(v11.0)* `change` `components/danantara/ceo/BumnHeatboard.tsx` — drop net-score span; add sequential rank number (`bumn-rank`) to each row; `TopicCell` adds the linked topic's reach + sentiment % under the pie; widen identity grid column for the rank number
+- *(v12.0)* `change` UI chrome → English across `{IssueBoard,BumnHeatboard,HeaderStrip,AiBriefTicker,SentimentPie,SentimentSplit,DetailModal}.tsx` + `lib/danantara/ceo/engine.ts` (`briefLines` templates) + `lib/danantara/ceo/format.ts` (`fmtCount` → `K`/`M`, en-US). `keep` Indonesian: `data.ts` content, `CATEGORY_LABEL`, shared `SECTOR_LABEL`
 
 **Data-model / API changes:** none (static demo; no DB/API). Production wiring is A1/A2 scope.
 **Reuse:** `AppShell`, existing `lib/danantara/types.ts` (`Holding` universe, `CrisisSignal` velocity concept), `lib/ai/scripted.ts` narration pattern, command-center design tokens.
@@ -351,10 +418,12 @@ built for can't read it. Readability becomes a hard requirement: **nothing below
 | T9 | AC9 | breakdown: pos+neg+neutral = mentions, net sign matches sentiment sign; mini pie + % labels rendered on rows & tiles; detail modal keeps labeled split bar | unit + component |
 | T10 | AC10 | click issue row → issue detail opens; click BUMN tile → BUMN detail opens; Esc / ✕ / overlay closes; detail shows live data | component |
 | T11 | AC11 | wall grid has exactly two columns; `Spotlight` and `BreakingTakeover` are not rendered and files removed from the bundle | component |
-| T12 | AC12 | `groupIssuesBySentiment`: pos>neg → positive group, tie/neg → negative group; within-group order by reach desc; both sub-columns render **side by side** with counts; flipping sentiment moves the row | unit + component |
-| T13 | AC13 | `groupBumnBySentiment`: sentiment ≥ 0 → positive, < 0 → negative; positive sorted desc, negative sorted asc; sub-columns side by side; flipping sign moves the tile | unit + component |
-| T14 | AC14 | mini pie renders **on every row/tile** with one segment per non-zero share + % labels; no panel-level pie; updates after tick | unit + component |
+| T12 | AC12 | `groupIssuesBySentiment`: pos>neg → positive, tie/neg → negative (within-group reach desc); topic board renders **side-by-side** TOPIK POSITIF / TOPIK NEGATIF sub-columns (`issue-groups` grid-cols-2) with counts; each row stacks full title over a pie+velocity meta line; flipping sentiment moves the row | unit + component |
+| T13 | AC13 | `groupBumnBySentiment` selector still classifies sentiment ≥ 0 → positive, < 0 → negative (kept for reuse; board no longer renders side-by-side sub-columns) | unit |
+| T14 | AC14 | mini pie renders **on every topic row** and **on each present BUMN topic cell** with one segment per non-zero share + % labels; no panel-level pie; **no sparkline on topic rows** (no `polyline`); updates after tick | unit + component |
 | T15 | AC15 | governance scan: rendered wall (and open detail modal) contains **no element with a text class under 16px** (`text-xs`, `text-sm`, `text-[<16px]`); titles/names use ≥ 20px classes; key numbers ≥ 24px | component |
+| T17 | AC17 | rendered wall uses English chrome (POSITIVE/NEGATIVE TOPICS, RISING/ESCALATING, metric labels, `M`/reach units, `K`/`M` counts) while content stays Indonesian (topic titles, BUMN names, headlines, category tags); `fmtCount` returns `K`/`M` | unit + component |
+| T16 | AC16 | `topicsForBumn`: picks highest-reach linked positive & negative topic, null when none; BUMN board renders one row per BUMN with a sequential rank number, no net-score, both topic cells (placeholder + no pie when absent; mini pie + reach + % when present); full title shown; clicking a row fires `onSelect(bumnId)` | unit + component |
 
 **Governance edge cases:** all data from public/open sources (no client-internal figures); AI ticker is deterministic scripted fallback (no live LLM call, no provider key client-side); demo banner identifies synthetic data; no auth change (`AppShell` login gate reused as-is).
 
@@ -369,3 +438,9 @@ built for can't read it. Readability becomes a hard requirement: **nothing below
 | 4.0 | 2026-06-03 | Client: sentiment becomes the organizing principle. Two-column wall (topics left / BUMN right) grouped into positive/negative sections + per-panel sentiment pie (AC11–AC14). Spotlight, breaking takeover & hotkey removed (AC4/AC5 retired; AC1/AC2/AC3/AC7/AC10 amended). Status → Built (118 tests green, build verified) |
 | 5.0 | 2026-06-03 | Client refinement on v4.0: pie chart moves **onto every topic/BUMN** (panel aggregate pie removed) and positive/negative groups render **side by side** as sub-columns (AC9/AC12/AC13/AC14 amended). Status → Built (124 tests green, build verified) |
 | 6.0 | 2026-06-03 | Client constraint: CEO is 60 — current type illegible. + AC15 readability scale: 16px floor, 20px names, 24px key numbers, across boards/header/ticker/modal; pies & sparklines scaled up. Status → Built (129 tests green, build verified) |
+| 7.0 | 2026-06-03 | Client refinement on v6.0: topic rows drop the sparkline (the pie takes its trailing slot) and show titles in full (AC2/AC12/AC14 amended); BUMN board becomes a single per-row list naming each BUMN's leading positive & negative topic instead of grouped pie tiles (+ AC16; AC3 amended, AC13 retired). Status → Built (129 tests green, build verified) |
+| 8.0 | 2026-06-03 | Client: make the topic board match the BUMN single-row list (full-width list, most-negative first, per-row sentiment tint) **but keep the per-topic pie**; fixes the v7.0 messy multi-line title wrap in the narrow sub-columns. Side-by-side TOPIK POSITIF/NEGATIF sub-columns retired (AC12 amended). Status → Built |
+| 9.0 | 2026-06-03 | Client: restore the explicit side-by-side TOPIK POSITIF / TOPIK NEGATIF columns (the labeled split matters more than parity with the BUMN list). Title legibility solved instead by a stacked row card — title line above a pie+velocity meta line — so titles own the full column width. Pie + tint kept (AC12 amended). Status → Built |
+| 10.0 | 2026-06-03 | Client polish: each BUMN topic cell gets its own mini sentiment pie (AC14/AC16 amended); net-score number gets a −100…+100 tooltip; Isu Danantara meta line/pie layout tidied; shared `pieTotals` helper. Status → Built |
+| 11.0 | 2026-06-03 | Client: BUMN board metric rework — remove the −100…+100 net-score number (tint keeps the sign), add a sequential rank number per row, and show each topic cell's reach value + sentiment % (AC3/AC16 amended). Status → Built |
+| 12.0 | 2026-06-03 | Client: localize UI chrome to English (headings, labels, badges, AI-ticker, modal, units M/K) while keeping content Indonesian (topic titles, BUMN names, headlines, category/sector tags). + AC17. Status → Built |
