@@ -205,6 +205,9 @@ export function CeoCommand() {
     <div className="flex h-full flex-col gap-3">
       <HeaderStrip state={state} />
 
+      {/* Running narration sits broadcast-style at the top, right under the headline numbers. */}
+      <AiBriefTicker state={state} />
+
       <div
         data-testid="ceo-wall"
         className="grid min-h-0 flex-1 grid-cols-1 gap-3 xl:grid-cols-[1.2fr_1.6fr_1fr]"
@@ -218,8 +221,6 @@ export function CeoCommand() {
           <BumnHeatboard rows={state.bumn} onSelect={(id) => setDetail({ type: "bumn", id })} />
         </div>
       </div>
-
-      <AiBriefTicker state={state} />
 
       {takeoverIssue && <BreakingTakeover issue={takeoverIssue} />}
       {detail && (
