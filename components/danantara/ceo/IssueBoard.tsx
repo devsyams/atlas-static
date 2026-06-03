@@ -15,8 +15,8 @@ const STATUS_BADGE: Record<CeoIssue["status"], { label: string; cls: string }> =
 
 /**
  * One topic row (AC12/AC14 v14.0): rank + full title on the left (title wraps,
- * never truncates), with the sentiment pie stacked over the reach value on the
- * right.
+ * never truncates) with a muted AI context line beneath it (sneak peek, 2-line
+ * clamp, v18.0), and the sentiment pie stacked over the reach value on the right.
  */
 function IssueRow({ issue, rank, onSelect }: { issue: CeoIssue; rank: number; onSelect?: (id: string) => void }) {
   const badge = STATUS_BADGE[issue.status];
@@ -37,13 +37,20 @@ function IssueRow({ issue, rank, onSelect }: { issue: CeoIssue; rank: number; on
           <span className="font-mono text-xl tabular-nums text-muted-foreground">{rank}.</span>
           <RankBadge delta={issue.rankDelta} />
         </div>
-        {/* Left: full title (wraps, never truncates) + status badge. */}
-        <div className="flex min-w-0 flex-1 items-start gap-2 pt-0.5">
-          <span data-testid="issue-title" className="text-xl font-medium leading-snug text-balance">{issue.title}</span>
-          {badge.label && (
-            <span className={`mt-0.5 shrink-0 rounded border px-1.5 py-px text-base font-bold tracking-wider ${badge.cls}`}>
-              {badge.label}
-            </span>
+        {/* Left: full title + status badge, with a muted AI context line beneath (AC12 v18.0). */}
+        <div className="min-w-0 flex-1 pt-0.5">
+          <div className="flex items-start gap-2">
+            <span data-testid="issue-title" className="text-xl font-medium leading-snug text-balance">{issue.title}</span>
+            {badge.label && (
+              <span className={`mt-0.5 shrink-0 rounded border px-1.5 py-px text-base font-bold tracking-wider ${badge.cls}`}>
+                {badge.label}
+              </span>
+            )}
+          </div>
+          {issue.aiLine && (
+            <p data-testid="issue-ailine" className="mt-1 line-clamp-2 text-base font-normal leading-snug text-muted-foreground">
+              {issue.aiLine}
+            </p>
           )}
         </div>
         {/* Right: sentiment pie stacked over the reach value (AC14 v14.0). */}

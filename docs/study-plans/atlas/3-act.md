@@ -266,7 +266,7 @@ learn a high-severity incident just landed. Push-based updates for the ticker an
 
 ### A7. Danantara CEO Command Wall (zero-click demo)
 
-- **Version:** 17.0 · **Stage:** 3-act · **Sprint:** demo · **Status:** Built · **Spec ref:** `docs/superpowers/specs/2026-06-02-danantara-ceo-command-design.md` · **Owner:** Dev A
+- **Version:** 18.0 · **Stage:** 3-act · **Sprint:** demo · **Status:** Built · **Spec ref:** `docs/superpowers/specs/2026-06-02-danantara-ceo-command-design.md` · **Owner:** Dev A
 
 #### PM
 **Background (why):** Client feedback on the Danantara demo: the real audience is the **CEO**, who
@@ -293,6 +293,11 @@ inside each panel), not stacked, so good vs bad is a single horizontal compariso
 density) is illegible to him at desk/TV distance — the entire artifact fails if the one person it's
 built for can't read it. Readability becomes a hard requirement: **nothing below 16px**, names at
 20px, key numbers larger still. All 20 items per board are kept; panels scroll vertically.
+
+*(v18.0)* Each topic row gains a **context line** — a one-line AI read of the topic (the existing
+`aiLine`) shown beneath the title as a **sneak peek**: muted, smaller than the title (16px floor, AC15),
+clamped to two lines so the row stays clean. It gives the CEO the *why* behind a headline without a
+click; the full picture still lives in the detail modal. Content stays Indonesian (it is data).
 
 *(v17.0)* Rank-cell tidy. The neutral "stay" dash (`–`) sat under nearly every rank number (the board
 is steady most of the time) and read as clutter — so an unchanged rank now renders **nothing**; only
@@ -383,7 +388,7 @@ of an abstract pie. One BUMN, one positive topic, one negative topic, per line.
 - **AC9** *(amended v5.0)* — *Given* any issue or BUMN, *When* it renders on a board, *Then* its sentiment is shown as a **mini pie chart** with explicit positive and negative **% labels** (green/red), not just a net score; positive + negative + neutral shares sum to 100%. The detail modal keeps the labeled split bar with counts.
 - **AC10** *(amended v4.0)* — *Given* any issue row or BUMN tile, *When* it is clicked/tapped, *Then* a detail panel opens with the full picture (live trend chart, sentiment % + counts, rank movement, velocity/reach/mention stats, headlines for issues / related issues for BUMN, related-BUMN chips for issues / top issue for BUMN), closable via Esc, the ✕ button, or clicking the overlay; the simulation keeps ticking underneath. Clicking remains optional — the zero-click experience (AC1) is unchanged.
 - **AC11** *(v4.0)* — *Given* `/danantara` on a desktop/TV viewport, *When* it renders, *Then* the wall is **two columns**: Danantara topics on the left, BUMN sentiment on the right — no third (Spotlight) column and no takeover overlay.
-- **AC12** *(v4.0, amended v5.0, v7.0, v8.0, v9.0)* — *Given* the topic board, *When* it renders, *Then* topics are split into a **TOPIK POSITIF** sub-column (positive mentions > negative) and a **TOPIK NEGATIF** sub-column (otherwise), rendered **side by side**, each ranked by reach (largest first) with counts shown; a topic moves between sub-columns live when its sentiment flips. Each row **stacks the full topic title on its own line** (wraps cleanly/balanced, never truncates) **above** a compact meta line carrying the per-topic pie + velocity %, plus the status badge — so the title owns the full column width and never collides with the pie. *(v9.0 restores the v5–v7 side-by-side columns retired in v8.0, with the stacked-row fix for title legibility.)*
+- **AC12** *(v4.0, amended v5.0, v7.0, v8.0, v9.0)* — *Given* the topic board, *When* it renders, *Then* topics are split into a **TOPIK POSITIF** sub-column (positive mentions > negative) and a **TOPIK NEGATIF** sub-column (otherwise), rendered **side by side**, each ranked by reach (largest first) with counts shown; a topic moves between sub-columns live when its sentiment flips. Each row shows the **full topic title** (wraps cleanly/balanced, never truncates) with a **muted AI context line beneath it** (the topic's `aiLine`, a 2-line-clamped sneak peek smaller than the title; v18.0), and the per-topic pie stacked over reach on the right. *(v9.0 restores the v5–v7 side-by-side columns retired in v8.0; v14.0 rank+title left / pie over reach right; v18.0 adds the context line.)*
 - **AC13** *(v4.0, amended v5.0, retired v7.0)* — *(retired in v7.0 — the BUMN board no longer groups into side-by-side positive/negative sub-columns; it is a single per-row list, see AC16. Net-sentiment grouping is still available via `groupBumnBySentiment`, used by the detail modal / kept for reuse.)*
 - **AC14** *(v4.0, amended v5.0, v7.0, v10.0, v13.0)* — *Given* any **topic row** or any **present BUMN topic cell** (positive/negative), *When* it renders, *Then* it carries its **own pie/donut chart** of that topic's positive / negative / neutral **mention share** with % labels, updating live with the tick. The mini pie renders its percentages **flanking the donut** — green (positive) % left, donut, red (negative) % right (`value% · donut · value%`, v15.0) — and the **donut arcs align with the labels** (green on the left, red on the right; v16.0); on topic rows the pie sits in a **right-hand column stacked over the reach value** (v14.0). There is **no** panel-level aggregate pie. *(v10.0: pies return to the BUMN board — one per topic cell.)*
 - **AC15** *(v6.0)* — *Given* the CEO wall (boards, header, ticker, and the detail modal), *When* any text renders, *Then* **no text is smaller than 16px**; topic titles and BUMN names are **at least 20px**; key numbers (sentiment scores, header metrics) are **at least 24px**. Lists keep all 20 items and scroll vertically.
@@ -430,6 +435,7 @@ of an abstract pie. One BUMN, one positive topic, one negative topic, per line.
 - *(v15.0)* `change` `components/danantara/ceo/SentimentPie.tsx` — mini variant: pos% · donut · neg% (percentages flank the donut)
 - *(v16.0)* `change` `components/danantara/ceo/SentimentPie.tsx` — mini donut draws reversed (neg→neutral→pos) so green arc is left / red right, matching the labels
 - *(v17.0)* `change` `components/danantara/ceo/RankBadge.tsx` — unchanged rank renders null (no stay dash); English movement tooltips. `change` `{IssueBoard,BumnHeatboard}.tsx` — rank number shows trailing period (`{rank}.`)
+- *(v18.0)* `change` `components/danantara/ceo/IssueBoard.tsx` — render the topic's `aiLine` as a muted, 2-line-clamped context line (`issue-ailine`) beneath the title
 
 **Data-model / API changes:** none (static demo; no DB/API). Production wiring is A1/A2 scope.
 **Reuse:** `AppShell`, existing `lib/danantara/types.ts` (`Holding` universe, `CrisisSignal` velocity concept), `lib/ai/scripted.ts` narration pattern, command-center design tokens.
@@ -480,3 +486,4 @@ of an abstract pie. One BUMN, one positive topic, one negative topic, per line.
 | 15.0 | 2026-06-04 | Client micro-tweak: mini pie percentages flank the donut — value% · donut · value% (AC14 amended). Status → Built |
 | 16.0 | 2026-06-04 | Client bug: mini donut arcs were reversed vs labels (green drew on the right). Donut now draws neg→neutral→pos so green is left / red right, matching labels (AC14 amended). Status → Built |
 | 17.0 | 2026-06-04 | Client: drop the neutral "stay" rank dash (unchanged rank renders nothing; only ▲/▼ show) and add a trailing period to rank numbers (1., 2., …); english rank tooltips (AC8 amended). Status → Built |
+| 18.0 | 2026-06-04 | Client: add a per-topic context line (the AI `aiLine`) beneath each title — muted, smaller, 2-line-clamped sneak peek (AC12 amended). Status → Built |

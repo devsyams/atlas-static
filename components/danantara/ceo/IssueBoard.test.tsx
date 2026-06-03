@@ -69,6 +69,20 @@ describe("IssueBoard grouped by sentiment (T12 / AC12 v9.0)", () => {
     expect(container.querySelector("polyline")).toBeNull();
   });
 
+  it("renders the AI context line (aiLine) beneath the title as a smaller muted sneak peek (AC12 v18.0)", () => {
+    render(
+      <IssueBoard
+        issues={[makeIssue({ id: "ctx", title: "Topik uji", aiLine: "Konteks singkat soal topik ini.", posMentions: 900, negMentions: 100 })]}
+      />,
+    );
+    const ctx = screen.getByTestId("issue-ailine");
+    expect(ctx.textContent).toContain("Konteks singkat soal topik ini.");
+    // Smaller than the 20px title, but not below the 16px readability floor (AC15).
+    expect(ctx.className).toContain("text-base");
+    expect(ctx.className).toContain("text-muted-foreground");
+    expect(ctx.className).toContain("line-clamp-2");
+  });
+
   it("renders topic titles in full, never truncated (AC12 v7.0)", () => {
     render(<IssueBoard issues={issues} />);
     for (const title of screen.getAllByTestId("issue-title")) {
