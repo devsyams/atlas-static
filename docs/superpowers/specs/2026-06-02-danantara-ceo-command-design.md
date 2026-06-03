@@ -93,6 +93,16 @@ pulse/siren animations. Number roll-ups and re-rank transitions via CSS transfor
    net sentiment (neutral share fixed at 30%); derived per item each tick. UI: shared
    `SentimentSplit` component (compact split-pill on rows/tiles, full labeled bar in the spotlight).
 
+## v3.0 additions (click-to-detail)
+
+**Optional drill-down (AC10).** The wall stays zero-click, but every issue row and BUMN tile is
+also a button: clicking opens a `DetailModal` overlay fed by LIVE state (it keeps updating as the
+simulation ticks). Issue detail: big trend chart, % + count sentiment, rank movement, velocity /
+reach / mention stats, all headlines, related-BUMN chips. BUMN detail: sentiment trend chart,
+% + count sentiment, rank movement, top issue, and every issue that references this BUMN.
+Close via Esc, ✕, or overlay click. A breaking takeover renders above the modal (z-index), and
+the modal never blocks the takeover from firing.
+
 ## Testing (vitest, TDD)
 
 All engine logic is pure and tested first: ranking, velocity windowing, status-ladder
