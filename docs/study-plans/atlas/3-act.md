@@ -286,7 +286,7 @@ itself on a TV).
 - **AC6** — *Given* the old dashboard, *When* `/danantara-v2` is opened, *Then* the full Sovereign Command experience works exactly as it does today.
 - **AC7** — *Given* a phone-width viewport, *When* `/danantara` loads, *Then* the layout stacks (header → spotlight → issues → BUMN) and stays zero-click.
 - **AC8** — *Given* the issue board or the BUMN board, *When* an item's rank differs from its rank one rolling window ago (6 ticks ≙ "2 jam"), *Then* the row/tile shows a green ▲ with positions gained, a red ▼ with positions lost, or a neutral "=" stay indicator when unchanged (league-table style).
-- **AC9** — *Given* any issue or BUMN, *When* it renders on a board or in the spotlight, *Then* its sentiment is shown as explicit positive and negative mention counts (green/red split with numbers), not just a net score or chart; positive + negative + neutral counts sum to total mentions.
+- **AC9** — *Given* any issue or BUMN, *When* it renders on a board or in the spotlight, *Then* its sentiment is shown as explicit positive and negative **percentages** (green/red split bar with % labels), not just a net score or chart; the spotlight additionally shows the underlying mention counts; positive + negative + neutral shares sum to 100%.
 
 #### Architecture
 **Impact — files add/change:**
@@ -325,3 +325,4 @@ itself on a TV).
 | 1.0 | 2026-06-02 | Initial plan from CEO feedback (zero-click rebuild; old dashboard → /danantara-v2) |
 | 1.1 | 2026-06-03 | Status → Built (55 tests green, build verified). Review-driven refinements: bounded simulation growth (reach tracks mentions, capped), 21→20 issue trim, live spotlight pin per AC4, queued concurrent takeovers, /danantara-v2 middleware scope fix |
 | 2.0 | 2026-06-03 | Client feedback after first viewing: + AC8 (league-table rank movement arrows ▲▼= on both boards) and AC9 (explicit positive/negative sentiment counts, not just net score). Status → In progress |
+| 2.1 | 2026-06-03 | AC9 refined during build (client): percentages primary, counts secondary (spotlight only). Split bar kept over pie chart — length comparison beats angle comparison across 40 items |
