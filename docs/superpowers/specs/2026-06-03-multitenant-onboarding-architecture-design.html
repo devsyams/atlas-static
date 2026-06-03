@@ -1,0 +1,799 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Atlas Multitenant — Onboarding Architecture</title>
+<link href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Sora:wght@300;400;500;600;700;800&display=swap');
+
+  :root {
+    --bg:      #080c12;
+    --bg2:     #0d1219;
+    --bg3:     #111820;
+    --border:  #1a2535;
+    --border2: #243040;
+    --text:    #c8d8e8;
+    --muted:   #4a6080;
+    --dim:     #2a3a50;
+    --bright:  #e8f4ff;
+    --blue:    #3b9eff;
+    --cyan:    #22d3ee;
+    --green:   #22c55e;
+    --amber:   #f59e0b;
+    --red:     #ef4444;
+    --purple:  #a78bfa;
+    --font-body: 'Sora', sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body { background: var(--bg); color: var(--text); font-family: var(--font-body); font-size: 15px; line-height: 1.65; }
+  a { color: var(--blue); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  strong { color: var(--bright); }
+  em { color: var(--cyan); font-style: normal; }
+  code:not([class*="language-"]) { font-family: var(--font-mono); font-size: 0.85em; background: var(--bg); padding: 1px 5px; border-radius: 4px; color: var(--amber); border: 1px solid var(--border); }
+
+  /* ── SIDEBAR ── */
+  #sidebar {
+    position: fixed; top: 0; left: 0; width: 290px; height: 100vh; overflow-y: auto;
+    background: #0a0f16; border-right: 1px solid var(--border); padding: 26px 0 60px;
+    scrollbar-width: thin;
+  }
+  #sidebar .logo { padding: 0 24px 20px; border-bottom: 1px solid var(--border); margin-bottom: 14px; }
+  #sidebar .logo .t { font-size: 18px; font-weight: 800; color: var(--bright); letter-spacing: -0.3px; }
+  #sidebar .logo .t span { color: var(--blue); }
+  #sidebar .logo .s { font-family: var(--font-mono); font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); margin-top: 4px; }
+  .nav-group { margin: 16px 0 4px; }
+  .nav-group > .gl { font-family: var(--font-mono); font-size: 10px; font-weight: 600; letter-spacing: 1.8px; text-transform: uppercase; color: var(--dim); padding: 0 24px; margin-bottom: 6px; }
+  .nav-link { display: block; padding: 6px 24px 6px 24px; font-size: 13px; color: var(--muted); border-left: 2px solid transparent; transition: all .12s; }
+  .nav-link:hover { color: var(--text); text-decoration: none; background: #0d141d; }
+  .nav-link.active { color: var(--blue); border-left-color: var(--blue); background: #0c1a2c; }
+
+  /* ── CONTENT ── */
+  #content { margin-left: 290px; padding: 0 0 160px; }
+  .hero {
+    padding: 56px clamp(28px, 5vw, 72px) 40px; border-bottom: 1px solid var(--border);
+    background: linear-gradient(160deg, #080c12 0%, #0a1426 65%, #080c12 100%); position: relative; overflow: hidden;
+  }
+  .hero::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse 700px 320px at 85% 30%, #18407318, transparent); pointer-events: none; }
+  .hero .tag { font-family: var(--font-mono); font-size: 11px; letter-spacing: 3px; text-transform: uppercase; color: var(--blue); margin-bottom: 14px; }
+  .hero h1 { font-size: clamp(30px, 5vw, 50px); font-weight: 800; color: var(--bright); letter-spacing: -1px; line-height: 1.05; }
+  .hero h1 span { color: var(--blue); }
+  .hero p { font-size: 16px; color: var(--muted); max-width: 760px; margin-top: 14px; }
+  .hero .meta { font-family: var(--font-mono); font-size: 11px; color: var(--muted); margin-top: 22px; letter-spacing: 0.5px; }
+  .hero .meta b { color: var(--text); font-weight: 500; }
+
+  section.doc { padding: 40px clamp(28px, 5vw, 72px) 8px; max-width: 1180px; scroll-margin-top: 20px; }
+  section.doc > .sn { font-family: var(--font-mono); font-size: 11px; letter-spacing: 2px; color: var(--blue); text-transform: uppercase; margin-bottom: 6px; }
+  section.doc > h2 { font-size: 27px; font-weight: 700; color: var(--bright); letter-spacing: -0.4px; margin-bottom: 8px; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
+  section.doc h3 { font-size: 17px; font-weight: 600; color: var(--bright); margin: 26px 0 10px; }
+  section.doc p { margin-bottom: 12px; color: var(--text); }
+  section.doc p.lead { font-size: 16px; color: #b6cbe2; }
+  .muted { color: var(--muted); }
+
+  ul.list, ol.list { margin: 8px 0 14px; padding-left: 0; list-style: none; display: flex; flex-direction: column; gap: 8px; counter-reset: li; }
+  ul.list li, ol.list li { position: relative; padding-left: 26px; color: var(--text); font-size: 14.5px; }
+  ul.list li::before { content: ''; position: absolute; left: 4px; top: 9px; width: 6px; height: 6px; border-radius: 2px; background: var(--blue); }
+  ol.list li { counter-increment: li; }
+  ol.list li::before { content: counter(li); position: absolute; left: 0; top: 0; font-family: var(--font-mono); font-size: 11px; color: var(--blue); font-weight: 700; background: #0c1a2c; border: 1px solid var(--border2); width: 18px; height: 18px; border-radius: 4px; display: flex; align-items: center; justify-content: center; }
+  ul.list li b, ol.list li b { color: var(--bright); }
+
+  /* callouts */
+  .note { border-left: 3px solid var(--blue); background: var(--bg2); border-radius: 0 8px 8px 0; padding: 12px 16px; margin: 16px 0; font-size: 14px; }
+  .note.warn { border-color: var(--amber); }
+  .note.good { border-color: var(--green); }
+  .note .l { font-family: var(--font-mono); font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); display: block; margin-bottom: 4px; }
+
+  /* cards */
+  .cards { display: grid; gap: 12px; margin: 16px 0; }
+  .cards.c2 { grid-template-columns: repeat(2, 1fr); }
+  .cards.c3 { grid-template-columns: repeat(3, 1fr); }
+  .cards.c4 { grid-template-columns: repeat(4, 1fr); }
+  .ic { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; }
+  .ic h4 { font-size: 14px; color: var(--bright); margin-bottom: 4px; }
+  .ic h4 code { font-size: 12px; }
+  .ic p { font-size: 12.5px; color: #7e98b6; margin: 0; line-height: 1.55; }
+
+  /* comparison lanes */
+  .lanes3 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; margin: 16px 0; }
+  .lanes3.three { grid-template-columns: repeat(3, 1fr); }
+  .lane { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+  .lane .h { font-family: var(--font-mono); font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; padding: 11px 14px; border-bottom: 1px solid var(--border); }
+  .lane.rejected .h { color: var(--muted); border-top: 3px solid var(--border2); }
+  .lane.chosen .h { color: var(--green); border-top: 3px solid var(--green); }
+  .lane.atlas .h { color: var(--blue); border-top: 3px solid var(--blue); }
+  .lane ul { list-style: none; padding: 12px 14px; display: flex; flex-direction: column; gap: 6px; }
+  .lane li { font-size: 12.8px; color: var(--text); line-height: 1.4; }
+  .lane li span { color: var(--muted); }
+  .lane .verdict { font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 1px; text-transform: uppercase; padding: 9px 14px; border-top: 1px solid var(--border); }
+  .lane.rejected .verdict { color: var(--amber); }
+  .lane.chosen .verdict { color: var(--green); }
+
+  /* definition list */
+  dl.defs { margin: 14px 0; }
+  dl.defs dt { font-weight: 600; color: var(--bright); font-size: 14.5px; margin-top: 14px; }
+  dl.defs dd { color: #8ba6c2; font-size: 14px; margin: 2px 0 0; padding-left: 0; }
+
+  /* diagrams */
+  .diagram { background: #f4f7fb; border: 1px solid var(--border2); border-radius: 12px; padding: 18px; margin: 16px 0; text-align: center; overflow: auto; cursor: zoom-in; position: relative; }
+  .diagram::after { content: 'click to enlarge'; position: absolute; top: 8px; right: 12px; font-family: var(--font-mono); font-size: 10px; color: #5b7da6; opacity: 0; transition: opacity .15s; pointer-events: none; }
+  .diagram:hover::after { opacity: .8; }
+  .diagram .mermaid { display: inline-block; min-width: 0; }
+  .diagram.tall { max-height: none; }
+  .dcap { font-family: var(--font-mono); font-size: 11.5px; color: var(--muted); margin-top: -4px; margin-bottom: 18px; }
+
+  /* code */
+  pre[class*="language-"] { border: 1px solid var(--border2); border-radius: 10px; padding: 16px 18px !important; margin: 14px 0; font-size: 12.5px; overflow: auto; max-height: 560px; }
+  code[class*="language-"] { font-family: var(--font-mono); font-size: 12.5px; }
+
+  /* tables */
+  table.tb { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 13.5px; }
+  table.tb th, table.tb td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  table.tb th { font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); }
+  table.tb td code { white-space: nowrap; }
+  table.tb td b { color: var(--bright); }
+
+  #totop { position: fixed; right: 22px; bottom: 22px; z-index: 40; background: var(--bg2); border: 1px solid var(--border2); color: var(--text); border-radius: 9px; padding: 9px 13px; font-family: var(--font-mono); font-size: 11px; cursor: pointer; opacity: 0; pointer-events: none; transition: opacity .2s; }
+  #totop.show { opacity: 1; pointer-events: auto; }
+  #totop:hover { border-color: var(--blue); color: var(--blue); }
+
+  /* lightbox (click-to-enlarge diagrams) */
+  #lightbox { position: fixed; inset: 0; z-index: 300; background: rgba(4,7,11,.94); display: none; align-items: center; justify-content: center; padding: 4vh 3vw; }
+  #lightbox.show { display: flex; }
+  #lightbox .lb-card { background: #f4f7fb; border-radius: 14px; padding: 22px; max-width: 96vw; max-height: 92vh; overflow: auto; box-shadow: 0 24px 90px rgba(0,0,0,.6); }
+  #lightbox .lb-card svg { display: block; }
+  #lb-close { position: fixed; top: 18px; right: 22px; z-index: 301; background: var(--bg2); border: 1px solid var(--border2); color: var(--text); border-radius: 8px; padding: 8px 13px; font-family: var(--font-mono); font-size: 12px; cursor: pointer; }
+  #lb-close:hover { border-color: var(--blue); color: var(--blue); }
+  #lb-hint { position: fixed; bottom: 16px; left: 0; right: 0; text-align: center; font-family: var(--font-mono); font-size: 11px; color: var(--muted); pointer-events: none; }
+
+  @media (max-width: 940px) {
+    #sidebar { position: static; width: 100%; height: auto; border-right: none; border-bottom: 1px solid var(--border); }
+    #content { margin-left: 0; }
+    .cards.c2, .cards.c3, .cards.c4, .lanes3, .lanes3.three { grid-template-columns: 1fr; }
+  }
+  @media print {
+    #sidebar, #totop { display: none; }
+    #content { margin-left: 0; }
+    body { background: #fff; color: #111; }
+    section.doc { page-break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+
+<nav id="sidebar">
+  <div class="logo">
+    <div class="t">Atlas <span>&oplus;</span> Tenants</div>
+    <div class="s">Multitenant Onboarding</div>
+  </div>
+
+  <div class="nav-group">
+    <div class="gl">Overview</div>
+    <a class="nav-link" href="#overview">Overview</a>
+    <a class="nav-link" href="#decisions">Locked Decisions</a>
+  </div>
+  <div class="nav-group">
+    <div class="gl">Architecture</div>
+    <a class="nav-link" href="#topology">System Topology</a>
+    <a class="nav-link" href="#widget-registry">Widget Registry &amp; Federation</a>
+    <a class="nav-link" href="#manifest">Tenant Configuration Model</a>
+  </div>
+  <div class="nav-group">
+    <div class="gl">Data</div>
+    <a class="nav-link" href="#data-model">Schema Model</a>
+  </div>
+  <div class="nav-group">
+    <div class="gl">Operations</div>
+    <a class="nav-link" href="#onboarding">Onboarding Pipeline</a>
+    <a class="nav-link" href="#blueprints">Blueprints &amp; Day-2 Ops</a>
+  </div>
+  <div class="nav-group">
+    <div class="gl">Security</div>
+    <a class="nav-link" href="#auth">Auth &amp; Routing</a>
+    <a class="nav-link" href="#isolation">Isolation Guardrails</a>
+  </div>
+  <div class="nav-group">
+    <div class="gl">Delivery</div>
+    <a class="nav-link" href="#testing">Testing Strategy</a>
+    <a class="nav-link" href="#risks">Risks</a>
+    <a class="nav-link" href="#implementation">Implementation Plan</a>
+  </div>
+</nav>
+
+<main id="content">
+
+  <header class="hero">
+    <div class="tag">Nexorus &middot; Architecture Spec</div>
+    <h1><span>Multitenant Atlas</span> &mdash; tenant onboarding &amp; widget registry</h1>
+    <p>How Nexorus ATLAS becomes a multitenant product: one platform plane, a Kubernetes namespace per tenant, a federated widget registry, and an onboarding pipeline that turns a new tenant into a manifest the control plane reconciles &mdash; not a manual deployment.</p>
+    <div class="meta"><b>Status:</b> Approved (design) &nbsp;&middot;&nbsp; <b>Date:</b> 2026-06-03 &nbsp;&middot;&nbsp; <b>Source:</b> 2026-06-03-multitenant-onboarding-architecture-design.md &nbsp;&middot;&nbsp; <b>Audience:</b> Engineering</div>
+  </header>
+
+  <!-- OVERVIEW -->
+  <section class="doc" id="overview">
+    <div class="sn">01</div>
+    <h2>Overview</h2>
+    <p class="lead"><strong>One platform, many namespaces. Public facts are shared; a tenant's lens on them is private. Onboarding is a manifest, not a deployment.</strong></p>
+    <p>Each tenant (e.g. Danantara) gets its own ATLAS dashboard at its own subdomain. Dashboards are composed of widgets &mdash; <strong>common</strong> widgets shared across tenants (same widget, different data) and <strong>custom</strong> widgets built for a single tenant. The platform runs on <strong>Kubernetes</strong>; tenant isolation means each tenant's pods run in their <strong>own namespace</strong>.</p>
+    <div class="note"><span class="l">Scope note</span>The <code>atlas-static</code> repo is the single-tenant demo this design generalizes from. This spec describes the production target; implementation is decomposed in <a href="#implementation">&sect;13</a>.</div>
+
+    <h3>Goals</h3>
+    <ul class="list">
+      <li>A <b>widget registry</b> so widgets are published once and composed per tenant.</li>
+      <li>A <b>tenant manifest</b> that declaratively describes everything about a tenant.</li>
+      <li>A deterministic, idempotent <b>onboarding pipeline</b> that provisions a new tenant end-to-end: namespace &rarr; schema &rarr; identity &rarr; routing &rarr; deploy &rarr; smoke test &rarr; activate.</li>
+      <li><b>Defense-in-depth isolation</b> so no tenant can ever see another tenant's data, widgets, or config.</li>
+    </ul>
+
+    <h3>Non-goals (out of scope)</h3>
+    <ul class="list">
+      <li>Migrating the static demo repo itself to the multitenant architecture.</li>
+      <li>Per-tenant SSO federation at launch <span class="muted">(designed for, added later)</span>.</li>
+      <li>Billing/metering beyond per-tenant LLM cost logging.</li>
+    </ul>
+  </section>
+
+  <!-- LOCKED DECISIONS -->
+  <section class="doc" id="decisions">
+    <div class="sn">02</div>
+    <h2>Locked Decisions</h2>
+    <p>These choices were made and confirmed during the design session. They are the constraints every later section builds on.</p>
+    <table class="tb">
+      <thead><tr><th>Decision</th><th>Choice</th></tr></thead>
+      <tbody>
+        <tr><td><b>Onboarding trigger</b></td><td>Automated internal pipeline (control-plane action by ops admin)</td></tr>
+        <tr><td><b>Data layout</b></td><td>Schema-per-tenant + a <code>shared</code> schema, in <strong>one shared Postgres cluster</strong> with per-schema roles. DB-per-tenant reserved as the &ldquo;dedicated tier&rdquo; upgrade.</td></tr>
+        <tr><td><b>Widget delivery</b></td><td>Federated/pluggable remotes, runtime-loaded from a registry (<strong>Module Federation</strong>)</td></tr>
+        <tr><td><b>Widget upgrades</b></td><td><strong>Pinned versions, opt-in upgrades</strong> (never forced)</td></tr>
+        <tr><td><b>Routing</b></td><td>Subdomain per tenant &rarr; ingress &rarr; tenant namespace</td></tr>
+        <tr><td><b>Auth</b></td><td><strong>Central IdP (OIDC)</strong> now; per-tenant SSO federation later</td></tr>
+        <tr><td><b>Topology</b></td><td><strong>Hybrid / tiered</strong> (Approach C): tenant data &amp; compute in-namespace, genuinely-shared infra central</td></tr>
+        <tr><td><b>Tenant config authority</b></td><td><strong>Control-plane DB is the source of truth</strong>; manifests are materialized into namespaces</td></tr>
+        <tr><td><b>News/social corpus</b></td><td><strong>Shared raw corpus, derive per-tenant</strong> analytics</td></tr>
+        <tr><td><b>Blueprints</b></td><td><strong>Curated blueprints with overrides</strong> (e.g. <code>sovereign-wealth</code>)</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- TOPOLOGY -->
+  <section class="doc" id="topology">
+    <div class="sn">03</div>
+    <h2>System Topology</h2>
+    <p class="lead">Two planes in one cluster: a <strong>platform (control) plane</strong> and many <strong>tenant data planes</strong>, separated by namespace.</p>
+    <div class="diagram tall"><div class="mermaid">
+flowchart TB
+    Users(["Tenant users"])
+    Ops(["Nexorus ops admin"])
+    Ingress["Ingress &mdash; wildcard TLS *.nexorus.io<br/>routes subdomain to tenant namespace"]
+
+    subgraph Platform["ns: platform (shared)"]
+        CP["Control Plane API<br/>(onboarding orchestrator)"]
+        Registry["Widget Registry +<br/>Remote-bundle CDN"]
+        Ingest["Market-data Ingestion"]
+        IdP["Central IdP (OIDC)"]
+        ModelGW["Model Gateway (LiteLLM)"]
+    end
+
+    subgraph Tenant["ns: tenant-danantara &mdash; one per tenant"]
+        Shell["Atlas app-shell (Next.js)"]
+        BFF["BFF &mdash; /api/v1/*"]
+        AIW["AI workers (tenant-scoped)"]
+    end
+
+    subgraph PG["Shared Postgres cluster"]
+        Control[("control")]
+        Shared[("shared")]
+        TSchema[("tenant_danantara")]
+    end
+
+    Users -->|danantara.nexorus.io| Ingress
+    Ingress --> Shell
+    Ops --> CP
+    CP -.->|provisions + configures| Tenant
+    CP --> Control
+    Shell -->|loads remoteEntry.js| Registry
+    Shell -->|OIDC| IdP
+    Shell --> BFF
+    BFF -->|read-only| Shared
+    BFF -->|read/write| TSchema
+    AIW -->|all LLM calls, cost-logged| ModelGW
+    AIW --> TSchema
+    Ingest -->|writes| Shared
+    </div></div>
+    <div class="dcap">Platform plane provisions and serves; tenant planes render and compute. The pattern repeats per tenant namespace.</div>
+
+    <h3>Key points</h3>
+    <ul class="list">
+      <li><b>One Postgres cluster, many schemas:</b> <code>control</code> + <code>shared</code> + <code>tenant_&lt;slug&gt;</code> per tenant (<a href="#data-model">&sect;6</a>). A tenant's BFF connects with a role scoped to <em>its</em> schema + read-only on <code>shared</code>.</li>
+      <li><b>Per-tenant namespace</b> holds only things that touch tenant data: app-shell, BFF, AI workers, plus <code>ResourceQuota</code>/<code>NetworkPolicy</code>. NetworkPolicy denies cross-tenant traffic; tenants may only reach the platform namespace's shared endpoints.</li>
+      <li><b>Platform namespace</b> holds the control plane + four shared services: widget registry/CDN, market-data ingestion, central IdP, model gateway (LiteLLM, per-tenant cost logging).</li>
+      <li>A <b>&ldquo;dedicated tier&rdquo;</b> flag lets the most sensitive tenants pull shared components (incl. their own Postgres instance) into their namespace.</li>
+    </ul>
+
+    <h3>Topology rationale &mdash; why hybrid (Approach C)</h3>
+    <div class="lanes3 three">
+      <div class="lane rejected">
+        <div class="h">A &mdash; Thin tenant / fat platform</div>
+        <ul>
+          <li>Namespace runs only app-shell + BFF + DB schema</li>
+          <li>Everything reusable runs centrally</li>
+          <li><span>Cheapest and most DRY</span></li>
+          <li>Shared services become a <b>cross-tenant blast radius</b></li>
+          <li>Tenant data crosses the namespace boundary &mdash; hard compliance story for sovereign clients</li>
+        </ul>
+        <div class="verdict">Rejected</div>
+      </div>
+      <div class="lane rejected">
+        <div class="h">B &mdash; Fat tenant / thin platform</div>
+        <ul>
+          <li>Namespace runs a near-complete stack incl. connectors + AI infra</li>
+          <li>Platform only provisions + hosts the registry</li>
+          <li><span>Maximal isolation</span></li>
+          <li>Market data fetched <b>N&times; over</b></li>
+          <li>AI infra duplicated per tenant &mdash; much higher cost</li>
+        </ul>
+        <div class="verdict">Rejected</div>
+      </div>
+      <div class="lane chosen">
+        <div class="h">C &mdash; Hybrid / tiered</div>
+        <ul>
+          <li>Tenant namespace: app-shell + BFF + <b>tenant's own AI workers</b> + DB schema</li>
+          <li>Central: registry/CDN, market ingestion, IdP, model gateway, control plane</li>
+          <li>Tenant-private data <b>never leaves the namespace</b></li>
+          <li>Shared infra not rebuilt per tenant &mdash; onboarding stays cheap and fast</li>
+          <li><b>Dedicated tier</b> escape hatch for the most sensitive tenants</li>
+        </ul>
+        <div class="verdict">Chosen</div>
+      </div>
+    </div>
+    <div class="note good"><span class="l">Reasoning</span>C honors the isolation intent of namespace-per-tenant where it matters (tenant data, AI, queries) while keeping genuinely-shared, non-sensitive infrastructure (market feeds, widget catalog, identity) central.</div>
+  </section>
+
+  <!-- WIDGET REGISTRY -->
+  <section class="doc" id="widget-registry">
+    <div class="sn">04</div>
+    <h2>Widget Registry &amp; Federation</h2>
+    <p class="lead">Three concepts: a <strong>widget package</strong>, the <strong>registry</strong>, and <strong>runtime loading</strong>.</p>
+
+    <div class="cards c3">
+      <div class="ic"><h4>1 &middot; Widget package</h4><p>The unit of reuse. Each widget is built and published independently as a federated remote module, shipping a manifest that describes its contract: remote URL, data contract, layout defaults, entitlement gate.</p></div>
+      <div class="ic"><h4>2 &middot; The registry</h4><p>A <code>shared.widget_registry</code> table + the CDN hosting built bundles, in the platform namespace. Holds every published widget version, with <em>common</em> vs <em>custom</em> visibility classes.</p></div>
+      <div class="ic"><h4>3 &middot; Runtime loading</h4><p>The tenant's app-shell reads its tenant manifest, resolves pinned versions, dynamically imports each <code>remoteEntry.js</code> from the CDN, and renders it into the grid via a stable host SDK.</p></div>
+    </div>
+
+    <h3>Widget package manifest</h3>
+<pre class="language-json"><code class="language-json">{
+  "id": "reputation-index",
+  "version": "2.3.0",
+  "title": "Reputation &amp; Trust Index",
+  "scope": "common",                 // "common" | "custom"
+  "remote": "https://cdn.nexorus.io/widgets/reputation-index/2.3.0/remoteEntry.js",
+  "exposedModule": "./Widget",
+  "dataContract": {                  // what the BFF must provide
+    "endpoint": "/api/v1/widgets/reputation-index",
+    "inputs": ["entityScope", "window"],
+    "schemaRef": "reputation-index@2"
+  },
+  "defaultLayout": { "w": 4, "h": 5, "minW": 3, "minH": 4 },
+  "entitlement": "media-intelligence" // feature/plan gate
+}</code></pre>
+
+    <h3>Visibility classes</h3>
+    <ul class="list">
+      <li><b><code>common</code> widgets</b> &mdash; available to any tenant (Reputation Index, Portfolio Value Map, Impact Simulator&hellip;).</li>
+      <li><b><code>custom</code> widgets</b> &mdash; pinned to one <code>tenant_id</code>; the registry <strong>refuses to serve them to any other tenant</strong> (enforced at the bundle-serving layer, not just UI).</li>
+    </ul>
+
+    <h3>Runtime loading flow</h3>
+    <div class="diagram"><div class="mermaid">
+flowchart LR
+    subgraph TenantNS["tenant namespace"]
+        Shell["App-shell"]
+        BFF["BFF"]
+    end
+    subgraph PlatformNS["platform namespace"]
+        Manifest["Resolved tenant manifest<br/>(ConfigMap + config endpoint)"]
+        Reg["shared.widget_registry"]
+        CDN["Remote-bundle CDN"]
+    end
+
+    Shell -->|1. read widget list| Manifest
+    Shell -->|2. resolve pinned versions| Reg
+    Shell -->|3. dynamic import remoteEntry.js| CDN
+    CDN -->|authz: common or owned custom only| Shell
+    Shell -->|4. widget fetches data via host SDK| BFF
+    </div></div>
+    <p>The widget receives a small, stable <strong>host SDK</strong> (props): its resolved data endpoint, tenant theme tokens, locale, and an auth-scoped fetch. The widget never knows about other tenants &mdash; it only gets its bound endpoint.</p>
+
+    <h3>Why this shape</h3>
+    <ul class="list">
+      <li>A new <b>common</b> widget = publish one version &rarr; it appears in the catalog for everyone, opt-in per tenant. <b>No tenant redeploys.</b></li>
+      <li>A new <b>custom</b> widget for tenant X = publish a remote scoped to X &rarr; only X can load it. <b>Core app untouched.</b></li>
+      <li><b>Versioning is explicit:</b> a tenant pins <code>reputation-index@2.3.0</code>; upgrades are deliberate, not forced.</li>
+    </ul>
+
+    <div class="note warn"><span class="l">Risk &mdash; carried to &sect;12</span>Module Federation has known friction with the Next.js App Router/Turbopack (this repo's <code>AGENTS.md</code> warns this Next.js diverges from defaults). A <strong>federation spike</strong> must confirm the shell bundler before committing implementation code.</div>
+  </section>
+
+  <!-- TENANT MANIFEST -->
+  <section class="doc" id="manifest">
+    <div class="sn">05</div>
+    <h2>Tenant Configuration Model</h2>
+    <p class="lead">Everything about a tenant lives in <strong>one declarative record</strong> &mdash; the <strong>tenant manifest</strong> &mdash; owned by the control plane and rendered into the data plane. It is the contract the onboarding pipeline writes and the app-shell reads.</p>
+<pre class="language-json"><code class="language-json">{
+  "slug": "danantara",
+  "displayName": "Danantara Indonesia",
+  "status": "active",                  // provisioning | active | suspended
+  "tier": "standard",                  // standard | dedicated
+  "routing": { "subdomain": "danantara", "customDomain": null },
+  "locale": "id-ID",
+  "branding": {
+    "logo": "cdn://tenants/danantara/logo.png",
+    "title": "Pusat Komando Aset Negara — Danantara Indonesia",
+    "themeTokens": { "accent": "oklch(...)" }
+  },
+  "identity": {
+    "idp": "central",                  // central | sso
+    "sso": null                        // { type: "oidc", issuer, clientId... } when federated
+  },
+  "entitlements": ["media-intelligence", "portfolio-markets", "briefing"],
+  "dataSources": [                     // drives the data-sources panel + connectors
+    { "id": "idx", "mode": "live" },
+    { "id": "forex", "mode": "live" },
+    { "id": "x-social", "mode": "demo" }
+  ],
+  "entityScope": ["DANANTARA", "PERTAMINA", "PLN", "GIAA"],   // tenant watchlist
+  "dashboard": {
+    "layout": [
+      { "widgetId": "reputation-index", "version": "2.3.0",
+        "grid": { "x": 0, "y": 0, "w": 4, "h": 5 },
+        "dataBinding": { "entityScope": "$tenant.entityScope", "window": "14d" } },
+      { "widgetId": "portfolio-value-map", "version": "1.8.0", "grid": {} },
+      { "widgetId": "danantara-soe-treemap", "version": "1.0.0", "grid": {} }  // custom
+    ]
+  }
+}</code></pre>
+
+    <h3>Normalized in the control schema (not one blob)</h3>
+    <table class="tb">
+      <thead><tr><th>Table</th><th>Holds</th></tr></thead>
+      <tbody>
+        <tr><td><code>control.tenants</code></td><td>Identity, routing, tier, status, branding, locale, entitlements</td></tr>
+        <tr><td><code>control.tenant_widgets</code></td><td>One row per placed widget: <code>(tenant_id, widget_id, version, grid, data_binding)</code>. The join between a tenant and the widget registry; what &ldquo;arrange layout&rdquo; edits.</td></tr>
+        <tr><td><code>control.tenant_data_sources</code></td><td>Connector config + mode per tenant</td></tr>
+        <tr><td><code>tenant_&lt;slug&gt;.*</code></td><td>The tenant's actual data (<a href="#data-model">&sect;6</a>)</td></tr>
+      </tbody>
+    </table>
+
+    <h3>What this model gives us</h3>
+    <ol class="list">
+      <li><b>Onboarding is &ldquo;create a manifest + reconcile it&rdquo;</b> &mdash; the whole tenant is data, so provisioning is deterministic and repeatable (<a href="#onboarding">&sect;7</a>).</li>
+      <li><b>Common vs custom is just a registry reference</b> &mdash; common and custom widgets sit in the same <code>layout</code> array; the registry enforces who may load which.</li>
+      <li><b>Layout edits are writes to <code>tenant_widgets</code></b> &mdash; the drag/resize grid persists per tenant, scoped by the BFF.</li>
+    </ol>
+  </section>
+
+  <!-- DATA MODEL -->
+  <section class="doc" id="data-model">
+    <div class="sn">06</div>
+    <h2>Schema Model &mdash; shared vs tenant</h2>
+    <p>The single Postgres cluster splits into <strong>three schema classes</strong>, each with its own role grants:</p>
+    <table class="tb">
+      <thead><tr><th>Schema</th><th>Contents</th><th>Who can read/write</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><b><code>control</code></b></td>
+          <td><code>tenants</code>, <code>tenant_widgets</code>, <code>tenant_data_sources</code>, <code>entitlements</code>, platform <code>audit_log</code></td>
+          <td><strong>Control-plane API only.</strong> Tenants never query this directly &mdash; their resolved manifest is delivered into the namespace (ConfigMap + a config endpoint), so no tenant can see another's row.</td>
+        </tr>
+        <tr>
+          <td><b><code>shared</code></b></td>
+          <td>Market/reference data: <strong>IDX prices, forex, commodities, macro indicators</strong>; <strong>reference entity master</strong> (ticker&rarr;name&rarr;sector); the <strong>widget registry catalog</strong>; the <strong>raw public news/social corpus</strong></td>
+          <td><strong>Read-only</strong> to every tenant BFF role. Written only by central market-data ingestion + the registry publisher.</td>
+        </tr>
+        <tr>
+          <td><b><code>tenant_&lt;slug&gt;</code></b></td>
+          <td>All <strong>derived, tenant-private</strong> data (below)</td>
+          <td><strong>Read/write only</strong> by that tenant's BFF role. No cross-tenant grant exists.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>What lands in each tenant's private schema</h3>
+    <p class="muted">The things that are <em>that tenant's interpretation of the world</em>:</p>
+    <div class="cards c2">
+      <div class="ic"><h4>Media-intelligence analytics</h4><p>Reputation/trust index history, sentiment timeseries, share-of-voice, narrative/issue radar, crisis early-warning alerts, leadership sentiment, actor/influencer map &mdash; all scoped to <em>their</em> entity watchlist and framing.</p></div>
+      <div class="ic"><h4>Portfolio analytics</h4><p>Holdings/NAV history, resilience index, sector allocation, capital-allocation suggestions, stress-test runs.</p></div>
+      <div class="ic"><h4>AI artifacts</h4><p>Generated briefings, copilot chat history, impact-simulator runs, forecasts.</p></div>
+      <div class="ic"><h4>Tenant audit log</h4><p>Who viewed/approved/changed what, in this workspace.</p></div>
+    </div>
+
+    <div class="note"><span class="l">Dividing principle</span><strong>Facts about the public world are shared; a tenant's lens on those facts is private.</strong> IDX closed at one price for everyone (shared); &ldquo;what that move does to Danantara's NAV and reputation&rdquo; is Danantara's alone (tenant). The reference entity master is shared; a tenant's <em>watchlist</em> is config in <code>control</code>, and their <em>analytics on it</em> live in their schema.</div>
+
+    <div class="note good"><span class="l">Corpus decision</span>Raw public news/social documents are ingested <strong>once</strong> into <code>shared</code>; each tenant's pipeline <strong>derives</strong> its private analytics (sentiment, narratives, alerts) from that shared corpus into its own schema.</div>
+  </section>
+
+  <!-- ONBOARDING -->
+  <section class="doc" id="onboarding">
+    <div class="sn">07</div>
+    <h2>Onboarding Pipeline</h2>
+    <p class="lead">Onboarding is the <strong>control-plane API orchestrating a deterministic, idempotent sequence</strong>, triggered by an ops admin (UI or CLI) who supplies just: <code>slug</code>, <code>displayName</code>, <code>tier</code>, <code>locale</code>, a <strong>blueprint</strong>, and branding/entity overrides. Everything else is derived.</p>
+    <div class="diagram tall"><div class="mermaid">
+flowchart TB
+    Start(["ops admin: onboard danantara<br/>blueprint=sovereign-wealth &middot; locale=id-ID"])
+    S1["1 &middot; RECORD<br/>control.tenants: status=provisioning<br/>(validate slug + subdomain free)"]
+    S2["2 &middot; NAMESPACE<br/>create ns tenant-danantara<br/>+ ResourceQuota + NetworkPolicy + RBAC"]
+    S3["3 &middot; DATA<br/>create schema tenant_danantara<br/>run Alembic migrations<br/>scoped DB role + creds to K8s Secret"]
+    S4["4 &middot; IDENTITY<br/>central IdP: tenant org + seed admin user<br/>+ roles (admin / analyst / viewer)"]
+    S5["5 &middot; ROUTING<br/>ingress danantara.nexorus.io to tenant svc<br/>cert via cert-manager"]
+    S6["6 &middot; CONFIG<br/>materialize manifest from BLUEPRINT<br/>(widgets, layout, entitlements, sources, watchlist)<br/>+ apply overrides"]
+    S7["7 &middot; DEPLOY<br/>Helm release: app-shell + BFF + AI workers<br/>inject ConfigMap(manifest) + Secret(db, idp)"]
+    S8["8 &middot; WIDGETS<br/>resolve blueprint widget set vs registry<br/>scope custom widgets to tenant_id"]
+    S9{"9 &middot; SMOKE TEST<br/>BFF up? reads shared? r/w tenant schema?<br/>widgets load? auth works?"}
+    S10["10 &middot; ACTIVATE<br/>status=active &middot; emit audit event &middot; notify ops"]
+    Live(["Tenant live at danantara.nexorus.io"])
+    Fail["status=provisioning_failed<br/>retry or teardown"]
+
+    Start --> S1 --> S2 --> S3 --> S4 --> S5 --> S6 --> S7 --> S8 --> S9
+    S9 -->|pass| S10 --> Live
+    S9 -.->|fail| Fail
+    Fail -.->|every step idempotent: retry| S1
+
+    style S10 fill:#dcfce7,stroke:#22c55e
+    style Live fill:#dcfce7,stroke:#22c55e
+    style Fail fill:#fef2f2,stroke:#ef4444
+    </div></div>
+    <div class="dcap">Any step can fail &rarr; status=provisioning_failed, retry or teardown. Every step is idempotent, so a retry resumes safely.</div>
+  </section>
+
+  <!-- BLUEPRINTS -->
+  <section class="doc" id="blueprints">
+    <div class="sn">08</div>
+    <h2>Blueprints &amp; Day-2 Operations</h2>
+
+    <h3>Blueprints &mdash; what makes &ldquo;common widgets&rdquo; real</h3>
+    <p>A <strong>blueprint</strong> is a named, curated starting template. <code>sovereign-wealth</code> bundles Reputation Index + Portfolio Value Map + Impact Simulator + Crisis Early-Warning + Briefing in a default layout, with IDX/forex/commodity sources wired.</p>
+    <p>Onboarding a new SWF tenant = pick that blueprint, override logo/name/watchlist, go. Custom widgets get added to that tenant's manifest afterward (or baked into a bespoke blueprint).</p>
+    <div class="note"><span class="l">Curation rule</span>Blueprints are <strong>curated with overrides</strong>: a small set of maintained templates; per-tenant deviation happens through manifest overrides, <em>not</em> blueprint forks.</div>
+
+    <h3>Day-2 operations reuse the same machinery</h3>
+    <ul class="list">
+      <li><b>Add a widget</b>, change entitlements, enable SSO, or upgrade a pinned widget version &mdash; all are <b>manifest edits the control plane reconciles</b>. Same path as onboarding, just incremental.</li>
+      <li><b>Suspend/offboard</b> = reverse the sequence: disable ingress &rarr; scale down &rarr; archive/drop schema &rarr; retain audit.</li>
+    </ul>
+  </section>
+
+  <!-- AUTH -->
+  <section class="doc" id="auth">
+    <div class="sn">09</div>
+    <h2>Auth &amp; Routing</h2>
+    <p>Replaces the demo cookie auth. The subdomain is <em>never</em> trusted on its own &mdash; <strong>the token is the authority</strong>.</p>
+    <div class="diagram tall"><div class="mermaid">
+sequenceDiagram
+    autonumber
+    actor U as Tenant user
+    participant Shell as Atlas app-shell
+    participant IdP as Central IdP (OIDC)
+    participant BFF as Tenant BFF
+    participant PG as Postgres
+
+    U->>Shell: open danantara.nexorus.io
+    Shell->>IdP: redirect (OIDC auth request)
+    IdP->>IdP: authenticate against tenant org
+    IdP-->>Shell: token with tenant claim + role (admin/analyst/viewer)
+    Shell->>BFF: /api/v1/* request + token
+    BFF->>BFF: validate token signature
+    BFF->>BFF: assert tenant claim matches this namespace
+    BFF->>BFF: enforce RBAC per route
+    BFF->>PG: query as tenant-scoped DB role
+    PG-->>BFF: tenant_danantara (RW) + shared (RO)
+    BFF-->>Shell: response
+    Shell-->>U: render widgets
+    </div></div>
+    <ul class="list">
+      <li>The BFF validates the token <b>on every request</b>, asserts the <code>tenant</code> claim matches the subdomain's namespace, enforces RBAC per route, and connects to Postgres with that tenant's scoped role.</li>
+      <li>Per-tenant SSO (OIDC/SAML) federates in later as an <b>alternate IdP connection on the same tenant org</b> &mdash; no app changes.</li>
+    </ul>
+  </section>
+
+  <!-- ISOLATION -->
+  <section class="doc" id="isolation">
+    <div class="sn">10</div>
+    <h2>Isolation Guardrails</h2>
+    <p class="lead">Defense in depth &mdash; <strong>every layer assumes the one above it can fail.</strong></p>
+    <ol class="list">
+      <li><b>Network:</b> <code>NetworkPolicy</code> lets a tenant namespace egress only to platform shared endpoints + the DB; cross-tenant traffic denied.</li>
+      <li><b>Database:</b> per-schema role; BFF role has RW on <code>tenant_&lt;slug&gt;</code>, RO on <code>shared</code>, <b>no grant</b> to <code>control</code> or other tenant schemas.</li>
+      <li><b>Widget registry:</b> serving a <code>custom</code> bundle checks the requester's tenant &mdash; tenant B cannot fetch tenant A's remote (authz at the CDN/registry edge, not just UI).</li>
+      <li><b>Secrets:</b> DB creds, IdP client secrets live only in the tenant namespace.</li>
+      <li><b>Model gateway:</b> every LLM call tagged with <code>tenant_id</code>, cost-logged, and budget-capped per tenant.</li>
+      <li><b>Quotas:</b> <code>ResourceQuota</code>/<code>LimitRange</code> per namespace stop noisy neighbors.</li>
+      <li><b>Audit:</b> sensitive actions (auth, approvals, config/source changes) append to the tenant audit log.</li>
+    </ol>
+
+    <h3>Graceful degradation</h3>
+    <div class="cards c3">
+      <div class="ic"><h4>Market data stale/down</h4><p>Serve cached last-known data; widgets show a staleness indicator instead of breaking.</p></div>
+      <div class="ic"><h4>Widget remote fails to load</h4><p>Host SDK renders a fallback tile; the rest of the dashboard survives.</p></div>
+      <div class="ic"><h4>AI gateway down</h4><p>Deterministic scripted fallback (the demo repo already has <code>lib/ai/scripted.ts</code>).</p></div>
+    </div>
+  </section>
+
+  <!-- TESTING -->
+  <section class="doc" id="testing">
+    <div class="sn">11</div>
+    <h2>Testing Strategy</h2>
+    <div class="cards c2">
+      <div class="ic">
+        <h4>Unit / integration</h4>
+        <p><b>vitest</b> (TS): BFF routes, host SDK, manifest resolution, RBAC enforcement.<br/>
+        <b>pytest</b> (Python): connectors, ingestion, provisioning steps.</p>
+      </div>
+      <div class="ic">
+        <h4>Cross-tenant isolation suite</h4>
+        <p>Every illegal access attempt must <b>fail closed</b>: cross-schema queries, cross-tenant bundle fetches, mismatched token/subdomain pairs.</p>
+      </div>
+      <div class="ic">
+        <h4>Onboarding e2e</h4>
+        <p>Provision a throwaway tenant in CI, smoke-test it, tear it down. The pipeline's own health gate (<a href="#onboarding">&sect;7</a>, step 9) is exercised on every run.</p>
+      </div>
+      <div class="ic">
+        <h4>Federation spike</h4>
+        <p>Before any widget-registry code: prove Module Federation works with this Next.js shell/bundler (<a href="#risks">&sect;12</a>).</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- RISKS -->
+  <section class="doc" id="risks">
+    <div class="sn">12</div>
+    <h2>Risks</h2>
+    <table class="tb">
+      <thead><tr><th>Risk</th><th>Mitigation</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><b>Module Federation friction</b> with Next.js App Router/Turbopack (this repo's <code>AGENTS.md</code> warns this Next.js diverges from defaults)</td>
+          <td><strong>Federation spike first</strong> &mdash; confirm the shell bundler can host MF remotes before any widget-registry implementation</td>
+        </tr>
+        <tr>
+          <td>Shared services as cross-tenant blast radius</td>
+          <td>Hybrid topology keeps tenant data/compute in-namespace; dedicated tier escape hatch</td>
+        </tr>
+        <tr>
+          <td>Provisioning partial failures</td>
+          <td>Every pipeline step idempotent; <code>provisioning_failed</code> status + retry/teardown</td>
+        </tr>
+        <tr>
+          <td>Noisy-neighbor tenants</td>
+          <td><code>ResourceQuota</code>/<code>LimitRange</code> per namespace; per-tenant LLM budget caps</td>
+        </tr>
+        <tr>
+          <td>Sovereign-client compliance demands</td>
+          <td>Dedicated tier: own Postgres instance + shared components pulled in-namespace</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- IMPLEMENTATION -->
+  <section class="doc" id="implementation">
+    <div class="sn">13</div>
+    <h2>Implementation Plan</h2>
+    <p>This architecture is too large for one plan. Decompose into separate <strong>spec &rarr; plan &rarr; build</strong> cycles, in dependency order:</p>
+    <table class="tb">
+      <thead><tr><th>#</th><th>Work package</th><th>Scope</th><th>Why this order</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><b>1</b></td>
+          <td><code>widget-federation</code></td>
+          <td>The MF spike + host SDK + registry serving</td>
+          <td>Unblocks everything widget-related; <strong>highest technical risk</strong> &mdash; fail fast here</td>
+        </tr>
+        <tr>
+          <td><b>2</b></td>
+          <td><code>tenant-control-plane</code></td>
+          <td>Control schema, tenant manifest CRUD, blueprint model</td>
+          <td>The source of truth every later package writes to and reads from</td>
+        </tr>
+        <tr>
+          <td><b>3</b></td>
+          <td><code>data-schema-migrations</code></td>
+          <td><code>control</code>/<code>shared</code>/<code>tenant_&lt;slug&gt;</code> Alembic structure + role grants</td>
+          <td>Provisioning needs the migration + grant machinery in place</td>
+        </tr>
+        <tr>
+          <td><b>4</b></td>
+          <td><code>onboarding-automation</code></td>
+          <td>The 10-step pipeline + smoke tests + day-2 reconciliation</td>
+          <td>Composes all of the above into the end-to-end flow</td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="note"><span class="l">Revision history</span><b>v1.0</b> &mdash; 2026-06-03 &mdash; Initial approved design (brainstormed 2026-06-01).</div>
+  </section>
+
+</main>
+
+<div id="lightbox">
+  <button id="lb-close">&times; close</button>
+  <div class="lb-card" id="lb-card"></div>
+  <div id="lb-hint">click outside or press Esc to close</div>
+</div>
+
+<button id="totop" title="Back to top">&uarr; Top</button>
+
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-core.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-clike.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-javascript.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-typescript.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-bash.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-json.min.js"></script>
+<script>
+  if (window.mermaid) {
+    mermaid.initialize({ startOnLoad: true, theme: 'default', securityLevel: 'loose',
+      flowchart: { useMaxWidth: true, htmlLabels: true }, sequence: { useMaxWidth: true } });
+  }
+  if (window.Prism) { Prism.highlightAll(); }
+
+  (function () {
+    var links = Array.prototype.slice.call(document.querySelectorAll('.nav-link'));
+    var map = {};
+    links.forEach(function (l) { map[l.getAttribute('href').slice(1)] = l; });
+    var sections = Array.prototype.slice.call(document.querySelectorAll('section.doc'));
+
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        if (e.isIntersecting) {
+          links.forEach(function (l) { l.classList.remove('active'); });
+          var a = map[e.target.id]; if (a) { a.classList.add('active'); }
+        }
+      });
+    }, { rootMargin: '-15% 0px -75% 0px', threshold: 0 });
+    sections.forEach(function (s) { io.observe(s); });
+
+    var totop = document.getElementById('totop');
+    window.addEventListener('scroll', function () {
+      totop.classList.toggle('show', window.scrollY > 600);
+    });
+    totop.addEventListener('click', function () { window.scrollTo({ top: 0, behavior: 'smooth' }); });
+  })();
+</script>
+<script>
+  (function () {
+    var lb = document.getElementById('lightbox');
+    var lbCard = document.getElementById('lb-card');
+    function openLightbox(svg) {
+      lbCard.innerHTML = '';
+      var clone = svg.cloneNode(true);
+      clone.removeAttribute('width');
+      clone.removeAttribute('height');
+      clone.style.maxWidth = 'none';
+      clone.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+      var vb = (clone.getAttribute('viewBox') || '').split(/\s+/);
+      var ratio = (vb.length === 4 && parseFloat(vb[3])) ? (parseFloat(vb[2]) / parseFloat(vb[3])) : 1.4;
+      var availW = window.innerWidth * 0.9;
+      var availH = window.innerHeight * 0.84;
+      if (ratio > availW / availH) { clone.style.width = availW + 'px'; clone.style.height = 'auto'; }
+      else { clone.style.height = availH + 'px'; clone.style.width = 'auto'; }
+      lbCard.appendChild(clone);
+      lb.classList.add('show');
+      document.body.style.overflow = 'hidden';
+    }
+    function closeLightbox() { lb.classList.remove('show'); lbCard.innerHTML = ''; document.body.style.overflow = ''; }
+
+    Array.prototype.forEach.call(document.querySelectorAll('.diagram'), function (d) {
+      d.addEventListener('click', function () {
+        var svg = d.querySelector('svg');
+        if (svg) openLightbox(svg);
+      });
+    });
+    lb.addEventListener('click', function (e) { if (e.target === lb || e.target.id === 'lb-close') closeLightbox(); });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeLightbox(); });
+  })();
+</script>
+</body>
+</html>
