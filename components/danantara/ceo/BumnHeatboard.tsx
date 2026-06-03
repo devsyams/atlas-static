@@ -1,8 +1,10 @@
 "use client";
 
-import { Building2 } from "lucide-react";
+import { Building2, TrendingDown, TrendingUp } from "lucide-react";
+import { groupBumnBySentiment, sentimentTotals } from "@/lib/danantara/ceo/engine";
 import { Sparkline } from "./Sparkline";
 import { RankBadge } from "./RankBadge";
+import { SentimentPie } from "./SentimentPie";
 import { SentimentSplit } from "./SentimentSplit";
 import type { BumnSentiment } from "@/lib/danantara/ceo/types";
 
@@ -14,50 +16,105 @@ function heatColor(sentiment: number): string {
   return `oklch(0.45 ${chroma.toFixed(3)} ${hue.toFixed(0)} / 0.35)`;
 }
 
-/** Top-20 BUMN by net public sentiment, most-negative first. */
+function BumnTile({ row, onSelect }: { row: BumnSentiment; onSelect?: (id: string) => void }) {
+  return (
+    <div
+      data-testid={`bumn-tile-${row.id}`}
+      className="rounded-md border border-border/60"
+      style={{ backgroundColor: heatColor(row.sentiment) }}
+    >
+      <button
+        type="button"
+        data-testid={`btn-bumn-tile-${row.id}`}
+        onClick={() => onSelect?.(row.id)}
+        className="flex h-full w-full cursor-pointer flex-col justify-between rounded-md p-2 text-left hover:ring-1 hover:ring-primary/40"
+      >
+        <div className="flex items-start justify-between gap-1">
+          <span className="flex items-center gap-1">
+            <RankBadge delta={row.rankDelta} />
+            <span className="truncate text-[12px] font-semibold leading-tight">{row.short}</span>
+          </span>
+          <span
+            className={`font-mono text-sm font-bold tabular-nums ${
+              row.sentiment <= -20 ? "text-destructive" : row.sentiment >= 20 ? "text-success" : "text-warning"
+            }`}
+          >
+            {row.sentiment > 0 ? "+" : ""}
+            {Math.round(row.sentiment)}
+          </span>
+        </div>
+        <div className="mt-1 flex items-end justify-between gap-1">
+          <SentimentSplit pos={row.posMentions} neg={row.negMentions} total={row.mentions} />
+          <Sparkline data={row.trend} width={36} height={14} stroke="oklch(0.85 0.02 250 / 0.8)" />
+        </div>
+      </button>
+    </div>
+  );
+}
+
+function BumnGroup({
+  variant,
+  rows,
+  onSelect,
+}: {
+  variant: "positive" | "negative";
+  rows: BumnSentiment[];
+  onSelect?: (id: string) => void;
+}) {
+  const positive = variant === "positive";
+  const Icon = positive ? TrendingUp : TrendingDown;
+  return (
+    <section data-testid={`bumn-group-${variant}`}>
+      <div
+        className={`sticky top-0 z-10 flex items-center gap-1.5 border-y border-border/60 bg-card px-3 py-1.5 ${
+          positive ? "text-success" : "text-destructive"
+        }`}
+      >
+        <Icon className="h-3 w-3" />
+        <span className="text-[10px] font-bold tracking-[0.18em]">
+          {positive ? "SENTIMEN POSITIF" : "SENTIMEN NEGATIF"}
+        </span>
+        <span className="font-mono text-[10px] tabular-nums">({rows.length})</span>
+      </div>
+      {rows.length === 0 ? (
+        <p className="px-3 py-3 text-[11px] text-muted-foreground">
+          Tidak ada BUMN dengan sentimen {positive ? "positif" : "negatif"} saat ini.
+        </p>
+      ) : (
+        <div className="grid grid-cols-2 gap-1.5 p-2">
+          {rows.map((row) => (
+            <BumnTile key={row.id} row={row} onSelect={onSelect} />
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
+/**
+ * BUMN grouped by net-sentiment sign (AC13): positive section first (most-positive
+ * leading), negative below (most-negative leading — the CEO's problems lead),
+ * headed by the aggregate sentiment pie (AC14).
+ */
 export function BumnHeatboard({ rows, onSelect }: { rows: BumnSentiment[]; onSelect?: (id: string) => void }) {
+  const { positive, negative } = groupBumnBySentiment(rows);
+  const totals = sentimentTotals(rows);
+
   return (
     <div data-testid="ceo-bumn" className="panel flex h-full flex-col overflow-hidden">
       <div className="flex items-center gap-2 border-b border-border px-3 py-2">
         <Building2 className="h-3.5 w-3.5 text-primary" />
-        <span className="text-[11px] font-semibold uppercase tracking-[0.18em]">Sentimen 20 BUMN</span>
-        <span className="ml-auto text-[10px] uppercase tracking-widest text-muted-foreground">Paling tertekan dulu</span>
+        <span className="text-[11px] font-semibold uppercase tracking-[0.18em]">Sentimen BUMN</span>
+        <span className="ml-auto text-[10px] uppercase tracking-widest text-muted-foreground">
+          {rows.length} BUMN · positif vs negatif
+        </span>
       </div>
-      <div className="grid min-h-0 flex-1 auto-rows-fr grid-cols-2 gap-1.5 overflow-y-auto p-2">
-        {rows.map((row) => (
-          <div
-            key={row.id}
-            data-testid={`bumn-tile-${row.id}`}
-            className="rounded-md border border-border/60"
-            style={{ backgroundColor: heatColor(row.sentiment) }}
-          >
-            <button
-              type="button"
-              data-testid={`btn-bumn-tile-${row.id}`}
-              onClick={() => onSelect?.(row.id)}
-              className="flex h-full w-full cursor-pointer flex-col justify-between rounded-md p-2 text-left hover:ring-1 hover:ring-primary/40"
-            >
-              <div className="flex items-start justify-between gap-1">
-                <span className="flex items-center gap-1">
-                  <RankBadge delta={row.rankDelta} />
-                  <span className="truncate text-[12px] font-semibold leading-tight">{row.short}</span>
-                </span>
-                <span
-                  className={`font-mono text-sm font-bold tabular-nums ${
-                    row.sentiment <= -20 ? "text-destructive" : row.sentiment >= 20 ? "text-success" : "text-warning"
-                  }`}
-                >
-                  {row.sentiment > 0 ? "+" : ""}
-                  {Math.round(row.sentiment)}
-                </span>
-              </div>
-              <div className="mt-1 flex items-end justify-between gap-1">
-                <SentimentSplit pos={row.posMentions} neg={row.negMentions} total={row.mentions} />
-                <Sparkline data={row.trend} width={36} height={14} stroke="oklch(0.85 0.02 250 / 0.8)" />
-              </div>
-            </button>
-          </div>
-        ))}
+      <div className="border-b border-border px-3 py-2">
+        <SentimentPie totals={totals} />
+      </div>
+      <div className="min-h-0 flex-1 overflow-y-auto">
+        <BumnGroup variant="positive" rows={positive} onSelect={onSelect} />
+        <BumnGroup variant="negative" rows={negative} onSelect={onSelect} />
       </div>
     </div>
   );

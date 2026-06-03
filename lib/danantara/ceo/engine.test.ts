@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { briefLines, mulberry32, rankBumn, rankIssues, spotlightQueue, statusOf, tick, velocity, HISTORY_LIMIT, VELOCITY_WINDOW, RISING_THRESHOLD, ESCALATING_THRESHOLD, REACH_FLOOR, REACH_CAP, NEUTRAL_SHARE, rankMovement, sentimentBreakdown } from "./engine";
+import { briefLines, groupBumnBySentiment, groupIssuesBySentiment, mulberry32, rankBumn, rankIssues, sentimentTotals, statusOf, tick, velocity, HISTORY_LIMIT, VELOCITY_WINDOW, RISING_THRESHOLD, ESCALATING_THRESHOLD, REACH_FLOOR, REACH_CAP, NEUTRAL_SHARE, rankMovement, sentimentBreakdown } from "./engine";
+import { makeBumn, makeIssue } from "./test-fixtures";
 import type { BumnSentiment, CeoIssue, CeoState, EscalationArc } from "./types";
 
 describe("mulberry32 PRNG", () => {
@@ -42,7 +43,7 @@ describe("velocity (T2)", () => {
   });
 });
 
-describe("statusOf ladder (T4 / AC4)", () => {
+describe("statusOf ladder (board status badges, AC2)", () => {
   it("normal when velocity is low", () => {
     expect(statusOf(RISING_THRESHOLD - 1, REACH_FLOOR * 2, "normal")).toBe("normal");
   });
@@ -67,45 +68,6 @@ describe("statusOf ladder (T4 / AC4)", () => {
     expect(statusOf(RISING_THRESHOLD - 1, REACH_FLOOR + 1_000_000, "escalating")).toBe("normal");
   });
 });
-
-/** Minimal valid CeoIssue for tests. */
-export function makeIssue(over: Partial<CeoIssue> & { id: string }): CeoIssue {
-  return {
-    title: over.id,
-    category: "tata-kelola",
-    relatedBumn: [],
-    mentions: 1000,
-    reach: 1_000_000,
-    sentiment: 0,
-    history: [1000, 1000, 1000, 1000, 1000, 1000],
-    headlines: [],
-    aiLine: "",
-    velocity: 0,
-    status: "normal",
-    rankHistory: [1, 1, 1, 1, 1, 1],
-    rankDelta: 0,
-    posMentions: 350,
-    negMentions: 350,
-    ...over,
-  };
-}
-
-/** Minimal valid BumnSentiment for tests. */
-export function makeBumn(over: Partial<BumnSentiment> & { id: string }): BumnSentiment {
-  return {
-    name: over.id,
-    short: over.id,
-    sector: "energi",
-    sentiment: 0,
-    mentions: 100,
-    trend: [0, 0, 0],
-    rankHistory: [1, 1, 1, 1, 1, 1],
-    rankDelta: 0,
-    posMentions: 350,
-    negMentions: 350,
-    ...over,
-  };
-}
 
 describe("rankIssues (T2 / AC2)", () => {
   it("sorts by reach descending", () => {
@@ -218,8 +180,8 @@ describe("tick (T2 / AC2)", () => {
   });
 });
 
-describe("spotlightQueue concurrent escalation", () => {
-  it("orders the spotlight queue by velocity when two arcs escalate concurrently", () => {
+describe("concurrent escalation arcs", () => {
+  it("escalates two issues at once when both arcs ramp together", () => {
     const arcs: EscalationArc[] = [
       { issueId: "fast", atTick: 0, rampTicks: 6, growthPerTick: 0.6 },
       { issueId: "slow", atTick: 0, rampTicks: 6, growthPerTick: 0.3 },
@@ -235,16 +197,14 @@ describe("spotlightQueue concurrent escalation", () => {
     }
     const fast = state.issues.find((i) => i.id === "fast")!;
     const slow = state.issues.find((i) => i.id === "slow")!;
+    const calm = state.issues.find((i) => i.id === "calm")!;
     expect(fast.status).toBe("escalating");
     expect(slow.status).toBe("escalating");
-    const queue = spotlightQueue(state.issues);
-    expect(queue[0]).toBe("fast");
-    expect(queue[1]).toBe("slow");
-    expect(queue[2]).toBe("calm");
+    expect(calm.status).toBe("normal");
   });
 });
 
-describe("scripted escalation arcs (T5 / AC5)", () => {
+describe("scripted escalation arcs (board badges, AC2)", () => {
   const arc: EscalationArc = { issueId: "target", atTick: 3, rampTicks: 5, growthPerTick: 0.45 };
 
   it("does not spike before atTick", () => {
@@ -272,25 +232,6 @@ describe("scripted escalation arcs (T5 / AC5)", () => {
       state = tick(state, rand, [arc]);
     }
     expect(state.issues[0].status).toBe("escalating");
-  });
-});
-
-describe("spotlightQueue", () => {
-  it("returns issue ids in reach order when nothing escalates", () => {
-    const issues = rankIssues([
-      makeIssue({ id: "big", reach: 9000 }),
-      makeIssue({ id: "small", reach: 100 }),
-    ]);
-    expect(spotlightQueue(issues)).toEqual(["big", "small"]);
-  });
-
-  it("pins escalating issues to the front, ordered by velocity", () => {
-    const issues = rankIssues([
-      makeIssue({ id: "big", reach: 9000 }),
-      makeIssue({ id: "esc-slow", reach: 100, status: "escalating", velocity: 210 }),
-      makeIssue({ id: "esc-fast", reach: 50, status: "escalating", velocity: 400 }),
-    ]);
-    expect(spotlightQueue(issues)).toEqual(["esc-fast", "esc-slow", "big"]);
   });
 });
 
@@ -362,6 +303,110 @@ describe("rankMovement (T8 / AC8)", () => {
 
   it("only considers the rolling window", () => {
     expect(rankMovement([20, 20, 1, 1, 1, 1, 1, 1])).toBe(0);
+  });
+});
+
+describe("groupIssuesBySentiment (T12 / AC12)", () => {
+  it("puts issues with more positive than negative mentions in the positive group", () => {
+    const { positive, negative } = groupIssuesBySentiment([
+      makeIssue({ id: "good", posMentions: 600, negMentions: 100 }),
+      makeIssue({ id: "bad", posMentions: 100, negMentions: 600 }),
+    ]);
+    expect(positive.map((i) => i.id)).toEqual(["good"]);
+    expect(negative.map((i) => i.id)).toEqual(["bad"]);
+  });
+
+  it("ties go to the negative group (conservative for a watchdog product)", () => {
+    const { positive, negative } = groupIssuesBySentiment([
+      makeIssue({ id: "tied", posMentions: 300, negMentions: 300 }),
+    ]);
+    expect(positive).toEqual([]);
+    expect(negative.map((i) => i.id)).toEqual(["tied"]);
+  });
+
+  it("orders each group by reach descending", () => {
+    const { positive, negative } = groupIssuesBySentiment([
+      makeIssue({ id: "good-small", posMentions: 9, negMentions: 1, reach: 100 }),
+      makeIssue({ id: "bad-big", posMentions: 1, negMentions: 9, reach: 9000 }),
+      makeIssue({ id: "good-big", posMentions: 9, negMentions: 1, reach: 9000 }),
+      makeIssue({ id: "bad-small", posMentions: 1, negMentions: 9, reach: 100 }),
+    ]);
+    expect(positive.map((i) => i.id)).toEqual(["good-big", "good-small"]);
+    expect(negative.map((i) => i.id)).toEqual(["bad-big", "bad-small"]);
+  });
+
+  it("does not mutate the input array", () => {
+    const input = [
+      makeIssue({ id: "a", posMentions: 9, negMentions: 1, reach: 1 }),
+      makeIssue({ id: "b", posMentions: 9, negMentions: 1, reach: 2 }),
+    ];
+    groupIssuesBySentiment(input);
+    expect(input.map((i) => i.id)).toEqual(["a", "b"]);
+  });
+});
+
+describe("groupBumnBySentiment (T13 / AC13)", () => {
+  it("splits by net sentiment sign: >= 0 positive, < 0 negative", () => {
+    const { positive, negative } = groupBumnBySentiment([
+      makeBumn({ id: "up", sentiment: 40 }),
+      makeBumn({ id: "zero", sentiment: 0 }),
+      makeBumn({ id: "down", sentiment: -40 }),
+    ]);
+    expect(positive.map((b) => b.id)).toEqual(expect.arrayContaining(["up", "zero"]));
+    expect(negative.map((b) => b.id)).toEqual(["down"]);
+  });
+
+  it("orders the positive group most-positive first", () => {
+    const { positive } = groupBumnBySentiment([
+      makeBumn({ id: "ok", sentiment: 10 }),
+      makeBumn({ id: "great", sentiment: 80 }),
+    ]);
+    expect(positive.map((b) => b.id)).toEqual(["great", "ok"]);
+  });
+
+  it("orders the negative group most-negative first", () => {
+    const { negative } = groupBumnBySentiment([
+      makeBumn({ id: "meh", sentiment: -10 }),
+      makeBumn({ id: "awful", sentiment: -80 }),
+    ]);
+    expect(negative.map((b) => b.id)).toEqual(["awful", "meh"]);
+  });
+
+  it("does not mutate the input array", () => {
+    const input = [makeBumn({ id: "a", sentiment: 10 }), makeBumn({ id: "b", sentiment: 50 })];
+    groupBumnBySentiment(input);
+    expect(input.map((b) => b.id)).toEqual(["a", "b"]);
+  });
+});
+
+describe("sentimentTotals (T14 / AC14)", () => {
+  it("sums pos/neg/neutral mention counts across items", () => {
+    const totals = sentimentTotals([
+      makeIssue({ id: "a", mentions: 1000, posMentions: 400, negMentions: 300 }),
+      makeIssue({ id: "b", mentions: 2000, posMentions: 100, negMentions: 1500 }),
+    ]);
+    expect(totals.pos).toBe(500);
+    expect(totals.neg).toBe(1800);
+    expect(totals.neu).toBe(3000 - 500 - 1800);
+    expect(totals.total).toBe(3000);
+  });
+
+  it("works for BUMN rows too (same mention fields)", () => {
+    const totals = sentimentTotals([
+      makeBumn({ id: "x", mentions: 100, posMentions: 60, negMentions: 30 }),
+    ]);
+    expect(totals).toEqual({ pos: 60, neg: 30, neu: 10, total: 100 });
+  });
+
+  it("returns all zeros for an empty list", () => {
+    expect(sentimentTotals([])).toEqual({ pos: 0, neg: 0, neu: 0, total: 0 });
+  });
+
+  it("never returns negative neutral (clamps when pos+neg exceed mentions due to rounding)", () => {
+    const totals = sentimentTotals([
+      makeIssue({ id: "a", mentions: 100, posMentions: 60, negMentions: 50 }),
+    ]);
+    expect(totals.neu).toBe(0);
   });
 });
 

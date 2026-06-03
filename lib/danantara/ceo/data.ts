@@ -3,10 +3,6 @@ import type { BumnSentiment, CeoIssue, CeoState, EscalationArc, IssueCategory, I
 
 /** Wall-clock between simulation ticks (ms). */
 export const TICK_MS = 4_000;
-/** Spotlight rotation interval (ms). */
-export const SPOTLIGHT_MS = 10_000;
-/** Breaking takeover display duration (ms). */
-export const TAKEOVER_MS = 5_000;
 
 /* ----------------------------- 20 BUMN ----------------------------- */
 

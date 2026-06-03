@@ -91,6 +91,47 @@ export function rankMovement(rankHistory: number[], window = VELOCITY_WINDOW): n
   return slice[0] - slice[slice.length - 1];
 }
 
+/**
+ * Split issues into sentiment groups for the two-section topic board (AC12).
+ * Positive = more positive than negative mentions; ties are negative (a watchdog
+ * product should never flatter an ambiguous topic). Each group keeps reach order.
+ */
+export function groupIssuesBySentiment(issues: CeoIssue[]): {
+  positive: CeoIssue[];
+  negative: CeoIssue[];
+} {
+  const ranked = rankIssues(issues);
+  return {
+    positive: ranked.filter((i) => i.posMentions > i.negMentions),
+    negative: ranked.filter((i) => i.posMentions <= i.negMentions),
+  };
+}
+
+/**
+ * Split BUMN into sentiment groups for the two-section BUMN board (AC13).
+ * Positive = net sentiment ≥ 0 (most-positive first); negative = net sentiment
+ * < 0 (most-negative first — the CEO's problems lead).
+ */
+export function groupBumnBySentiment(rows: BumnSentiment[]): {
+  positive: BumnSentiment[];
+  negative: BumnSentiment[];
+} {
+  return {
+    positive: rows.filter((r) => r.sentiment >= 0).sort((a, b) => b.sentiment - a.sentiment),
+    negative: rows.filter((r) => r.sentiment < 0).sort((a, b) => a.sentiment - b.sentiment),
+  };
+}
+
+/** Aggregate pos/neg/neutral mention counts across a board's items (AC14 pie). */
+export function sentimentTotals(
+  items: ReadonlyArray<Pick<CeoIssue, "mentions" | "posMentions" | "negMentions">>,
+): { pos: number; neg: number; neu: number; total: number } {
+  const pos = items.reduce((a, i) => a + i.posMentions, 0);
+  const neg = items.reduce((a, i) => a + i.negMentions, 0);
+  const total = items.reduce((a, i) => a + i.mentions, 0);
+  return { pos, neg, neu: Math.max(0, total - pos - neg), total };
+}
+
 /** Organic per-tick mention change: symmetric random walk (no net drift). */
 const ORGANIC_MIN = -0.02;
 const ORGANIC_MAX = 0.02;
@@ -138,15 +179,6 @@ export function tick(state: CeoState, rand: () => number, arcs: EscalationArc[])
   });
 
   return { tickCount, issues: rankedIssues, bumn: rankedBumn };
-}
-
-/** Spotlight rotation order: escalating issues pin first (fastest spike first). */
-export function spotlightQueue(rankedIssues: CeoIssue[]): string[] {
-  const escalating = rankedIssues
-    .filter((i) => i.status === "escalating")
-    .sort((a, b) => b.velocity - a.velocity);
-  const rest = rankedIssues.filter((i) => i.status !== "escalating");
-  return [...escalating, ...rest].map((i) => i.id);
 }
 
 /** Deterministic Indonesian narration for the AI brief ticker (no LLM — scripted fallback pattern). */
