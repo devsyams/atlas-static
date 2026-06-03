@@ -58,7 +58,7 @@ describe("BumnHeatboard single per-row list (T16 / AC16)", () => {
   it("prefixes each row with a sequential rank number and no net-sentiment score (AC3/AC16 v11.0)", () => {
     render(<BumnHeatboard rows={rows} issues={issues} />);
     const ranks = screen.getAllByTestId("bumn-rank").map((el) => el.textContent);
-    expect(ranks).toEqual(["1", "2", "3", "4"]);
+    expect(ranks).toEqual(["1.", "2.", "3.", "4."]);
     // The old −100..100 score (e.g. Pertamina's +45 / Waskita's -68) is gone.
     const prt = screen.getByTestId("bumn-tile-prt");
     expect(prt.querySelector("[data-testid='bumn-score']")).toBeNull();

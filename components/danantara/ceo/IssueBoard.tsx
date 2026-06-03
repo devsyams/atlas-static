@@ -33,8 +33,8 @@ function IssueRow({ issue, rank, onSelect }: { issue: CeoIssue; rank: number; on
         className="ceo-row flex w-full cursor-pointer items-start gap-2.5 px-3 py-2.5 text-left hover:bg-card/40"
       >
         {/* Rank number + movement badge. */}
-        <div className="flex w-8 shrink-0 flex-col items-end gap-0.5 pt-0.5">
-          <span className="font-mono text-xl tabular-nums text-muted-foreground">{rank}</span>
+        <div className="flex w-9 shrink-0 flex-col items-end gap-0.5 pt-0.5">
+          <span className="font-mono text-xl tabular-nums text-muted-foreground">{rank}.</span>
           <RankBadge delta={issue.rankDelta} />
         </div>
         {/* Left: full title (wraps, never truncates) + status badge. */}

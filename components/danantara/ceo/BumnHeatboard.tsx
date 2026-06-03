@@ -71,8 +71,8 @@ function BumnRow({
       >
         {/* BUMN identity: rank number, rank-movement badge, name. */}
         <div className="flex min-w-0 items-center gap-2">
-          <span data-testid="bumn-rank" className="w-6 shrink-0 text-right font-mono text-xl tabular-nums text-muted-foreground">
-            {rank}
+          <span data-testid="bumn-rank" className="w-7 shrink-0 text-right font-mono text-xl tabular-nums text-muted-foreground">
+            {rank}.
           </span>
           <RankBadge delta={row.rankDelta} />
           <span data-testid="bumn-name" className="truncate text-xl font-semibold leading-tight">{row.short}</span>

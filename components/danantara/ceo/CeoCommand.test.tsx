@@ -67,10 +67,12 @@ describe("CeoCommand two-column sentiment wall (v5.0)", () => {
     expect(screen.getByTestId("ceo-issues").textContent).toContain("ESCALATING");
   });
 
-  it("shows rank movement badges on issue rows and BUMN tiles (AC8)", () => {
+  it("renders no neutral rank badge at load — unchanged ranks show nothing (AC8 v17.0)", () => {
     render(<CeoCommand />);
-    // At load everything is "stay" (rankDelta 0 by construction).
-    expect(screen.getAllByTestId("rank-stay").length).toBeGreaterThanOrEqual(40); // 20 issues + 20 BUMN
+    // At load everything is "stay" (rankDelta 0); the neutral indicator is suppressed.
+    expect(screen.queryByTestId("rank-stay")).not.toBeInTheDocument();
+    expect(screen.queryAllByTestId("rank-up")).toHaveLength(0);
+    expect(screen.queryAllByTestId("rank-down")).toHaveLength(0);
   });
 
   it("detail modal keeps the labeled sentiment split bar (AC9 v5.0)", () => {

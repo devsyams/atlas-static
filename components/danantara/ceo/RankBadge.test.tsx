@@ -19,8 +19,9 @@ describe("RankBadge (T8 / AC8)", () => {
     expect(badge.className).toContain("text-destructive");
   });
 
-  it("shows a neutral stay badge at zero", () => {
-    render(<RankBadge delta={0} />);
-    expect(screen.getByTestId("rank-stay")).toBeInTheDocument();
+  it("renders nothing for an unchanged rank (AC8 v17.0)", () => {
+    const { container } = render(<RankBadge delta={0} />);
+    expect(screen.queryByTestId("rank-stay")).not.toBeInTheDocument();
+    expect(container).toBeEmptyDOMElement();
   });
 });
