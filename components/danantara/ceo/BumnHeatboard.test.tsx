@@ -50,9 +50,18 @@ describe("BumnHeatboard grouped by sentiment (T13 / AC13)", () => {
     ]);
   });
 
-  it("shows the aggregate sentiment pie at the top of the panel (AC14)", () => {
+  it("renders the positive and negative sections side by side (AC13 v5.0)", () => {
     render(<BumnHeatboard rows={rows} />);
-    expect(screen.getByTestId("sentiment-pie")).toBeInTheDocument();
+    const columns = screen.getByTestId("bumn-groups");
+    expect(columns.className).toContain("grid-cols-2");
+    expect(columns.contains(screen.getByTestId("bumn-group-positive"))).toBe(true);
+    expect(columns.contains(screen.getByTestId("bumn-group-negative"))).toBe(true);
+  });
+
+  it("shows a mini sentiment pie on every tile and no panel-level pie (AC14 v5.0)", () => {
+    render(<BumnHeatboard rows={rows} />);
+    expect(screen.getAllByTestId("sentiment-pie-mini")).toHaveLength(rows.length);
+    expect(screen.queryByTestId("sentiment-pie")).not.toBeInTheDocument();
   });
 
   it("still fires onSelect when a tile is clicked (AC10)", () => {

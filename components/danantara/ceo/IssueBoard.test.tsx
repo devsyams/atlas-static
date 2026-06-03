@@ -50,9 +50,18 @@ describe("IssueBoard grouped by sentiment (T12 / AC12)", () => {
     ]);
   });
 
-  it("shows the aggregate sentiment pie at the top of the panel (AC14)", () => {
+  it("renders the positive and negative sections side by side (AC12 v5.0)", () => {
     render(<IssueBoard issues={issues} />);
-    expect(screen.getByTestId("sentiment-pie")).toBeInTheDocument();
+    const columns = screen.getByTestId("issue-groups");
+    expect(columns.className).toContain("grid-cols-2");
+    expect(columns.contains(screen.getByTestId("issue-group-positive"))).toBe(true);
+    expect(columns.contains(screen.getByTestId("issue-group-negative"))).toBe(true);
+  });
+
+  it("shows a mini sentiment pie on every row and no panel-level pie (AC14 v5.0)", () => {
+    render(<IssueBoard issues={issues} />);
+    expect(screen.getAllByTestId("sentiment-pie-mini")).toHaveLength(issues.length);
+    expect(screen.queryByTestId("sentiment-pie")).not.toBeInTheDocument();
   });
 
   it("still fires onSelect when a row is clicked (AC10)", () => {

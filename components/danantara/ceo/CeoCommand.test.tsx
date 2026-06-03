@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { TICK_MS } from "@/lib/danantara/ceo/data";
 import { CeoCommand } from "./CeoCommand";
 
-describe("CeoCommand two-column sentiment wall (v4.0)", () => {
+describe("CeoCommand two-column sentiment wall (v5.0)", () => {
   beforeEach(() => {
     vi.useFakeTimers();
   });
@@ -45,9 +45,17 @@ describe("CeoCommand two-column sentiment wall (v4.0)", () => {
     expect(screen.getAllByTestId(/^bumn-tile-/)).toHaveLength(20);
   });
 
-  it("renders both panels' aggregate sentiment pies (AC14)", () => {
+  it("renders a mini sentiment pie on every row and tile, no panel pie (AC9, AC14 v5.0)", () => {
     render(<CeoCommand />);
-    expect(screen.getAllByTestId("sentiment-pie")).toHaveLength(2);
+    // 20 issue rows + 20 BUMN tiles, each with its own pie
+    expect(screen.getAllByTestId("sentiment-pie-mini")).toHaveLength(40);
+    expect(screen.queryByTestId("sentiment-pie")).not.toBeInTheDocument();
+  });
+
+  it("renders positive|negative sub-columns side by side in both panels (AC12, AC13 v5.0)", () => {
+    render(<CeoCommand />);
+    expect(screen.getByTestId("issue-groups").className).toContain("grid-cols-2");
+    expect(screen.getByTestId("bumn-groups").className).toContain("grid-cols-2");
   });
 
   it("escalating issues still badge on the board when the scripted arc fires (AC2)", () => {
@@ -64,9 +72,15 @@ describe("CeoCommand two-column sentiment wall (v4.0)", () => {
     expect(screen.getAllByTestId("rank-stay").length).toBeGreaterThanOrEqual(40); // 20 issues + 20 BUMN
   });
 
-  it("shows positive/negative sentiment splits on rows and tiles (AC9)", () => {
+  it("detail modal keeps the labeled sentiment split bar (AC9 v5.0)", () => {
     render(<CeoCommand />);
-    expect(screen.getAllByTestId("sentiment-split").length).toBeGreaterThanOrEqual(40);
+    act(() => {
+      fireEvent.click(screen.getAllByTestId(/^btn-issue-row-/)[0]);
+    });
+    expect(screen.getByTestId("sentiment-split-full")).toBeInTheDocument();
+    act(() => {
+      fireEvent.keyDown(window, { key: "Escape" });
+    });
   });
 
   it("opens issue detail when a row is clicked, closes with Esc (T10 / AC10)", () => {

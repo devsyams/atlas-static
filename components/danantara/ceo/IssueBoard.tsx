@@ -1,11 +1,10 @@
 "use client";
 
 import { Flame, TrendingDown, TrendingUp } from "lucide-react";
-import { ESCALATING_THRESHOLD, groupIssuesBySentiment, RISING_THRESHOLD, sentimentTotals } from "@/lib/danantara/ceo/engine";
+import { ESCALATING_THRESHOLD, groupIssuesBySentiment, RISING_THRESHOLD } from "@/lib/danantara/ceo/engine";
 import { Sparkline } from "./Sparkline";
 import { RankBadge } from "./RankBadge";
 import { SentimentPie } from "./SentimentPie";
-import { SentimentSplit } from "./SentimentSplit";
 import type { CeoIssue } from "@/lib/danantara/ceo/types";
 import { SOV_COLORS } from "@/lib/danantara/ui";
 
@@ -44,7 +43,16 @@ function IssueRow({ issue, rank, onSelect }: { issue: CeoIssue; rank: number; on
           <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[10px] text-muted-foreground">
             <span>{(issue.reach / 1_000_000).toFixed(1)} jt jangkauan</span>
             <span>·</span>
-            <SentimentSplit pos={issue.posMentions} neg={issue.negMentions} total={issue.mentions} />
+            {/* Per-topic sentiment pie (AC14 v5.0). */}
+            <SentimentPie
+              totals={{
+                pos: issue.posMentions,
+                neg: issue.negMentions,
+                neu: Math.max(0, issue.mentions - issue.posMentions - issue.negMentions),
+                total: issue.mentions,
+              }}
+              variant="mini"
+            />
           </div>
         </div>
         <Sparkline
@@ -105,12 +113,12 @@ function IssueGroup({
 }
 
 /**
- * Danantara topics grouped by dominant sentiment (AC12): positive section first,
- * negative below, each ranked by reach, headed by the aggregate sentiment pie (AC14).
+ * Danantara topics grouped by dominant sentiment (AC12 v5.0): positive and
+ * negative sub-columns side by side, each ranked by reach, with a per-topic
+ * sentiment pie on every row (AC14 v5.0).
  */
 export function IssueBoard({ issues, onSelect }: { issues: CeoIssue[]; onSelect?: (id: string) => void }) {
   const { positive, negative } = groupIssuesBySentiment(issues);
-  const totals = sentimentTotals(issues);
 
   return (
     <div data-testid="ceo-issues" className="panel flex h-full flex-col overflow-hidden">
@@ -121,10 +129,10 @@ export function IssueBoard({ issues, onSelect }: { issues: CeoIssue[]; onSelect?
           {issues.length} topik · positif vs negatif
         </span>
       </div>
-      <div className="border-b border-border px-3 py-2">
-        <SentimentPie totals={totals} />
-      </div>
-      <div className="min-h-0 flex-1 overflow-y-auto">
+      <div
+        data-testid="issue-groups"
+        className="grid min-h-0 flex-1 grid-cols-2 items-start gap-x-1.5 overflow-y-auto"
+      >
         <IssueGroup variant="positive" issues={positive} onSelect={onSelect} />
         <IssueGroup variant="negative" issues={negative} onSelect={onSelect} />
       </div>

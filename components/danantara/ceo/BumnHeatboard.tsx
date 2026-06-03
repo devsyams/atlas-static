@@ -1,11 +1,10 @@
 "use client";
 
 import { Building2, TrendingDown, TrendingUp } from "lucide-react";
-import { groupBumnBySentiment, sentimentTotals } from "@/lib/danantara/ceo/engine";
+import { groupBumnBySentiment } from "@/lib/danantara/ceo/engine";
 import { Sparkline } from "./Sparkline";
 import { RankBadge } from "./RankBadge";
 import { SentimentPie } from "./SentimentPie";
-import { SentimentSplit } from "./SentimentSplit";
 import type { BumnSentiment } from "@/lib/danantara/ceo/types";
 
 /** Sentiment −100..100 → tile background (red ↔ green via oklch). */
@@ -44,7 +43,16 @@ function BumnTile({ row, onSelect }: { row: BumnSentiment; onSelect?: (id: strin
           </span>
         </div>
         <div className="mt-1 flex items-end justify-between gap-1">
-          <SentimentSplit pos={row.posMentions} neg={row.negMentions} total={row.mentions} />
+          {/* Per-BUMN sentiment pie (AC14 v5.0). */}
+          <SentimentPie
+            totals={{
+              pos: row.posMentions,
+              neg: row.negMentions,
+              neu: Math.max(0, row.mentions - row.posMentions - row.negMentions),
+              total: row.mentions,
+            }}
+            variant="mini"
+          />
           <Sparkline data={row.trend} width={36} height={14} stroke="oklch(0.85 0.02 250 / 0.8)" />
         </div>
       </button>
@@ -81,7 +89,8 @@ function BumnGroup({
           Tidak ada BUMN dengan sentimen {positive ? "positif" : "negatif"} saat ini.
         </p>
       ) : (
-        <div className="grid grid-cols-2 gap-1.5 p-2">
+        // Single tile column — the group itself is already a half-width sub-column.
+        <div className="grid grid-cols-1 gap-1.5 p-2">
           {rows.map((row) => (
             <BumnTile key={row.id} row={row} onSelect={onSelect} />
           ))}
@@ -92,13 +101,12 @@ function BumnGroup({
 }
 
 /**
- * BUMN grouped by net-sentiment sign (AC13): positive section first (most-positive
- * leading), negative below (most-negative leading — the CEO's problems lead),
- * headed by the aggregate sentiment pie (AC14).
+ * BUMN grouped by net-sentiment sign (AC13 v5.0): positive and negative
+ * sub-columns side by side (most-positive / most-negative leading), with a
+ * per-BUMN sentiment pie on every tile (AC14 v5.0).
  */
 export function BumnHeatboard({ rows, onSelect }: { rows: BumnSentiment[]; onSelect?: (id: string) => void }) {
   const { positive, negative } = groupBumnBySentiment(rows);
-  const totals = sentimentTotals(rows);
 
   return (
     <div data-testid="ceo-bumn" className="panel flex h-full flex-col overflow-hidden">
@@ -109,10 +117,10 @@ export function BumnHeatboard({ rows, onSelect }: { rows: BumnSentiment[]; onSel
           {rows.length} BUMN · positif vs negatif
         </span>
       </div>
-      <div className="border-b border-border px-3 py-2">
-        <SentimentPie totals={totals} />
-      </div>
-      <div className="min-h-0 flex-1 overflow-y-auto">
+      <div
+        data-testid="bumn-groups"
+        className="grid min-h-0 flex-1 grid-cols-2 items-start gap-x-1.5 overflow-y-auto"
+      >
         <BumnGroup variant="positive" rows={positive} onSelect={onSelect} />
         <BumnGroup variant="negative" rows={negative} onSelect={onSelect} />
       </div>

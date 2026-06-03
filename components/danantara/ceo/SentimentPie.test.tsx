@@ -41,3 +41,29 @@ describe("SentimentPie (T14 / AC14)", () => {
     expect(container.querySelectorAll("[data-segment]")).toHaveLength(0);
   });
 });
+
+describe("SentimentPie mini variant (T14 / AC14 v5.0 — per-row pie)", () => {
+  const totals = { pos: 6200, neg: 1000, neu: 2800, total: 10000 };
+
+  it("renders a compact donut with inline positive/negative % labels", () => {
+    render(<SentimentPie totals={totals} variant="mini" />);
+    const el = screen.getByTestId("sentiment-pie-mini");
+    expect(el.textContent).toContain("62%");
+    expect(el.textContent).toContain("10%");
+    // mini omits the long labels — % only
+    expect(el.textContent).not.toContain("Positif");
+    expect(el.textContent).not.toContain("Negatif");
+  });
+
+  it("renders one donut segment per non-zero share", () => {
+    const { container } = render(<SentimentPie totals={totals} variant="mini" />);
+    expect(container.querySelectorAll("[data-segment]")).toHaveLength(3);
+  });
+
+  it("handles a zero total without NaN", () => {
+    render(<SentimentPie totals={{ pos: 0, neg: 0, neu: 0, total: 0 }} variant="mini" />);
+    const el = screen.getByTestId("sentiment-pie-mini");
+    expect(el.textContent).not.toContain("NaN");
+    expect(el.textContent).toContain("0%");
+  });
+});
