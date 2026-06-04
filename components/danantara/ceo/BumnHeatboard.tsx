@@ -60,18 +60,18 @@ function TopicCell({ issue, variant }: { issue: CeoIssue | null; variant: "posit
   return (
     <span
       data-testid={`bumn-topic-${variant}`}
-      className={`flex flex-col gap-1.5 rounded border px-2 py-1.5 text-base leading-snug ${
+      className={`flex items-start gap-2 rounded border px-2 py-1.5 text-base leading-snug ${
         positive
           ? "border-success/40 bg-success/10 text-success"
           : "border-destructive/40 bg-destructive/10 text-destructive"
       }`}
     >
-      <span className="flex items-start gap-1.5">
+      <span className="flex min-w-0 flex-1 items-start gap-1.5">
         <Icon className="mt-0.5 h-4 w-4 shrink-0" />
         <span className="text-balance">{issue.title}</span>
       </span>
-      {/* Pie stacked over reach, right-aligned — same as the Danantara Issues rows. */}
-      <span className="flex flex-col items-end gap-1">
+      {/* Pie over reach, pinned top-right — same as the Danantara Issues rows. */}
+      <span className="flex shrink-0 flex-col items-end gap-1">
         <SentimentPie totals={pieTotals(issue)} variant="mini" />
         <span className="text-base tabular-nums text-muted-foreground">{(issue.reach / 1_000_000).toFixed(1)}M reach</span>
       </span>

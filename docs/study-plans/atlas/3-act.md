@@ -266,7 +266,7 @@ learn a high-severity incident just landed. Push-based updates for the ticker an
 
 ### A7. Danantara CEO Command Wall (zero-click demo)
 
-- **Version:** 25.0 · **Stage:** 3-act · **Sprint:** demo · **Status:** Built · **Spec ref:** `docs/superpowers/specs/2026-06-02-danantara-ceo-command-design.md` · **Owner:** Dev A
+- **Version:** 26.0 · **Stage:** 3-act · **Sprint:** demo · **Status:** Built · **Spec ref:** `docs/superpowers/specs/2026-06-02-danantara-ceo-command-design.md` · **Owner:** Dev A
 
 #### PM
 **Background (why):** Client feedback on the Danantara demo: the real audience is the **CEO**, who
@@ -293,6 +293,10 @@ inside each panel), not stacked, so good vs bad is a single horizontal compariso
 density) is illegible to him at desk/TV distance — the entire artifact fails if the one person it's
 built for can't read it. Readability becomes a hard requirement: **nothing below 16px**, names at
 20px, key numbers larger still. All 20 items per board are kept; panels scroll vertically.
+
+*(v26.0)* Follow-up: the pie+reach block is **pinned to the top-right** of each BUMN topic cell with
+the title flowing to its left (title-left / pie-right), exactly like an Issues row — rather than
+stacked beneath the title.
 
 *(v25.0)* Consistency tweak: inside each BUMN topic cell the pie is now **stacked over the reach**
 (right-aligned), exactly like the Danantara Issues rows, rather than inline beside it.
@@ -484,6 +488,7 @@ of an abstract pie. One BUMN, one positive topic, one negative topic, per line.
 - *(v23.0)* `change` `BumnHeatboard.tsx` — move `bumn-name` ticker into the logo column (stacked under the logo); text column holds only the headline
 - *(v24.0)* `rewrite` `BumnHeatboard.tsx` — single list, row = `grid-cols-[5rem_1fr_1fr]`: identity (rank · logo · ticker) | negative `TopicCell` | positive `TopicCell` (restored, with pie + reach), via `topicsForBumn`; drop the two-column `BumnGroup`
 - *(v25.0)* `change` `BumnHeatboard.tsx` `TopicCell` — pie stacked over reach (`flex-col items-end`), matching the Issues rows
+- *(v26.0)* `change` `BumnHeatboard.tsx` `TopicCell` — title-left / pie+reach top-right (cell is `flex items-start`; title `flex-1`), like an Issues row
 
 **Data-model / API changes:** none (static demo; no DB/API). Production wiring is A1/A2 scope.
 **Reuse:** `AppShell`, existing `lib/danantara/types.ts` (`Holding` universe, `CrisisSignal` velocity concept), `lib/ai/scripted.ts` narration pattern, command-center design tokens.
@@ -542,3 +547,4 @@ of an abstract pie. One BUMN, one positive topic, one negative topic, per line.
 | 23.0 | 2026-06-04 | Client: row felt busy — BUMN ticker moved under the logo as one identity block; text column carries only the topic headline (AC18 amended). Status → Built |
 | 24.0 | 2026-06-04 | Client (original intent): each BUMN row = identity | negative topic | positive topic, each topic cell with its own pie + reach. Reverts v20 two-column grouping / v22–23 single headline; single list restored (AC18 settled, AC15 reverted). Status → Built |
 | 25.0 | 2026-06-04 | Client: BUMN topic-cell pie stacked over reach (right-aligned), matching the Danantara Issues rows. Status → Built |
+| 26.0 | 2026-06-04 | Client: pie+reach pinned top-right of the BUMN topic cell (title-left / pie-right), like an Issues row. Status → Built |
