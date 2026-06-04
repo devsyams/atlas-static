@@ -80,10 +80,15 @@ function BumnRow({
           <span data-testid="bumn-rank" className="font-mono text-xl tabular-nums text-muted-foreground">{rank}.</span>
           <RankBadge delta={row.rankDelta} />
         </div>
-        <BumnLogo row={row} />
-        {/* Left: small BUMN ticker (logo carries identity) over its dominant topic as the headline. */}
+        {/* Identity: logo with the BUMN ticker stacked beneath it. */}
+        <div className="flex shrink-0 flex-col items-center gap-1 pt-0.5">
+          <BumnLogo row={row} />
+          <span data-testid="bumn-name" className="max-w-[5rem] text-center text-base font-bold leading-tight text-muted-foreground">
+            {row.short}
+          </span>
+        </div>
+        {/* Headline: the BUMN's dominant topic (parallel to a topic row). */}
         <div className="min-w-0 flex-1 pt-0.5">
-          <span data-testid="bumn-name" className="text-base font-bold uppercase tracking-wide text-muted-foreground">{row.short}</span>
           <p data-testid="bumn-headline" className="text-2xl font-semibold leading-snug text-balance">
             {topIssue?.title ?? row.name}
           </p>
