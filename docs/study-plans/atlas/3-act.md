@@ -495,6 +495,7 @@ of an abstract pie. One BUMN, one positive topic, one negative topic, per line.
 - *(v25.0)* `change` `BumnHeatboard.tsx` `TopicCell` — pie stacked over reach (`flex-col items-end`), matching the Issues rows
 - *(v26.0)* `change` `BumnHeatboard.tsx` `TopicCell` — title-left / pie+reach top-right (cell is `flex items-start`; title `flex-1`), like an Issues row
 - *(v27.0)* `change` `BumnHeatboard.tsx` `BumnRow` — rank moved from a stacked mono `rank.` line into a corner badge on the logo (`relative` logo wrapper + absolutely-positioned `bumn-rank`); name + movement arrow share one line
+- *(v28.0)* `assets` `public/bumn/{pertamina,pln,kai,bulog,semen,telkom,waskita}.png` — 7 real BUMN logos sourced (Wikidata P154 → Commons PNG; waskita via site favicon), lifting logo coverage 12 → 19/20; only `jasamarga` keeps the monogram (no clean corporate mark available). No component change — `BumnLogo` already prefers the asset over the monogram fallback.
 
 **Data-model / API changes:** none (static demo; no DB/API). Production wiring is A1/A2 scope.
 **Reuse:** `AppShell`, existing `lib/danantara/types.ts` (`Holding` universe, `CrisisSignal` velocity concept), `lib/ai/scripted.ts` narration pattern, command-center design tokens.
@@ -555,3 +556,4 @@ of an abstract pie. One BUMN, one positive topic, one negative topic, per line.
 | 25.0 | 2026-06-04 | Client: BUMN topic-cell pie stacked over reach (right-aligned), matching the Danantara Issues rows. Status → Built |
 | 26.0 | 2026-06-04 | Client: pie+reach pinned top-right of the BUMN topic cell (title-left / pie-right), like an Issues row. Status → Built |
 | 27.0 | 2026-06-04 | Client: the stacked BUMN rank number was unclean. Rank moved into a small badge on the logo's top-left corner; logo + name become one identity block (AC18 amended). Status → Built |
+| 28.0 | 2026-06-04 | Client: source logos for the BUMN still on monograms. Added 7 real logos (pertamina, pln, kai, bulog, semen, telkom, waskita) → 19/20 covered; jasamarga keeps the monogram (no clean corporate mark). Assets only, no component change. Status → Built |

@@ -35,7 +35,7 @@
 | **A4** | AI assistant — copilot chat | 3-act | S5 | E7 | 1.0 | Planned |
 | **A5** | AI assistant — briefing, forecast & per-widget ask | 3-act | S5 | E7 | 1.0 | Planned |
 | **A6** | Real-time ticker, alerts & War Room | 3-act | S5–S6 | E8 | 1.0 | Planned |
-| **A7** | Danantara CEO Command Wall (zero-click demo) | 3-act | demo | — | 27.0 | Built |
+| **A7** | Danantara CEO Command Wall (zero-click demo) | 3-act | demo | — | 28.0 | Built |
 
 **Totals:** 24 features · 7 platform · 5 watch · 5 understand · 7 act.
 
@@ -81,3 +81,4 @@
 | 1.25 | 2026-06-04 | A7 → v25.0 Built (BUMN topic-cell pie stacked over reach, matching the Issues rows) |
 | 1.26 | 2026-06-04 | A7 → v26.0 Built (BUMN topic-cell pie+reach pinned top-right, title-left, like an Issues row) |
 | 1.27 | 2026-06-04 | A7 → v27.0 Built (BUMN rank moved from stacked mono line into a corner badge on the logo; logo+name = one identity block) |
+| 1.28 | 2026-06-04 | A7 → v28.0 Built (sourced 7 more real BUMN logos → 19/20 covered; only jasamarga stays on a monogram) |
