@@ -39,8 +39,8 @@ type NavItem = {
 const NAV: NavItem[] = [
   { to: "/", label: "MBG Crisis Command", icon: LayoutDashboard, group: "Dashboards" },
   { to: "/jasamarga", label: "JasaMarga Ops Command", icon: TrafficCone, group: "Dashboards" },
+  { to: "/danantara-v2", label: "Danantara CEO Command (v1)", icon: Landmark, group: "Dashboards" },
   { to: "/danantara", label: "Danantara CEO Command (v2)", icon: Landmark, group: "Dashboards" },
-  { to: "/danantara-v2", label: "Danantara Sovereign Command (v1)", icon: Landmark, group: "Dashboards" },
 
   { to: "/", label: "Command Center", icon: LayoutDashboard, group: "Operations" },
   { to: "/", label: "Presentation Workspace", icon: Presentation, group: "Operations" },
@@ -94,7 +94,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   return (
     <div className="flex h-screen w-full flex-col overflow-hidden text-foreground">
       {/* Top bar — dense command-bar style */}
-      <header className="relative z-20 flex h-12 shrink-0 items-center gap-3 border-b border-sidebar-border bg-sidebar/85 px-3 backdrop-blur-xl">
+      <header className="relative z-40 flex h-12 shrink-0 items-center gap-3 border-b border-sidebar-border bg-sidebar/85 px-3 backdrop-blur-xl">
         {/* Brand */}
         <Link href={homeHref} className="flex items-center">
           <Image

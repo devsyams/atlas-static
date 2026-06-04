@@ -44,13 +44,18 @@ describe("BumnHeatboard one row per BUMN: identity | negative topic | positive t
     expect(board.textContent).not.toContain("TOPIK");
   });
 
-  it("shows a placeholder (no pie) when a BUMN has no topic of a tone", () => {
+  it("renders an empty placeholder cell (no pie, no 'No … topic' text) when a tone is absent (v30.0)", () => {
     render(<BumnHeatboard rows={rows} issues={issues} />);
-    // Waskita has only a negative topic linked.
+    // Waskita has only a negative topic linked — the positive column is an empty cell.
     const wsk = screen.getByTestId("bumn-tile-wsk");
     expect(wsk.querySelector("[data-testid='bumn-topic-negative']")?.textContent).toContain("Restrukturisasi utang Waskita");
-    expect(wsk.querySelector("[data-testid='bumn-topic-positive']")).toBeNull();
-    expect(wsk.textContent).toContain("No positive topic");
+    const emptyPos = wsk.querySelector("[data-testid='bumn-topic-positive']");
+    expect(emptyPos).not.toBeNull();
+    expect(emptyPos?.getAttribute("data-empty")).toBe("true");
+    expect(emptyPos?.querySelector("[data-testid='sentiment-pie-mini']")).toBeNull();
+    expect(wsk.textContent).not.toContain("No positive topic");
+    // Every BUMN row shows both topic columns.
+    expect(wsk.querySelectorAll("[data-testid^='bumn-topic-']")).toHaveLength(2);
   });
 
   it("renders a mini pie on each present topic cell + a logo and ticker per BUMN", () => {
