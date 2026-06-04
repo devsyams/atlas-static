@@ -45,10 +45,10 @@ describe("CeoCommand two-column sentiment wall (v5.0)", () => {
     expect(screen.getAllByTestId(/^bumn-tile-/)).toHaveLength(20);
   });
 
-  it("renders mini pies on topic rows and BUMN topic cells, no panel pie (AC14 v10.0)", () => {
+  it("renders one mini pie per topic row and per BUMN row, no panel pie (AC14 v19.0)", () => {
     render(<CeoCommand />);
-    // 20 topic rows each carry a pie, plus one per present BUMN topic cell (> 20 total).
-    expect(screen.getAllByTestId("sentiment-pie-mini").length).toBeGreaterThan(20);
+    // 20 topic rows + 20 BUMN rows = 40 mini pies, no aggregate panel pie.
+    expect(screen.getAllByTestId("sentiment-pie-mini")).toHaveLength(40);
     expect(screen.queryByTestId("sentiment-pie")).not.toBeInTheDocument();
   });
 

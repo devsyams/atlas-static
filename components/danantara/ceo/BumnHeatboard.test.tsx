@@ -5,71 +5,57 @@ import { makeBumn, makeIssue } from "@/lib/danantara/ceo/test-fixtures";
 import { BumnHeatboard } from "./BumnHeatboard";
 
 const rows = [
-  makeBumn({ id: "prt", short: "Pertamina", sentiment: 45 }),
-  makeBumn({ id: "bri", short: "BRI", sentiment: 38 }),
-  makeBumn({ id: "wsk", short: "Waskita", sentiment: -68 }),
-  makeBumn({ id: "gia", short: "Garuda", sentiment: -54 }),
+  makeBumn({ id: "prt", name: "Pertamina", short: "PTM", sector: "energi", sentiment: 45, mentions: 8400, posMentions: 6000, negMentions: 1400, topIssueId: "prt-bad" }),
+  makeBumn({ id: "bri", name: "Bank Rakyat Indonesia", short: "BBRI", sentiment: 38, mentions: 9100, posMentions: 6500, negMentions: 1500 }),
+  makeBumn({ id: "wsk", name: "Waskita Karya", short: "WSKT", sentiment: -68, mentions: 5200, posMentions: 800, negMentions: 3800, topIssueId: "wsk-bad" }),
+  makeBumn({ id: "gia", name: "Garuda Indonesia", short: "GIAA", sentiment: -54, mentions: 8400, posMentions: 1500, negMentions: 6000 }),
 ];
 
 const issues = [
-  makeIssue({ id: "prt-good", title: "Laba Pertamina naik", relatedBumn: ["prt"], posMentions: 900, negMentions: 100, reach: 9_000_000, mentions: 1000 }),
-  makeIssue({ id: "prt-bad", title: "Antrean BBM langka", relatedBumn: ["prt"], posMentions: 100, negMentions: 900, reach: 8_000_000, mentions: 1000 }),
-  makeIssue({ id: "wsk-bad", title: "Restrukturisasi utang Waskita", relatedBumn: ["wsk"], posMentions: 100, negMentions: 900, reach: 7_000_000, mentions: 1000 }),
+  makeIssue({ id: "prt-bad", title: "Antrean BBM langka", relatedBumn: ["prt"] }),
+  makeIssue({ id: "wsk-bad", title: "Restrukturisasi utang Waskita", relatedBumn: ["wsk"] }),
 ];
 
-describe("BumnHeatboard single per-row list (T16 / AC16)", () => {
-  it("renders exactly one row per BUMN", () => {
+describe("BumnHeatboard issues-style rows (v19.0)", () => {
+  it("renders exactly one row per BUMN, no positive/negative topic cells", () => {
     render(<BumnHeatboard rows={rows} issues={issues} />);
     expect(screen.getAllByTestId(/^bumn-tile-/)).toHaveLength(rows.length);
+    expect(screen.queryByTestId("bumn-topic-positive")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("bumn-topic-negative")).not.toBeInTheDocument();
   });
 
-  it("no longer renders side-by-side sentiment sub-columns", () => {
+  it("shows the BUMN name as the title", () => {
     render(<BumnHeatboard rows={rows} issues={issues} />);
-    expect(screen.queryByTestId("bumn-group-positive")).not.toBeInTheDocument();
-    expect(screen.queryByTestId("bumn-group-negative")).not.toBeInTheDocument();
+    expect(screen.getByTestId("bumn-tile-prt").textContent).toContain("Pertamina");
+    expect(screen.getByTestId("bumn-tile-gia").textContent).toContain("Garuda Indonesia");
   });
 
-  it("shows the BUMN's leading positive and negative topic on its row", () => {
+  it("renders one sentiment pie per BUMN row and no panel pie", () => {
     render(<BumnHeatboard rows={rows} issues={issues} />);
-    const prt = screen.getByTestId("bumn-tile-prt");
-    expect(prt.textContent).toContain("Laba Pertamina naik");
-    expect(prt.textContent).toContain("Antrean BBM langka");
-  });
-
-  it("shows a placeholder when a BUMN has no topic of a given tone", () => {
-    render(<BumnHeatboard rows={rows} issues={issues} />);
-    // Waskita only has a negative topic linked.
-    const wsk = screen.getByTestId("bumn-tile-wsk");
-    expect(wsk.textContent).toContain("Restrukturisasi utang Waskita");
-    expect(wsk.querySelector("[data-testid='bumn-topic-positive']")).toBeNull();
-    expect(wsk.textContent).toContain("No positive topic");
-  });
-
-  it("renders a mini pie on each present topic cell, none on placeholders, no panel pie (AC14 v10.0)", () => {
-    render(<BumnHeatboard rows={rows} issues={issues} />);
-    // prt has both topics (2 pies) + wsk has one negative topic (1 pie) = 3.
-    expect(screen.getAllByTestId("sentiment-pie-mini")).toHaveLength(3);
+    expect(screen.getAllByTestId("sentiment-pie-mini")).toHaveLength(rows.length);
     expect(screen.queryByTestId("sentiment-pie")).not.toBeInTheDocument();
-    // The placeholder cell (wsk positive) carries no pie.
-    const wsk = screen.getByTestId("bumn-tile-wsk");
-    expect(wsk.querySelector("[data-testid='bumn-topic-positive']")).toBeNull();
   });
 
-  it("prefixes each row with a sequential rank number and no net-sentiment score (AC3/AC16 v11.0)", () => {
+  it("shows the mention count on each row", () => {
     render(<BumnHeatboard rows={rows} issues={issues} />);
-    const ranks = screen.getAllByTestId("bumn-rank").map((el) => el.textContent);
-    expect(ranks).toEqual(["1.", "2.", "3.", "4."]);
-    // The old −100..100 score (e.g. Pertamina's +45 / Waskita's -68) is gone.
-    const prt = screen.getByTestId("bumn-tile-prt");
-    expect(prt.querySelector("[data-testid='bumn-score']")).toBeNull();
-    expect(prt.textContent).not.toContain("45");
+    expect(screen.getByTestId("bumn-tile-prt").textContent).toContain("8.4K mentions");
   });
 
-  it("shows each present topic's reach value in its cell (AC16 v11.0)", () => {
+  it("shows the BUMN's top issue as a muted context line", () => {
     render(<BumnHeatboard rows={rows} issues={issues} />);
-    const prt = screen.getByTestId("bumn-tile-prt");
-    expect(prt.querySelector("[data-testid='bumn-topic-positive']")?.textContent).toContain("9.0M");
-    expect(prt.querySelector("[data-testid='bumn-topic-negative']")?.textContent).toContain("8.0M");
+    expect(screen.getByTestId("bumn-tile-prt").querySelector("[data-testid='bumn-context']")?.textContent).toContain(
+      "Antrean BBM langka",
+    );
+  });
+
+  it("renders a logo for each BUMN", () => {
+    render(<BumnHeatboard rows={rows} issues={issues} />);
+    expect(screen.getAllByTestId("bumn-logo")).toHaveLength(rows.length);
+  });
+
+  it("prefixes each row with a sequential rank number (1., 2., …)", () => {
+    render(<BumnHeatboard rows={rows} issues={issues} />);
+    expect(screen.getAllByTestId("bumn-rank").map((el) => el.textContent)).toEqual(["1.", "2.", "3.", "4."]);
   });
 
   it("still fires onSelect when a row is clicked (AC10)", () => {
