@@ -294,6 +294,11 @@ density) is illegible to him at desk/TV distance — the entire artifact fails i
 built for can't read it. Readability becomes a hard requirement: **nothing below 16px**, names at
 20px, key numbers larger still. All 20 items per board are kept; panels scroll vertically.
 
+*(v27.0)* Follow-up: the BUMN rank number was visual clutter — a mono `1.` stacked above the logo
+above the name made three competing identity lines in one narrow column. The rank is now a small
+**badge pinned to the top-left corner of the logo**, so logo + name read as the single clean identity
+and the movement arrow sits beside the name.
+
 *(v26.0)* Follow-up: the pie+reach block is **pinned to the top-right** of each BUMN topic cell with
 the title flowing to its left (title-left / pie-right), exactly like an Issues row — rather than
 stacked beneath the title.
@@ -438,7 +443,7 @@ of an abstract pie. One BUMN, one positive topic, one negative topic, per line.
 - **AC15** *(v6.0, amended v21.0)* — *Given* the CEO wall (boards, header, ticker, and the detail modal), *When* any text renders, *Then* **no text is smaller than 16px**; topic titles (Issues board) render at **24px** (v21.0) and BUMN names (ticker) at **≥ 20px**; topic-cell text and the BUMN context are ≥ 16px; key numbers (sentiment scores, header metrics) are **at least 24px**. Lists keep all 20 items and scroll vertically.
 - **AC17** *(v12.0)* — *Given* the CEO wall (boards, header, ticker, detail modal), *When* any **UI chrome** renders, *Then* it is in **English** (panel/section/column headings, status badges RISING/ESCALATING, metric labels, AI-ticker narration templates, modal labels, and units — reach in `M`, counts in `K`/`M`). *Given* any **content** (topic title, BUMN name, headline + timestamp, AI line, category/sector tag), *Then* it remains **Indonesian**. This supersedes the Indonesian label strings quoted in earlier ACs/QA (e.g. "TOPIK POSITIF" → "POSITIVE TOPICS", "Tidak ada…" → "No …", "jt"/"jangkauan" → "M"/"reach").
 - **AC16** *(v7.0, amended v10.0, v11.0, superseded v19.0 → AC18)* — *(v7–v18: each BUMN row named a leading positive topic and a leading negative topic, each with its own pie + reach. Retired in v19.0 — the BUMN board now mirrors the Danantara Issues rows; see AC18. `topicsForBumn` is kept for reuse.)*
-- **AC18** *(v19.0, amended v20.0, settled v24.0)* — *Given* the BUMN board, *When* it renders, *Then* it is a **single list, one row per BUMN** (most-negative first), each row laid out in three cells: **(1) BUMN identity** — sequential `rank.` + rank-movement badge, the **logo** (`/public/bumn/{id}.png`, monogram fallback when absent), and the BUMN **ticker** (`short`, ≥ 20px); **(2) its leading negative topic**; **(3) its leading positive topic** (negative before positive). Each present topic cell is the highest-reach `CeoIssue` linked to that BUMN whose tone is negative / positive, shown as a green/red chip with the topic title, the topic's **own mini sentiment pie**, and its **reach**; an absent tone shows a *"No … topic"* placeholder (no pie). The row keeps the green↔red net-sentiment tint and opens the BUMN detail on click (AC10). *(Supersedes the v20 two-column grouping and the v22–v23 single-headline layout.)*
+- **AC18** *(v19.0, amended v20.0, settled v24.0, v27.0)* — *Given* the BUMN board, *When* it renders, *Then* it is a **single list, one row per BUMN** (most-negative first), each row laid out in three cells: **(1) BUMN identity** — the **logo** (`/public/bumn/{id}.png`, monogram fallback when absent) carrying the **sequential rank as a small corner badge** *(v27.0; was a stacked mono `rank.` line)*, with the BUMN **ticker** (`short`, ≥ 20px) and the rank-movement badge beside it on the line below; **(2) its leading negative topic**; **(3) its leading positive topic** (negative before positive). Each present topic cell is the highest-reach `CeoIssue` linked to that BUMN whose tone is negative / positive, shown as a green/red chip with the topic title, the topic's **own mini sentiment pie**, and its **reach**; an absent tone shows a *"No … topic"* placeholder (no pie). The row keeps the green↔red net-sentiment tint and opens the BUMN detail on click (AC10). *(Supersedes the v20 two-column grouping and the v22–v23 single-headline layout.)*
 
 #### Architecture
 **Impact — files add/change:**
@@ -489,6 +494,7 @@ of an abstract pie. One BUMN, one positive topic, one negative topic, per line.
 - *(v24.0)* `rewrite` `BumnHeatboard.tsx` — single list, row = `grid-cols-[5rem_1fr_1fr]`: identity (rank · logo · ticker) | negative `TopicCell` | positive `TopicCell` (restored, with pie + reach), via `topicsForBumn`; drop the two-column `BumnGroup`
 - *(v25.0)* `change` `BumnHeatboard.tsx` `TopicCell` — pie stacked over reach (`flex-col items-end`), matching the Issues rows
 - *(v26.0)* `change` `BumnHeatboard.tsx` `TopicCell` — title-left / pie+reach top-right (cell is `flex items-start`; title `flex-1`), like an Issues row
+- *(v27.0)* `change` `BumnHeatboard.tsx` `BumnRow` — rank moved from a stacked mono `rank.` line into a corner badge on the logo (`relative` logo wrapper + absolutely-positioned `bumn-rank`); name + movement arrow share one line
 
 **Data-model / API changes:** none (static demo; no DB/API). Production wiring is A1/A2 scope.
 **Reuse:** `AppShell`, existing `lib/danantara/types.ts` (`Holding` universe, `CrisisSignal` velocity concept), `lib/ai/scripted.ts` narration pattern, command-center design tokens.
@@ -548,3 +554,4 @@ of an abstract pie. One BUMN, one positive topic, one negative topic, per line.
 | 24.0 | 2026-06-04 | Client (original intent): each BUMN row = identity | negative topic | positive topic, each topic cell with its own pie + reach. Reverts v20 two-column grouping / v22–23 single headline; single list restored (AC18 settled, AC15 reverted). Status → Built |
 | 25.0 | 2026-06-04 | Client: BUMN topic-cell pie stacked over reach (right-aligned), matching the Danantara Issues rows. Status → Built |
 | 26.0 | 2026-06-04 | Client: pie+reach pinned top-right of the BUMN topic cell (title-left / pie-right), like an Issues row. Status → Built |
+| 27.0 | 2026-06-04 | Client: the stacked BUMN rank number was unclean. Rank moved into a small badge on the logo's top-left corner; logo + name become one identity block (AC18 amended). Status → Built |
