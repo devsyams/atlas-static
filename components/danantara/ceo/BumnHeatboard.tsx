@@ -124,9 +124,9 @@ function BumnRow({
             <RankBadge delta={row.rankDelta} />
           </span>
         </div>
-        {/* Negative topic, then positive topic. */}
-        <TopicCell issue={negative} variant="negative" />
+        {/* Positive topic on the left, then negative — same order as the Issues board. */}
         <TopicCell issue={positive} variant="positive" />
+        <TopicCell issue={negative} variant="negative" />
       </button>
     </li>
   );
@@ -153,14 +153,14 @@ export function BumnHeatboard({
         <Building2 className="h-5 w-5 text-primary" />
         <span className="text-xl font-semibold uppercase tracking-[0.18em]">BUMN Sentiment</span>
         <span className="ml-auto text-base uppercase tracking-widest text-muted-foreground">
-          {rows.length} BUMN · negative & positive topic
+          {rows.length} BUMN · positive & negative topic
         </span>
       </div>
       {/* Column legend. */}
       <div className={`grid ${GRID} items-center gap-2.5 border-b border-border/60 bg-card px-3 py-1.5 text-base font-bold tracking-[0.14em] text-muted-foreground`}>
         <span className="text-center">BUMN</span>
-        <span className="text-destructive">TOPIK NEGATIF</span>
-        <span className="text-success">TOPIK POSITIF</span>
+        <span className="text-success">POSITIVE TOPICS</span>
+        <span className="text-destructive">NEGATIVE TOPICS</span>
       </div>
       <ol data-testid="bumn-list" className="min-h-0 flex-1 overflow-y-auto">
         {rows.map((row, idx) => (
