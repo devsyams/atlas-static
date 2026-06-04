@@ -83,7 +83,8 @@ function BumnRow({
         <BumnLogo row={row} />
         {/* Left: BUMN name + muted context line (its top issue). */}
         <div className="min-w-0 flex-1 pt-0.5">
-          <span data-testid="bumn-name" className="text-xl font-semibold leading-snug text-balance">{row.name}</span>
+          {/* Use the BUMN nickname/ticker (short); the logo carries the full identity. */}
+          <span data-testid="bumn-name" className="text-2xl font-semibold leading-snug text-balance">{row.short}</span>
           {topIssue && (
             <p data-testid="bumn-context" className="mt-1 line-clamp-2 text-base font-normal leading-snug text-muted-foreground">
               {topIssue.title}

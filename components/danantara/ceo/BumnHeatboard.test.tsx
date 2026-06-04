@@ -5,7 +5,7 @@ import { makeBumn, makeIssue } from "@/lib/danantara/ceo/test-fixtures";
 import { BumnHeatboard } from "./BumnHeatboard";
 
 const rows = [
-  makeBumn({ id: "prt", name: "Pertamina", short: "PTM", sector: "energi", sentiment: 45, mentions: 8400, posMentions: 6000, negMentions: 1400, topIssueId: "prt-iss" }),
+  makeBumn({ id: "prt", name: "Pertamina", short: "Pertamina", sector: "energi", sentiment: 45, mentions: 8400, posMentions: 6000, negMentions: 1400, topIssueId: "prt-iss" }),
   makeBumn({ id: "bri", name: "Bank Rakyat Indonesia", short: "BBRI", sentiment: 38, mentions: 9100, posMentions: 6500, negMentions: 1500 }),
   makeBumn({ id: "wsk", name: "Waskita Karya", short: "WSKT", sentiment: -68, mentions: 5200, posMentions: 800, negMentions: 3800, topIssueId: "wsk-iss" }),
   makeBumn({ id: "gia", name: "Garuda Indonesia", short: "GIAA", sentiment: -54, mentions: 8400, posMentions: 1500, negMentions: 6000 }),
@@ -28,12 +28,13 @@ describe("BumnHeatboard two-column issues-style board (AC18 v20.0)", () => {
     expect(neg.textContent).toContain("(2)");
   });
 
-  it("places each BUMN in the group matching its net-sentiment sign", () => {
+  it("places each BUMN in the group matching its net-sentiment sign, titled by nickname", () => {
     render(<BumnHeatboard rows={rows} issues={issues} />);
-    expect(screen.getByTestId("bumn-group-positive").textContent).toContain("Pertamina");
-    expect(screen.getByTestId("bumn-group-positive").textContent).toContain("Bank Rakyat Indonesia");
-    expect(screen.getByTestId("bumn-group-negative").textContent).toContain("Waskita Karya");
-    expect(screen.getByTestId("bumn-group-negative").textContent).toContain("Garuda Indonesia");
+    // Title uses the BUMN short/nickname, not the full name.
+    expect(screen.getByTestId("bumn-group-positive").querySelector("[data-testid='bumn-name']")?.textContent).toBe("Pertamina");
+    expect(screen.getByTestId("bumn-group-positive").textContent).toContain("BBRI");
+    expect(screen.getByTestId("bumn-group-negative").textContent).toContain("WSKT");
+    expect(screen.getByTestId("bumn-group-negative").textContent).toContain("GIAA");
   });
 
   it("renders one row per BUMN, no positive/negative topic cells", () => {

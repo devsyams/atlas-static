@@ -40,7 +40,7 @@ function IssueRow({ issue, rank, onSelect }: { issue: CeoIssue; rank: number; on
         {/* Left: full title + status badge, with a muted AI context line beneath (AC12 v18.0). */}
         <div className="min-w-0 flex-1 pt-0.5">
           <div className="flex items-start gap-2">
-            <span data-testid="issue-title" className="text-xl font-medium leading-snug text-balance">{issue.title}</span>
+            <span data-testid="issue-title" className="text-2xl font-semibold leading-snug text-balance">{issue.title}</span>
             {badge.label && (
               <span className={`mt-0.5 shrink-0 rounded border px-1.5 py-px text-base font-bold tracking-wider ${badge.cls}`}>
                 {badge.label}
