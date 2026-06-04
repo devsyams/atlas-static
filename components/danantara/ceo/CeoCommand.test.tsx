@@ -52,11 +52,10 @@ describe("CeoCommand two-column sentiment wall (v5.0)", () => {
     expect(screen.queryByTestId("sentiment-pie")).not.toBeInTheDocument();
   });
 
-  it("topics use side-by-side sub-columns; BUMN is a single per-row list (AC12 v9.0, AC16 v7.0)", () => {
+  it("both boards use side-by-side positive/negative sub-columns (AC12, AC18 v20.0)", () => {
     render(<CeoCommand />);
     expect(screen.getByTestId("issue-groups").className).toContain("grid-cols-2");
-    expect(screen.getByTestId("bumn-list")).toBeInTheDocument();
-    expect(screen.queryByTestId("bumn-groups")).not.toBeInTheDocument();
+    expect(screen.getByTestId("bumn-groups").className).toContain("grid-cols-2");
   });
 
   it("escalating issues still badge on the board when the scripted arc fires (AC2)", () => {
