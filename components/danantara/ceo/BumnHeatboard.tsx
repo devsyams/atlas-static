@@ -49,14 +49,25 @@ function BumnLogo({ row }: { row: BumnSentiment }) {
 /** A BUMN's leading positive/negative topic (title + its own pie + reach), or a placeholder. */
 function TopicCell({ issue, variant }: { issue: CeoIssue | null; variant: "positive" | "negative" }) {
   const positive = variant === "positive";
+  const Icon = positive ? TrendingUp : TrendingDown;
   if (!issue) {
+    // Empty topic slot — keeps every BUMN row showing both columns (v30.0).
+    // A muted, dashed, tone-tinted cell with the trend icon + em-dash; never a
+    // "No … topic" text line. Tone presence is computed live from drifting
+    // sentiment, so the absence is handled here in the view, not the seed data.
     return (
-      <span className="flex items-center text-base italic text-muted-foreground">
-        No {positive ? "positive" : "negative"} topic
+      <span
+        data-testid={`bumn-topic-${variant}`}
+        data-empty="true"
+        className={`flex items-center gap-2 rounded border border-dashed px-2 py-1.5 text-base leading-snug opacity-50 ${
+          positive ? "border-success/40 bg-success/5 text-success" : "border-destructive/40 bg-destructive/5 text-destructive"
+        }`}
+      >
+        <Icon className="h-4 w-4 shrink-0" />
+        <span className="tabular-nums text-muted-foreground">—</span>
       </span>
     );
   }
-  const Icon = positive ? TrendingUp : TrendingDown;
   return (
     <span
       data-testid={`bumn-topic-${variant}`}
