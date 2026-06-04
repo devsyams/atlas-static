@@ -60,6 +60,20 @@ describe("BumnHeatboard one row per BUMN: identity | negative topic | positive t
     expect(prt.querySelector("[data-testid='bumn-topic-positive']")?.textContent).toContain("9.0M");
   });
 
+  it("shows the rank as a corner badge on the logo, not a stacked mono line (v27.0)", () => {
+    render(<BumnHeatboard rows={rows} issues={issues} />);
+    const prt = screen.getByTestId("bumn-tile-prt");
+    const rank = prt.querySelector("[data-testid='bumn-rank']") as HTMLElement;
+    // Pertamina is most-positive of the two → ranks #1 (sorted most-negative first → wsk #1)... rank is positional.
+    expect(rank).not.toBeNull();
+    // No trailing period anymore — just the digits.
+    expect(rank.textContent?.trim()).toMatch(/^\d+$/);
+    // Pinned as an absolute corner badge inside the logo wrapper.
+    expect(rank.className).toContain("absolute");
+    const logoWrap = prt.querySelector("[data-testid='bumn-logo']")?.parentElement;
+    expect(logoWrap?.contains(rank)).toBe(true);
+  });
+
   it("still fires onSelect when a row is clicked (AC10)", () => {
     const onSelect = vi.fn();
     render(<BumnHeatboard rows={rows} issues={issues} onSelect={onSelect} />);

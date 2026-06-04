@@ -108,14 +108,21 @@ function BumnRow({
         onClick={() => onSelect?.(row.id)}
         className={`ceo-row grid w-full cursor-pointer ${GRID} items-start gap-2.5 px-3 py-2.5 text-left hover:bg-card/40`}
       >
-        {/* Identity: rank + movement, logo, ticker. */}
+        {/* Identity: logo (rank as a corner badge), then ticker + movement on one line. */}
         <div className="flex flex-col items-center gap-1 pt-0.5 text-center">
+          <span className="relative inline-block">
+            <BumnLogo row={row} />
+            <span
+              data-testid="bumn-rank"
+              className="absolute -left-2 -top-2 flex h-5 min-w-5 items-center justify-center rounded-full border border-background bg-foreground px-1 font-mono text-base font-bold tabular-nums leading-none text-background shadow-sm"
+            >
+              {rank}
+            </span>
+          </span>
           <span className="flex items-center gap-1">
-            <span data-testid="bumn-rank" className="font-mono text-xl tabular-nums text-muted-foreground">{rank}.</span>
+            <span data-testid="bumn-name" className="max-w-full truncate text-xl font-bold leading-tight">{row.short}</span>
             <RankBadge delta={row.rankDelta} />
           </span>
-          <BumnLogo row={row} />
-          <span data-testid="bumn-name" className="max-w-full truncate text-xl font-bold leading-tight">{row.short}</span>
         </div>
         {/* Negative topic, then positive topic. */}
         <TopicCell issue={negative} variant="negative" />
