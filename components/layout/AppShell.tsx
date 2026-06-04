@@ -94,7 +94,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   return (
     <div className="flex h-screen w-full flex-col overflow-hidden text-foreground">
       {/* Top bar — dense command-bar style */}
-      <header className="relative z-20 flex h-12 shrink-0 items-center gap-3 border-b border-sidebar-border bg-sidebar/85 px-3 backdrop-blur-xl">
+      <header className="relative z-40 flex h-12 shrink-0 items-center gap-3 border-b border-sidebar-border bg-sidebar/85 px-3 backdrop-blur-xl">
         {/* Brand */}
         <Link href={homeHref} className="flex items-center">
           <Image
