@@ -35,7 +35,7 @@
 | **A4** | AI assistant — copilot chat | 3-act | S5 | E7 | 1.0 | Planned |
 | **A5** | AI assistant — briefing, forecast & per-widget ask | 3-act | S5 | E7 | 1.0 | Planned |
 | **A6** | Real-time ticker, alerts & War Room | 3-act | S5–S6 | E8 | 1.0 | Planned |
-| **A7** | Danantara CEO Command Wall (zero-click demo) | 3-act | demo | — | 18.0 | Built |
+| **A7** | Danantara CEO Command Wall (zero-click demo) | 3-act | demo | — | 19.0 | Built |
 
 **Totals:** 24 features · 7 platform · 5 watch · 5 understand · 7 act.
 
@@ -72,3 +72,4 @@
 | 1.16 | 2026-06-04 | A7 → v16.0 Built (mini donut arcs reversed to match labels — green left, red right) |
 | 1.17 | 2026-06-04 | A7 → v17.0 Built (drop neutral stay rank dash; rank numbers get trailing period; english rank tooltips) |
 | 1.18 | 2026-06-04 | A7 → v18.0 Built (per-topic AI context line beneath each title — muted, clamped sneak peek) |
+| 1.19 | 2026-06-04 | A7 → v19.0 Built (BUMN board mirrors Issues rows: logo + name + context + own pie/mentions; retire topic cells; + AC18) |
