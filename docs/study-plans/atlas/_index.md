@@ -35,7 +35,7 @@
 | **A4** | AI assistant — copilot chat | 3-act | S5 | E7 | 1.0 | Planned |
 | **A5** | AI assistant — briefing, forecast & per-widget ask | 3-act | S5 | E7 | 1.0 | Planned |
 | **A6** | Real-time ticker, alerts & War Room | 3-act | S5–S6 | E8 | 1.0 | Planned |
-| **A7** | Danantara CEO Command Wall (zero-click demo) | 3-act | demo | — | 21.0 | Built |
+| **A7** | Danantara CEO Command Wall (zero-click demo) | 3-act | demo | — | 22.0 | Built |
 
 **Totals:** 24 features · 7 platform · 5 watch · 5 understand · 7 act.
 
@@ -75,3 +75,4 @@
 | 1.19 | 2026-06-04 | A7 → v19.0 Built (BUMN board mirrors Issues rows: logo + name + context + own pie/mentions; retire topic cells; + AC18) |
 | 1.20 | 2026-06-04 | A7 → v20.0 Built (BUMN board → two-column SENTIMEN POSITIF/NEGATIF like Issues; sourced 12 real BUMN logos) |
 | 1.21 | 2026-06-04 | A7 → v21.0 Built (bigger topic titles text-2xl; BUMN titled by nickname/ticker) |
+| 1.22 | 2026-06-04 | A7 → v22.0 Built (BUMN row leads with its top issue as the 24px headline; ticker demoted to a small eyebrow) |

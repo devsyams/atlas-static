@@ -81,15 +81,12 @@ function BumnRow({
           <RankBadge delta={row.rankDelta} />
         </div>
         <BumnLogo row={row} />
-        {/* Left: BUMN name + muted context line (its top issue). */}
+        {/* Left: small BUMN ticker (logo carries identity) over its dominant topic as the headline. */}
         <div className="min-w-0 flex-1 pt-0.5">
-          {/* Use the BUMN nickname/ticker (short); the logo carries the full identity. */}
-          <span data-testid="bumn-name" className="text-2xl font-semibold leading-snug text-balance">{row.short}</span>
-          {topIssue && (
-            <p data-testid="bumn-context" className="mt-1 line-clamp-2 text-base font-normal leading-snug text-muted-foreground">
-              {topIssue.title}
-            </p>
-          )}
+          <span data-testid="bumn-name" className="text-base font-bold uppercase tracking-wide text-muted-foreground">{row.short}</span>
+          <p data-testid="bumn-headline" className="text-2xl font-semibold leading-snug text-balance">
+            {topIssue?.title ?? row.name}
+          </p>
         </div>
         {/* Right: the BUMN's own sentiment pie stacked over its mention count. */}
         <div className="flex shrink-0 flex-col items-end gap-1 pt-0.5">

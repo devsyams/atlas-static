@@ -143,9 +143,9 @@ describe("CeoCommand two-column sentiment wall (v5.0)", () => {
     expect(tinyTextOffenders(container)).toEqual([]);
   });
 
-  it("topic titles and BUMN names are at least 20px (T15 / AC15)", () => {
+  it("topic titles and BUMN row headlines are at least 20px (T15 / AC15)", () => {
     render(<CeoCommand />);
-    const titles = [...screen.getAllByTestId("issue-title"), ...screen.getAllByTestId("bumn-name")];
+    const titles = [...screen.getAllByTestId("issue-title"), ...screen.getAllByTestId("bumn-headline")];
     expect(titles.length).toBe(40);
     for (const el of titles) {
       expect(el.className).toMatch(/text-(?:xl|2xl|3xl)/);

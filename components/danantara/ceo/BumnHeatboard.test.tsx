@@ -50,11 +50,14 @@ describe("BumnHeatboard two-column issues-style board (AC18 v20.0)", () => {
     expect(screen.queryByTestId("sentiment-pie")).not.toBeInTheDocument();
   });
 
-  it("shows the mention count and top-issue context line on a row", () => {
+  it("uses the BUMN's top issue as the headline, with the ticker as a small label", () => {
     render(<BumnHeatboard rows={rows} issues={issues} />);
     const prt = screen.getByTestId("bumn-tile-prt");
+    // Headline = top issue title (24px); name = small ticker label.
+    expect(prt.querySelector("[data-testid='bumn-headline']")?.textContent).toContain("Antrean BBM langka");
+    expect(prt.querySelector("[data-testid='bumn-name']")?.textContent).toBe("Pertamina");
+    expect(prt.querySelector("[data-testid='bumn-headline']")?.className).toContain("text-2xl");
     expect(prt.textContent).toContain("8.4K mentions");
-    expect(prt.querySelector("[data-testid='bumn-context']")?.textContent).toContain("Antrean BBM langka");
   });
 
   it("ranks rows within each group (1., 2., …)", () => {
