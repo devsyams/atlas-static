@@ -1,7 +1,7 @@
 "use client";
 
 import { Flame, TrendingDown, TrendingUp } from "lucide-react";
-import { ESCALATING_THRESHOLD, groupIssuesBySentiment, RISING_THRESHOLD } from "@/lib/danantara/ceo/engine";
+import { groupIssuesBySentiment } from "@/lib/danantara/ceo/engine";
 import { pieTotals, sentimentTint } from "@/lib/danantara/ceo/format";
 import { RankBadge } from "./RankBadge";
 import { SentimentPie } from "./SentimentPie";
@@ -14,9 +14,9 @@ const STATUS_BADGE: Record<CeoIssue["status"], { label: string; cls: string }> =
 };
 
 /**
- * One topic, as a stacked card (AC12 v9.0): the full title gets its own line —
- * the whole column width — above a compact meta line (pie + velocity), so a long
- * title wraps cleanly instead of colliding with the pie in the narrow column.
+ * One topic row (AC12/AC14 v14.0): rank + full title on the left (title wraps,
+ * never truncates) with a muted AI context line beneath it (sneak peek, 2-line
+ * clamp, v18.0), and the sentiment pie stacked over the reach value on the right.
  */
 function IssueRow({ issue, rank, onSelect }: { issue: CeoIssue; rank: number; onSelect?: (id: string) => void }) {
   const badge = STATUS_BADGE[issue.status];
@@ -32,37 +32,33 @@ function IssueRow({ issue, rank, onSelect }: { issue: CeoIssue; rank: number; on
         onClick={() => onSelect?.(issue.id)}
         className="ceo-row flex w-full cursor-pointer items-start gap-2.5 px-3 py-2.5 text-left hover:bg-card/40"
       >
-        <div className="flex w-8 shrink-0 flex-col items-end gap-0.5 pt-0.5">
-          <span className="font-mono text-xl tabular-nums text-muted-foreground">{rank}</span>
+        {/* Rank number + movement badge. */}
+        <div className="flex w-9 shrink-0 flex-col items-end gap-0.5 pt-0.5">
+          <span className="font-mono text-xl tabular-nums text-muted-foreground">{rank}.</span>
           <RankBadge delta={issue.rankDelta} />
         </div>
-        <div className="min-w-0 flex-1">
-          {/* Title owns the full column width — wraps cleanly, never truncates. */}
+        {/* Left: full title + status badge, with a muted AI context line beneath (AC12 v18.0). */}
+        <div className="min-w-0 flex-1 pt-0.5">
           <div className="flex items-start gap-2">
-            <span data-testid="issue-title" className="text-xl font-medium leading-snug text-balance">{issue.title}</span>
+            <span data-testid="issue-title" className="text-2xl font-semibold leading-snug text-balance">{issue.title}</span>
             {badge.label && (
               <span className={`mt-0.5 shrink-0 rounded border px-1.5 py-px text-base font-bold tracking-wider ${badge.cls}`}>
                 {badge.label}
               </span>
             )}
           </div>
-          {/* Meta line: pie on the left, reach · velocity aligned right. */}
-          <div className="mt-2 flex items-center gap-3">
-            <SentimentPie totals={pieTotals(issue)} variant="mini" />
-            <span className="ml-auto flex shrink-0 items-center gap-2 text-base text-muted-foreground">
-              <span className="tabular-nums">{(issue.reach / 1_000_000).toFixed(1)}M reach</span>
-              <span aria-hidden className="opacity-50">·</span>
-              <span
-                className={`flex items-center gap-1 font-mono tabular-nums ${
-                  issue.velocity >= ESCALATING_THRESHOLD ? "text-destructive" : issue.velocity >= RISING_THRESHOLD ? "text-warning" : "text-muted-foreground"
-                }`}
-              >
-                <TrendingUp className="h-4 w-4" />
-                {issue.velocity >= 0 ? "+" : ""}
-                {Math.round(issue.velocity)}%
-              </span>
-            </span>
-          </div>
+          {issue.aiLine && (
+            <p data-testid="issue-ailine" className="mt-1 line-clamp-2 text-base font-normal leading-snug text-muted-foreground">
+              {issue.aiLine}
+            </p>
+          )}
+        </div>
+        {/* Right: sentiment pie stacked over the reach value (AC14 v14.0). */}
+        <div className="flex shrink-0 flex-col items-end gap-1 pt-0.5">
+          <SentimentPie totals={pieTotals(issue)} variant="mini" />
+          <span className="text-base tabular-nums text-muted-foreground">
+            {(issue.reach / 1_000_000).toFixed(1)}M reach
+          </span>
         </div>
       </button>
     </li>

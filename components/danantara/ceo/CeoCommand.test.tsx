@@ -45,14 +45,14 @@ describe("CeoCommand two-column sentiment wall (v5.0)", () => {
     expect(screen.getAllByTestId(/^bumn-tile-/)).toHaveLength(20);
   });
 
-  it("renders mini pies on topic rows and BUMN topic cells, no panel pie (AC14 v10.0)", () => {
+  it("renders a mini pie on every topic row and on each present BUMN topic cell, no panel pie (AC14 v24.0)", () => {
     render(<CeoCommand />);
-    // 20 topic rows each carry a pie, plus one per present BUMN topic cell (> 20 total).
+    // 20 topic rows + one pie per present BUMN topic cell (> 20 total).
     expect(screen.getAllByTestId("sentiment-pie-mini").length).toBeGreaterThan(20);
     expect(screen.queryByTestId("sentiment-pie")).not.toBeInTheDocument();
   });
 
-  it("topics use side-by-side sub-columns; BUMN is a single per-row list (AC12 v9.0, AC16 v7.0)", () => {
+  it("topics use side-by-side sub-columns; BUMN is one row per BUMN (AC12, AC18 v24.0)", () => {
     render(<CeoCommand />);
     expect(screen.getByTestId("issue-groups").className).toContain("grid-cols-2");
     expect(screen.getByTestId("bumn-list")).toBeInTheDocument();
@@ -67,10 +67,12 @@ describe("CeoCommand two-column sentiment wall (v5.0)", () => {
     expect(screen.getByTestId("ceo-issues").textContent).toContain("ESCALATING");
   });
 
-  it("shows rank movement badges on issue rows and BUMN tiles (AC8)", () => {
+  it("renders no neutral rank badge at load — unchanged ranks show nothing (AC8 v17.0)", () => {
     render(<CeoCommand />);
-    // At load everything is "stay" (rankDelta 0 by construction).
-    expect(screen.getAllByTestId("rank-stay").length).toBeGreaterThanOrEqual(40); // 20 issues + 20 BUMN
+    // At load everything is "stay" (rankDelta 0); the neutral indicator is suppressed.
+    expect(screen.queryByTestId("rank-stay")).not.toBeInTheDocument();
+    expect(screen.queryAllByTestId("rank-up")).toHaveLength(0);
+    expect(screen.queryAllByTestId("rank-down")).toHaveLength(0);
   });
 
   it("detail modal keeps the labeled sentiment split bar (AC9 v5.0)", () => {

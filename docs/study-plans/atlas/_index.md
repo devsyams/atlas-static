@@ -35,7 +35,7 @@
 | **A4** | AI assistant — copilot chat | 3-act | S5 | E7 | 1.0 | Planned |
 | **A5** | AI assistant — briefing, forecast & per-widget ask | 3-act | S5 | E7 | 1.0 | Planned |
 | **A6** | Real-time ticker, alerts & War Room | 3-act | S5–S6 | E8 | 1.0 | Planned |
-| **A7** | Danantara CEO Command Wall (zero-click demo) | 3-act | demo | — | 12.0 | Built |
+| **A7** | Danantara CEO Command Wall (zero-click demo) | 3-act | demo | — | 29.0 | Built |
 
 **Totals:** 24 features · 7 platform · 5 watch · 5 understand · 7 act.
 
@@ -66,3 +66,20 @@
 | 1.10 | 2026-06-03 | A7 → v10.0 Built (mini pie per BUMN topic cell; net-score tooltip; tidied Isu Danantara pie/meta layout; shared pieTotals) |
 | 1.11 | 2026-06-03 | A7 → v11.0 Built (BUMN board: remove net-score number, add sequential rank number, add per-topic reach + sentiment %) |
 | 1.12 | 2026-06-03 | A7 → v12.0 Built (localize UI chrome to English; content/taxonomy stays Indonesian — AC17) |
+| 1.13 | 2026-06-04 | A7 → v13.0 Built (topic rows drop velocity %; mini pie groups green/red % + donut; pie to right side) |
+| 1.14 | 2026-06-04 | A7 → v14.0 Built (topic row: rank + title left, pie over reach right — client sketch) |
+| 1.15 | 2026-06-04 | A7 → v15.0 Built (mini pie percentages flank the donut — value% · donut · value%) |
+| 1.16 | 2026-06-04 | A7 → v16.0 Built (mini donut arcs reversed to match labels — green left, red right) |
+| 1.17 | 2026-06-04 | A7 → v17.0 Built (drop neutral stay rank dash; rank numbers get trailing period; english rank tooltips) |
+| 1.18 | 2026-06-04 | A7 → v18.0 Built (per-topic AI context line beneath each title — muted, clamped sneak peek) |
+| 1.19 | 2026-06-04 | A7 → v19.0 Built (BUMN board mirrors Issues rows: logo + name + context + own pie/mentions; retire topic cells; + AC18) |
+| 1.20 | 2026-06-04 | A7 → v20.0 Built (BUMN board → two-column SENTIMEN POSITIF/NEGATIF like Issues; sourced 12 real BUMN logos) |
+| 1.21 | 2026-06-04 | A7 → v21.0 Built (bigger topic titles text-2xl; BUMN titled by nickname/ticker) |
+| 1.22 | 2026-06-04 | A7 → v22.0 Built (BUMN row leads with its top issue as the 24px headline; ticker demoted to a small eyebrow) |
+| 1.23 | 2026-06-04 | A7 → v23.0 Built (BUMN ticker moved under the logo as one identity block; headline-only text column) |
+| 1.24 | 2026-06-04 | A7 → v24.0 Built (BUMN row = identity | negative topic | positive topic, each topic cell with its own pie; single list restored) |
+| 1.25 | 2026-06-04 | A7 → v25.0 Built (BUMN topic-cell pie stacked over reach, matching the Issues rows) |
+| 1.26 | 2026-06-04 | A7 → v26.0 Built (BUMN topic-cell pie+reach pinned top-right, title-left, like an Issues row) |
+| 1.27 | 2026-06-04 | A7 → v27.0 Built (BUMN rank moved from stacked mono line into a corner badge on the logo; logo+name = one identity block) |
+| 1.28 | 2026-06-04 | A7 → v28.0 Built (sourced 7 more real BUMN logos → 19/20 covered; only jasamarga stays on a monogram) |
+| 1.29 | 2026-06-04 | A7 → v29.0 Built (BUMN topic columns → positive-left/negative-right + English POSITIVE/NEGATIVE TOPICS labels, consistent with the Issues board) |

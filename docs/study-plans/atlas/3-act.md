@@ -266,7 +266,7 @@ learn a high-severity incident just landed. Push-based updates for the ticker an
 
 ### A7. Danantara CEO Command Wall (zero-click demo)
 
-- **Version:** 12.0 · **Stage:** 3-act · **Sprint:** demo · **Status:** Built · **Spec ref:** `docs/superpowers/specs/2026-06-02-danantara-ceo-command-design.md` · **Owner:** Dev A
+- **Version:** 26.0 · **Stage:** 3-act · **Sprint:** demo · **Status:** Built · **Spec ref:** `docs/superpowers/specs/2026-06-02-danantara-ceo-command-design.md` · **Owner:** Dev A
 
 #### PM
 **Background (why):** Client feedback on the Danantara demo: the real audience is the **CEO**, who
@@ -293,6 +293,86 @@ inside each panel), not stacked, so good vs bad is a single horizontal compariso
 density) is illegible to him at desk/TV distance — the entire artifact fails if the one person it's
 built for can't read it. Readability becomes a hard requirement: **nothing below 16px**, names at
 20px, key numbers larger still. All 20 items per board are kept; panels scroll vertically.
+
+*(v27.0)* Follow-up: the BUMN rank number was visual clutter — a mono `1.` stacked above the logo
+above the name made three competing identity lines in one narrow column. The rank is now a small
+**badge pinned to the top-left corner of the logo**, so logo + name read as the single clean identity
+and the movement arrow sits beside the name.
+
+*(v26.0)* Follow-up: the pie+reach block is **pinned to the top-right** of each BUMN topic cell with
+the title flowing to its left (title-left / pie-right), exactly like an Issues row — rather than
+stacked beneath the title.
+
+*(v25.0)* Consistency tweak: inside each BUMN topic cell the pie is now **stacked over the reach**
+(right-aligned), exactly like the Danantara Issues rows, rather than inline beside it.
+
+*(v24.0)* Settling the BUMN row shape per the client's original intent ("BUMN | positive topic |
+negative topic"): each row is **one BUMN**, and the row's three cells are **BUMN identity | its leading
+negative topic | its leading positive topic** (negative first), each topic cell a styled chip with the
+topic's **own sentiment pie + reach**. This reverts the v19–v23 single-headline/two-column detours:
+the board is a single list again (one row per BUMN, most-negative first), the BUMN is identified by
+rank · logo · ticker, and the topic cells come back via `topicsForBumn` with a placeholder when a tone
+is absent.
+
+*(v23.0)* The eyebrow-ticker-over-headline stack felt busy. The BUMN **ticker now sits directly under
+its logo** as one compact identity block, leaving the text column to carry only the 24px topic
+headline — a calmer row.
+
+*(v22.0)* Correcting the v21.0 hierarchy: a BUMN row should not be headlined by the company name. The
+row now **leads with the BUMN's dominant topic as the 24px headline** (parallel to the Issues board —
+every row of both boards now leads with a topic), and the **BUMN ticker drops to a small eyebrow
+label** above it (the logo already carries identity). So the BUMN board reads "this BUMN → here's the
+story about it", with the pie + tint + column giving sentiment.
+
+*(v21.0)* Two type tweaks: topic titles step up to **24px** (`text-2xl`, bolder) so the headline the
+CEO actually reads leads each row; and a BUMN row is titled by its **nickname/ticker** (`short`, e.g.
+*GIAA*, *BBRI*) rather than the full legal name — the logo already carries the full identity, and the
+short label fits the half-width column cleanly.
+
+*(v20.0)* Correction to v19.0: "like the Danantara Issues board" means its **two-column
+positive/negative split**, not a flat list. The BUMN board now renders two side-by-side sub-columns —
+**SENTIMEN POSITIF** (net sentiment ≥ 0) and **SENTIMEN NEGATIF** (< 0), via `groupBumnBySentiment` —
+each holding issues-style BUMN rows. Real **logos** were sourced into `/public/bumn/` for 12 BUMN
+(favicon-service marks); the remaining 8 (incl. Pertamina/PLN/Telkom/KAI, not indexed) use the
+monogram fallback until higher-res files are dropped in.
+
+*(v19.0)* The BUMN board is **rebuilt to mirror the Danantara Issues rows**: one row per BUMN =
+**logo + `rank.` + BUMN name** with a muted **context line** (its top issue) on the left, and the
+**BUMN's own sentiment pie stacked over its mention count** on the right. This retires the v7–v18
+two-cell *positive-topic / negative-topic* layout. Each BUMN gets a **logo**: a real asset at
+`/public/bumn/{id}.png`, monogram fallback (ticker on a sector-tinted tile) when absent. The topic-cell
+selectors (`topicsForBumn`) remain for reuse / the detail modal.
+
+*(v18.0)* Each topic row gains a **context line** — a one-line AI read of the topic (the existing
+`aiLine`) shown beneath the title as a **sneak peek**: muted, smaller than the title (16px floor, AC15),
+clamped to two lines so the row stays clean. It gives the CEO the *why* behind a headline without a
+click; the full picture still lives in the detail modal. Content stays Indonesian (it is data).
+
+*(v17.0)* Rank-cell tidy. The neutral "stay" dash (`–`) sat under nearly every rank number (the board
+is steady most of the time) and read as clutter — so an unchanged rank now renders **nothing**; only
+real movement shows a green ▲ / red ▼. Rank numbers also gain a trailing period (`1.`, `2.`, …). (Also
+englished the rank-movement tooltips, an AC17 miss.)
+
+*(v16.0)* Bug the client spotted: the mini donut drew `pos → neutral → neg` clockwise, so the green
+arc sat on the **right** while its green % label sat on the **left** — chart reversed against labels.
+Fixed by drawing the mini donut in reverse (`neg → neutral → pos`) so green lands on the left and red
+on the right, in step with the flanking labels.
+
+*(v15.0)* Micro-tweak the client liked: the mini pie's percentages **flank the donut** —
+`value% · donut · value%` (green positive on the left, red negative on the right) — instead of being
+grouped on one side (v13.0). Applies on both boards.
+
+*(v14.0)* Topic-row layout to the client's sketch: **rank + full title on the left** (title wraps
+across lines, never truncated), with the **sentiment pie stacked over the reach value on the right**
+— e.g. `1. Hilirisasi nikel & investasi smelter … [pie] / 34.0M reach`. Replaces the v13.0 stacked-card
+(title over a reach-left/pie-right meta line); the pie+reach are now a single right-hand column.
+
+*(v13.0)* Topic-row tidy. The per-row **velocity %** is dropped from the list — the RISING /
+ESCALATING badge already signals momentum, and the CEO reads the list for *what* is hot, not the exact
+growth number (velocity stays in the drill-down detail modal). The per-row **pie moves to the right
+side** of the meta line (reach on the left), and the pie's **positive (green) and negative (red)
+percentages are grouped together to the left of the donut** rather than flanking it, so the two
+colored values read as a matched pair instead of looking detached from the chart.
 
 *(v12.0)* The demo audience for this build is English-speaking, so the wall's **UI chrome is
 localized to English** — panel headings, section/column labels, badges (RISING / ESCALATING), metric
@@ -347,22 +427,23 @@ of an abstract pie. One BUMN, one positive topic, one negative topic, per line.
 
 **Acceptance criteria:**
 - **AC1** *(amended v4.0)* — *Given* `/danantara` loads, *When* no user interaction occurs, *Then* the issue board, BUMN sentiment board, and AI brief ticker all render and animate on their own. *(Spotlight removed in v4.0.)*
-- **AC2** *(amended v4.0, v7.0)* — *Given* the issue board, *When* the simulation ticks, *Then* issues stay live-ranked **within their sentiment group** with re-rank animation, velocity %, and status badge. *(v7.0: the per-row sparkline is removed; the per-row sentiment pie moves to the trailing slot it vacated.)*
+- **AC2** *(amended v4.0, v7.0, v13.0)* — *Given* the issue board, *When* the simulation ticks, *Then* issues stay live-ranked **within their sentiment group** with re-rank animation and status badge. *(v7.0: per-row sparkline removed. v13.0: per-row **velocity % removed** from the list — the RISING/ESCALATING badge carries momentum; velocity remains in the detail modal.)*
 - **AC3** *(amended v4.0, v7.0, v11.0)* — *Given* the BUMN board, *When* rendered, *Then* all 20 BUMN render as a **single full-width list, one BUMN per row** (most-negative first), each row prefixed with a **sequential rank number** (1…20) plus its rank-movement badge, with net sentiment encoded as a **green↔red row tint** (the explicit −100..100 score number is removed in v11.0). *(v7.0: replaces the grouped heatmap tiles; see AC16.)*
 - **AC4** — *(removed in v4.0 — breaking-news takeover and spotlight pin dropped; escalating issues keep their ESKALASI badge and row pulse on the board.)*
 - **AC5** — *(removed in v4.0 — scripted arcs still drive board badges, but no takeover to trigger; presenter hotkey `E` dropped.)*
 - **AC6** — *Given* the old dashboard, *When* `/danantara-v2` is opened, *Then* the full Sovereign Command experience works exactly as it does today.
 - **AC7** *(amended v4.0)* — *Given* a phone-width viewport, *When* `/danantara` loads, *Then* the layout stacks (header → ticker → issues → BUMN) and stays zero-click.
-- **AC8** — *Given* the issue board or the BUMN board, *When* an item's rank differs from its rank one rolling window ago (6 ticks ≙ "2 jam"), *Then* the row/tile shows a green ▲ with positions gained, a red ▼ with positions lost, or a neutral "=" stay indicator when unchanged (league-table style).
+- **AC8** *(amended v17.0)* — *Given* the issue board or the BUMN board, *When* an item's rank differs from its rank one rolling window ago (6 ticks ≙ "2 jam"), *Then* the row/tile shows a green ▲ with positions gained or a red ▼ with positions lost (league-table style). *(v17.0: an **unchanged** rank renders **no** badge — the neutral stay dash is dropped as clutter. Rank numbers display with a trailing period, e.g. `1.`)*
 - **AC9** *(amended v5.0)* — *Given* any issue or BUMN, *When* it renders on a board, *Then* its sentiment is shown as a **mini pie chart** with explicit positive and negative **% labels** (green/red), not just a net score; positive + negative + neutral shares sum to 100%. The detail modal keeps the labeled split bar with counts.
 - **AC10** *(amended v4.0)* — *Given* any issue row or BUMN tile, *When* it is clicked/tapped, *Then* a detail panel opens with the full picture (live trend chart, sentiment % + counts, rank movement, velocity/reach/mention stats, headlines for issues / related issues for BUMN, related-BUMN chips for issues / top issue for BUMN), closable via Esc, the ✕ button, or clicking the overlay; the simulation keeps ticking underneath. Clicking remains optional — the zero-click experience (AC1) is unchanged.
 - **AC11** *(v4.0)* — *Given* `/danantara` on a desktop/TV viewport, *When* it renders, *Then* the wall is **two columns**: Danantara topics on the left, BUMN sentiment on the right — no third (Spotlight) column and no takeover overlay.
-- **AC12** *(v4.0, amended v5.0, v7.0, v8.0, v9.0)* — *Given* the topic board, *When* it renders, *Then* topics are split into a **TOPIK POSITIF** sub-column (positive mentions > negative) and a **TOPIK NEGATIF** sub-column (otherwise), rendered **side by side**, each ranked by reach (largest first) with counts shown; a topic moves between sub-columns live when its sentiment flips. Each row **stacks the full topic title on its own line** (wraps cleanly/balanced, never truncates) **above** a compact meta line carrying the per-topic pie + velocity %, plus the status badge — so the title owns the full column width and never collides with the pie. *(v9.0 restores the v5–v7 side-by-side columns retired in v8.0, with the stacked-row fix for title legibility.)*
+- **AC12** *(v4.0, amended v5.0, v7.0, v8.0, v9.0)* — *Given* the topic board, *When* it renders, *Then* topics are split into a **TOPIK POSITIF** sub-column (positive mentions > negative) and a **TOPIK NEGATIF** sub-column (otherwise), rendered **side by side**, each ranked by reach (largest first) with counts shown; a topic moves between sub-columns live when its sentiment flips. Each row shows the **full topic title** (wraps cleanly/balanced, never truncates) with a **muted AI context line beneath it** (the topic's `aiLine`, a 2-line-clamped sneak peek smaller than the title; v18.0), and the per-topic pie stacked over reach on the right. *(v9.0 restores the v5–v7 side-by-side columns retired in v8.0; v14.0 rank+title left / pie over reach right; v18.0 adds the context line.)*
 - **AC13** *(v4.0, amended v5.0, retired v7.0)* — *(retired in v7.0 — the BUMN board no longer groups into side-by-side positive/negative sub-columns; it is a single per-row list, see AC16. Net-sentiment grouping is still available via `groupBumnBySentiment`, used by the detail modal / kept for reuse.)*
-- **AC14** *(v4.0, amended v5.0, v7.0, v10.0)* — *Given* any **topic row** or any **present BUMN topic cell** (positive/negative), *When* it renders, *Then* it carries its **own pie/donut chart** of that topic's positive / negative / neutral **mention share** with % labels, updating live with the tick. There is **no** panel-level aggregate pie. *(v10.0: pies return to the BUMN board — now one per topic cell, not one per BUMN tile.)*
-- **AC15** *(v6.0)* — *Given* the CEO wall (boards, header, ticker, and the detail modal), *When* any text renders, *Then* **no text is smaller than 16px**; topic titles and BUMN names are **at least 20px**; key numbers (sentiment scores, header metrics) are **at least 24px**. Lists keep all 20 items and scroll vertically.
+- **AC14** *(v4.0, amended v5.0, v7.0, v10.0, v13.0)* — *Given* any **topic row** or any **present BUMN topic cell** (positive/negative), *When* it renders, *Then* it carries its **own pie/donut chart** of that topic's positive / negative / neutral **mention share** with % labels, updating live with the tick. The mini pie renders its percentages **flanking the donut** — green (positive) % left, donut, red (negative) % right (`value% · donut · value%`, v15.0) — and the **donut arcs align with the labels** (green on the left, red on the right; v16.0); on topic rows the pie sits in a **right-hand column stacked over the reach value** (v14.0). There is **no** panel-level aggregate pie. *(v10.0: pies return to the BUMN board — one per topic cell.)*
+- **AC15** *(v6.0, amended v21.0)* — *Given* the CEO wall (boards, header, ticker, and the detail modal), *When* any text renders, *Then* **no text is smaller than 16px**; topic titles (Issues board) render at **24px** (v21.0) and BUMN names (ticker) at **≥ 20px**; topic-cell text and the BUMN context are ≥ 16px; key numbers (sentiment scores, header metrics) are **at least 24px**. Lists keep all 20 items and scroll vertically.
 - **AC17** *(v12.0)* — *Given* the CEO wall (boards, header, ticker, detail modal), *When* any **UI chrome** renders, *Then* it is in **English** (panel/section/column headings, status badges RISING/ESCALATING, metric labels, AI-ticker narration templates, modal labels, and units — reach in `M`, counts in `K`/`M`). *Given* any **content** (topic title, BUMN name, headline + timestamp, AI line, category/sector tag), *Then* it remains **Indonesian**. This supersedes the Indonesian label strings quoted in earlier ACs/QA (e.g. "TOPIK POSITIF" → "POSITIVE TOPICS", "Tidak ada…" → "No …", "jt"/"jangkauan" → "M"/"reach").
-- **AC16** *(v7.0, amended v10.0, v11.0)* — *Given* the BUMN board, *When* a BUMN row renders, *Then* it shows, in one row: the BUMN (sequential **rank number**, rank-movement badge, name — **no net-sentiment score**, v11.0), its **leading positive topic** and its **leading negative topic** — each being the highest-reach `CeoIssue` linked to that BUMN (via `relatedBumn`) whose tone is positive (positive mentions > negative) / negative (otherwise). Each **present topic cell** carries its own mini sentiment pie (AC14) **plus that topic's reach value (jt jangkauan) and sentiment %** (v11.0). When a BUMN has no linked topic of a given tone, that cell shows a *"Tidak ada topik …"* placeholder (no pie). Titles wrap; topic cells are color-coded green/red. Clicking the row still opens the BUMN detail (AC10 unchanged).
+- **AC16** *(v7.0, amended v10.0, v11.0, superseded v19.0 → AC18)* — *(v7–v18: each BUMN row named a leading positive topic and a leading negative topic, each with its own pie + reach. Retired in v19.0 — the BUMN board now mirrors the Danantara Issues rows; see AC18. `topicsForBumn` is kept for reuse.)*
+- **AC18** *(v19.0, amended v20.0, settled v24.0, v27.0, v29.0)* — *Given* the BUMN board, *When* it renders, *Then* it is a **single list, one row per BUMN** (most-negative first), each row laid out in three cells: **(1) BUMN identity** — the **logo** (`/public/bumn/{id}.png`, monogram fallback when absent) carrying the **sequential rank as a small corner badge** *(v27.0; was a stacked mono `rank.` line)*, with the BUMN **ticker** (`short`, ≥ 20px) and the rank-movement badge beside it on the line below; **(2) its leading positive topic**; **(3) its leading negative topic** *(v29.0: **positive before negative**, so the positive column sits on the left — matching the Danantara Issues board, where POSITIVE TOPICS is the left sub-column)*. The column headers use the **same English wording as the Issues board** — `POSITIVE TOPICS` (green) / `NEGATIVE TOPICS` (red), per AC17 — not the earlier Indonesian "TOPIK POSITIF/NEGATIF". Each present topic cell is the highest-reach `CeoIssue` linked to that BUMN whose tone is positive / negative, shown as a green/red chip with the topic title, the topic's **own mini sentiment pie**, and its **reach**; an absent tone shows a *"No … topic"* placeholder (no pie). The row keeps the green↔red net-sentiment tint and opens the BUMN detail on click (AC10). *(Supersedes the v20 two-column grouping and the v22–v23 single-headline layout.)*
 
 #### Architecture
 **Impact — files add/change:**
@@ -399,6 +480,23 @@ of an abstract pie. One BUMN, one positive topic, one negative topic, per line.
 - *(v10.0)* `change` `components/danantara/ceo/IssueBoard.tsx` — tidy meta line (pie left, reach · velocity right) via shared `pieTotals`
 - *(v11.0)* `change` `components/danantara/ceo/BumnHeatboard.tsx` — drop net-score span; add sequential rank number (`bumn-rank`) to each row; `TopicCell` adds the linked topic's reach + sentiment % under the pie; widen identity grid column for the rank number
 - *(v12.0)* `change` UI chrome → English across `{IssueBoard,BumnHeatboard,HeaderStrip,AiBriefTicker,SentimentPie,SentimentSplit,DetailModal}.tsx` + `lib/danantara/ceo/engine.ts` (`briefLines` templates) + `lib/danantara/ceo/format.ts` (`fmtCount` → `K`/`M`, en-US). `keep` Indonesian: `data.ts` content, `CATEGORY_LABEL`, shared `SECTOR_LABEL`
+- *(v13.0)* `change` `components/danantara/ceo/IssueBoard.tsx` — remove per-row velocity (+ unused threshold imports); meta line = reach left, pie right. `change` `components/danantara/ceo/SentimentPie.tsx` — mini variant groups pos%/neg% then donut (donut on the right)
+- *(v14.0)* `change` `components/danantara/ceo/IssueBoard.tsx` — row → rank + full title (left) | pie stacked over reach (right column)
+- *(v15.0)* `change` `components/danantara/ceo/SentimentPie.tsx` — mini variant: pos% · donut · neg% (percentages flank the donut)
+- *(v16.0)* `change` `components/danantara/ceo/SentimentPie.tsx` — mini donut draws reversed (neg→neutral→pos) so green arc is left / red right, matching the labels
+- *(v17.0)* `change` `components/danantara/ceo/RankBadge.tsx` — unchanged rank renders null (no stay dash); English movement tooltips. `change` `{IssueBoard,BumnHeatboard}.tsx` — rank number shows trailing period (`{rank}.`)
+- *(v18.0)* `change` `components/danantara/ceo/IssueBoard.tsx` — render the topic's `aiLine` as a muted, 2-line-clamped context line (`issue-ailine`) beneath the title
+- *(v19.0)* `rewrite` `components/danantara/ceo/BumnHeatboard.tsx` — issues-style rows (logo + rank + name + context | pie over mentions); `add` `BumnLogo` (next/image `/bumn/{id}.png` + monogram fallback); drop the positive/negative `TopicCell`. `add` `public/bumn/` (logo drop-in dir + README). `keep` `topicsForBumn` (now unused by the board; detail modal / reuse)
+- *(v20.0)* `change` `components/danantara/ceo/BumnHeatboard.tsx` — wrap rows in two `BumnGroup` sub-columns (`bumn-groups` grid-cols-2) via `groupBumnBySentiment`. `add` 12 real logo PNGs under `public/bumn/` (favicon-service marks; 8 remain monogram)
+- *(v21.0)* `change` `IssueBoard.tsx` topic title → `text-2xl`; `BumnHeatboard.tsx` name → `row.short` nickname at `text-2xl`
+- *(v22.0)* `change` `BumnHeatboard.tsx` — row leads with the BUMN's top issue as `text-2xl` headline (`bumn-headline`); `bumn-name` (ticker) demoted to a `text-base` eyebrow
+- *(v23.0)* `change` `BumnHeatboard.tsx` — move `bumn-name` ticker into the logo column (stacked under the logo); text column holds only the headline
+- *(v24.0)* `rewrite` `BumnHeatboard.tsx` — single list, row = `grid-cols-[5rem_1fr_1fr]`: identity (rank · logo · ticker) | negative `TopicCell` | positive `TopicCell` (restored, with pie + reach), via `topicsForBumn`; drop the two-column `BumnGroup`
+- *(v25.0)* `change` `BumnHeatboard.tsx` `TopicCell` — pie stacked over reach (`flex-col items-end`), matching the Issues rows
+- *(v26.0)* `change` `BumnHeatboard.tsx` `TopicCell` — title-left / pie+reach top-right (cell is `flex items-start`; title `flex-1`), like an Issues row
+- *(v27.0)* `change` `BumnHeatboard.tsx` `BumnRow` — rank moved from a stacked mono `rank.` line into a corner badge on the logo (`relative` logo wrapper + absolutely-positioned `bumn-rank`); name + movement arrow share one line
+- *(v28.0)* `assets` `public/bumn/{pertamina,pln,kai,bulog,semen,telkom,waskita}.png` — 7 real BUMN logos sourced (Wikidata P154 → Commons PNG; waskita via site favicon), lifting logo coverage 12 → 19/20; only `jasamarga` keeps the monogram (no clean corporate mark available). No component change — `BumnLogo` already prefers the asset over the monogram fallback.
+- *(v29.0)* `change` `BumnHeatboard.tsx` — swap the topic cells to **positive then negative** (positive column on the left, matching Issues) and relabel the column legend `POSITIVE TOPICS` / `NEGATIVE TOPICS` (English, matching the Issues board) instead of `TOPIK NEGATIF/POSITIF`; header subtitle → `positive & negative topic`. Fixes the cross-board wording + side inconsistency (and the lingering AC17 violation).
 
 **Data-model / API changes:** none (static demo; no DB/API). Production wiring is A1/A2 scope.
 **Reuse:** `AppShell`, existing `lib/danantara/types.ts` (`Holding` universe, `CrisisSignal` velocity concept), `lib/ai/scripted.ts` narration pattern, command-center design tokens.
@@ -414,7 +512,7 @@ of an abstract pie. One BUMN, one positive topic, one negative topic, per line.
 | T5 | AC5 | *(retired in v4.0 — hotkey removed; scripted-arc tick test kept)* | unit |
 | T6 | AC6 | `/danantara-v2` page renders `SovereignCommand` | component |
 | T7 | AC7 | stacked layout below `md` breakpoint (header → ticker → issues → BUMN) | component |
-| T8 | AC8 | `rankDelta` = rank window-ago − current rank; ▲/▼/= rendered per delta sign on both boards | unit + component |
+| T8 | AC8 | `rankDelta` = rank window-ago − current rank; ▲ (up) / ▼ (down) rendered per delta sign on both boards; an unchanged rank (delta 0) renders **nothing** (no stay badge) | unit + component |
 | T9 | AC9 | breakdown: pos+neg+neutral = mentions, net sign matches sentiment sign; mini pie + % labels rendered on rows & tiles; detail modal keeps labeled split bar | unit + component |
 | T10 | AC10 | click issue row → issue detail opens; click BUMN tile → BUMN detail opens; Esc / ✕ / overlay closes; detail shows live data | component |
 | T11 | AC11 | wall grid has exactly two columns; `Spotlight` and `BreakingTakeover` are not rendered and files removed from the bundle | component |
@@ -423,7 +521,7 @@ of an abstract pie. One BUMN, one positive topic, one negative topic, per line.
 | T14 | AC14 | mini pie renders **on every topic row** and **on each present BUMN topic cell** with one segment per non-zero share + % labels; no panel-level pie; **no sparkline on topic rows** (no `polyline`); updates after tick | unit + component |
 | T15 | AC15 | governance scan: rendered wall (and open detail modal) contains **no element with a text class under 16px** (`text-xs`, `text-sm`, `text-[<16px]`); titles/names use ≥ 20px classes; key numbers ≥ 24px | component |
 | T17 | AC17 | rendered wall uses English chrome (POSITIVE/NEGATIVE TOPICS, RISING/ESCALATING, metric labels, `M`/reach units, `K`/`M` counts) while content stays Indonesian (topic titles, BUMN names, headlines, category tags); `fmtCount` returns `K`/`M` | unit + component |
-| T16 | AC16 | `topicsForBumn`: picks highest-reach linked positive & negative topic, null when none; BUMN board renders one row per BUMN with a sequential rank number, no net-score, both topic cells (placeholder + no pie when absent; mini pie + reach + % when present); full title shown; clicking a row fires `onSelect(bumnId)` | unit + component |
+| T16 | AC16/AC18 | `topicsForBumn` unit behaviour kept (reuse). BUMN board (v19.0): one issues-style row per BUMN — logo (`bumn-logo`, monogram fallback), `rank.`, name title, top-issue context line, one sentiment pie + mention count; no positive/negative topic cells; clicking a row fires `onSelect(bumnId)` | unit + component |
 
 **Governance edge cases:** all data from public/open sources (no client-internal figures); AI ticker is deterministic scripted fallback (no live LLM call, no provider key client-side); demo banner identifies synthetic data; no auth change (`AppShell` login gate reused as-is).
 
@@ -444,3 +542,20 @@ of an abstract pie. One BUMN, one positive topic, one negative topic, per line.
 | 10.0 | 2026-06-03 | Client polish: each BUMN topic cell gets its own mini sentiment pie (AC14/AC16 amended); net-score number gets a −100…+100 tooltip; Isu Danantara meta line/pie layout tidied; shared `pieTotals` helper. Status → Built |
 | 11.0 | 2026-06-03 | Client: BUMN board metric rework — remove the −100…+100 net-score number (tint keeps the sign), add a sequential rank number per row, and show each topic cell's reach value + sentiment % (AC3/AC16 amended). Status → Built |
 | 12.0 | 2026-06-03 | Client: localize UI chrome to English (headings, labels, badges, AI-ticker, modal, units M/K) while keeping content Indonesian (topic titles, BUMN names, headlines, category/sector tags). + AC17. Status → Built |
+| 13.0 | 2026-06-04 | Client: topic rows drop per-row velocity % (badge carries momentum; velocity kept in detail modal); mini pie groups green/red % then donut, and the pie moves to the right side of the topic row (AC2/AC14 amended). Status → Built |
+| 14.0 | 2026-06-04 | Client sketch: topic row = rank + full title on the left, sentiment pie stacked over the reach value on the right (AC12/AC14 amended). Status → Built |
+| 15.0 | 2026-06-04 | Client micro-tweak: mini pie percentages flank the donut — value% · donut · value% (AC14 amended). Status → Built |
+| 16.0 | 2026-06-04 | Client bug: mini donut arcs were reversed vs labels (green drew on the right). Donut now draws neg→neutral→pos so green is left / red right, matching labels (AC14 amended). Status → Built |
+| 17.0 | 2026-06-04 | Client: drop the neutral "stay" rank dash (unchanged rank renders nothing; only ▲/▼ show) and add a trailing period to rank numbers (1., 2., …); english rank tooltips (AC8 amended). Status → Built |
+| 18.0 | 2026-06-04 | Client: add a per-topic context line (the AI `aiLine`) beneath each title — muted, smaller, 2-line-clamped sneak peek (AC12 amended). Status → Built |
+| 19.0 | 2026-06-04 | Client: rebuild the BUMN board to mirror the Danantara Issues rows (logo + rank + name + top-issue context | BUMN's own pie over mention count); retire the positive/negative topic cells; add per-BUMN logo (real asset + monogram fallback). AC16 superseded by + AC18. Status → Built |
+| 20.0 | 2026-06-04 | Client correction: "like Issues" = the two-column positive/negative split. BUMN board now renders SENTIMEN POSITIF / SENTIMEN NEGATIF sub-columns side by side (groupBumnBySentiment) with issues-style rows; sourced 12 real BUMN logos into public/bumn (AC18 amended). Status → Built |
+| 21.0 | 2026-06-04 | Client: bigger topic titles (text-2xl); BUMN rows titled by nickname/ticker (short) instead of full name (AC15/AC18 amended). Status → Built |
+| 22.0 | 2026-06-04 | Client: BUMN name shouldn't headline the row. Row now leads with the BUMN's top issue as the 24px headline; ticker demoted to a small eyebrow label (AC15/AC18 amended). Status → Built |
+| 23.0 | 2026-06-04 | Client: row felt busy — BUMN ticker moved under the logo as one identity block; text column carries only the topic headline (AC18 amended). Status → Built |
+| 24.0 | 2026-06-04 | Client (original intent): each BUMN row = identity | negative topic | positive topic, each topic cell with its own pie + reach. Reverts v20 two-column grouping / v22–23 single headline; single list restored (AC18 settled, AC15 reverted). Status → Built |
+| 25.0 | 2026-06-04 | Client: BUMN topic-cell pie stacked over reach (right-aligned), matching the Danantara Issues rows. Status → Built |
+| 26.0 | 2026-06-04 | Client: pie+reach pinned top-right of the BUMN topic cell (title-left / pie-right), like an Issues row. Status → Built |
+| 27.0 | 2026-06-04 | Client: the stacked BUMN rank number was unclean. Rank moved into a small badge on the logo's top-left corner; logo + name become one identity block (AC18 amended). Status → Built |
+| 28.0 | 2026-06-04 | Client: source logos for the BUMN still on monograms. Added 7 real logos (pertamina, pln, kai, bulog, semen, telkom, waskita) → 19/20 covered; jasamarga keeps the monogram (no clean corporate mark). Assets only, no component change. Status → Built |
+| 29.0 | 2026-06-04 | Client: BUMN topic columns inconsistent with the Issues board. Swap to positive-left/negative-right and relabel POSITIVE TOPICS / NEGATIVE TOPICS (English, matching Issues; fixes AC17 violation). AC18 amended. Status → Built |

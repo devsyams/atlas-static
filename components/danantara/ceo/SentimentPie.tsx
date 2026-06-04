@@ -87,11 +87,14 @@ export function SentimentPie({ totals, variant = "full" }: { totals: Totals; var
   if (variant === "mini") {
     // Readability scale (AC15): 16px labels, donut sized to match.
     const R = 11;
-    const segments = buildSegments(slices, totals.total, 2 * Math.PI * R);
+    // Draw neg → neutral → pos so the donut's green arc lands on the LEFT and red
+    // on the RIGHT, matching the flanking value% · donut · value% labels (v16.0).
+    const segments = buildSegments([...slices].reverse(), totals.total, 2 * Math.PI * R);
     const pos = slices.find((s) => s.key === "pos")!;
     const neg = slices.find((s) => s.key === "neg")!;
     return (
-      <span data-testid="sentiment-pie-mini" className="inline-flex items-center gap-2">
+      // value% · donut · value% — green (pos) left, donut centered, red (neg) right.
+      <span data-testid="sentiment-pie-mini" className="inline-flex items-center gap-1.5">
         <span className={`font-mono text-base tabular-nums ${pos.text}`}>{pos.pct}%</span>
         <Donut segments={segments} r={R} stroke={6} />
         <span className={`font-mono text-base tabular-nums ${neg.text}`}>{neg.pct}%</span>
