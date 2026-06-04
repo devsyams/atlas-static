@@ -39,8 +39,8 @@ type NavItem = {
 const NAV: NavItem[] = [
   { to: "/", label: "MBG Crisis Command", icon: LayoutDashboard, group: "Dashboards" },
   { to: "/jasamarga", label: "JasaMarga Ops Command", icon: TrafficCone, group: "Dashboards" },
+  { to: "/danantara-v2", label: "Danantara CEO Command (v1)", icon: Landmark, group: "Dashboards" },
   { to: "/danantara", label: "Danantara CEO Command (v2)", icon: Landmark, group: "Dashboards" },
-  { to: "/danantara-v2", label: "Danantara Sovereign Command (v1)", icon: Landmark, group: "Dashboards" },
 
   { to: "/", label: "Command Center", icon: LayoutDashboard, group: "Operations" },
   { to: "/", label: "Presentation Workspace", icon: Presentation, group: "Operations" },
