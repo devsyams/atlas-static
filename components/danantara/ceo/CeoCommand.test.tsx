@@ -45,17 +45,18 @@ describe("CeoCommand two-column sentiment wall (v5.0)", () => {
     expect(screen.getAllByTestId(/^bumn-tile-/)).toHaveLength(20);
   });
 
-  it("renders one mini pie per topic row and per BUMN row, no panel pie (AC14 v19.0)", () => {
+  it("renders a mini pie on every topic row and on each present BUMN topic cell, no panel pie (AC14 v24.0)", () => {
     render(<CeoCommand />);
-    // 20 topic rows + 20 BUMN rows = 40 mini pies, no aggregate panel pie.
-    expect(screen.getAllByTestId("sentiment-pie-mini")).toHaveLength(40);
+    // 20 topic rows + one pie per present BUMN topic cell (> 20 total).
+    expect(screen.getAllByTestId("sentiment-pie-mini").length).toBeGreaterThan(20);
     expect(screen.queryByTestId("sentiment-pie")).not.toBeInTheDocument();
   });
 
-  it("both boards use side-by-side positive/negative sub-columns (AC12, AC18 v20.0)", () => {
+  it("topics use side-by-side sub-columns; BUMN is one row per BUMN (AC12, AC18 v24.0)", () => {
     render(<CeoCommand />);
     expect(screen.getByTestId("issue-groups").className).toContain("grid-cols-2");
-    expect(screen.getByTestId("bumn-groups").className).toContain("grid-cols-2");
+    expect(screen.getByTestId("bumn-list")).toBeInTheDocument();
+    expect(screen.queryByTestId("bumn-groups")).not.toBeInTheDocument();
   });
 
   it("escalating issues still badge on the board when the scripted arc fires (AC2)", () => {
@@ -143,9 +144,9 @@ describe("CeoCommand two-column sentiment wall (v5.0)", () => {
     expect(tinyTextOffenders(container)).toEqual([]);
   });
 
-  it("topic titles and BUMN row headlines are at least 20px (T15 / AC15)", () => {
+  it("topic titles and BUMN names are at least 20px (T15 / AC15)", () => {
     render(<CeoCommand />);
-    const titles = [...screen.getAllByTestId("issue-title"), ...screen.getAllByTestId("bumn-headline")];
+    const titles = [...screen.getAllByTestId("issue-title"), ...screen.getAllByTestId("bumn-name")];
     expect(titles.length).toBe(40);
     for (const el of titles) {
       expect(el.className).toMatch(/text-(?:xl|2xl|3xl)/);

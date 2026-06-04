@@ -5,65 +5,59 @@ import { makeBumn, makeIssue } from "@/lib/danantara/ceo/test-fixtures";
 import { BumnHeatboard } from "./BumnHeatboard";
 
 const rows = [
-  makeBumn({ id: "prt", name: "Pertamina", short: "Pertamina", sector: "energi", sentiment: 45, mentions: 8400, posMentions: 6000, negMentions: 1400, topIssueId: "prt-iss" }),
-  makeBumn({ id: "bri", name: "Bank Rakyat Indonesia", short: "BBRI", sentiment: 38, mentions: 9100, posMentions: 6500, negMentions: 1500 }),
-  makeBumn({ id: "wsk", name: "Waskita Karya", short: "WSKT", sentiment: -68, mentions: 5200, posMentions: 800, negMentions: 3800, topIssueId: "wsk-iss" }),
-  makeBumn({ id: "gia", name: "Garuda Indonesia", short: "GIAA", sentiment: -54, mentions: 8400, posMentions: 1500, negMentions: 6000 }),
+  makeBumn({ id: "prt", name: "Pertamina", short: "Pertamina", sector: "energi", sentiment: 45 }),
+  makeBumn({ id: "wsk", name: "Waskita Karya", short: "WSKT", sentiment: -68 }),
 ];
 
 const issues = [
-  makeIssue({ id: "prt-iss", title: "Antrean BBM langka", relatedBumn: ["prt"] }),
-  makeIssue({ id: "wsk-iss", title: "Restrukturisasi utang Waskita", relatedBumn: ["wsk"] }),
+  makeIssue({ id: "prt-good", title: "Laba Pertamina naik", relatedBumn: ["prt"], posMentions: 900, negMentions: 100, reach: 9_000_000, mentions: 1000 }),
+  makeIssue({ id: "prt-bad", title: "Antrean BBM langka", relatedBumn: ["prt"], posMentions: 100, negMentions: 900, reach: 8_000_000, mentions: 1000 }),
+  makeIssue({ id: "wsk-bad", title: "Restrukturisasi utang Waskita", relatedBumn: ["wsk"], posMentions: 100, negMentions: 900, reach: 7_000_000, mentions: 1000 }),
 ];
 
-describe("BumnHeatboard two-column issues-style board (AC18 v20.0)", () => {
-  it("renders SENTIMEN POSITIF and SENTIMEN NEGATIF sub-columns side by side with counts", () => {
+describe("BumnHeatboard one row per BUMN: identity | negative topic | positive topic (AC18 v24.0)", () => {
+  it("renders a single list, one row per BUMN (no positive/negative BUMN groups)", () => {
     render(<BumnHeatboard rows={rows} issues={issues} />);
-    expect(screen.getByTestId("bumn-groups").className).toContain("grid-cols-2");
-    const pos = screen.getByTestId("bumn-group-positive");
-    const neg = screen.getByTestId("bumn-group-negative");
-    expect(pos.textContent).toContain("SENTIMEN POSITIF");
-    expect(pos.textContent).toContain("(2)");
-    expect(neg.textContent).toContain("SENTIMEN NEGATIF");
-    expect(neg.textContent).toContain("(2)");
-  });
-
-  it("places each BUMN in the group matching its net-sentiment sign, titled by nickname", () => {
-    render(<BumnHeatboard rows={rows} issues={issues} />);
-    // Title uses the BUMN short/nickname, not the full name.
-    expect(screen.getByTestId("bumn-group-positive").querySelector("[data-testid='bumn-name']")?.textContent).toBe("Pertamina");
-    expect(screen.getByTestId("bumn-group-positive").textContent).toContain("BBRI");
-    expect(screen.getByTestId("bumn-group-negative").textContent).toContain("WSKT");
-    expect(screen.getByTestId("bumn-group-negative").textContent).toContain("GIAA");
-  });
-
-  it("renders one row per BUMN, no positive/negative topic cells", () => {
-    render(<BumnHeatboard rows={rows} issues={issues} />);
+    expect(screen.getByTestId("bumn-list")).toBeInTheDocument();
     expect(screen.getAllByTestId(/^bumn-tile-/)).toHaveLength(rows.length);
-    expect(screen.queryByTestId("bumn-topic-positive")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("bumn-group-positive")).not.toBeInTheDocument();
   });
 
-  it("renders one sentiment pie + a logo per BUMN row, no panel pie", () => {
-    render(<BumnHeatboard rows={rows} issues={issues} />);
-    expect(screen.getAllByTestId("sentiment-pie-mini")).toHaveLength(rows.length);
-    expect(screen.getAllByTestId("bumn-logo")).toHaveLength(rows.length);
-    expect(screen.queryByTestId("sentiment-pie")).not.toBeInTheDocument();
-  });
-
-  it("uses the BUMN's top issue as the headline, with the ticker as a small label", () => {
+  it("shows the BUMN's negative and positive topic on its row", () => {
     render(<BumnHeatboard rows={rows} issues={issues} />);
     const prt = screen.getByTestId("bumn-tile-prt");
-    // Headline = top issue title (24px); name = small ticker label.
-    expect(prt.querySelector("[data-testid='bumn-headline']")?.textContent).toContain("Antrean BBM langka");
-    expect(prt.querySelector("[data-testid='bumn-name']")?.textContent).toBe("Pertamina");
-    expect(prt.querySelector("[data-testid='bumn-headline']")?.className).toContain("text-2xl");
-    expect(prt.textContent).toContain("8.4K mentions");
+    expect(prt.querySelector("[data-testid='bumn-topic-negative']")?.textContent).toContain("Antrean BBM langka");
+    expect(prt.querySelector("[data-testid='bumn-topic-positive']")?.textContent).toContain("Laba Pertamina naik");
   });
 
-  it("ranks rows within each group (1., 2., …)", () => {
+  it("orders the negative topic before the positive topic in the row", () => {
     render(<BumnHeatboard rows={rows} issues={issues} />);
-    const posRanks = [...screen.getByTestId("bumn-group-positive").querySelectorAll("[data-testid='bumn-rank']")].map((el) => el.textContent);
-    expect(posRanks).toEqual(["1.", "2."]);
+    const cells = [...screen.getByTestId("bumn-tile-prt").querySelectorAll("[data-testid^='bumn-topic-']")];
+    expect(cells.map((c) => c.getAttribute("data-testid"))).toEqual(["bumn-topic-negative", "bumn-topic-positive"]);
+  });
+
+  it("shows a placeholder (no pie) when a BUMN has no topic of a tone", () => {
+    render(<BumnHeatboard rows={rows} issues={issues} />);
+    // Waskita has only a negative topic linked.
+    const wsk = screen.getByTestId("bumn-tile-wsk");
+    expect(wsk.querySelector("[data-testid='bumn-topic-negative']")?.textContent).toContain("Restrukturisasi utang Waskita");
+    expect(wsk.querySelector("[data-testid='bumn-topic-positive']")).toBeNull();
+    expect(wsk.textContent).toContain("No positive topic");
+  });
+
+  it("renders a mini pie on each present topic cell + a logo and ticker per BUMN", () => {
+    render(<BumnHeatboard rows={rows} issues={issues} />);
+    // prt: 2 topic pies, wsk: 1 topic pie = 3.
+    expect(screen.getAllByTestId("sentiment-pie-mini")).toHaveLength(3);
+    expect(screen.getAllByTestId("bumn-logo")).toHaveLength(rows.length);
+    expect(screen.getByTestId("bumn-tile-prt").querySelector("[data-testid='bumn-name']")?.textContent).toBe("Pertamina");
+  });
+
+  it("shows the topic reach in each cell", () => {
+    render(<BumnHeatboard rows={rows} issues={issues} />);
+    const prt = screen.getByTestId("bumn-tile-prt");
+    expect(prt.querySelector("[data-testid='bumn-topic-negative']")?.textContent).toContain("8.0M");
+    expect(prt.querySelector("[data-testid='bumn-topic-positive']")?.textContent).toContain("9.0M");
   });
 
   it("still fires onSelect when a row is clicked (AC10)", () => {

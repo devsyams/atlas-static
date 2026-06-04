@@ -3,11 +3,13 @@
 import Image from "next/image";
 import { useState } from "react";
 import { Building2, TrendingDown, TrendingUp } from "lucide-react";
-import { groupBumnBySentiment } from "@/lib/danantara/ceo/engine";
-import { fmtCount, pieTotals, sentimentTint } from "@/lib/danantara/ceo/format";
+import { topicsForBumn } from "@/lib/danantara/ceo/engine";
+import { pieTotals, sentimentTint } from "@/lib/danantara/ceo/format";
 import { RankBadge } from "./RankBadge";
 import { SentimentPie } from "./SentimentPie";
 import type { BumnSentiment, CeoIssue } from "@/lib/danantara/ceo/types";
+
+const GRID = "grid-cols-[5rem_1fr_1fr]";
 
 /** Stable monogram background from the sector key (logo fallback). */
 function monogramColor(key: string): string {
@@ -16,10 +18,7 @@ function monogramColor(key: string): string {
   return `oklch(0.5 0.13 ${h})`;
 }
 
-/**
- * BUMN logo: real brand asset at `/public/bumn/{id}.png`, with a clean monogram
- * (ticker on a sector-tinted tile) as the fallback when the file is absent.
- */
+/** BUMN logo: real asset at `/public/bumn/{id}.png`, monogram fallback when absent. */
 function BumnLogo({ row }: { row: BumnSentiment }) {
   const [failed, setFailed] = useState(false);
   const initials = row.short.replace(/\s+/g, "").slice(0, 4).toUpperCase();
@@ -47,10 +46,42 @@ function BumnLogo({ row }: { row: BumnSentiment }) {
   );
 }
 
+/** A BUMN's leading positive/negative topic (title + its own pie + reach), or a placeholder. */
+function TopicCell({ issue, variant }: { issue: CeoIssue | null; variant: "positive" | "negative" }) {
+  const positive = variant === "positive";
+  if (!issue) {
+    return (
+      <span className="flex items-center text-base italic text-muted-foreground">
+        No {positive ? "positive" : "negative"} topic
+      </span>
+    );
+  }
+  const Icon = positive ? TrendingUp : TrendingDown;
+  return (
+    <span
+      data-testid={`bumn-topic-${variant}`}
+      className={`flex flex-col gap-1.5 rounded border px-2 py-1.5 text-base leading-snug ${
+        positive
+          ? "border-success/40 bg-success/10 text-success"
+          : "border-destructive/40 bg-destructive/10 text-destructive"
+      }`}
+    >
+      <span className="flex items-start gap-1.5">
+        <Icon className="mt-0.5 h-4 w-4 shrink-0" />
+        <span className="text-balance">{issue.title}</span>
+      </span>
+      <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
+        <SentimentPie totals={pieTotals(issue)} variant="mini" />
+        <span className="text-base tabular-nums text-muted-foreground">{(issue.reach / 1_000_000).toFixed(1)}M reach</span>
+      </span>
+    </span>
+  );
+}
+
 /**
- * One BUMN row, styled like a topic row: rank + logo + BUMN name with a muted
- * context line (its top issue) on the left, and the BUMN's own sentiment pie
- * stacked over its mention count on the right.
+ * One BUMN row (AC18 v24.0): the BUMN identity (rank · logo · ticker) on the
+ * left, then its leading negative topic and its leading positive topic — each a
+ * styled cell with the topic's own sentiment pie + reach.
  */
 function BumnRow({
   row,
@@ -63,7 +94,7 @@ function BumnRow({
   issues: CeoIssue[];
   onSelect?: (id: string) => void;
 }) {
-  const topIssue = issues.find((i) => i.id === row.topIssueId);
+  const { positive, negative } = topicsForBumn(row.id, issues);
   return (
     <li
       data-testid={`bumn-tile-${row.id}`}
@@ -74,82 +105,30 @@ function BumnRow({
         type="button"
         data-testid={`btn-bumn-tile-${row.id}`}
         onClick={() => onSelect?.(row.id)}
-        className="ceo-row flex w-full cursor-pointer items-start gap-2 px-3 py-2.5 text-left hover:bg-card/40"
+        className={`ceo-row grid w-full cursor-pointer ${GRID} items-start gap-2.5 px-3 py-2.5 text-left hover:bg-card/40`}
       >
-        <div className="flex w-7 shrink-0 flex-col items-end gap-0.5 pt-0.5">
-          <span data-testid="bumn-rank" className="font-mono text-xl tabular-nums text-muted-foreground">{rank}.</span>
-          <RankBadge delta={row.rankDelta} />
-        </div>
-        {/* Identity: logo with the BUMN ticker stacked beneath it. */}
-        <div className="flex shrink-0 flex-col items-center gap-1 pt-0.5">
-          <BumnLogo row={row} />
-          <span data-testid="bumn-name" className="max-w-[5rem] text-center text-base font-bold leading-tight text-muted-foreground">
-            {row.short}
+        {/* Identity: rank + movement, logo, ticker. */}
+        <div className="flex flex-col items-center gap-1 pt-0.5 text-center">
+          <span className="flex items-center gap-1">
+            <span data-testid="bumn-rank" className="font-mono text-xl tabular-nums text-muted-foreground">{rank}.</span>
+            <RankBadge delta={row.rankDelta} />
           </span>
+          <BumnLogo row={row} />
+          <span data-testid="bumn-name" className="max-w-full truncate text-xl font-bold leading-tight">{row.short}</span>
         </div>
-        {/* Headline: the BUMN's dominant topic (parallel to a topic row). */}
-        <div className="min-w-0 flex-1 pt-0.5">
-          <p data-testid="bumn-headline" className="text-2xl font-semibold leading-snug text-balance">
-            {topIssue?.title ?? row.name}
-          </p>
-        </div>
-        {/* Right: the BUMN's own sentiment pie stacked over its mention count. */}
-        <div className="flex shrink-0 flex-col items-end gap-1 pt-0.5">
-          <SentimentPie totals={pieTotals(row)} variant="mini" />
-          <span className="text-base tabular-nums text-muted-foreground">{fmtCount(row.mentions)} mentions</span>
-        </div>
+        {/* Negative topic, then positive topic. */}
+        <TopicCell issue={negative} variant="negative" />
+        <TopicCell issue={positive} variant="positive" />
       </button>
     </li>
   );
 }
 
-function BumnGroup({
-  variant,
-  rows,
-  issues,
-  onSelect,
-}: {
-  variant: "positive" | "negative";
-  rows: BumnSentiment[];
-  issues: CeoIssue[];
-  onSelect?: (id: string) => void;
-}) {
-  const positive = variant === "positive";
-  const Icon = positive ? TrendingUp : TrendingDown;
-  return (
-    <section data-testid={`bumn-group-${variant}`}>
-      <div
-        className={`sticky top-0 z-10 flex items-center gap-2 border-y border-border/60 bg-card px-3 py-2 ${
-          positive ? "text-success" : "text-destructive"
-        }`}
-      >
-        <Icon className="h-4 w-4" />
-        <span className="text-lg font-bold tracking-[0.18em]">
-          {positive ? "SENTIMEN POSITIF" : "SENTIMEN NEGATIF"}
-        </span>
-        <span className="font-mono text-lg tabular-nums">({rows.length})</span>
-      </div>
-      {rows.length === 0 ? (
-        <p className="px-3 py-3 text-base text-muted-foreground">
-          No {positive ? "positive" : "negative"} BUMN right now.
-        </p>
-      ) : (
-        <ol>
-          {rows.map((row, idx) => (
-            <BumnRow key={row.id} row={row} rank={idx + 1} issues={issues} onSelect={onSelect} />
-          ))}
-        </ol>
-      )}
-    </section>
-  );
-}
-
 /**
- * BUMN sentiment board (v20.0): mirrors the Danantara Issues board — two
- * side-by-side sub-columns, SENTIMEN POSITIF (net sentiment ≥ 0) and SENTIMEN
- * NEGATIF (< 0), each holding issues-style BUMN rows (logo + name + top-issue
- * context | the BUMN's own pie over its mention count). Rows keep the green↔red
- * tint and open the BUMN detail on click (AC10).
+ * BUMN sentiment board (AC18 v24.0): one row per BUMN (most-negative first), each
+ * row = BUMN identity | its negative topic | its positive topic, every topic cell
+ * carrying its own sentiment pie. Rows keep the green↔red net-sentiment tint and
+ * open the BUMN detail on click (AC10).
  */
 export function BumnHeatboard({
   rows,
@@ -160,24 +139,26 @@ export function BumnHeatboard({
   issues: CeoIssue[];
   onSelect?: (id: string) => void;
 }) {
-  const { positive, negative } = groupBumnBySentiment(rows);
-
   return (
     <div data-testid="ceo-bumn" className="panel flex h-full flex-col overflow-hidden">
       <div className="flex items-center gap-2 border-b border-border px-3 py-2.5">
         <Building2 className="h-5 w-5 text-primary" />
         <span className="text-xl font-semibold uppercase tracking-[0.18em]">BUMN Sentiment</span>
         <span className="ml-auto text-base uppercase tracking-widest text-muted-foreground">
-          {rows.length} BUMN · positive vs negative
+          {rows.length} BUMN · negative & positive topic
         </span>
       </div>
-      <div
-        data-testid="bumn-groups"
-        className="grid min-h-0 flex-1 grid-cols-2 items-start gap-x-1.5 overflow-y-auto"
-      >
-        <BumnGroup variant="positive" rows={positive} issues={issues} onSelect={onSelect} />
-        <BumnGroup variant="negative" rows={negative} issues={issues} onSelect={onSelect} />
+      {/* Column legend. */}
+      <div className={`grid ${GRID} items-center gap-2.5 border-b border-border/60 bg-card px-3 py-1.5 text-base font-bold tracking-[0.14em] text-muted-foreground`}>
+        <span className="text-center">BUMN</span>
+        <span className="text-destructive">TOPIK NEGATIF</span>
+        <span className="text-success">TOPIK POSITIF</span>
       </div>
+      <ol data-testid="bumn-list" className="min-h-0 flex-1 overflow-y-auto">
+        {rows.map((row, idx) => (
+          <BumnRow key={row.id} row={row} rank={idx + 1} issues={issues} onSelect={onSelect} />
+        ))}
+      </ol>
     </div>
   );
 }
