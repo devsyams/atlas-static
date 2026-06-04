@@ -70,7 +70,8 @@ function TopicCell({ issue, variant }: { issue: CeoIssue | null; variant: "posit
         <Icon className="mt-0.5 h-4 w-4 shrink-0" />
         <span className="text-balance">{issue.title}</span>
       </span>
-      <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
+      {/* Pie stacked over reach, right-aligned — same as the Danantara Issues rows. */}
+      <span className="flex flex-col items-end gap-1">
         <SentimentPie totals={pieTotals(issue)} variant="mini" />
         <span className="text-base tabular-nums text-muted-foreground">{(issue.reach / 1_000_000).toFixed(1)}M reach</span>
       </span>
