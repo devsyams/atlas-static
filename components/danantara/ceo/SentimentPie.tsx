@@ -81,7 +81,19 @@ function Donut({ segments, r, stroke }: { segments: Segment[]; r: number; stroke
  * full: donut + labeled legend with counts (panel-scale).
  * mini: tiny per-row/per-tile donut with inline pos%/neg% labels only.
  */
-export function SentimentPie({ totals, variant = "full" }: { totals: Totals; variant?: "full" | "mini" }) {
+export function SentimentPie({
+  totals,
+  variant = "full",
+  size = 26,
+  layout = "row",
+}: {
+  totals: Totals;
+  variant?: "full" | "mini";
+  /** Donut radius for the full variant (default 26). */
+  size?: number;
+  /** full layout: donut beside the legend (row) or above it, centered (stack). */
+  layout?: "row" | "stack";
+}) {
   const slices = buildSlices(totals);
 
   if (variant === "mini") {
@@ -102,12 +114,14 @@ export function SentimentPie({ totals, variant = "full" }: { totals: Totals; var
     );
   }
 
-  const R = 26;
+  const R = size;
+  const stroke = R >= 38 ? 14 : 10;
   const segments = buildSegments(slices, totals.total, 2 * Math.PI * R);
+  const stack = layout === "stack";
   return (
-    <div data-testid="sentiment-pie" className="flex items-center gap-3">
-      <Donut segments={segments} r={R} stroke={10} />
-      <div className="min-w-0 flex-1 space-y-0.5">
+    <div data-testid="sentiment-pie" className={stack ? "flex flex-col items-center gap-3" : "flex items-center gap-3"}>
+      <Donut segments={segments} r={R} stroke={stroke} />
+      <div className={stack ? "space-y-1" : "min-w-0 flex-1 space-y-0.5"}>
         {slices.map((s) => (
           <div key={s.key} className="flex items-center gap-1.5 text-base">
             <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: s.color }} />

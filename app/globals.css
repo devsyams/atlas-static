@@ -727,3 +727,42 @@
 
 /* Row re-rank: rows animate via CSS transition on transform */
 .ceo-row { transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1); }
+
+/* ── A8 v3.0: BUMN topics — sentiment-driven dossier cards ───────────────── */
+@keyframes topic-rise {
+  from { opacity: 0; transform: translateY(14px) scale(0.99); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.topic-rise { animation: topic-rise 0.55s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+
+/* Card hover: lift + accent. The tone glow color is passed via --tone. */
+.topic-card {
+  position: relative;
+  transition: transform 0.4s cubic-bezier(0.2, 0.7, 0.2, 1), box-shadow 0.4s ease, border-color 0.4s ease;
+}
+.topic-card:hover {
+  transform: translateY(-3px);
+  border-color: color-mix(in oklch, var(--tone) 55%, var(--color-border));
+  box-shadow: var(--shadow-panel), 0 0 34px -10px var(--tone);
+}
+/* Sentiment spine down the left edge, glowing on hover. */
+.topic-spine {
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 4px;
+  background: var(--tone);
+  box-shadow: 0 0 0 var(--tone);
+  transition: box-shadow 0.4s ease, width 0.4s ease;
+  border-radius: 0 2px 2px 0;
+}
+.topic-card:hover .topic-spine { width: 5px; box-shadow: 0 0 18px 0 var(--tone); }
+/* Big editorial rank numeral watermark. */
+.topic-rank {
+  font-variant-numeric: tabular-nums;
+  line-height: 0.8;
+  color: color-mix(in oklch, var(--tone) 40%, transparent);
+  transition: color 0.4s ease, transform 0.4s ease;
+}
+.topic-card:hover .topic-rank { color: color-mix(in oklch, var(--tone) 70%, transparent); transform: scale(1.04); }
+/* Soft tone-tinted corner wash inside the card. */
+.topic-card-bg { background: radial-gradient(130% 90% at 0% 0%, color-mix(in oklch, var(--tone) 9%, transparent), transparent 62%); }
