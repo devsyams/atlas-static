@@ -35,7 +35,7 @@
 | **A4** | AI assistant — copilot chat | 3-act | S5 | E7 | 1.0 | Planned |
 | **A5** | AI assistant — briefing, forecast & per-widget ask | 3-act | S5 | E7 | 1.0 | Planned |
 | **A6** | Real-time ticker, alerts & War Room | 3-act | S5–S6 | E8 | 1.0 | Planned |
-| **A7** | Danantara CEO Command Wall (zero-click demo) | 3-act | demo | — | 37.0 | Built |
+| **A7** | Danantara CEO Command Wall (zero-click demo) | 3-act | demo | — | 38.0 | Built |
 | **A8** | Per-BUMN CEO sentiment dashboards | 3-act | demo | — | 3.2 | Built |
 
 **Totals:** 25 features · 7 platform · 5 watch · 5 understand · 8 act.
@@ -98,3 +98,4 @@
 | 1.41 | 2026-06-07 | A8 → v3.1 Built (per-topic pie enlarged: 70% text / 30% big centered donut showing pos/neutral/negative %) |
 | 1.42 | 2026-06-07 | A8 → v3.2 Built (Sentiment Summary impressions/reach totals get bar-chart + eye icons, matching the topic cards) |
 | 1.43 | 2026-06-07 | A7 → v37.0 Built (BUMN board wired to real data for the 7 launch BUMN via a server-side aggregation BFF; all mock data + the tick simulation removed — /danantara is 100% real) |
+| 1.44 | 2026-06-08 | A7 → v38.0 Built (BUMN topic cells: white title + per-topic sentiment-tinted background) |

@@ -71,15 +71,16 @@ function TopicCell({ issue, variant }: { issue: CeoIssue | null; variant: "posit
   return (
     <span
       data-testid={`bumn-topic-${variant}`}
+      // Border + icon keep the column tone; the background is tinted per-topic by
+      // its own net sentiment (so cells vary, not a flat block); the title is white.
       className={`flex items-start gap-2 rounded border px-2 py-1.5 text-base leading-snug ${
-        positive
-          ? "border-success/40 bg-success/10 text-success"
-          : "border-destructive/40 bg-destructive/10 text-destructive"
+        positive ? "border-success/40 text-success" : "border-destructive/40 text-destructive"
       }`}
+      style={{ backgroundColor: sentimentTint(issue.sentiment) }}
     >
       <span className="flex min-w-0 flex-1 items-start gap-1.5">
         <Icon className="mt-0.5 h-4 w-4 shrink-0" />
-        <span className="text-balance">{issue.title}</span>
+        <span className="text-balance text-foreground">{issue.title}</span>
       </span>
       {/* Pie over reach, pinned top-right — same as the Danantara Issues rows. */}
       <span className="flex shrink-0 flex-col items-end gap-1">

@@ -266,7 +266,7 @@ learn a high-severity incident just landed. Push-based updates for the ticker an
 
 ### A7. Danantara CEO Command Wall (zero-click demo)
 
-- **Version:** 37.0 · **Stage:** 3-act · **Sprint:** demo · **Status:** Built · **Spec ref:** `docs/superpowers/specs/2026-06-02-danantara-ceo-command-design.md` · **Owner:** Dev A
+- **Version:** 38.0 · **Stage:** 3-act · **Sprint:** demo · **Status:** Built · **Spec ref:** `docs/superpowers/specs/2026-06-02-danantara-ceo-command-design.md` · **Owner:** Dev A
 
 #### PM
 *(v31.0)* The wall graduates from a self-running **simulation** to a **live feed** for the Danantara
@@ -591,6 +591,7 @@ of an abstract pie. One BUMN, one positive topic, one negative topic, per line.
 | 35.0 | 2026-06-07 | Boss: put the **negative topics on the left** on both boards — the Issues topic board and the BUMN row topic cells (+ legend) now lead with NEGATIVE (reverses v29.0 positive-left). AC12/AC18 amended. Status → Built |
 | 36.0 | 2026-06-07 | Client: cache the topics feed **1 h** (was 6 h) and add a header **Refresh** button that forces a fresh upstream pull (`?fresh=1` → `no-store`), so a manually-refreshing dashboard user always re-hits the endpoint. AC19 amended. Status → Built |
 | 37.0 | 2026-06-07 | Client: wire the **BUMN board to real data** for the **7 launch BUMN** via a single server-side **aggregation BFF** (`/api/v1/danantara/bumn-board`, fan-out + shared cache), and **remove all mock data + the tick/escalation simulation** — `/danantara` is now 100% real, with a graceful offline state on failure (no mock fallback). + AC20; AC1/AC3/AC19 amended. Status → Built |
+| 38.0 | 2026-06-08 | Client: in the BUMN topic cells, make the **topic title white** (was tone-colored) and tint each cell's **background per-topic by its own net sentiment** (`sentimentTint`) instead of a flat green/red block; border + trend icon keep the column tone. Status → Built |
 
 ---
 
