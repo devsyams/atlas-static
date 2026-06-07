@@ -36,7 +36,7 @@
 | **A5** | AI assistant — briefing, forecast & per-widget ask | 3-act | S5 | E7 | 1.0 | Planned |
 | **A6** | Real-time ticker, alerts & War Room | 3-act | S5–S6 | E8 | 1.0 | Planned |
 | **A7** | Danantara CEO Command Wall (zero-click demo) | 3-act | demo | — | 36.0 | Built |
-| **A8** | Per-BUMN CEO sentiment dashboards | 3-act | demo | — | 2.0 | Built |
+| **A8** | Per-BUMN CEO sentiment dashboards | 3-act | demo | — | 3.0 | Built |
 
 **Totals:** 25 features · 7 platform · 5 watch · 5 understand · 8 act.
 
@@ -94,3 +94,4 @@
 | 1.37 | 2026-06-07 | Added A8 (Per-BUMN CEO sentiment dashboards) at v1.0 Planned — 7 launch BUMN on A7's live feed; 24→25 features |
 | 1.38 | 2026-06-07 | A8 → v1.0 Built (registry-driven `/bumn/‹slug›`, allowlisted `?code=` BFF + 7d→28d window, 7 scoped logins, sentiment + intent pies, topics list, empty-topics state) |
 | 1.39 | 2026-06-07 | A8 → v2.0 Built (sentiment summary donut → dominant-verdict + bar + totals; explicit per-topic sentiment badge) |
+| 1.40 | 2026-06-07 | A8 → v3.0 Built (topics list redesigned as sentiment-driven dossier cards — rank numerals, tone spine/wash, icon badges, stat-chips, hover + staggered reveal) |
