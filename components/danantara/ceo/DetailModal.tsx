@@ -7,8 +7,6 @@ import type { CeoState } from "@/lib/danantara/ceo/types";
 import { SECTOR_LABEL } from "@/lib/danantara/ui";
 import { RankBadge } from "./RankBadge";
 import { SentimentPie } from "./SentimentPie";
-import { SentimentSplit } from "./SentimentSplit";
-import { TrendChart } from "./TrendChart";
 
 export type DetailSelection = { type: "issue"; id: string } | { type: "bumn"; id: string };
 
@@ -198,36 +196,27 @@ export function DetailModal({
             </button>
           </div>
 
-          {/* Scrollable body */}
+          {/* Scrollable body — same shape as the Danantara topic detail. */}
           <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-4">
-            {/* Stats row */}
-            <div className="flex flex-wrap gap-x-4 gap-y-1 font-mono text-lg tabular-nums">
-              <span className="text-muted-foreground">
-                Net sentiment:{" "}
-                <span
-                  className={`font-bold ${bumn.sentiment < 0 ? "text-destructive" : bumn.sentiment > 0 ? "text-success" : "text-warning"}`}
-                >
-                  {bumn.sentiment > 0 ? "+" : ""}
-                  {Math.round(bumn.sentiment)}
-                </span>
-              </span>
-              <span className="text-muted-foreground">
-                <span className="font-semibold text-foreground">{fmtCount(bumn.mentions)}</span> mentions
-              </span>
-              <span className="text-muted-foreground">Sector: {SECTOR_LABEL[bumn.sector]}</span>
+            {/* Key metric with a plain-language hint. */}
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <Metric label="Impressions" value={fmtCount(bumn.mentions)} hint="Total views across all posts about this BUMN" />
             </div>
 
-            {/* Sentiment trend chart */}
-            <TrendChart history={bumn.trend} escalating={false} className="h-40 w-full" label="Sentiment Trend" />
+            {/* Sentiment breakdown (pie, with neutral share). */}
+            <div>
+              <div className="text-lg font-semibold uppercase tracking-[0.18em] text-muted-foreground">Sentiment</div>
+              <p className="mb-2 mt-0.5 text-base leading-snug text-muted-foreground">
+                Breakdown of emotional tone (Positive / Negative / Neutral %)
+              </p>
+              <SentimentPie totals={pieTotals(bumn)} variant="full" />
+            </div>
 
-            {/* Sentiment split */}
-            <SentimentSplit pos={bumn.posMentions} neg={bumn.negMentions} total={bumn.mentions} variant="full" />
-
-            {/* Related issues */}
+            {/* Topics for this BUMN. */}
             {sortedIssues.length > 0 && (
               <div>
                 <div className="mb-2 text-lg font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                  Related Issues
+                  Topics
                 </div>
                 <div className="space-y-1.5">
                   {sortedIssues.map((issue) => {
