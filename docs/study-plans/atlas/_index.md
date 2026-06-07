@@ -36,8 +36,9 @@
 | **A5** | AI assistant — briefing, forecast & per-widget ask | 3-act | S5 | E7 | 1.0 | Planned |
 | **A6** | Real-time ticker, alerts & War Room | 3-act | S5–S6 | E8 | 1.0 | Planned |
 | **A7** | Danantara CEO Command Wall (zero-click demo) | 3-act | demo | — | 36.0 | Built |
+| **A8** | Per-BUMN CEO sentiment dashboards | 3-act | demo | — | 1.0 | Planned |
 
-**Totals:** 24 features · 7 platform · 5 watch · 5 understand · 7 act.
+**Totals:** 25 features · 7 platform · 5 watch · 5 understand · 8 act.
 
 ## Sprint → feature map (delivery view)
 
@@ -90,3 +91,4 @@
 | 1.34 | 2026-06-07 | A7 → v34.0 Built (issue detail: full topic title; Impressions/Reach metric cards + English hints; remove the horizontal split bar) |
 | 1.35 | 2026-06-07 | A7 → v35.0 Built (negative topics on the left on both the Issues board and the BUMN rows/legend; reverses v29.0 positive-left) |
 | 1.36 | 2026-06-07 | A7 → v36.0 Built (topics cache 6h → 1h; header Refresh button forces a fresh upstream pull via ?fresh=1 / no-store) |
+| 1.37 | 2026-06-07 | Added A8 (Per-BUMN CEO sentiment dashboards) at v1.0 Planned — 7 launch BUMN on A7's live feed; 24→25 features |

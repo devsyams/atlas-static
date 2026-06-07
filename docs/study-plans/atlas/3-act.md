@@ -589,3 +589,63 @@ of an abstract pie. One BUMN, one positive topic, one negative topic, per line.
 | 34.0 | 2026-06-07 | Client: issue detail — show the **full topic title** (no truncation); turn **Impressions/Reach** into labeled metric cards with English hints + a Sentiment hint; **remove the horizontal split bar** (the pie carries the breakdown). AC9/AC10 amended. Status → Built |
 | 35.0 | 2026-06-07 | Boss: put the **negative topics on the left** on both boards — the Issues topic board and the BUMN row topic cells (+ legend) now lead with NEGATIVE (reverses v29.0 positive-left). AC12/AC18 amended. Status → Built |
 | 36.0 | 2026-06-07 | Client: cache the topics feed **1 h** (was 6 h) and add a header **Refresh** button that forces a fresh upstream pull (`?fresh=1` → `no-store`), so a manually-refreshing dashboard user always re-hits the endpoint. AC19 amended. Status → Built |
+
+---
+
+### A8. Per-BUMN CEO sentiment dashboards
+
+- **Version:** 1.0 · **Stage:** 3-act · **Sprint:** demo · **Status:** Planned · **Spec ref:** built on A7's live topics feed (`docs/superpowers/specs/2026-06-02-danantara-ceo-command-design.md`) · **Owner:** Dev A
+
+#### PM
+**Background (why):** Danantara is the **holding company over all BUMN**, but the Danantara CEO Command wall (A7) is one aggregate view. The boss wants a **dedicated dashboard per BUMN**, each aimed at **that BUMN's own CEO** — a focused, low-density read of *"how is the public talking about my company right now"*. These users are **40–60 years old**, non-analyst executives, so the dashboard must be **simple and readable** (large type, no operator chrome) and **zero-config** (open the URL, see your company). It also has to be **access-scoped**: each BUMN CEO signs in as their own user and only ever sees their own company's dashboard — they must not wander into Danantara-wide or other BUMN data during a demo. The live feed already exposes a **topic code per BUMN** (`danantara_‹bumn›`), so each dashboard is the same A7 topics endpoint pointed at a different code — real data, not a mock. Launch set: **7 BUMN** (Mandiri, PLN, Telkom, Pertamina, BNI, BRI, Jasa Marga).
+
+**Acceptance criteria:**
+- **AC1** — *Given* a registered BUMN slug, *When* `/bumn/‹slug›` loads, *Then* it renders that BUMN's dashboard (header = BUMN name) driven by a **registry** (`slug → name → topicCode`); *And When* the slug is not in the registry, *Then* it 404s. A super-admin-only **`/bumn` index** lists all registered BUMN with links.
+- **AC2** — *Given* a BUMN dashboard, *When* it loads data, *Then* it calls the BFF `/api/v1/danantara/topics?code=‹code›` where **`code` is validated against the registry allowlist** (an unknown/absent code rejects or falls back to `danantara_main`, never proxied blindly). The request uses a **rolling 7-day window that auto-widens to 28 days when the 7-day window returns 0 topics**, is **cached ~1 h** (Vercel data cache) with the header **Refresh** forcing a fresh upstream pull (`?fresh=1` → `no-store`); on upstream error the page **degrades gracefully** (last-known/empty state, never a blank screen).
+- **AC3** — *Given* the dashboard, *When* it renders, *Then* it shows a **Sentiment Summary pie** (positive/negative/neutral with % labels) built from the feed's `summary.percentage`.
+- **AC4** — *Given* the dashboard, *When* it renders, *Then* it shows an **Intent Share pie** — a donut of the feed's `intent[]` categories by `share_of_voice` (%), each slice labeled with the intent name.
+- **AC5** — *Given* the dashboard, *When* topics exist, *Then* it shows a **topics list**, each item with: **title**, **Impressions**, **Reach** (both with a plain-English hint), the **description** (`penjelasan`), and a **sentiment-breakdown pie** (positive/negative/neutral) for that topic.
+- **AC6** — *Given* a BUMN with **no topics** in the window even after widening to 28 days (e.g. Mandiri, BRI), *When* the dashboard renders, *Then* it still shows the Intent Share pie (and the Sentiment Summary pie when `summary` is present) plus a clear **"No topics in this window"** state — the page never blanks.
+- **AC7** — *Given* a BUMN-scoped user (`scope = bumn:‹slug›`), *When* they are authenticated, *Then* they may reach **only** `/bumn/‹slug›` (middleware redirects any other path back to their dashboard) and they land there on sign-in; *And* the `all` super-admin may reach every dashboard plus the `/bumn` index. Existing `danantara` / `all` scopes are unchanged.
+- **AC8** — *Given* any text on a BUMN dashboard, *When* it renders, *Then* it uses a **readable executive type scale** (body ≥16px, larger titles/key numbers) and the **shared `/danantara-v2`-style header** (eyebrow → h1 → subtitle, Live/Sample badge + Refresh), for visual consistency across dashboards.
+- **AC9** — *Given* the BFF, *When* it serves a BUMN dashboard, *Then* the feed `api_key` stays **server-side only** and never appears in any client payload (API-first + secrets-server-side).
+
+#### Architecture
+**Impact — files add/change:**
+- `add` `lib/bumn/registry.ts` — `BUMN_REGISTRY: { slug, name, topicCode }[]` (7 rows) + helpers `getBumn(slug)`, `listBumn()`, `isAllowedTopicCode(code)` (registry codes + `danantara_main`)
+- `change` `app/api/v1/danantara/topics/route.ts` — accept `?code=` (validated via `isAllowedTopicCode`, default `danantara_main`); window strategy = **7-day, widen to 28-day when the mapped topics are empty** (at most two upstream fetches, both cache-keyed); keep 1 h revalidate + `?fresh=1` `no-store` + graceful non-OK. *(Side-effect: the shared default window also moves A7's CEO command to the 7d→28d strategy — to be recorded as a small A7 revision when built.)*
+- `change` `lib/auth.ts` — generalize `Scope` to `"all" | "danantara" | bumn:‹slug›`; add 7 BUMN `DEMO_USERS` (`‹slug›@nexorus.io` / `‹slug›2026`, `home = /bumn/‹slug›`); update `parseScope` (parse `bumn:‹slug›`), `homeForScope`, `scopeAllowsPath` (a `bumn:‹slug›` scope allows only `/bumn/‹slug›`; `all` also allows `/bumn`)
+- `add` `app/bumn/[slug]/page.tsx` — resolve slug via registry (404 on miss), render `<BumnDashboard>` in `AppShell`
+- `add` `app/bumn/page.tsx` — super-admin index linking to all registered BUMN
+- `add` `components/bumn/BumnDashboard.tsx` — client component: fetch BFF (`code`, refresh, fallback), v2-style header, the two pies, the topics list, empty + offline states
+- `add` `components/bumn/IntentPie.tsx` — general N-category donut (reuses the SVG-donut approach from `SentimentPie`; a fixed palette cycles for ≤ ~6 intents) with a labeled legend
+- `add` tests (vitest): `lib/bumn/registry.test.ts`, extend `app/api/v1/danantara/topics/route.test.ts` (code allowlist + 7d→28d widening), extend `lib/auth.test.ts` (bumn scope gating), `components/bumn/BumnDashboard.test.tsx`, `components/bumn/IntentPie.test.tsx`
+- `reuse` `components/danantara/ceo/SentimentPie.tsx` (sentiment summary + per-topic pies), `lib/danantara/ceo/topics-source.ts` (mapper unchanged), `lib/danantara/ceo/format.ts` (`fmtCount`/`pieTotals`), `AppShell`, the v37-style header pattern
+
+**Data-model / API changes:** BFF gains an **allowlisted `code` query param** + the 7d→28d window strategy; no DB. Secret `DANANTARA_TOPICS_API_KEY` unchanged (server-only).
+**Reuse:** A7's live topics BFF + mapper + `SentimentPie`; the demo-auth scope/cookie mechanism + middleware; `AppShell`.
+**Risks:** per-BUMN topic volume is **sparse** (Mandiri/BRI return 0 topics in any recent window; PLN empty at 7d) → mitigated by the 28-day widen + the empty state (AC6). The shared-BFF window change touches A7 (flagged above). Allowlisting `code` prevents the route becoming an open proxy (SSRF-style abuse).
+
+#### QA
+| # | Maps to | Test case | Type |
+|---|---|---|---|
+| T1 | AC1 | `getBumn` resolves each of the 7 slugs to its name + `danantara_‹bumn›` code; unknown slug → undefined (page 404s) | unit |
+| T2 | AC1 | `/bumn` index lists all 7 registry entries with links | component |
+| T3 | AC2 | route: `?code=danantara_pln` (allowed) → mapped payload; unknown code → rejected/`danantara_main` fallback, never proxied | unit |
+| T4 | AC2 | route window: 7-day request with 0 topics auto-widens to 28-day; a non-empty 7-day result is used as-is | unit |
+| T5 | AC2 | route: `?fresh=1` → upstream `no-store`; default → `{ next: { revalidate: 3600 } }` | unit |
+| T6 | AC3 | sentiment summary pie renders pos/neg/neutral % from `summary.percentage` | component |
+| T7 | AC4 | intent pie renders one labeled slice per `intent[]` entry, sized by `share_of_voice`; shares handle rounding | unit + component |
+| T8 | AC5 | a topic item shows title, Impressions, Reach (+ hints), description, and its sentiment-breakdown pie | component |
+| T9 | AC6 | empty-topics payload → intent pie still renders + "No topics in this window" message; no blank page | component |
+| T10 | AC7 | `scopeAllowsPath("bumn:pln", "/bumn/pln")` true; `/bumn/bri` and `/danantara` false; `all` allows `/bumn` | unit |
+| T11 | AC7 | each BUMN `DEMO_USER` has `home = /bumn/‹slug›` and a `bumn:‹slug›` scope | unit |
+| T12 | AC8 | rendered dashboard has no text class below 16px; header uses the eyebrow→h1→subtitle structure | component |
+| T13 | AC9 | route response JSON never contains the api key; the key is sent only on the upstream URL | unit |
+
+**Governance edge cases:** `api_key` server-side only (T13); `code` allowlisted (no open proxy / SSRF); BUMN-scoped users cannot cross to other BUMN or Danantara-wide views (T10, middleware); all data is public open-source media intelligence; graceful degradation on upstream failure (AC2/AC6); no auth change to existing `all` / `danantara` users.
+
+#### Revision history
+| Version | Date | Change |
+|---|---|---|
+| 1.0 | 2026-06-07 | Initial plan — per-BUMN CEO dashboards (7 launch BUMN) on A7's live feed: registry-driven `/bumn/‹slug›`, allowlisted `?code=` BFF with 7d→28d window, `bumn:‹slug›` scoped logins, sentiment + intent pies, topics list with per-topic breakdown, empty-topics state. Status → Planned |
