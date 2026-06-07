@@ -9,13 +9,15 @@ describe("DetailModal (T10 / AC10)", () => {
   const topIssue = state.issues[0];
   const topBumn = state.bumn[0];
 
-  it("renders issue detail with headlines and related BUMN", () => {
+  it("renders issue detail with the description (not Top Coverage) and related BUMN (v32.0)", () => {
     render(
       <DetailModal selection={{ type: "issue", id: topIssue.id }} state={state} onClose={vi.fn()} onNavigate={vi.fn()} />,
     );
     const detail = screen.getByTestId("ceo-detail-issue");
     expect(detail.textContent).toContain(topIssue.title);
-    expect(detail.textContent).toContain(topIssue.headlines[0].title);
+    // Top Coverage / headlines list is gone; the AI description takes its place.
+    expect(detail.textContent).not.toContain("Top Coverage");
+    expect(screen.getByTestId("issue-description").textContent).toContain(topIssue.aiLine);
     expect(screen.getByTestId("sentiment-split-full")).toBeInTheDocument();
     for (const id of topIssue.relatedBumn) {
       expect(screen.getByTestId(`related-bumn-${id}`)).toBeInTheDocument();

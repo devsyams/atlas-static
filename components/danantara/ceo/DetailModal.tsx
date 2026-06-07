@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { AlertTriangle, Building2, Newspaper, Tag, TrendingUp, X } from "lucide-react";
+import { AlertTriangle, Building2, FileText, Tag, TrendingUp, X } from "lucide-react";
 import { ESCALATING_THRESHOLD, RISING_THRESHOLD } from "@/lib/danantara/ceo/engine";
 import { fmtCount } from "@/lib/danantara/ceo/format";
 import type { CeoState } from "@/lib/danantara/ceo/types";
@@ -135,23 +135,17 @@ export function DetailModal({
               {/* Sentiment split */}
               <SentimentSplit pos={issue.posMentions} neg={issue.negMentions} total={issue.mentions} variant="full" />
 
-              {/* Headlines */}
-              <div>
-                <div className="mb-2 text-lg font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                  Top Coverage
+              {/* Description (AI read of the topic — the feed's penjelasan) */}
+              {issue.aiLine && (
+                <div>
+                  <div className="mb-2 flex items-center gap-1.5 text-lg font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                    <FileText className="h-4 w-4" /> Description
+                  </div>
+                  <p data-testid="issue-description" className="text-lg leading-relaxed text-foreground/90">
+                    {issue.aiLine}
+                  </p>
                 </div>
-                <div className="space-y-1.5">
-                  {issue.headlines.map((h) => (
-                    <div key={h.title} className="flex items-start gap-2 text-lg">
-                      <Newspaper className="mt-0.5 h-3 w-3 shrink-0 text-muted-foreground" />
-                      <span className="min-w-0 flex-1 leading-snug">{h.title}</span>
-                      <span className="shrink-0 text-base text-muted-foreground">
-                        {h.source} · {h.time}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
+              )}
 
               {/* Related BUMN chips */}
               {relatedBumn.length > 0 && (
