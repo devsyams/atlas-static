@@ -7,23 +7,29 @@
  * the BFF route, and client components alike.
  */
 
+import type { SectorKey } from "@/lib/danantara/types";
+
 export interface Bumn {
-  /** URL slug — `/bumn/<slug>`. */
+  /** URL slug — `/bumn/<slug>`. Also the logo key (`/public/bumn/<slug>.png`). */
   slug: string;
   /** Display name shown in the dashboard header. */
   name: string;
+  /** Short ticker/nickname for the CEO-wall BUMN board. */
+  short: string;
+  /** Sector key (drives the monogram color + sector label on the board). */
+  sector: SectorKey;
   /** garudaperkasa topic code for this BUMN. */
   topicCode: string;
 }
 
 export const BUMN_REGISTRY: Bumn[] = [
-  { slug: "mandiri", name: "Bank Mandiri", topicCode: "danantara_mandiri" },
-  { slug: "pln", name: "PLN", topicCode: "danantara_pln" },
-  { slug: "telkom", name: "Telkom Indonesia", topicCode: "danantara_telkom" },
-  { slug: "pertamina", name: "Pertamina", topicCode: "danantara_pertamina" },
-  { slug: "bni", name: "Bank BNI", topicCode: "danantara_bni" },
-  { slug: "bri", name: "Bank BRI", topicCode: "danantara_bri" },
-  { slug: "jasamarga", name: "Jasa Marga", topicCode: "danantara_jasamarga" },
+  { slug: "mandiri", name: "Bank Mandiri", short: "BMRI", sector: "perbankan", topicCode: "danantara_mandiri" },
+  { slug: "pln", name: "PLN", short: "PLN", sector: "energi", topicCode: "danantara_pln" },
+  { slug: "telkom", name: "Telkom Indonesia", short: "TLKM", sector: "telko", topicCode: "danantara_telkom" },
+  { slug: "pertamina", name: "Pertamina", short: "Pertamina", sector: "energi", topicCode: "danantara_pertamina" },
+  { slug: "bni", name: "Bank BNI", short: "BBNI", sector: "perbankan", topicCode: "danantara_bni" },
+  { slug: "bri", name: "Bank BRI", short: "BBRI", sector: "perbankan", topicCode: "danantara_bri" },
+  { slug: "jasamarga", name: "Jasa Marga", short: "JSMR", sector: "infrastruktur", topicCode: "danantara_jasamarga" },
 ];
 
 /** The Danantara-wide code served by the CEO command wall (A7). */

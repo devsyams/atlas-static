@@ -35,7 +35,12 @@ export function BumnDashboard({ name, topicCode }: { name: string; topicCode: st
   const [live, setLive] = useState<LiveState>("loading");
   const [refreshing, setRefreshing] = useState(false);
   const mountedRef = useRef(true);
-  useEffect(() => () => { mountedRef.current = false; }, []);
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
 
   const loadTopics = useCallback(
     (fresh = false) => {

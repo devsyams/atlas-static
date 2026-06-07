@@ -35,8 +35,8 @@
 | **A4** | AI assistant — copilot chat | 3-act | S5 | E7 | 1.0 | Planned |
 | **A5** | AI assistant — briefing, forecast & per-widget ask | 3-act | S5 | E7 | 1.0 | Planned |
 | **A6** | Real-time ticker, alerts & War Room | 3-act | S5–S6 | E8 | 1.0 | Planned |
-| **A7** | Danantara CEO Command Wall (zero-click demo) | 3-act | demo | — | 36.0 | Built |
-| **A8** | Per-BUMN CEO sentiment dashboards | 3-act | demo | — | 3.2 | Built |
+| **A7** | Danantara CEO Command Wall (zero-click demo) | 3-act | demo | — | 40.1 | Built |
+| **A8** | Per-BUMN CEO sentiment dashboards | 3-act | demo | — | 3.3 | Built |
 
 **Totals:** 25 features · 7 platform · 5 watch · 5 understand · 8 act.
 
@@ -97,3 +97,14 @@
 | 1.40 | 2026-06-07 | A8 → v3.0 Built (topics list redesigned as sentiment-driven dossier cards — rank numerals, tone spine/wash, icon badges, stat-chips, hover + staggered reveal) |
 | 1.41 | 2026-06-07 | A8 → v3.1 Built (per-topic pie enlarged: 70% text / 30% big centered donut showing pos/neutral/negative %) |
 | 1.42 | 2026-06-07 | A8 → v3.2 Built (Sentiment Summary impressions/reach totals get bar-chart + eye icons, matching the topic cards) |
+| 1.43 | 2026-06-07 | A7 → v37.0 Built (BUMN board wired to real data for the 7 launch BUMN via a server-side aggregation BFF; all mock data + the tick simulation removed — /danantara is 100% real) |
+| 1.44 | 2026-06-08 | A7 → v38.0 Built (BUMN topic cells: white title + per-topic sentiment-tinted background) |
+| 1.45 | 2026-06-08 | A7 → v38.1 Built (BUMN topic cells in a row are equal height — stretch + h-full) |
+| 1.46 | 2026-06-08 | A7 → v38.2 Built (board subtitles → "negative vs positive" to match the negative-first layout) |
+| 1.47 | 2026-06-08 | A7 → v38.3 Built (real Jasa Marga + BNI logos; all 7 launch BUMN have logos) |
+| 1.48 | 2026-06-08 | A7 → v38.4 Built (reach uses fmtCount — small reach shows 15K not 0.0M) |
+| 1.49 | 2026-06-08 | A7 → v38.5 Built (header: remove Net BUMN Sentiment + Active Alerts metrics) |
+| 1.50 | 2026-06-08 | A7 → v38.6 Built (BUMN detail follows the topic detail: no net sentiment/trend/split; impressions card + sentiment pie + topics) |
+| 1.51 | 2026-06-08 | A7 → v39.0 Built (topic detail redesigned as a sentiment-driven brief — hero verdict, stat tiles, AI-analysis card) |
+| 1.52 | 2026-06-08 | A7 → v40.0 Built (BUMN board: topic cell → single topic detail; logo → /bumn/<slug> dashboard; topic detail gains an Open-dashboard button) |
+| 1.53 | 2026-06-08 | Fix: client-side nav to /bumn/<slug> (and /danantara) loaded no data until a hard refresh — the mountedRef guard was never reset on remount, so the fetch result was discarded. A8 → v3.3, A7 → v40.1 |

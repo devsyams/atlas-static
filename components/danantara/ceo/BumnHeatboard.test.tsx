@@ -69,8 +69,17 @@ describe("BumnHeatboard one row per BUMN: identity | negative topic | positive t
   it("shows the topic reach in each cell", () => {
     render(<BumnHeatboard rows={rows} issues={issues} />);
     const prt = screen.getByTestId("bumn-tile-prt");
-    expect(prt.querySelector("[data-testid='bumn-topic-negative']")?.textContent).toContain("8.0M");
-    expect(prt.querySelector("[data-testid='bumn-topic-positive']")?.textContent).toContain("9.0M");
+    expect(prt.querySelector("[data-testid='bumn-topic-negative']")?.textContent).toContain("8M");
+    expect(prt.querySelector("[data-testid='bumn-topic-positive']")?.textContent).toContain("9M");
+  });
+
+  it("formats a small reach as K, not 0.0M (v38.4)", () => {
+    const smallRows = [makeBumn({ id: "x", name: "X", short: "X", sector: "energi", sentiment: -50 })];
+    const smallIssues = [makeIssue({ id: "x-bad", title: "Isu kecil", relatedBumn: ["x"], posMentions: 100, negMentions: 900, reach: 15_000, mentions: 1000 })];
+    render(<BumnHeatboard rows={smallRows} issues={smallIssues} />);
+    const cell = screen.getByTestId("bumn-tile-x").querySelector("[data-testid='bumn-topic-negative']");
+    expect(cell?.textContent).toContain("15K");
+    expect(cell?.textContent).not.toContain("0.0M");
   });
 
   it("shows the rank as a corner badge on the logo, not a stacked mono line (v27.0)", () => {
@@ -87,10 +96,14 @@ describe("BumnHeatboard one row per BUMN: identity | negative topic | positive t
     expect(logoWrap?.contains(rank)).toBe(true);
   });
 
-  it("still fires onSelect when a row is clicked (AC10)", () => {
-    const onSelect = vi.fn();
-    render(<BumnHeatboard rows={rows} issues={issues} onSelect={onSelect} />);
-    fireEvent.click(screen.getByTestId("btn-bumn-tile-wsk"));
-    expect(onSelect).toHaveBeenCalledWith("wsk");
+  it("links the BUMN logo to its dashboard, and a topic cell opens that topic (v40.0)", () => {
+    const onSelectTopic = vi.fn();
+    render(<BumnHeatboard rows={rows} issues={issues} onSelectTopic={onSelectTopic} />);
+    // Logo → dashboard link
+    expect(screen.getByTestId("btn-bumn-tile-wsk")).toHaveAttribute("href", "/bumn/wsk");
+    // Topic cell → opens that topic
+    const prt = screen.getByTestId("bumn-tile-prt");
+    fireEvent.click(prt.querySelector("[data-testid='bumn-topic-negative']") as HTMLElement);
+    expect(onSelectTopic).toHaveBeenCalledWith("prt-bad");
   });
 });

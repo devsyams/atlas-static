@@ -1,179 +1,167 @@
 // @vitest-environment jsdom
-import { act, fireEvent, render, screen } from "@testing-library/react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { TICK_MS } from "@/lib/danantara/ceo/data";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import type { BumnSentiment, CeoIssue } from "@/lib/danantara/ceo/types";
 import { CeoCommand } from "./CeoCommand";
 
-describe("CeoCommand two-column sentiment wall (v5.0)", () => {
-  beforeEach(() => {
-    vi.useFakeTimers();
-  });
-  afterEach(() => {
-    vi.useRealTimers();
-  });
+function mkIssue(over: Partial<CeoIssue> & Pick<CeoIssue, "id" | "title">): CeoIssue {
+  return {
+    category: "kebijakan",
+    relatedBumn: [],
+    mentions: 1000,
+    reach: 9_000_000,
+    sentiment: -40,
+    history: Array.from({ length: 8 }, () => 1000),
+    headlines: [],
+    aiLine: "Konteks singkat.",
+    velocity: 0,
+    status: "normal",
+    rankHistory: [1, 1, 1, 1, 1, 1, 1, 1],
+    rankDelta: 0,
+    posMentions: 200,
+    negMentions: 600,
+    ...over,
+  };
+}
 
-  it("renders all four zones with zero interaction (T1 / AC1)", () => {
+function mkBumn(slug: string, sentiment: number): BumnSentiment {
+  return {
+    id: slug,
+    name: slug,
+    short: slug.toUpperCase(),
+    sector: "energi",
+    sentiment,
+    mentions: 1000,
+    trend: Array.from({ length: 8 }, () => sentiment),
+    topIssueId: `${slug}-neg`,
+    rankHistory: Array.from({ length: 8 }, () => 1),
+    rankDelta: 0,
+    posMentions: 200,
+    negMentions: 700,
+  };
+}
+
+const SLUGS = ["mandiri", "pln", "telkom", "pertamina", "bni", "bri", "jasamarga"];
+
+const TOPICS = {
+  issues: [
+    mkIssue({ id: "t0", title: "Danantara Topic A", reach: 50_000_000, posMentions: 100, negMentions: 800, sentiment: -60 }),
+    mkIssue({ id: "t1", title: "Danantara Topic B", reach: 30_000_000, posMentions: 700, negMentions: 100, sentiment: 50 }),
+  ],
+};
+
+const BOARD = {
+  bumn: SLUGS.map((s, i) => mkBumn(s, -60 + i * 10)),
+  issues: SLUGS.flatMap((s) => [
+    mkIssue({ id: `${s}-neg`, title: `${s} negative`, relatedBumn: [s], reach: 9_000_000, posMentions: 100, negMentions: 800 }),
+    mkIssue({ id: `${s}-pos`, title: `${s} positive`, relatedBumn: [s], reach: 5_000_000, posMentions: 800, negMentions: 100 }),
+  ]),
+};
+
+function stubFetch({ topicsStatus = 200, boardStatus = 200 } = {}) {
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async (url: string) => {
+      const u = String(url);
+      if (u.includes("bumn-board")) return new Response(JSON.stringify(BOARD), { status: boardStatus });
+      return new Response(JSON.stringify(TOPICS), { status: topicsStatus });
+    }),
+  );
+}
+
+describe("CeoCommand — live wall (v37.0)", () => {
+  afterEach(() => vi.restoreAllMocks());
+
+  it("renders all four zones from the live feeds (AC1)", async () => {
+    stubFetch();
     render(<CeoCommand />);
     expect(screen.getByTestId("ceo-header")).toBeInTheDocument();
     expect(screen.getByTestId("ceo-ticker")).toBeInTheDocument();
     expect(screen.getByTestId("ceo-issues")).toBeInTheDocument();
     expect(screen.getByTestId("ceo-bumn")).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByText("Danantara Topic A")).toBeInTheDocument());
   });
 
-  it("renders no spotlight and never fires a takeover (T11 / AC11)", () => {
+  it("renders the topic rows from /topics and the 7 BUMN from /bumn-board (AC3, AC20)", async () => {
+    stubFetch();
     render(<CeoCommand />);
-    expect(screen.queryByTestId("ceo-spotlight")).not.toBeInTheDocument();
-    expect(screen.queryByTestId("ceo-takeover")).not.toBeInTheDocument();
-    // Even after the scripted demo arc escalates an issue (~tick 18), no overlay interrupts.
-    act(() => {
-      vi.advanceTimersByTime(TICK_MS * 25);
-    });
-    expect(screen.queryByTestId("ceo-takeover")).not.toBeInTheDocument();
-    expect(screen.queryByTestId("ceo-spotlight")).not.toBeInTheDocument();
+    await waitFor(() => expect(screen.getAllByTestId(/^issue-row-/)).toHaveLength(2));
+    expect(screen.getAllByTestId(/^bumn-tile-/)).toHaveLength(7);
   });
 
-  it("uses a two-column wall on xl, stacked on phone (T11 / AC11, T7 / AC7)", () => {
+  it("uses a two-column wall, no spotlight/takeover (AC11)", async () => {
+    stubFetch();
     render(<CeoCommand />);
     const wall = screen.getByTestId("ceo-wall");
     expect(wall.className).toContain("grid-cols-1");
     expect(wall.className).toContain("xl:grid-cols-2");
+    expect(screen.queryByTestId("ceo-spotlight")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("ceo-takeover")).not.toBeInTheDocument();
   });
 
-  it("renders 20 issue rows and 20 BUMN tiles across the sentiment groups (AC2, AC3)", () => {
+  it("opens issue detail on row click and closes on Esc (AC10)", async () => {
+    stubFetch();
     render(<CeoCommand />);
-    expect(screen.getAllByTestId(/^issue-row-/)).toHaveLength(20);
-    expect(screen.getAllByTestId(/^bumn-tile-/)).toHaveLength(20);
-  });
-
-  it("renders a mini pie on every topic row and on each present BUMN topic cell, no panel pie (AC14 v24.0)", () => {
-    render(<CeoCommand />);
-    // 20 topic rows + one pie per present BUMN topic cell (> 20 total).
-    expect(screen.getAllByTestId("sentiment-pie-mini").length).toBeGreaterThan(20);
-    expect(screen.queryByTestId("sentiment-pie")).not.toBeInTheDocument();
-  });
-
-  it("topics use side-by-side sub-columns; BUMN is one row per BUMN (AC12, AC18 v24.0)", () => {
-    render(<CeoCommand />);
-    expect(screen.getByTestId("issue-groups").className).toContain("grid-cols-2");
-    expect(screen.getByTestId("bumn-list")).toBeInTheDocument();
-    expect(screen.queryByTestId("bumn-groups")).not.toBeInTheDocument();
-  });
-
-  it("escalating issues still badge on the board when the scripted arc fires (AC2)", () => {
-    render(<CeoCommand />);
-    act(() => {
-      vi.advanceTimersByTime(TICK_MS * 19);
-    });
-    expect(screen.getByTestId("ceo-issues").textContent).toContain("ESCALATING");
-  });
-
-  it("renders no neutral rank badge at load — unchanged ranks show nothing (AC8 v17.0)", () => {
-    render(<CeoCommand />);
-    // At load everything is "stay" (rankDelta 0); the neutral indicator is suppressed.
-    expect(screen.queryByTestId("rank-stay")).not.toBeInTheDocument();
-    expect(screen.queryAllByTestId("rank-up")).toHaveLength(0);
-    expect(screen.queryAllByTestId("rank-down")).toHaveLength(0);
-  });
-
-  it("issue detail shows the full sentiment pie, not the split bar (AC9 v34.0)", () => {
-    render(<CeoCommand />);
-    act(() => {
-      fireEvent.click(screen.getAllByTestId(/^btn-issue-row-/)[0]);
-    });
-    expect(screen.getByTestId("sentiment-pie")).toBeInTheDocument();
-    expect(screen.queryByTestId("sentiment-split-full")).not.toBeInTheDocument();
-    act(() => {
-      fireEvent.keyDown(window, { key: "Escape" });
-    });
-  });
-
-  it("opens issue detail when a row is clicked, closes with Esc (T10 / AC10)", () => {
-    render(<CeoCommand />);
-    expect(screen.queryByTestId("ceo-detail")).not.toBeInTheDocument();
-    const firstRowBtn = screen.getAllByTestId(/^btn-issue-row-/)[0];
-    act(() => {
-      fireEvent.click(firstRowBtn);
-    });
+    const btn = await screen.findByTestId("btn-issue-row-t0");
+    fireEvent.click(btn);
     expect(screen.getByTestId("ceo-detail-issue")).toBeInTheDocument();
-    act(() => {
-      fireEvent.keyDown(window, { key: "Escape" });
-    });
+    fireEvent.keyDown(window, { key: "Escape" });
     expect(screen.queryByTestId("ceo-detail")).not.toBeInTheDocument();
   });
 
-  it("opens BUMN detail when a tile is clicked (T10 / AC10)", () => {
+  it("links the BUMN logo to that BUMN's dashboard (v40.0)", async () => {
+    stubFetch();
     render(<CeoCommand />);
-    const firstTileBtn = screen.getAllByTestId(/^btn-bumn-tile-/)[0];
-    act(() => {
-      fireEvent.click(firstTileBtn);
-    });
-    expect(screen.getByTestId("ceo-detail-bumn")).toBeInTheDocument();
+    const link = await screen.findByTestId("btn-bumn-tile-pln");
+    expect(link).toHaveAttribute("href", "/bumn/pln");
   });
 
-  /**
-   * AC15 (v6.0): the CEO is 60 — nothing on the wall may render below 16px.
-   * Forbidden classes: text-xs (12px), text-sm (14px), text-[<16px].
-   */
+  it("clicking a BUMN topic opens that topic's detail (v40.0)", async () => {
+    stubFetch();
+    render(<CeoCommand />);
+    const tile = await screen.findByTestId("bumn-tile-pln");
+    const negCell = tile.querySelector("[data-testid='bumn-topic-negative']") as HTMLElement;
+    fireEvent.click(negCell);
+    expect(screen.getByTestId("ceo-detail-issue")).toBeInTheDocument();
+  });
+
+  it("shows an offline state when the topics feed fails — no mock fallback (AC1 v37.0)", async () => {
+    stubFetch({ topicsStatus: 502 });
+    render(<CeoCommand />);
+    await waitFor(() => expect(screen.getByTestId("ceo-header").textContent).toContain("Offline"));
+    // No seeded fallback rows.
+    expect(screen.queryAllByTestId(/^issue-row-/)).toHaveLength(0);
+  });
+
+  it("manual refresh re-hits both feeds with ?fresh=1 (v37.0)", async () => {
+    stubFetch();
+    render(<CeoCommand />);
+    await waitFor(() => expect(screen.getByText("Danantara Topic A")).toBeInTheDocument());
+    const fetchMock = fetch as unknown as ReturnType<typeof vi.fn>;
+    const before = fetchMock.mock.calls.length;
+    fireEvent.click(screen.getByTestId("ceo-refresh"));
+    await waitFor(() => expect(fetchMock.mock.calls.length).toBeGreaterThan(before));
+    const urls = fetchMock.mock.calls.map((c: unknown[]) => String(c[0]));
+    expect(urls.some((u: string) => u.includes("topics?fresh=1"))).toBe(true);
+    expect(urls.some((u: string) => u.includes("bumn-board?fresh=1"))).toBe(true);
+  });
+
   const TINY_TEXT = /text-(?:xs|sm)(?![\w-])|text-\[(?:[1-9]|1[0-5])(?:\.\d+)?px\]/;
-
-  function tinyTextOffenders(container: HTMLElement): string[] {
-    return [...container.querySelectorAll("*")]
+  it("renders no text smaller than 16px on the wall (AC15)", async () => {
+    stubFetch();
+    const { container } = render(<CeoCommand />);
+    await waitFor(() => expect(screen.getAllByTestId(/^bumn-tile-/)).toHaveLength(7));
+    const offenders = [...container.querySelectorAll("*")]
       .map((el) => el.getAttribute("class") ?? "")
-      .filter((cls) => TINY_TEXT.test(cls));
-  }
-
-  it("renders no text smaller than 16px anywhere on the wall (T15 / AC15)", () => {
-    const { container } = render(<CeoCommand />);
-    expect(tinyTextOffenders(container)).toEqual([]);
+      .filter((c) => TINY_TEXT.test(c));
+    expect(offenders).toEqual([]);
   });
 
-  it("renders no text smaller than 16px inside the open issue detail modal (T15 / AC15)", () => {
-    const { container } = render(<CeoCommand />);
-    act(() => {
-      fireEvent.click(screen.getAllByTestId(/^btn-issue-row-/)[0]);
-    });
-    expect(screen.getByTestId("ceo-detail-issue")).toBeInTheDocument();
-    expect(tinyTextOffenders(container)).toEqual([]);
-  });
-
-  it("renders no text smaller than 16px inside the open BUMN detail modal (T15 / AC15)", () => {
-    const { container } = render(<CeoCommand />);
-    act(() => {
-      fireEvent.click(screen.getAllByTestId(/^btn-bumn-tile-/)[0]);
-    });
-    expect(screen.getByTestId("ceo-detail-bumn")).toBeInTheDocument();
-    expect(tinyTextOffenders(container)).toEqual([]);
-  });
-
-  it("topic titles and BUMN names are at least 20px (T15 / AC15)", () => {
-    render(<CeoCommand />);
-    const titles = [...screen.getAllByTestId("issue-title"), ...screen.getAllByTestId("bumn-name")];
-    expect(titles.length).toBe(40);
-    for (const el of titles) {
-      expect(el.className).toMatch(/text-(?:xl|2xl|3xl)/);
-    }
-  });
-
-  it("header key numbers are at least 24px (T15 / AC15)", () => {
+  it("header key numbers are at least 24px (AC15)", async () => {
+    stubFetch();
     render(<CeoCommand />);
     const metrics = screen.getAllByTestId("metric-value");
     expect(metrics.length).toBeGreaterThanOrEqual(2);
-    for (const el of metrics) {
-      expect(el.className).toMatch(/text-(?:2xl|3xl|4xl)/);
-    }
-  });
-
-  it("keeps ticking while a detail modal is open (T10 / AC10)", () => {
-    render(<CeoCommand />);
-    act(() => {
-      fireEvent.click(screen.getAllByTestId(/^btn-issue-row-/)[0]);
-    });
-    expect(screen.getByTestId("ceo-detail")).toBeInTheDocument();
-    act(() => {
-      vi.advanceTimersByTime(TICK_MS * 5);
-    });
-    // Modal still open and the wall is still live underneath.
-    expect(screen.getByTestId("ceo-detail")).toBeInTheDocument();
-    expect(screen.getAllByTestId(/^issue-row-/)).toHaveLength(20);
+    for (const el of metrics) expect(el.className).toMatch(/text-(?:2xl|3xl|4xl)/);
   });
 });

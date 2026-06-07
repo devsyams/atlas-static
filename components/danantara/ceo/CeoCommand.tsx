@@ -1,108 +1,111 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { buildInitialState, DEMO_ARCS, TICK_MS } from "@/lib/danantara/ceo/data";
-import { mulberry32, tick } from "@/lib/danantara/ceo/engine";
-import type { CeoIssue, CeoState } from "@/lib/danantara/ceo/types";
+import { rankBumn } from "@/lib/danantara/ceo/engine";
+import type { BumnSentiment, CeoIssue, CeoState } from "@/lib/danantara/ceo/types";
 import { AiBriefTicker } from "./AiBriefTicker";
 import { BumnHeatboard } from "./BumnHeatboard";
 import { DetailModal, type DetailSelection } from "./DetailModal";
 import { HeaderStrip } from "./HeaderStrip";
 import { IssueBoard } from "./IssueBoard";
 
+type Live = "loading" | "live" | "offline";
+
 /**
- * Zero-click CEO sentiment wall (v4.0). Two columns — Danantara topics grouped
- * by sentiment on the left, BUMN grouped by sentiment on the right — driven by
- * one shared tick. Sentiment is the organizing principle: each panel splits
- * into a positive and a negative section headed by an aggregate pie.
- *
- * The CEO never has to click anything; clicking any row/tile is optional
- * drill-down into the detail modal (AC10). The v3.0 spotlight, breaking-news
- * takeover and presenter hotkey are gone (AC11) — escalations now surface as
- * board badges only. Scripted demo arcs still run so badges fire reliably.
+ * Zero-click CEO sentiment wall (v37.0) — 100% live data. The left column shows
+ * the Danantara-wide topics (`/api/v1/danantara/topics`); the right column shows
+ * the 7 BUMN, each from its own feed, fetched in **one** request to the
+ * aggregation BFF (`/api/v1/danantara/bumn-board`). No mock seeds, no simulation:
+ * on upstream failure the boards show a graceful offline state. Clicking any
+ * row/tile is optional drill-down (AC10); a header Refresh forces a fresh pull.
  */
 export function CeoCommand() {
-  const [state, setState] = useState(buildInitialState);
-  const [liveIssues, setLiveIssues] = useState<CeoIssue[] | null>(null);
-  const [source, setSource] = useState<"live" | "fallback">("fallback");
+  const [issues, setIssues] = useState<CeoIssue[]>([]); // Danantara-wide topics
+  const [bumn, setBumn] = useState<BumnSentiment[]>([]); // BUMN board rows
+  const [bumnIssues, setBumnIssues] = useState<CeoIssue[]>([]); // per-BUMN topics
+  const [issuesLive, setIssuesLive] = useState<Live>("loading");
+  const [, setBumnLive] = useState<Live>("loading");
   const [refreshing, setRefreshing] = useState(false);
   const [detail, setDetail] = useState<DetailSelection | null>(null);
-  const randRef = useRef(mulberry32(20260602));
   const mountedRef = useRef(true);
-  useEffect(() => () => { mountedRef.current = false; }, []);
-
-  // Simulation clock — animates the BUMN board (still mock) and seeds the topic
-  // fallback. Once live topics arrive they replace the simulated ones (v31.0),
-  // so the Issues board shows a real snapshot rather than fake drift.
   useEffect(() => {
-    const id = setInterval(() => {
-      setState((s) => tick(s, randRef.current, DEMO_ARCS));
-    }, TICK_MS);
-    return () => clearInterval(id);
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
   }, []);
 
-  // Live Danantara topics via the BFF (v31.0). On any failure we keep the seeded
-  // topics (graceful degradation — the wall never blanks). A manual refresh
-  // (v36.0) passes ?fresh=1 so the BFF bypasses its 1 h cache and re-hits the
-  // upstream — the dashboard always pulls the newest data on demand.
-  const loadTopics = useCallback((fresh = false) => {
-    fetch(`/api/v1/danantara/topics${fresh ? "?fresh=1" : ""}`)
-      .then((res) => {
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        return res.json();
+  const load = useCallback((fresh = false) => {
+    const q = fresh ? "?fresh=1" : "";
+    const topics = fetch(`/api/v1/danantara/topics${q}`)
+      .then((r) => {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        return r.json();
       })
-      .then((json: { issues?: CeoIssue[] }) => {
+      .then((j: { issues?: CeoIssue[] }) => {
         if (!mountedRef.current) return;
-        if (Array.isArray(json.issues) && json.issues.length > 0) {
-          setLiveIssues(json.issues);
-          setSource("live");
-        } else {
-          setSource("fallback");
-        }
+        setIssues(Array.isArray(j.issues) ? j.issues : []);
+        setIssuesLive("live");
       })
       .catch(() => {
-        if (mountedRef.current) setSource("fallback");
-      })
-      .finally(() => {
-        if (mountedRef.current) setRefreshing(false);
+        if (mountedRef.current) setIssuesLive("offline");
       });
+
+    const board = fetch(`/api/v1/danantara/bumn-board${q}`)
+      .then((r) => {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        return r.json();
+      })
+      .then((j: { bumn?: BumnSentiment[]; issues?: CeoIssue[] }) => {
+        if (!mountedRef.current) return;
+        setBumn(Array.isArray(j.bumn) ? j.bumn : []);
+        setBumnIssues(Array.isArray(j.issues) ? j.issues : []);
+        setBumnLive("live");
+      })
+      .catch(() => {
+        if (mountedRef.current) setBumnLive("offline");
+      });
+
+    Promise.allSettled([topics, board]).finally(() => {
+      if (mountedRef.current) setRefreshing(false);
+    });
   }, []);
 
   useEffect(() => {
-    loadTopics(false);
-  }, [loadTopics]);
+    load(false);
+  }, [load]);
 
-  // The Issues board (+ header/ticker) read live topics when present; the BUMN
-  // board keeps the mock topics so its rich topic-cell linking stays populated.
-  const issues = liveIssues ?? state.issues;
-  const viewState = useMemo<CeoState>(() => ({ ...state, issues }), [state, issues]);
-  const detailState = detail?.type === "bumn" ? state : viewState;
+  const rankedBumn = useMemo(() => rankBumn(bumn), [bumn]);
+  const headerState = useMemo<CeoState>(() => ({ tickCount: 0, issues, bumn: rankedBumn }), [issues, rankedBumn]);
+  // The detail modal can show any topic — Danantara-wide or a BUMN's — so it sees
+  // both topic sets (ids are unique). The BUMN logo links straight to its dashboard.
+  const detailState = useMemo<CeoState>(
+    () => ({ tickCount: 0, issues: [...issues, ...bumnIssues], bumn: rankedBumn }),
+    [issues, bumnIssues, rankedBumn],
+  );
 
   return (
     <div className="flex h-full flex-col gap-3">
       <HeaderStrip
-        state={viewState}
-        source={source}
+        state={headerState}
+        source={issuesLive}
         onRefresh={() => {
           setRefreshing(true);
-          loadTopics(true);
+          load(true);
         }}
         refreshing={refreshing}
       />
 
       {/* Running narration sits broadcast-style at the top, right under the headline numbers. */}
-      <AiBriefTicker state={viewState} />
+      <AiBriefTicker state={headerState} />
 
-      <div
-        data-testid="ceo-wall"
-        className="grid min-h-0 flex-1 grid-cols-1 gap-3 xl:grid-cols-2"
-      >
+      <div data-testid="ceo-wall" className="grid min-h-0 flex-1 grid-cols-1 gap-3 xl:grid-cols-2">
         {/* Phone order matches AC7: header → ticker → issues → BUMN. */}
         <div className="min-h-0">
           <IssueBoard issues={issues} onSelect={(id) => setDetail({ type: "issue", id })} />
         </div>
         <div className="min-h-0">
-          <BumnHeatboard rows={state.bumn} issues={state.issues} onSelect={(id) => setDetail({ type: "bumn", id })} />
+          <BumnHeatboard rows={rankedBumn} issues={bumnIssues} onSelectTopic={(id) => setDetail({ type: "issue", id })} />
         </div>
       </div>
 

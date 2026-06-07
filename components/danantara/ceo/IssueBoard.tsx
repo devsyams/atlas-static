@@ -2,7 +2,7 @@
 
 import { Flame, TrendingDown, TrendingUp } from "lucide-react";
 import { groupIssuesBySentiment } from "@/lib/danantara/ceo/engine";
-import { pieTotals, sentimentTint } from "@/lib/danantara/ceo/format";
+import { fmtCount, pieTotals, sentimentTint } from "@/lib/danantara/ceo/format";
 import { RankBadge } from "./RankBadge";
 import { SentimentPie } from "./SentimentPie";
 import type { CeoIssue } from "@/lib/danantara/ceo/types";
@@ -57,7 +57,7 @@ function IssueRow({ issue, rank, onSelect }: { issue: CeoIssue; rank: number; on
         <div className="flex shrink-0 flex-col items-end gap-1 pt-0.5">
           <SentimentPie totals={pieTotals(issue)} variant="mini" />
           <span className="text-base tabular-nums text-muted-foreground">
-            {(issue.reach / 1_000_000).toFixed(1)}M reach
+            {fmtCount(issue.reach)} reach
           </span>
         </div>
       </button>
@@ -119,7 +119,7 @@ export function IssueBoard({ issues, onSelect }: { issues: CeoIssue[]; onSelect?
         <Flame className="h-5 w-5 text-primary" />
         <span className="text-xl font-semibold uppercase tracking-[0.18em]">Danantara Issues</span>
         <span className="ml-auto text-base uppercase tracking-widest text-muted-foreground">
-          {issues.length} topics · positive vs negative
+          {issues.length} topics · negative vs positive
         </span>
       </div>
       <div

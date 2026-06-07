@@ -1,11 +1,46 @@
 // @vitest-environment jsdom
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import { buildInitialState } from "@/lib/danantara/ceo/data";
+import type { BumnSentiment, CeoIssue, CeoState } from "@/lib/danantara/ceo/types";
 import { DetailModal } from "./DetailModal";
 
+const issue: CeoIssue = {
+  id: "pln-topic-0",
+  title: "Blackout Massal Sumatera",
+  category: "kebijakan",
+  relatedBumn: ["pln"],
+  mentions: 1000,
+  reach: 9_000_000,
+  sentiment: -69,
+  history: Array.from({ length: 8 }, () => 1000),
+  headlines: [],
+  aiLine: "Penjelasan topik ini.",
+  velocity: 0,
+  status: "normal",
+  rankHistory: [1, 1, 1, 1, 1, 1, 1, 1],
+  rankDelta: 0,
+  posMentions: 70,
+  negMentions: 760,
+};
+
+const bumn: BumnSentiment = {
+  id: "pln",
+  name: "PLN",
+  short: "PLN",
+  sector: "energi",
+  sentiment: -69,
+  mentions: 1000,
+  trend: Array.from({ length: 8 }, () => -69),
+  topIssueId: "pln-topic-0",
+  rankHistory: Array.from({ length: 8 }, () => 1),
+  rankDelta: 0,
+  posMentions: 70,
+  negMentions: 760,
+};
+
+const state: CeoState = { tickCount: 0, issues: [issue], bumn: [bumn] };
+
 describe("DetailModal (T10 / AC10)", () => {
-  const state = buildInitialState();
   const topIssue = state.issues[0];
   const topBumn = state.bumn[0];
 
@@ -65,13 +100,14 @@ describe("DetailModal (T10 / AC10)", () => {
     expect(onClose).toHaveBeenCalledOnce();
   });
 
-  it("navigates from issue detail to a related BUMN", () => {
-    const onNavigate = vi.fn();
+  it("links a related BUMN to its dashboard (v40.0)", () => {
     render(
-      <DetailModal selection={{ type: "issue", id: topIssue.id }} state={state} onClose={vi.fn()} onNavigate={onNavigate} />,
+      <DetailModal selection={{ type: "issue", id: topIssue.id }} state={state} onClose={vi.fn()} onNavigate={vi.fn()} />,
     );
-    fireEvent.click(screen.getByTestId(`related-bumn-${topIssue.relatedBumn[0]}`));
-    expect(onNavigate).toHaveBeenCalledWith({ type: "bumn", id: topIssue.relatedBumn[0] });
+    expect(screen.getByTestId(`related-bumn-${topIssue.relatedBumn[0]}`)).toHaveAttribute(
+      "href",
+      `/bumn/${topIssue.relatedBumn[0]}`,
+    );
   });
 
   it("renders nothing when the id does not exist", () => {
