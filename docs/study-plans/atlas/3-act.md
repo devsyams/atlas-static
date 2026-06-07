@@ -266,7 +266,7 @@ learn a high-severity incident just landed. Push-based updates for the ticker an
 
 ### A7. Danantara CEO Command Wall (zero-click demo)
 
-- **Version:** 31.0 · **Stage:** 3-act · **Sprint:** demo · **Status:** In progress · **Spec ref:** `docs/superpowers/specs/2026-06-02-danantara-ceo-command-design.md` · **Owner:** Dev A
+- **Version:** 31.0 · **Stage:** 3-act · **Sprint:** demo · **Status:** Built · **Spec ref:** `docs/superpowers/specs/2026-06-02-danantara-ceo-command-design.md` · **Owner:** Dev A
 
 #### PM
 *(v31.0)* The wall graduates from a self-running **simulation** to a **live feed** for the Danantara
@@ -583,4 +583,4 @@ of an abstract pie. One BUMN, one positive topic, one negative topic, per line.
 | 28.0 | 2026-06-04 | Client: source logos for the BUMN still on monograms. Added 7 real logos (pertamina, pln, kai, bulog, semen, telkom, waskita) → 19/20 covered; jasamarga keeps the monogram (no clean corporate mark). Assets only, no component change. Status → Built |
 | 29.0 | 2026-06-04 | Client: BUMN topic columns inconsistent with the Issues board. Swap to positive-left/negative-right and relabel POSITIVE TOPICS / NEGATIVE TOPICS (English, matching Issues; fixes AC17 violation). AC18 amended. Status → Built |
 | 30.0 | 2026-06-04 | Client: replace the "No positive/negative topic" text with an empty placeholder topic cell (muted dashed tone-tinted cell + icon + em-dash) so every BUMN row shows both columns. AC18 amended. Status → Built |
-| 31.0 | 2026-06-07 | Client: wire the Issues (topics) board to the **live `garudaperkasa.io` media-intelligence feed** via a server-side BFF route (`/api/v1/danantara/topics`, `api_key` server-only, rolling 28-day window, ~6 h Vercel cache); upstream failure degrades to seeded topics. BUMN board stays simulated (no live feed yet). + AC19; AC2 amended. Status → In progress |
+| 31.0 | 2026-06-07 | Client: wire the Issues (topics) board to the **live `garudaperkasa.io` media-intelligence feed** via a server-side BFF route (`/api/v1/danantara/topics`, `api_key` server-only, rolling 28-day window, ~6 h Vercel cache); upstream failure degrades to seeded topics. BUMN board stays simulated (no live feed yet). + AC19; AC2 amended. Status → Built (155 tests green, typecheck + lint clean, build verified) |

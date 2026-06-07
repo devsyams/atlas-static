@@ -8,7 +8,7 @@ import type { CeoState } from "@/lib/danantara/ceo/types";
  * Headline strip: identity, LIVE badge, totals, alert count, Jakarta clock.
  * Zero-click. Type sizes follow the CEO readability scale (AC15).
  */
-export function HeaderStrip({ state }: { state: CeoState }) {
+export function HeaderStrip({ state, source = "live" }: { state: CeoState; source?: "live" | "fallback" }) {
   const totalMentions = state.issues.reduce((a, i) => a + i.mentions, 0);
   const netSentiment = Math.round(state.bumn.reduce((a, b) => a + b.sentiment, 0) / Math.max(1, state.bumn.length));
   const alerts = state.issues.filter((i) => i.status !== "normal").length;
@@ -35,9 +35,15 @@ export function HeaderStrip({ state }: { state: CeoState }) {
         </div>
       </div>
 
-      <span className="flex items-center gap-1.5 rounded-full border border-success/40 bg-success/10 px-3 py-1 text-base font-semibold uppercase tracking-widest text-success">
-        <Radio className="h-4 w-4 animate-pulse" /> Live
-      </span>
+      {source === "live" ? (
+        <span className="flex items-center gap-1.5 rounded-full border border-success/40 bg-success/10 px-3 py-1 text-base font-semibold uppercase tracking-widest text-success">
+          <Radio className="h-4 w-4 animate-pulse" /> Live
+        </span>
+      ) : (
+        <span className="flex items-center gap-1.5 rounded-full border border-warning/40 bg-warning/10 px-3 py-1 text-base font-semibold uppercase tracking-widest text-warning">
+          <Radio className="h-4 w-4" /> Sample data
+        </span>
+      )}
 
       <Metric label="Total Mentions" value={totalMentions.toLocaleString("en-US")} />
       <Metric

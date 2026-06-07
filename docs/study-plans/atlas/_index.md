@@ -35,7 +35,7 @@
 | **A4** | AI assistant — copilot chat | 3-act | S5 | E7 | 1.0 | Planned |
 | **A5** | AI assistant — briefing, forecast & per-widget ask | 3-act | S5 | E7 | 1.0 | Planned |
 | **A6** | Real-time ticker, alerts & War Room | 3-act | S5–S6 | E8 | 1.0 | Planned |
-| **A7** | Danantara CEO Command Wall (zero-click demo) | 3-act | demo | — | 31.0 | In progress |
+| **A7** | Danantara CEO Command Wall (zero-click demo) | 3-act | demo | — | 31.0 | Built |
 
 **Totals:** 24 features · 7 platform · 5 watch · 5 understand · 7 act.
 
@@ -84,4 +84,4 @@
 | 1.28 | 2026-06-04 | A7 → v28.0 Built (sourced 7 more real BUMN logos → 19/20 covered; only jasamarga stays on a monogram) |
 | 1.29 | 2026-06-04 | A7 → v29.0 Built (BUMN topic columns → positive-left/negative-right + English POSITIVE/NEGATIVE TOPICS labels, consistent with the Issues board) |
 | 1.30 | 2026-06-04 | A7 → v30.0 Built (empty placeholder topic cell replaces the "No positive/negative topic" text; every BUMN row shows both columns) |
-| 1.31 | 2026-06-07 | A7 → v31.0 In progress (Issues board wired to the live garudaperkasa.io topics feed via a server-side BFF route + Vercel cache; BUMN stays simulated) |
+| 1.31 | 2026-06-07 | A7 → v31.0 Built (Issues board wired to the live garudaperkasa.io topics feed via a server-side BFF route + Vercel cache; BUMN stays simulated) |
