@@ -15,7 +15,7 @@ export function HeaderStrip({
   refreshing = false,
 }: {
   state: CeoState;
-  source?: "live" | "fallback";
+  source?: "live" | "loading" | "offline";
   onRefresh?: () => void;
   refreshing?: boolean;
 }) {
@@ -49,9 +49,13 @@ export function HeaderStrip({
         <span className="flex items-center gap-1.5 rounded-full border border-success/40 bg-success/10 px-3 py-1 text-base font-semibold uppercase tracking-widest text-success">
           <Radio className="h-4 w-4 animate-pulse" /> Live
         </span>
+      ) : source === "offline" ? (
+        <span className="flex items-center gap-1.5 rounded-full border border-destructive/40 bg-destructive/10 px-3 py-1 text-base font-semibold uppercase tracking-widest text-destructive">
+          <Radio className="h-4 w-4" /> Offline
+        </span>
       ) : (
-        <span className="flex items-center gap-1.5 rounded-full border border-warning/40 bg-warning/10 px-3 py-1 text-base font-semibold uppercase tracking-widest text-warning">
-          <Radio className="h-4 w-4" /> Sample data
+        <span className="flex items-center gap-1.5 rounded-full border border-border bg-background/40 px-3 py-1 text-base font-semibold uppercase tracking-widest text-muted-foreground">
+          <Radio className="h-4 w-4" /> Loading
         </span>
       )}
 
