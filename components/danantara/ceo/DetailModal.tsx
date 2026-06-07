@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, type CSSProperties } from "react";
-import { BarChart3, Building2, Eye, Sparkles, X } from "lucide-react";
+import Link from "next/link";
+import { ArrowRight, BarChart3, Building2, Eye, LayoutDashboard, Sparkles, X } from "lucide-react";
 import { fmtCount, pieTotals } from "@/lib/danantara/ceo/format";
 import type { CeoState } from "@/lib/danantara/ceo/types";
 import { SECTOR_LABEL } from "@/lib/danantara/ui";
@@ -132,25 +133,22 @@ export function DetailModal({
                 </section>
               )}
 
-              {/* Related BUMN chips */}
+              {/* Jump to the related BUMN's own dashboard. */}
               {relatedBumn.length > 0 && (
                 <div>
-                  <div className="mb-2 text-lg font-semibold uppercase tracking-[0.18em] text-muted-foreground">Related BUMN</div>
+                  <div className="mb-2 flex items-center gap-1.5 text-lg font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                    <LayoutDashboard className="h-4 w-4" /> BUMN Dashboard
+                  </div>
                   <div className="flex flex-wrap gap-2">
                     {relatedBumn.map((b) => (
-                      <button
+                      <Link
                         key={b.id}
-                        type="button"
+                        href={`/bumn/${b.id}`}
                         data-testid={`related-bumn-${b.id}`}
-                        onClick={() => onNavigate({ type: "bumn", id: b.id })}
-                        className="inline-flex items-center gap-2 rounded-full border border-border bg-background/40 px-3.5 py-1.5 text-base font-semibold transition-colors hover:border-primary/50 hover:bg-primary/10"
+                        className="inline-flex items-center gap-2 rounded-lg border border-primary/40 bg-primary/10 px-4 py-2 text-base font-semibold text-primary transition-colors hover:bg-primary/20"
                       >
-                        {b.short}
-                        <span className={`tabular-nums ${b.sentiment < 0 ? "text-destructive" : "text-success"}`}>
-                          {b.sentiment > 0 ? "+" : ""}
-                          {Math.round(b.sentiment)}
-                        </span>
-                      </button>
+                        Open {b.name} dashboard <ArrowRight className="h-4 w-4" />
+                      </Link>
                     ))}
                   </div>
                 </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useState } from "react";
 import { Building2, TrendingDown, TrendingUp } from "lucide-react";
 import { topicsForBumn } from "@/lib/danantara/ceo/engine";
@@ -46,8 +47,16 @@ function BumnLogo({ row }: { row: BumnSentiment }) {
   );
 }
 
-/** A BUMN's leading positive/negative topic (title + its own pie + reach), or a placeholder. */
-function TopicCell({ issue, variant }: { issue: CeoIssue | null; variant: "positive" | "negative" }) {
+/** A BUMN's leading positive/negative topic (title + its own pie + reach), or a placeholder. Clickable → opens that topic's detail. */
+function TopicCell({
+  issue,
+  variant,
+  onSelect,
+}: {
+  issue: CeoIssue | null;
+  variant: "positive" | "negative";
+  onSelect?: (id: string) => void;
+}) {
   const positive = variant === "positive";
   const Icon = positive ? TrendingUp : TrendingDown;
   if (!issue) {
@@ -69,11 +78,13 @@ function TopicCell({ issue, variant }: { issue: CeoIssue | null; variant: "posit
     );
   }
   return (
-    <span
+    <button
+      type="button"
       data-testid={`bumn-topic-${variant}`}
+      onClick={() => onSelect?.(issue.id)}
       // Border + icon keep the column tone; the background is tinted per-topic by
       // its own net sentiment (so cells vary, not a flat block); the title is white.
-      className={`flex h-full items-start gap-2 rounded border px-2 py-1.5 text-base leading-snug ${
+      className={`flex h-full w-full cursor-pointer items-start gap-2 rounded border px-2 py-1.5 text-left text-base leading-snug transition hover:brightness-125 ${
         positive ? "border-success/40 text-success" : "border-destructive/40 text-destructive"
       }`}
       style={{ backgroundColor: sentimentTint(issue.sentiment) }}
@@ -87,7 +98,7 @@ function TopicCell({ issue, variant }: { issue: CeoIssue | null; variant: "posit
         <SentimentPie totals={pieTotals(issue)} variant="mini" />
         <span className="text-base tabular-nums text-muted-foreground">{fmtCount(issue.reach)} reach</span>
       </span>
-    </span>
+    </button>
   );
 }
 
@@ -100,46 +111,44 @@ function BumnRow({
   row,
   rank,
   issues,
-  onSelect,
+  onSelectTopic,
 }: {
   row: BumnSentiment;
   rank: number;
   issues: CeoIssue[];
-  onSelect?: (id: string) => void;
+  onSelectTopic?: (id: string) => void;
 }) {
   const { positive, negative } = topicsForBumn(row.id, issues);
   return (
     <li
       data-testid={`bumn-tile-${row.id}`}
-      className="border-b border-border/40 last:border-b-0"
+      className={`grid ${GRID} items-stretch gap-2.5 border-b border-border/40 px-3 py-2.5 last:border-b-0`}
       style={{ backgroundColor: sentimentTint(row.sentiment) }}
     >
-      <button
-        type="button"
+      {/* Identity → the BUMN's own dashboard. Click the logo to open it. */}
+      <Link
+        href={`/bumn/${row.id}`}
         data-testid={`btn-bumn-tile-${row.id}`}
-        onClick={() => onSelect?.(row.id)}
-        className={`ceo-row grid w-full cursor-pointer ${GRID} items-stretch gap-2.5 px-3 py-2.5 text-left hover:bg-card/40`}
+        title={`Open ${row.name} dashboard`}
+        className="flex flex-col items-center gap-1 rounded-md pt-0.5 text-center transition-colors hover:bg-card/50"
       >
-        {/* Identity: logo (rank as a corner badge), then ticker + movement on one line. */}
-        <div className="flex flex-col items-center gap-1 pt-0.5 text-center">
-          <span className="relative inline-block">
-            <BumnLogo row={row} />
-            <span
-              data-testid="bumn-rank"
-              className="absolute -left-2 -top-2 flex h-5 min-w-5 items-center justify-center rounded-full border border-background bg-foreground px-1 font-mono text-base font-bold tabular-nums leading-none text-background shadow-sm"
-            >
-              {rank}
-            </span>
+        <span className="relative inline-block">
+          <BumnLogo row={row} />
+          <span
+            data-testid="bumn-rank"
+            className="absolute -left-2 -top-2 flex h-5 min-w-5 items-center justify-center rounded-full border border-background bg-foreground px-1 font-mono text-base font-bold tabular-nums leading-none text-background shadow-sm"
+          >
+            {rank}
           </span>
-          <span className="flex items-center gap-1">
-            <span data-testid="bumn-name" className="max-w-full truncate text-xl font-bold leading-tight">{row.short}</span>
-            <RankBadge delta={row.rankDelta} />
-          </span>
-        </div>
-        {/* Negative topic on the left, then positive — same order as the Issues board. */}
-        <TopicCell issue={negative} variant="negative" />
-        <TopicCell issue={positive} variant="positive" />
-      </button>
+        </span>
+        <span className="flex items-center gap-1">
+          <span data-testid="bumn-name" className="max-w-full truncate text-xl font-bold leading-tight">{row.short}</span>
+          <RankBadge delta={row.rankDelta} />
+        </span>
+      </Link>
+      {/* Negative topic on the left, then positive — same order as the Issues board. */}
+      <TopicCell issue={negative} variant="negative" onSelect={onSelectTopic} />
+      <TopicCell issue={positive} variant="positive" onSelect={onSelectTopic} />
     </li>
   );
 }
@@ -153,11 +162,12 @@ function BumnRow({
 export function BumnHeatboard({
   rows,
   issues,
-  onSelect,
+  onSelectTopic,
 }: {
   rows: BumnSentiment[];
   issues: CeoIssue[];
-  onSelect?: (id: string) => void;
+  /** Open a specific topic's detail (a topic cell was clicked). */
+  onSelectTopic?: (id: string) => void;
 }) {
   return (
     <div data-testid="ceo-bumn" className="panel flex h-full flex-col overflow-hidden">
@@ -176,7 +186,7 @@ export function BumnHeatboard({
       </div>
       <ol data-testid="bumn-list" className="min-h-0 flex-1 overflow-y-auto">
         {rows.map((row, idx) => (
-          <BumnRow key={row.id} row={row} rank={idx + 1} issues={issues} onSelect={onSelect} />
+          <BumnRow key={row.id} row={row} rank={idx + 1} issues={issues} onSelectTopic={onSelectTopic} />
         ))}
       </ol>
     </div>

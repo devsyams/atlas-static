@@ -96,10 +96,14 @@ describe("BumnHeatboard one row per BUMN: identity | negative topic | positive t
     expect(logoWrap?.contains(rank)).toBe(true);
   });
 
-  it("still fires onSelect when a row is clicked (AC10)", () => {
-    const onSelect = vi.fn();
-    render(<BumnHeatboard rows={rows} issues={issues} onSelect={onSelect} />);
-    fireEvent.click(screen.getByTestId("btn-bumn-tile-wsk"));
-    expect(onSelect).toHaveBeenCalledWith("wsk");
+  it("links the BUMN logo to its dashboard, and a topic cell opens that topic (v40.0)", () => {
+    const onSelectTopic = vi.fn();
+    render(<BumnHeatboard rows={rows} issues={issues} onSelectTopic={onSelectTopic} />);
+    // Logo → dashboard link
+    expect(screen.getByTestId("btn-bumn-tile-wsk")).toHaveAttribute("href", "/bumn/wsk");
+    // Topic cell → opens that topic
+    const prt = screen.getByTestId("bumn-tile-prt");
+    fireEvent.click(prt.querySelector("[data-testid='bumn-topic-negative']") as HTMLElement);
+    expect(onSelectTopic).toHaveBeenCalledWith("prt-bad");
   });
 });

@@ -100,13 +100,14 @@ describe("DetailModal (T10 / AC10)", () => {
     expect(onClose).toHaveBeenCalledOnce();
   });
 
-  it("navigates from issue detail to a related BUMN", () => {
-    const onNavigate = vi.fn();
+  it("links a related BUMN to its dashboard (v40.0)", () => {
     render(
-      <DetailModal selection={{ type: "issue", id: topIssue.id }} state={state} onClose={vi.fn()} onNavigate={onNavigate} />,
+      <DetailModal selection={{ type: "issue", id: topIssue.id }} state={state} onClose={vi.fn()} onNavigate={vi.fn()} />,
     );
-    fireEvent.click(screen.getByTestId(`related-bumn-${topIssue.relatedBumn[0]}`));
-    expect(onNavigate).toHaveBeenCalledWith({ type: "bumn", id: topIssue.relatedBumn[0] });
+    expect(screen.getByTestId(`related-bumn-${topIssue.relatedBumn[0]}`)).toHaveAttribute(
+      "href",
+      `/bumn/${topIssue.relatedBumn[0]}`,
+    );
   });
 
   it("renders nothing when the id does not exist", () => {

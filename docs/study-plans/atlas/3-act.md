@@ -266,7 +266,7 @@ learn a high-severity incident just landed. Push-based updates for the ticker an
 
 ### A7. Danantara CEO Command Wall (zero-click demo)
 
-- **Version:** 39.0 · **Stage:** 3-act · **Sprint:** demo · **Status:** Built · **Spec ref:** `docs/superpowers/specs/2026-06-02-danantara-ceo-command-design.md` · **Owner:** Dev A
+- **Version:** 40.0 · **Stage:** 3-act · **Sprint:** demo · **Status:** Built · **Spec ref:** `docs/superpowers/specs/2026-06-02-danantara-ceo-command-design.md` · **Owner:** Dev A
 
 #### PM
 *(v31.0)* The wall graduates from a self-running **simulation** to a **live feed** for the Danantara
@@ -598,7 +598,8 @@ of an abstract pie. One BUMN, one positive topic, one negative topic, per line.
 | 38.4 | 2026-06-08 | Client: fix reach formatting — use `fmtCount` so a small reach shows e.g. `15K` instead of `0.0M` (BUMN topic cells, Issues rows, BUMN detail). Status → Built |
 | 38.5 | 2026-06-08 | Client: remove the **Net BUMN Sentiment** and **Active Alerts** metrics from the CEO header (keep Total Mentions + the clock). Status → Built |
 | 38.6 | 2026-06-08 | Client: align the BUMN detail modal with the Danantara topic detail — drop the **Net sentiment** stat, trend chart & split bar; show an Impressions card + the sentiment pie (with neutral) + a Topics list. Status → Built |
-| 39.0 | 2026-06-08 | Client ("topic details seems boring"): redesign the topic detail modal as a sentiment-driven brief — tone-keyed hero + verdict pill, icon stat tiles, sentiment pie panel, "Nexorus AI · Analysis" card, tone spine + pop-in. AC10 amended. Status → Built |
+| 39.0 | 2026-06-08 | Client ("topic details seems boring"): redesign the topic detail modal as a sentiment-driven brief — tone-keyed hero + verdict pill, icon stat tiles, sentiment pie panel, "Nexorus · Analysis" card, tone spine + pop-in. AC10 amended. Status → Built |
+| 40.0 | 2026-06-08 | Client: in the BUMN board, **clicking a topic cell opens that single topic's detail** (the Danantara brief — no list of all topics); **the logo links to that BUMN's `/bumn/<slug>` dashboard**; and the topic detail gains an **"Open <BUMN> dashboard"** button (the related-BUMN chip became a dashboard link). AC10/AC18 amended. Status → Built |
 
 ---
 

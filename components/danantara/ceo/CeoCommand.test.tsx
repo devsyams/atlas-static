@@ -109,12 +109,20 @@ describe("CeoCommand — live wall (v37.0)", () => {
     expect(screen.queryByTestId("ceo-detail")).not.toBeInTheDocument();
   });
 
-  it("opens BUMN detail on tile click (AC10)", async () => {
+  it("links the BUMN logo to that BUMN's dashboard (v40.0)", async () => {
     stubFetch();
     render(<CeoCommand />);
-    const btn = await screen.findByTestId("btn-bumn-tile-pln");
-    fireEvent.click(btn);
-    expect(screen.getByTestId("ceo-detail-bumn")).toBeInTheDocument();
+    const link = await screen.findByTestId("btn-bumn-tile-pln");
+    expect(link).toHaveAttribute("href", "/bumn/pln");
+  });
+
+  it("clicking a BUMN topic opens that topic's detail (v40.0)", async () => {
+    stubFetch();
+    render(<CeoCommand />);
+    const tile = await screen.findByTestId("bumn-tile-pln");
+    const negCell = tile.querySelector("[data-testid='bumn-topic-negative']") as HTMLElement;
+    fireEvent.click(negCell);
+    expect(screen.getByTestId("ceo-detail-issue")).toBeInTheDocument();
   });
 
   it("shows an offline state when the topics feed fails — no mock fallback (AC1 v37.0)", async () => {

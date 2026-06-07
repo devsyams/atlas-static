@@ -72,8 +72,12 @@ export function CeoCommand() {
 
   const rankedBumn = useMemo(() => rankBumn(bumn), [bumn]);
   const headerState = useMemo<CeoState>(() => ({ tickCount: 0, issues, bumn: rankedBumn }), [issues, rankedBumn]);
-  const detailState: CeoState =
-    detail?.type === "bumn" ? { tickCount: 0, issues: bumnIssues, bumn: rankedBumn } : headerState;
+  // The detail modal can show any topic — Danantara-wide or a BUMN's — so it sees
+  // both topic sets (ids are unique). The BUMN logo links straight to its dashboard.
+  const detailState = useMemo<CeoState>(
+    () => ({ tickCount: 0, issues: [...issues, ...bumnIssues], bumn: rankedBumn }),
+    [issues, bumnIssues, rankedBumn],
+  );
 
   return (
     <div className="flex h-full flex-col gap-3">
@@ -96,7 +100,7 @@ export function CeoCommand() {
           <IssueBoard issues={issues} onSelect={(id) => setDetail({ type: "issue", id })} />
         </div>
         <div className="min-h-0">
-          <BumnHeatboard rows={rankedBumn} issues={bumnIssues} onSelect={(id) => setDetail({ type: "bumn", id })} />
+          <BumnHeatboard rows={rankedBumn} issues={bumnIssues} onSelectTopic={(id) => setDetail({ type: "issue", id })} />
         </div>
       </div>
 
