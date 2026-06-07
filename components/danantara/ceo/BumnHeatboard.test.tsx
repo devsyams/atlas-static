@@ -30,10 +30,10 @@ describe("BumnHeatboard one row per BUMN: identity | negative topic | positive t
     expect(prt.querySelector("[data-testid='bumn-topic-positive']")?.textContent).toContain("Laba Pertamina naik");
   });
 
-  it("orders the positive topic before the negative topic in the row (v29.0 — positive on the left, like Issues)", () => {
+  it("orders the negative topic before the positive topic in the row (v35.0 — negative on the left, like Issues)", () => {
     render(<BumnHeatboard rows={rows} issues={issues} />);
     const cells = [...screen.getByTestId("bumn-tile-prt").querySelectorAll("[data-testid^='bumn-topic-']")];
-    expect(cells.map((c) => c.getAttribute("data-testid"))).toEqual(["bumn-topic-positive", "bumn-topic-negative"]);
+    expect(cells.map((c) => c.getAttribute("data-testid"))).toEqual(["bumn-topic-negative", "bumn-topic-positive"]);
   });
 
   it("labels the topic columns in English, matching the Issues board (v29.0)", () => {

@@ -35,7 +35,7 @@
 | **A4** | AI assistant — copilot chat | 3-act | S5 | E7 | 1.0 | Planned |
 | **A5** | AI assistant — briefing, forecast & per-widget ask | 3-act | S5 | E7 | 1.0 | Planned |
 | **A6** | Real-time ticker, alerts & War Room | 3-act | S5–S6 | E8 | 1.0 | Planned |
-| **A7** | Danantara CEO Command Wall (zero-click demo) | 3-act | demo | — | 34.0 | Built |
+| **A7** | Danantara CEO Command Wall (zero-click demo) | 3-act | demo | — | 35.0 | Built |
 
 **Totals:** 24 features · 7 platform · 5 watch · 5 understand · 7 act.
 
@@ -88,3 +88,4 @@
 | 1.32 | 2026-06-07 | A7 → v32.0 Built (issue detail modal: replace the empty "Top Coverage" headlines list with a "Description" section showing the topic penjelasan) |
 | 1.33 | 2026-06-07 | A7 → v33.0 Built (issue detail: trend line → sentiment pie with neutral share; remove velocity stat + category tag) |
 | 1.34 | 2026-06-07 | A7 → v34.0 Built (issue detail: full topic title; Impressions/Reach metric cards + English hints; remove the horizontal split bar) |
+| 1.35 | 2026-06-07 | A7 → v35.0 Built (negative topics on the left on both the Issues board and the BUMN rows/legend; reverses v29.0 positive-left) |
