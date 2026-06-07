@@ -1,6 +1,6 @@
 "use client";
 
-import { Landmark, Radio, RotateCw, Siren } from "lucide-react";
+import { Landmark, Radio, RotateCw } from "lucide-react";
 import { useEffect, useState } from "react";
 import type { CeoState } from "@/lib/danantara/ceo/types";
 
@@ -20,9 +20,6 @@ export function HeaderStrip({
   refreshing?: boolean;
 }) {
   const totalMentions = state.issues.reduce((a, i) => a + i.mentions, 0);
-  const netSentiment = Math.round(state.bumn.reduce((a, b) => a + b.sentiment, 0) / Math.max(1, state.bumn.length));
-  const alerts = state.issues.filter((i) => i.status !== "normal").length;
-  const escalating = state.issues.some((i) => i.status === "escalating");
 
   const [clock, setClock] = useState("");
   useEffect(() => {
@@ -74,19 +71,6 @@ export function HeaderStrip({
       )}
 
       <Metric label="Total Mentions" value={totalMentions.toLocaleString("en-US")} />
-      <Metric
-        label="Net BUMN Sentiment"
-        value={`${netSentiment > 0 ? "+" : ""}${netSentiment}`}
-        tone={netSentiment >= 10 ? "text-success" : netSentiment <= -10 ? "text-destructive" : "text-warning"}
-      />
-      <div className={escalating ? "ceo-siren rounded-md" : undefined}>
-        <Metric
-          label="Active Alerts"
-          value={String(alerts)}
-          tone={escalating ? "text-destructive" : alerts > 0 ? "text-warning" : "text-success"}
-          icon={escalating ? <Siren className="h-5 w-5 text-destructive" /> : undefined}
-        />
-      </div>
 
       <div className="ml-auto text-right">
         <div data-testid="metric-value" className="font-mono text-2xl tabular-nums leading-tight">{clock || "--:--:--"}</div>

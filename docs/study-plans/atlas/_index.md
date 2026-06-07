@@ -35,7 +35,7 @@
 | **A4** | AI assistant — copilot chat | 3-act | S5 | E7 | 1.0 | Planned |
 | **A5** | AI assistant — briefing, forecast & per-widget ask | 3-act | S5 | E7 | 1.0 | Planned |
 | **A6** | Real-time ticker, alerts & War Room | 3-act | S5–S6 | E8 | 1.0 | Planned |
-| **A7** | Danantara CEO Command Wall (zero-click demo) | 3-act | demo | — | 38.4 | Built |
+| **A7** | Danantara CEO Command Wall (zero-click demo) | 3-act | demo | — | 38.5 | Built |
 | **A8** | Per-BUMN CEO sentiment dashboards | 3-act | demo | — | 3.2 | Built |
 
 **Totals:** 25 features · 7 platform · 5 watch · 5 understand · 8 act.
@@ -103,3 +103,4 @@
 | 1.46 | 2026-06-08 | A7 → v38.2 Built (board subtitles → "negative vs positive" to match the negative-first layout) |
 | 1.47 | 2026-06-08 | A7 → v38.3 Built (real Jasa Marga + BNI logos; all 7 launch BUMN have logos) |
 | 1.48 | 2026-06-08 | A7 → v38.4 Built (reach uses fmtCount — small reach shows 15K not 0.0M) |
+| 1.49 | 2026-06-08 | A7 → v38.5 Built (header: remove Net BUMN Sentiment + Active Alerts metrics) |
