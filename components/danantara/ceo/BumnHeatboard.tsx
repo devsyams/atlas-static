@@ -59,7 +59,7 @@ function TopicCell({ issue, variant }: { issue: CeoIssue | null; variant: "posit
       <span
         data-testid={`bumn-topic-${variant}`}
         data-empty="true"
-        className={`flex items-center gap-2 rounded border border-dashed px-2 py-1.5 text-base leading-snug opacity-50 ${
+        className={`flex h-full items-center gap-2 rounded border border-dashed px-2 py-1.5 text-base leading-snug opacity-50 ${
           positive ? "border-success/40 bg-success/5 text-success" : "border-destructive/40 bg-destructive/5 text-destructive"
         }`}
       >
@@ -73,7 +73,7 @@ function TopicCell({ issue, variant }: { issue: CeoIssue | null; variant: "posit
       data-testid={`bumn-topic-${variant}`}
       // Border + icon keep the column tone; the background is tinted per-topic by
       // its own net sentiment (so cells vary, not a flat block); the title is white.
-      className={`flex items-start gap-2 rounded border px-2 py-1.5 text-base leading-snug ${
+      className={`flex h-full items-start gap-2 rounded border px-2 py-1.5 text-base leading-snug ${
         positive ? "border-success/40 text-success" : "border-destructive/40 text-destructive"
       }`}
       style={{ backgroundColor: sentimentTint(issue.sentiment) }}
@@ -118,7 +118,7 @@ function BumnRow({
         type="button"
         data-testid={`btn-bumn-tile-${row.id}`}
         onClick={() => onSelect?.(row.id)}
-        className={`ceo-row grid w-full cursor-pointer ${GRID} items-start gap-2.5 px-3 py-2.5 text-left hover:bg-card/40`}
+        className={`ceo-row grid w-full cursor-pointer ${GRID} items-stretch gap-2.5 px-3 py-2.5 text-left hover:bg-card/40`}
       >
         {/* Identity: logo (rank as a corner badge), then ticker + movement on one line. */}
         <div className="flex flex-col items-center gap-1 pt-0.5 text-center">
