@@ -51,14 +51,16 @@ describe("BumnDashboard (A8)", () => {
     render(<BumnDashboard name="PLN" topicCode="danantara_pln" />);
 
     await waitFor(() => expect(screen.getByText("Topik Uji PLN")).toBeInTheDocument());
-    // Both summary pies present.
-    expect(screen.getByTestId("sentiment-summary")).toBeInTheDocument(); // sentiment summary
+    // Sentiment summary (new verdict viz) + intent pie present.
+    expect(screen.getByTestId("sentiment-summary")).toBeInTheDocument();
+    expect(screen.getByTestId("sentiment-verdict")).toBeInTheDocument();
     expect(screen.getByTestId("intent-pie")).toBeInTheDocument();
-    // Topic detail bits.
+    // Topic detail bits + an explicit per-topic sentiment badge.
     const list = screen.getByTestId("bumn-topics");
     expect(list.textContent).toContain("Penjelasan topik ini."); // description
     expect(list.textContent).toContain("Impressions");
     expect(list.textContent).toContain("Reach");
+    expect(screen.getAllByTestId("topic-sentiment")[0].textContent).toMatch(/negative/i); // pos200/neg600 → Negative
   });
 
   it("calls the BFF with the BUMN's code", async () => {

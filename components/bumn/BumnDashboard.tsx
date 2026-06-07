@@ -3,10 +3,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Radio, RotateCw } from "lucide-react";
 import { SentimentPie } from "@/components/danantara/ceo/SentimentPie";
-import { fmtCount, pieTotals } from "@/lib/danantara/ceo/format";
+import { fmtCount, pieTotals, sentimentTint } from "@/lib/danantara/ceo/format";
 import type { CeoIssue } from "@/lib/danantara/ceo/types";
 import type { TopicIntent, TopicsSummary } from "@/lib/danantara/ceo/topics-source";
 import { IntentPie } from "./IntentPie";
+import { SentimentSummary } from "./SentimentSummary";
 
 interface Payload {
   issues?: CeoIssue[];
@@ -16,22 +17,11 @@ interface Payload {
 
 type LiveState = "loading" | "live" | "offline";
 
-/** Sentiment-summary slice totals from the feed summary (impressions-weighted). */
-function summaryTotals(summary: TopicsSummary | null | undefined) {
-  if (!summary?.percentage) return null;
+/** A usable summary has at least one non-zero sentiment share. */
+function hasSummary(summary: TopicsSummary | null | undefined): summary is TopicsSummary {
+  if (!summary?.percentage) return false;
   const { positive, negative, neutral } = summary.percentage;
-  if (!positive && !negative && !neutral) return null;
-  const ti = summary.total_impressions;
-  if (ti && ti > 0) {
-    return {
-      pos: Math.round((ti * positive) / 100),
-      neg: Math.round((ti * negative) / 100),
-      neu: Math.round((ti * neutral) / 100),
-      total: ti,
-    };
-  }
-  // No impression counts → fall back to raw percentages (ring still correct).
-  return { pos: positive, neg: negative, neu: neutral, total: 100 };
+  return Boolean(positive || negative || neutral);
 }
 
 /**
@@ -77,7 +67,7 @@ export function BumnDashboard({ name, topicCode }: { name: string; topicCode: st
 
   const issues = data?.issues ?? [];
   const intents = data?.intent ?? [];
-  const totals = summaryTotals(data?.summary);
+  const summary = data?.summary;
 
   return (
     <div className="space-y-5">
@@ -123,12 +113,16 @@ export function BumnDashboard({ name, topicCode }: { name: string; topicCode: st
         </div>
       ) : (
         <>
-          {/* Two summary pies. */}
+          {/* Sentiment summary + intent share. */}
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-            <section data-testid="sentiment-summary" className="panel p-4">
+            <section className="panel p-4">
               <h2 className="mb-3 text-lg font-semibold uppercase tracking-[0.14em] text-muted-foreground">Sentiment Summary</h2>
-              {totals ? (
-                <SentimentPie totals={totals} variant="full" />
+              {hasSummary(summary) ? (
+                <SentimentSummary
+                  percentage={summary.percentage}
+                  totalImpressions={summary.total_impressions}
+                  totalReach={summary.total_reach}
+                />
               ) : (
                 <p className="text-base text-muted-foreground">No sentiment data in this window.</p>
               )}
@@ -158,11 +152,32 @@ export function BumnDashboard({ name, topicCode }: { name: string; topicCode: st
   );
 }
 
-/** One topic: title, description, Impressions/Reach (with hints), and a breakdown pie. */
+/** Dominant tone of a topic from its positive/neutral/negative mention split. */
+function topicTone(issue: CeoIssue): { label: string; cls: string } {
+  const { pos, neg, neu } = pieTotals(issue);
+  if (neg >= pos && neg >= neu) return { label: "Negative", cls: "border-destructive/50 bg-destructive/15 text-destructive" };
+  if (pos >= neu) return { label: "Positive", cls: "border-success/50 bg-success/15 text-success" };
+  return { label: "Neutral", cls: "border-border bg-muted/20 text-muted-foreground" };
+}
+
+/** One topic: title + sentiment badge, description, Impressions/Reach (with hints), breakdown pie. */
 function TopicCard({ issue }: { issue: CeoIssue }) {
+  const tone = topicTone(issue);
   return (
-    <article data-testid={`bumn-topic-${issue.id}`} className="panel p-4">
-      <h3 className="text-2xl font-semibold leading-snug text-balance">{issue.title}</h3>
+    <article
+      data-testid={`bumn-topic-${issue.id}`}
+      className="panel p-4"
+      style={{ backgroundColor: sentimentTint(issue.sentiment) }}
+    >
+      <div className="flex items-start gap-3">
+        <h3 className="min-w-0 flex-1 text-2xl font-semibold leading-snug text-balance">{issue.title}</h3>
+        <span
+          data-testid="topic-sentiment"
+          className={`shrink-0 rounded-full border px-3 py-1 text-base font-bold uppercase tracking-wide ${tone.cls}`}
+        >
+          {tone.label}
+        </span>
+      </div>
       {issue.aiLine && <p className="mt-1.5 text-base leading-relaxed text-muted-foreground">{issue.aiLine}</p>}
       <div className="mt-3 flex flex-wrap items-start gap-4">
         <Metric label="Impressions" value={fmtCount(issue.mentions)} hint="Total views across all posts in this topic" />
