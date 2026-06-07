@@ -65,18 +65,18 @@ export function DetailModal({
           className="panel relative flex max-h-[85vh] w-full max-w-3xl flex-col overflow-hidden"
         >
           <div data-testid="ceo-detail-issue" className="flex min-h-0 flex-1 flex-col overflow-hidden">
-            {/* Header */}
-            <div className="flex shrink-0 items-center gap-2 border-b border-border px-4 py-3">
-              <AlertTriangle className="h-4 w-4 shrink-0 text-primary" />
-              <span className="min-w-0 flex-1 truncate text-2xl font-semibold">{issue.title}</span>
+            {/* Header — full title (wraps, never truncated) */}
+            <div className="flex shrink-0 items-start gap-2 border-b border-border px-4 py-3">
+              <AlertTriangle className="mt-1 h-4 w-4 shrink-0 text-primary" />
+              <span className="min-w-0 flex-1 text-2xl font-semibold leading-snug text-balance">{issue.title}</span>
               {badge.label && (
                 <span
-                  className={`shrink-0 rounded border px-2 py-0.5 text-base font-bold tracking-wider ${badge.cls}`}
+                  className={`mt-1 shrink-0 rounded border px-2 py-0.5 text-base font-bold tracking-wider ${badge.cls}`}
                 >
                   {badge.label}
                 </span>
               )}
-              <span className="shrink-0">
+              <span className="mt-1 shrink-0">
                 <RankBadge delta={issue.rankDelta} />
               </span>
               <button
@@ -84,7 +84,7 @@ export function DetailModal({
                 data-testid="ceo-detail-close"
                 aria-label="Close"
                 onClick={onClose}
-                className="ml-1 shrink-0 rounded p-1 text-muted-foreground hover:bg-white/5 hover:text-foreground"
+                className="shrink-0 rounded p-1 text-muted-foreground hover:bg-white/5 hover:text-foreground"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -92,22 +92,20 @@ export function DetailModal({
 
             {/* Scrollable body */}
             <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-4">
-              {/* Stats row */}
-              <div className="flex flex-wrap gap-x-4 gap-y-1 font-mono text-lg tabular-nums">
-                <span className="text-muted-foreground">
-                  <span className="font-semibold text-foreground">{(issue.reach / 1_000_000).toFixed(1)}M</span>{" "}
-                  reach
-                </span>
-                <span className="text-muted-foreground">
-                  <span className="font-semibold text-foreground">{fmtCount(issue.mentions)}</span> mentions
-                </span>
+              {/* Key metrics, each with a plain-language hint */}
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <Metric label="Impressions" value={fmtCount(issue.mentions)} hint="Total views across all posts in this topic" />
+                <Metric label="Reach" value={fmtCount(issue.reach)} hint="Number of users exposed to this topic" />
               </div>
 
-              {/* Sentiment breakdown (pie, with neutral share) — replaces the trend line */}
-              <SentimentPie totals={pieTotals(issue)} variant="full" />
-
-              {/* Sentiment split */}
-              <SentimentSplit pos={issue.posMentions} neg={issue.negMentions} total={issue.mentions} variant="full" />
+              {/* Sentiment breakdown (pie, with neutral share) */}
+              <div>
+                <div className="text-lg font-semibold uppercase tracking-[0.18em] text-muted-foreground">Sentiment</div>
+                <p className="mb-2 mt-0.5 text-base leading-snug text-muted-foreground">
+                  Breakdown of emotional tone (Positive / Negative / Neutral %)
+                </p>
+                <SentimentPie totals={pieTotals(issue)} variant="full" />
+              </div>
 
               {/* Description (AI read of the topic — the feed's penjelasan) */}
               {issue.aiLine && (
@@ -268,6 +266,17 @@ export function DetailModal({
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+/** A labeled key metric with a one-line plain-language hint (CEO readability). */
+function Metric({ label, value, hint }: { label: string; value: string; hint: string }) {
+  return (
+    <div className="rounded-lg border border-border/60 bg-background/30 px-3 py-2.5">
+      <div className="text-base font-semibold uppercase tracking-[0.14em] text-muted-foreground">{label}</div>
+      <div className="mt-0.5 font-mono text-2xl font-bold tabular-nums text-foreground">{value}</div>
+      <p className="mt-1 text-base leading-snug text-muted-foreground">{hint}</p>
     </div>
   );
 }

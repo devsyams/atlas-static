@@ -75,12 +75,13 @@ describe("CeoCommand two-column sentiment wall (v5.0)", () => {
     expect(screen.queryAllByTestId("rank-down")).toHaveLength(0);
   });
 
-  it("detail modal keeps the labeled sentiment split bar (AC9 v5.0)", () => {
+  it("issue detail shows the full sentiment pie, not the split bar (AC9 v34.0)", () => {
     render(<CeoCommand />);
     act(() => {
       fireEvent.click(screen.getAllByTestId(/^btn-issue-row-/)[0]);
     });
-    expect(screen.getByTestId("sentiment-split-full")).toBeInTheDocument();
+    expect(screen.getByTestId("sentiment-pie")).toBeInTheDocument();
+    expect(screen.queryByTestId("sentiment-split-full")).not.toBeInTheDocument();
     act(() => {
       fireEvent.keyDown(window, { key: "Escape" });
     });

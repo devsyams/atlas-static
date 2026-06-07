@@ -18,7 +18,12 @@ describe("DetailModal (T10 / AC10)", () => {
     // Top Coverage / headlines list is gone; the AI description takes its place.
     expect(detail.textContent).not.toContain("Top Coverage");
     expect(screen.getByTestId("issue-description").textContent).toContain(topIssue.aiLine);
-    expect(screen.getByTestId("sentiment-split-full")).toBeInTheDocument();
+    // v34.0: the horizontal split bar is gone — the sentiment pie carries the breakdown.
+    expect(screen.queryByTestId("sentiment-split-full")).not.toBeInTheDocument();
+    expect(screen.getByTestId("sentiment-pie")).toBeInTheDocument();
+    // Impressions/Reach/Sentiment hints are spelled out in English.
+    expect(detail.textContent).toContain("Total views across all posts in this topic");
+    expect(detail.textContent).toContain("Number of users exposed to this topic");
     for (const id of topIssue.relatedBumn) {
       expect(screen.getByTestId(`related-bumn-${id}`)).toBeInTheDocument();
     }
