@@ -30,11 +30,20 @@ const SAMPLE: TopicsApiResponse = {
   },
 };
 
+/** Same shape, but no topics (a sparse BUMN window). */
+const EMPTY: TopicsApiResponse = {
+  success: true,
+  status_code: 200,
+  meta: { topic: "danantara_bri", startdate: "2026-05-31", enddate: "2026-06-07" },
+  data: { topics: [], summary: { total_impressions: 0, total_reach: 0, percentage: { positive: 0, negative: 0, neutral: 0 } }, intent: [] },
+};
+
 const KEY = "SUPER-SECRET-KEY";
 
-/** Build a request to the route, optionally with the manual-refresh flag. */
+/** Build a request to the route, optionally with query params. */
 const req = (fresh = false) =>
   new Request(`http://localhost/api/v1/danantara/topics${fresh ? "?fresh=1" : ""}`);
+const reqWith = (qs: string) => new Request(`http://localhost/api/v1/danantara/topics?${qs}`);
 
 describe("GET /api/v1/danantara/topics (T20 / AC19)", () => {
   beforeEach(() => {
@@ -100,5 +109,45 @@ describe("GET /api/v1/danantara/topics (T20 / AC19)", () => {
     delete process.env.DANANTARA_TOPICS_API_KEY;
     const res = await GET(req());
     expect(res.status).toBe(503);
+  });
+
+  it("proxies an allowlisted BUMN code, but falls back to danantara_main for an unknown code (T3 / AC2)", async () => {
+    const urls: string[] = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string) => {
+        urls.push(String(url));
+        return new Response(JSON.stringify(SAMPLE), { status: 200 });
+      }),
+    );
+
+    await GET(reqWith("code=danantara_pln"));
+    expect(urls.at(-1)).toContain("topic=danantara_pln");
+
+    await GET(reqWith("code=danantara_evil"));
+    expect(urls.at(-1)).toContain("topic=danantara_main");
+    expect(urls.at(-1)).not.toContain("danantara_evil");
+  });
+
+  it("widens a 0-topic 7-day window to 28 days (T4 / AC2)", async () => {
+    let call = 0;
+    const fetchMock = vi.fn(async () => {
+      call += 1;
+      return new Response(JSON.stringify(call === 1 ? EMPTY : SAMPLE), { status: 200 });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const res = await GET(reqWith("code=danantara_pln"));
+    const body = await res.json();
+    expect(fetchMock).toHaveBeenCalledTimes(2); // 7d empty → widened to 28d
+    expect(body.issues).toHaveLength(2); // the 28-day result is used
+  });
+
+  it("uses a non-empty 7-day window as-is, without widening (T4 / AC2)", async () => {
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify(SAMPLE), { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await GET(reqWith("code=danantara_pln"));
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 });

@@ -594,7 +594,7 @@ of an abstract pie. One BUMN, one positive topic, one negative topic, per line.
 
 ### A8. Per-BUMN CEO sentiment dashboards
 
-- **Version:** 1.0 · **Stage:** 3-act · **Sprint:** demo · **Status:** Planned · **Spec ref:** built on A7's live topics feed (`docs/superpowers/specs/2026-06-02-danantara-ceo-command-design.md`) · **Owner:** Dev A
+- **Version:** 1.0 · **Stage:** 3-act · **Sprint:** demo · **Status:** Built · **Spec ref:** built on A7's live topics feed (`docs/superpowers/specs/2026-06-02-danantara-ceo-command-design.md`) · **Owner:** Dev A
 
 #### PM
 **Background (why):** Danantara is the **holding company over all BUMN**, but the Danantara CEO Command wall (A7) is one aggregate view. The boss wants a **dedicated dashboard per BUMN**, each aimed at **that BUMN's own CEO** — a focused, low-density read of *"how is the public talking about my company right now"*. These users are **40–60 years old**, non-analyst executives, so the dashboard must be **simple and readable** (large type, no operator chrome) and **zero-config** (open the URL, see your company). It also has to be **access-scoped**: each BUMN CEO signs in as their own user and only ever sees their own company's dashboard — they must not wander into Danantara-wide or other BUMN data during a demo. The live feed already exposes a **topic code per BUMN** (`danantara_‹bumn›`), so each dashboard is the same A7 topics endpoint pointed at a different code — real data, not a mock. Launch set: **7 BUMN** (Mandiri, PLN, Telkom, Pertamina, BNI, BRI, Jasa Marga).
@@ -649,3 +649,4 @@ of an abstract pie. One BUMN, one positive topic, one negative topic, per line.
 | Version | Date | Change |
 |---|---|---|
 | 1.0 | 2026-06-07 | Initial plan — per-BUMN CEO dashboards (7 launch BUMN) on A7's live feed: registry-driven `/bumn/‹slug›`, allowlisted `?code=` BFF with 7d→28d window, `bumn:‹slug›` scoped logins, sentiment + intent pies, topics list with per-topic breakdown, empty-topics state. Status → Planned |
+| 1.0 | 2026-06-07 | Built — all 9 ACs implemented TDD (178 tests green, typecheck + lint clean, build verified). Shared-BFF window change also moved A7's CEO command to the 7d→28d strategy (no A7 version bump on this branch to avoid colliding with the parked header v37 — to reconcile at merge). Status → Built |
