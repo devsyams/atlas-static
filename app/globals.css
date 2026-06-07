@@ -766,3 +766,17 @@
 .topic-card:hover .topic-rank { color: color-mix(in oklch, var(--tone) 70%, transparent); transform: scale(1.04); }
 /* Soft tone-tinted corner wash inside the card. */
 .topic-card-bg { background: radial-gradient(130% 90% at 0% 0%, color-mix(in oklch, var(--tone) 9%, transparent), transparent 62%); }
+
+/* ── A7 v39: topic detail — sentiment-driven brief ───────────────────────── */
+@keyframes detail-pop {
+  from { opacity: 0; transform: translateY(10px) scale(0.985); }
+  to   { opacity: 1; transform: none; }
+}
+.detail-pop { animation: detail-pop 0.32s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+/* Tone wash behind the hero header (tone via --tone on the panel). */
+.detail-hero { background: radial-gradient(120% 140% at 0% 0%, color-mix(in oklch, var(--tone) 14%, transparent), transparent 60%); }
+/* The AI-analysis card: tone-tinted border + corner glow. */
+.detail-ai-card {
+  border-color: color-mix(in oklch, var(--tone) 40%, var(--color-border));
+  background: radial-gradient(130% 130% at 100% 0%, color-mix(in oklch, var(--tone) 10%, transparent), transparent 58%);
+}

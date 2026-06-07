@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect } from "react";
-import { AlertTriangle, Building2, FileText, X } from "lucide-react";
+import { useEffect, type CSSProperties } from "react";
+import { BarChart3, Building2, Eye, Sparkles, X } from "lucide-react";
 import { fmtCount, pieTotals } from "@/lib/danantara/ceo/format";
 import type { CeoState } from "@/lib/danantara/ceo/types";
 import { SECTOR_LABEL } from "@/lib/danantara/ui";
@@ -18,6 +18,17 @@ const STATUS_BADGE: Record<string, { label: string; cls: string }> = {
     cls: "bg-destructive/15 text-destructive border-destructive/50 ceo-siren",
   },
 };
+
+/** Dominant tone (label + %, colors) of a positive/neutral/negative split. */
+function dominantTone(t: { pos: number; neg: number; neu: number; total: number }) {
+  const total = t.total || 1;
+  const pct = (v: number) => Math.round((v / total) * 100);
+  if (t.neg >= t.pos && t.neg >= t.neu)
+    return { label: "Negative", pct: pct(t.neg), tone: "oklch(0.62 0.22 25)", pill: "border-destructive/50 bg-destructive/15 text-destructive" };
+  if (t.pos >= t.neu)
+    return { label: "Positive", pct: pct(t.pos), tone: "oklch(0.72 0.17 150)", pill: "border-success/50 bg-success/15 text-success" };
+  return { label: "Neutral", pct: pct(t.neu), tone: "oklch(0.66 0.03 260)", pill: "border-border bg-muted/25 text-muted-foreground" };
+}
 
 export function DetailModal({
   selection,
@@ -45,6 +56,8 @@ export function DetailModal({
     if (!issue) return null;
 
     const badge = STATUS_BADGE[issue.status];
+    const totals = pieTotals(issue);
+    const tone = dominantTone(totals);
     const relatedBumn = issue.relatedBumn
       .map((id) => state.bumn.find((b) => b.id === id))
       .filter(Boolean) as (typeof state.bumn)[number][];
@@ -60,80 +73,80 @@ export function DetailModal({
         {/* Panel: ceo-detail for overlay-click test; inner wrapper ceo-detail-issue for content tests */}
         <div
           data-testid="ceo-detail"
-          className="panel relative flex max-h-[85vh] w-full max-w-3xl flex-col overflow-hidden"
+          className="panel detail-pop relative flex max-h-[85vh] w-full max-w-3xl flex-col overflow-hidden"
+          style={{ "--tone": tone.tone } as CSSProperties}
         >
+          <span className="topic-spine" aria-hidden />
           <div data-testid="ceo-detail-issue" className="flex min-h-0 flex-1 flex-col overflow-hidden">
-            {/* Header — full title (wraps, never truncated) */}
-            <div className="flex shrink-0 items-start gap-2 border-b border-border px-4 py-3">
-              <AlertTriangle className="mt-1 h-4 w-4 shrink-0 text-primary" />
-              <span className="min-w-0 flex-1 text-2xl font-semibold leading-snug text-balance">{issue.title}</span>
-              {badge.label && (
-                <span
-                  className={`mt-1 shrink-0 rounded border px-2 py-0.5 text-base font-bold tracking-wider ${badge.cls}`}
-                >
-                  {badge.label}
-                </span>
-              )}
-              <span className="mt-1 shrink-0">
-                <RankBadge delta={issue.rankDelta} />
-              </span>
+            {/* Hero header — sentiment verdict + full title over a tone wash. */}
+            <div className="detail-hero relative flex shrink-0 items-start gap-3 border-b border-border px-5 py-4 pl-6">
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-base font-bold uppercase tracking-wide ${tone.pill}`}>
+                    {tone.label} {tone.pct}%
+                  </span>
+                  {badge.label && (
+                    <span className={`rounded border px-2 py-0.5 text-base font-bold tracking-wider ${badge.cls}`}>{badge.label}</span>
+                  )}
+                  <RankBadge delta={issue.rankDelta} />
+                </div>
+                <h2 className="mt-2 text-2xl font-bold leading-snug text-balance sm:text-[26px]">{issue.title}</h2>
+              </div>
               <button
                 type="button"
                 data-testid="ceo-detail-close"
                 aria-label="Close"
                 onClick={onClose}
-                className="shrink-0 rounded p-1 text-muted-foreground hover:bg-white/5 hover:text-foreground"
+                className="-mr-1 shrink-0 rounded-full p-1.5 text-muted-foreground hover:bg-white/10 hover:text-foreground"
               >
-                <X className="h-4 w-4" />
+                <X className="h-5 w-5" />
               </button>
             </div>
 
             {/* Scrollable body */}
-            <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-4">
-              {/* Key metrics, each with a plain-language hint */}
+            <div className="min-h-0 flex-1 space-y-5 overflow-y-auto p-5">
+              {/* Key metric tiles, each with a plain-language hint */}
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                <Metric label="Impressions" value={fmtCount(issue.mentions)} hint="Total views across all posts in this topic" />
-                <Metric label="Reach" value={fmtCount(issue.reach)} hint="Number of users exposed to this topic" />
+                <Metric icon={BarChart3} label="Impressions" value={fmtCount(issue.mentions)} hint="Total views across all posts in this topic" />
+                <Metric icon={Eye} label="Reach" value={fmtCount(issue.reach)} hint="Number of users exposed to this topic" />
               </div>
 
               {/* Sentiment breakdown (pie, with neutral share) */}
-              <div>
+              <section className="rounded-xl border border-border/60 bg-card/40 p-4">
                 <div className="text-lg font-semibold uppercase tracking-[0.18em] text-muted-foreground">Sentiment</div>
-                <p className="mb-2 mt-0.5 text-base leading-snug text-muted-foreground">
+                <p className="mb-3 mt-0.5 text-base leading-snug text-muted-foreground">
                   Breakdown of emotional tone (Positive / Negative / Neutral %)
                 </p>
-                <SentimentPie totals={pieTotals(issue)} variant="full" />
-              </div>
+                <SentimentPie totals={totals} variant="full" size={40} />
+              </section>
 
-              {/* Description (AI read of the topic — the feed's penjelasan) */}
+              {/* AI read of the topic (the feed's penjelasan) */}
               {issue.aiLine && (
-                <div>
-                  <div className="mb-2 flex items-center gap-1.5 text-lg font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                    <FileText className="h-4 w-4" /> Description
+                <section className="detail-ai-card relative overflow-hidden rounded-xl border p-4">
+                  <div className="flex items-center gap-1.5 text-base font-bold uppercase tracking-[0.18em] text-primary">
+                    <Sparkles className="h-4 w-4" /> Nexorus AI · Analysis
                   </div>
-                  <p data-testid="issue-description" className="text-lg leading-relaxed text-foreground/90">
+                  <p data-testid="issue-description" className="mt-2 text-lg leading-relaxed text-foreground/90">
                     {issue.aiLine}
                   </p>
-                </div>
+                </section>
               )}
 
               {/* Related BUMN chips */}
               {relatedBumn.length > 0 && (
                 <div>
-                  <div className="mb-2 text-lg font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                    Related BUMN
-                  </div>
-                  <div className="flex flex-wrap gap-1.5">
+                  <div className="mb-2 text-lg font-semibold uppercase tracking-[0.18em] text-muted-foreground">Related BUMN</div>
+                  <div className="flex flex-wrap gap-2">
                     {relatedBumn.map((b) => (
                       <button
                         key={b.id}
                         type="button"
                         data-testid={`related-bumn-${b.id}`}
                         onClick={() => onNavigate({ type: "bumn", id: b.id })}
-                        className="rounded-full border border-border bg-background/40 px-3 py-1 text-base font-medium hover:border-primary/50 hover:bg-primary/10"
+                        className="inline-flex items-center gap-2 rounded-full border border-border bg-background/40 px-3.5 py-1.5 text-base font-semibold transition-colors hover:border-primary/50 hover:bg-primary/10"
                       >
-                        {b.short}{" "}
-                        <span className={b.sentiment < 0 ? "text-destructive" : "text-success"}>
+                        {b.short}
+                        <span className={`tabular-nums ${b.sentiment < 0 ? "text-destructive" : "text-success"}`}>
                           {b.sentiment > 0 ? "+" : ""}
                           {Math.round(b.sentiment)}
                         </span>
@@ -200,7 +213,7 @@ export function DetailModal({
           <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-4">
             {/* Key metric with a plain-language hint. */}
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <Metric label="Impressions" value={fmtCount(bumn.mentions)} hint="Total views across all posts about this BUMN" />
+              <Metric icon={BarChart3} label="Impressions" value={fmtCount(bumn.mentions)} hint="Total views across all posts about this BUMN" />
             </div>
 
             {/* Sentiment breakdown (pie, with neutral share). */}
@@ -259,12 +272,14 @@ export function DetailModal({
   );
 }
 
-/** A labeled key metric with a one-line plain-language hint (CEO readability). */
-function Metric({ label, value, hint }: { label: string; value: string; hint: string }) {
+/** A labeled key metric with an icon + a one-line plain-language hint (CEO readability). */
+function Metric({ icon: Icon, label, value, hint }: { icon?: typeof BarChart3; label: string; value: string; hint: string }) {
   return (
-    <div className="rounded-lg border border-border/60 bg-background/30 px-3 py-2.5">
-      <div className="text-base font-semibold uppercase tracking-[0.14em] text-muted-foreground">{label}</div>
-      <div className="mt-0.5 font-mono text-2xl font-bold tabular-nums text-foreground">{value}</div>
+    <div className="rounded-xl border border-border/60 bg-card/40 px-4 py-3.5">
+      <div className="flex items-center gap-2 text-base font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+        {Icon ? <Icon className="h-4 w-4 text-primary/70" /> : null} {label}
+      </div>
+      <div className="mt-1 font-mono text-3xl font-bold tabular-nums text-foreground">{value}</div>
       <p className="mt-1 text-base leading-snug text-muted-foreground">{hint}</p>
     </div>
   );
