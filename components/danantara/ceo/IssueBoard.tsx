@@ -126,8 +126,9 @@ export function IssueBoard({ issues, onSelect }: { issues: CeoIssue[]; onSelect?
         data-testid="issue-groups"
         className="grid min-h-0 flex-1 grid-cols-2 items-start gap-x-1.5 overflow-y-auto"
       >
-        <IssueGroup variant="positive" issues={positive} onSelect={onSelect} />
+        {/* Negative topics on the left (client/boss direction) — problems lead. */}
         <IssueGroup variant="negative" issues={negative} onSelect={onSelect} />
+        <IssueGroup variant="positive" issues={positive} onSelect={onSelect} />
       </div>
     </div>
   );

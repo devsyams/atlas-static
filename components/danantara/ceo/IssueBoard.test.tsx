@@ -50,12 +50,15 @@ describe("IssueBoard grouped by sentiment (T12 / AC12 v9.0)", () => {
     ]);
   });
 
-  it("renders the positive and negative sections side by side", () => {
+  it("renders the negative and positive sections side by side, negative on the left (v35.0)", () => {
     render(<IssueBoard issues={issues} />);
     const columns = screen.getByTestId("issue-groups");
     expect(columns.className).toContain("grid-cols-2");
-    expect(columns.contains(screen.getByTestId("issue-group-positive"))).toBe(true);
-    expect(columns.contains(screen.getByTestId("issue-group-negative"))).toBe(true);
+    const sections = [...columns.querySelectorAll("[data-testid^='issue-group-']")];
+    expect(sections.map((s) => s.getAttribute("data-testid"))).toEqual([
+      "issue-group-negative",
+      "issue-group-positive",
+    ]);
   });
 
   it("keeps a mini sentiment pie on every row and no panel-level pie", () => {
