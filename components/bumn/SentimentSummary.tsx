@@ -1,4 +1,4 @@
-import { Minus, ThumbsDown, ThumbsUp } from "lucide-react";
+import { BarChart3, Eye, Minus, ThumbsDown, ThumbsUp } from "lucide-react";
 import { fmtCount } from "@/lib/danantara/ceo/format";
 
 interface Pct {
@@ -72,11 +72,13 @@ export function SentimentSummary({
       </div>
 
       {/* Totals context. */}
-      <div className="flex flex-wrap gap-x-6 gap-y-1 border-t border-border/50 pt-3 text-base text-muted-foreground">
-        <span>
+      <div className="flex flex-wrap gap-x-7 gap-y-2 border-t border-border/50 pt-3 text-base text-muted-foreground">
+        <span className="flex items-center gap-2">
+          <BarChart3 className="h-5 w-5 shrink-0 text-primary/70" />
           <span className="font-bold text-foreground tabular-nums">{fmtCount(totalImpressions)}</span> impressions
         </span>
-        <span>
+        <span className="flex items-center gap-2">
+          <Eye className="h-5 w-5 shrink-0 text-primary/70" />
           <span className="font-bold text-foreground tabular-nums">{fmtCount(totalReach)}</span> reach
         </span>
       </div>
