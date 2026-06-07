@@ -1,6 +1,6 @@
 "use client";
 
-import { Landmark, Radio, Siren } from "lucide-react";
+import { Landmark, Radio, RotateCw, Siren } from "lucide-react";
 import { useEffect, useState } from "react";
 import type { CeoState } from "@/lib/danantara/ceo/types";
 
@@ -8,7 +8,17 @@ import type { CeoState } from "@/lib/danantara/ceo/types";
  * Headline strip: identity, LIVE badge, totals, alert count, Jakarta clock.
  * Zero-click. Type sizes follow the CEO readability scale (AC15).
  */
-export function HeaderStrip({ state, source = "live" }: { state: CeoState; source?: "live" | "fallback" }) {
+export function HeaderStrip({
+  state,
+  source = "live",
+  onRefresh,
+  refreshing = false,
+}: {
+  state: CeoState;
+  source?: "live" | "fallback";
+  onRefresh?: () => void;
+  refreshing?: boolean;
+}) {
   const totalMentions = state.issues.reduce((a, i) => a + i.mentions, 0);
   const netSentiment = Math.round(state.bumn.reduce((a, b) => a + b.sentiment, 0) / Math.max(1, state.bumn.length));
   const alerts = state.issues.filter((i) => i.status !== "normal").length;
@@ -43,6 +53,20 @@ export function HeaderStrip({ state, source = "live" }: { state: CeoState; sourc
         <span className="flex items-center gap-1.5 rounded-full border border-warning/40 bg-warning/10 px-3 py-1 text-base font-semibold uppercase tracking-widest text-warning">
           <Radio className="h-4 w-4" /> Sample data
         </span>
+      )}
+
+      {onRefresh && (
+        <button
+          type="button"
+          data-testid="ceo-refresh"
+          onClick={onRefresh}
+          disabled={refreshing}
+          title="Refresh — re-fetch the latest topics from the live feed"
+          className="flex items-center gap-1.5 rounded-full border border-border bg-background/40 px-3 py-1 text-base font-semibold text-muted-foreground transition-colors hover:text-foreground disabled:opacity-60"
+        >
+          <RotateCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
+          {refreshing ? "Refreshing…" : "Refresh"}
+        </button>
       )}
 
       <Metric label="Total Mentions" value={totalMentions.toLocaleString("en-US")} />

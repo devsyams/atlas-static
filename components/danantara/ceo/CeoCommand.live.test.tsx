@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { CeoIssue } from "@/lib/danantara/ceo/types";
 import { CeoCommand } from "./CeoCommand";
@@ -42,6 +42,18 @@ describe("CeoCommand live topics feed (T21 / AC19)", () => {
     );
     render(<CeoCommand />);
     await waitFor(() => expect(screen.getByText("LIVE FEED TOPIC ALPHA")).toBeInTheDocument());
+  });
+
+  it("manual refresh re-hits the BFF with the cache-busting fresh flag (v36.0)", async () => {
+    const fetchMock = vi.fn(async (_url: string) => new Response(JSON.stringify(PAYLOAD), { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+    render(<CeoCommand />);
+    await waitFor(() => expect(screen.getByText("LIVE FEED TOPIC ALPHA")).toBeInTheDocument());
+
+    const before = fetchMock.mock.calls.length;
+    fireEvent.click(screen.getByTestId("ceo-refresh"));
+    await waitFor(() => expect(fetchMock.mock.calls.length).toBeGreaterThan(before));
+    expect(String(fetchMock.mock.calls.at(-1)![0])).toContain("fresh=1");
   });
 
   it("falls back to the seeded mock topics when the BFF fetch fails (graceful degradation)", async () => {

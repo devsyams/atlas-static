@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { buildInitialState, DEMO_ARCS, TICK_MS } from "@/lib/danantara/ceo/data";
 import { mulberry32, tick } from "@/lib/danantara/ceo/engine";
 import type { CeoIssue, CeoState } from "@/lib/danantara/ceo/types";
@@ -25,8 +25,11 @@ export function CeoCommand() {
   const [state, setState] = useState(buildInitialState);
   const [liveIssues, setLiveIssues] = useState<CeoIssue[] | null>(null);
   const [source, setSource] = useState<"live" | "fallback">("fallback");
+  const [refreshing, setRefreshing] = useState(false);
   const [detail, setDetail] = useState<DetailSelection | null>(null);
   const randRef = useRef(mulberry32(20260602));
+  const mountedRef = useRef(true);
+  useEffect(() => () => { mountedRef.current = false; }, []);
 
   // Simulation clock — animates the BUMN board (still mock) and seeds the topic
   // fallback. Once live topics arrive they replace the simulated ones (v31.0),
@@ -39,28 +42,35 @@ export function CeoCommand() {
   }, []);
 
   // Live Danantara topics via the BFF (v31.0). On any failure we keep the seeded
-  // topics (graceful degradation — the wall never blanks).
-  useEffect(() => {
-    let cancelled = false;
-    fetch("/api/v1/danantara/topics")
+  // topics (graceful degradation — the wall never blanks). A manual refresh
+  // (v36.0) passes ?fresh=1 so the BFF bypasses its 1 h cache and re-hits the
+  // upstream — the dashboard always pulls the newest data on demand.
+  const loadTopics = useCallback((fresh = false) => {
+    fetch(`/api/v1/danantara/topics${fresh ? "?fresh=1" : ""}`)
       .then((res) => {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         return res.json();
       })
       .then((json: { issues?: CeoIssue[] }) => {
-        if (cancelled) return;
+        if (!mountedRef.current) return;
         if (Array.isArray(json.issues) && json.issues.length > 0) {
           setLiveIssues(json.issues);
           setSource("live");
+        } else {
+          setSource("fallback");
         }
       })
       .catch(() => {
-        if (!cancelled) setSource("fallback");
+        if (mountedRef.current) setSource("fallback");
+      })
+      .finally(() => {
+        if (mountedRef.current) setRefreshing(false);
       });
-    return () => {
-      cancelled = true;
-    };
   }, []);
+
+  useEffect(() => {
+    loadTopics(false);
+  }, [loadTopics]);
 
   // The Issues board (+ header/ticker) read live topics when present; the BUMN
   // board keeps the mock topics so its rich topic-cell linking stays populated.
@@ -70,7 +80,15 @@ export function CeoCommand() {
 
   return (
     <div className="flex h-full flex-col gap-3">
-      <HeaderStrip state={viewState} source={source} />
+      <HeaderStrip
+        state={viewState}
+        source={source}
+        onRefresh={() => {
+          setRefreshing(true);
+          loadTopics(true);
+        }}
+        refreshing={refreshing}
+      />
 
       {/* Running narration sits broadcast-style at the top, right under the headline numbers. */}
       <AiBriefTicker state={viewState} />

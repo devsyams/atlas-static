@@ -32,6 +32,10 @@ const SAMPLE: TopicsApiResponse = {
 
 const KEY = "SUPER-SECRET-KEY";
 
+/** Build a request to the route, optionally with the manual-refresh flag. */
+const req = (fresh = false) =>
+  new Request(`http://localhost/api/v1/danantara/topics${fresh ? "?fresh=1" : ""}`);
+
 describe("GET /api/v1/danantara/topics (T20 / AC19)", () => {
   beforeEach(() => {
     process.env.DANANTARA_TOPICS_API_BASE = "https://api.example.io/topics";
@@ -49,12 +53,23 @@ describe("GET /api/v1/danantara/topics (T20 / AC19)", () => {
     const fetchMock = vi.fn(async () => new Response(JSON.stringify(SAMPLE), { status: 200 }));
     vi.stubGlobal("fetch", fetchMock);
 
-    const res = await GET();
+    const res = await GET(req());
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.issues).toHaveLength(2);
     expect(body.summary.total_impressions).toBe(3000);
     expect(body.meta.topic).toBe("danantara_main");
+  });
+
+  it("caches the upstream for 1h by default, and bypasses the cache on ?fresh=1 (v36.0)", async () => {
+    const fetchMock = vi.fn(async (_url: string, _init?: RequestInit) => new Response(JSON.stringify(SAMPLE), { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await GET(req(false));
+    expect(fetchMock.mock.calls[0][1]).toEqual({ next: { revalidate: 3600 } });
+
+    await GET(req(true));
+    expect(fetchMock.mock.calls[1][1]).toEqual({ cache: "no-store" });
   });
 
   it("sends the api_key upstream but never leaks it in the response (governance)", async () => {
@@ -65,7 +80,7 @@ describe("GET /api/v1/danantara/topics (T20 / AC19)", () => {
     });
     vi.stubGlobal("fetch", fetchMock);
 
-    const res = await GET();
+    const res = await GET(req());
     const body = await res.json();
 
     expect(calledUrl).toContain(`api_key=${KEY}`); // sent server-side
@@ -77,13 +92,13 @@ describe("GET /api/v1/danantara/topics (T20 / AC19)", () => {
       "fetch",
       vi.fn(async () => new Response("upstream down", { status: 500 })),
     );
-    const res = await GET();
+    const res = await GET(req());
     expect(res.ok).toBe(false);
   });
 
   it("returns 503 when no api key is configured", async () => {
     delete process.env.DANANTARA_TOPICS_API_KEY;
-    const res = await GET();
+    const res = await GET(req());
     expect(res.status).toBe(503);
   });
 });
