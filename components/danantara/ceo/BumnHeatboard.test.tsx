@@ -69,8 +69,17 @@ describe("BumnHeatboard one row per BUMN: identity | negative topic | positive t
   it("shows the topic reach in each cell", () => {
     render(<BumnHeatboard rows={rows} issues={issues} />);
     const prt = screen.getByTestId("bumn-tile-prt");
-    expect(prt.querySelector("[data-testid='bumn-topic-negative']")?.textContent).toContain("8.0M");
-    expect(prt.querySelector("[data-testid='bumn-topic-positive']")?.textContent).toContain("9.0M");
+    expect(prt.querySelector("[data-testid='bumn-topic-negative']")?.textContent).toContain("8M");
+    expect(prt.querySelector("[data-testid='bumn-topic-positive']")?.textContent).toContain("9M");
+  });
+
+  it("formats a small reach as K, not 0.0M (v38.4)", () => {
+    const smallRows = [makeBumn({ id: "x", name: "X", short: "X", sector: "energi", sentiment: -50 })];
+    const smallIssues = [makeIssue({ id: "x-bad", title: "Isu kecil", relatedBumn: ["x"], posMentions: 100, negMentions: 900, reach: 15_000, mentions: 1000 })];
+    render(<BumnHeatboard rows={smallRows} issues={smallIssues} />);
+    const cell = screen.getByTestId("bumn-tile-x").querySelector("[data-testid='bumn-topic-negative']");
+    expect(cell?.textContent).toContain("15K");
+    expect(cell?.textContent).not.toContain("0.0M");
   });
 
   it("shows the rank as a corner badge on the logo, not a stacked mono line (v27.0)", () => {

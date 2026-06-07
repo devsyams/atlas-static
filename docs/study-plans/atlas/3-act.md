@@ -266,7 +266,7 @@ learn a high-severity incident just landed. Push-based updates for the ticker an
 
 ### A7. Danantara CEO Command Wall (zero-click demo)
 
-- **Version:** 38.3 · **Stage:** 3-act · **Sprint:** demo · **Status:** Built · **Spec ref:** `docs/superpowers/specs/2026-06-02-danantara-ceo-command-design.md` · **Owner:** Dev A
+- **Version:** 38.4 · **Stage:** 3-act · **Sprint:** demo · **Status:** Built · **Spec ref:** `docs/superpowers/specs/2026-06-02-danantara-ceo-command-design.md` · **Owner:** Dev A
 
 #### PM
 *(v31.0)* The wall graduates from a self-running **simulation** to a **live feed** for the Danantara
@@ -595,6 +595,7 @@ of an abstract pie. One BUMN, one positive topic, one negative topic, per line.
 | 38.1 | 2026-06-08 | Client: make the two BUMN topic cells in a row **equal height** (row stretches both; cells `h-full`) so positive/negative boxes line up regardless of title length. Status → Built |
 | 38.2 | 2026-06-08 | Client: flip the board subtitles to **"negative vs positive"** / **"negative & positive topic"** to match the negative-first (negative-left) layout. Status → Built |
 | 38.3 | 2026-06-08 | Client: source real **Jasa Marga** + **BNI** logos into `public/bumn/` (faviconV2 / Google favicon) — all 7 launch BUMN now show a real logo, no monograms. Assets only. Status → Built |
+| 38.4 | 2026-06-08 | Client: fix reach formatting — use `fmtCount` so a small reach shows e.g. `15K` instead of `0.0M` (BUMN topic cells, Issues rows, BUMN detail). Status → Built |
 
 ---
 

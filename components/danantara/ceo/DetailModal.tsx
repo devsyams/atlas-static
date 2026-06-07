@@ -255,7 +255,7 @@ export function DetailModal({
                           </span>
                         )}
                         <span className="shrink-0 font-mono text-base tabular-nums text-muted-foreground">
-                          {(issue.reach / 1_000_000).toFixed(1)}M
+                          {fmtCount(issue.reach)}
                         </span>
                       </button>
                     );

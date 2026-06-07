@@ -4,7 +4,7 @@ import Image from "next/image";
 import { useState } from "react";
 import { Building2, TrendingDown, TrendingUp } from "lucide-react";
 import { topicsForBumn } from "@/lib/danantara/ceo/engine";
-import { pieTotals, sentimentTint } from "@/lib/danantara/ceo/format";
+import { fmtCount, pieTotals, sentimentTint } from "@/lib/danantara/ceo/format";
 import { RankBadge } from "./RankBadge";
 import { SentimentPie } from "./SentimentPie";
 import type { BumnSentiment, CeoIssue } from "@/lib/danantara/ceo/types";
@@ -85,7 +85,7 @@ function TopicCell({ issue, variant }: { issue: CeoIssue | null; variant: "posit
       {/* Pie over reach, pinned top-right — same as the Danantara Issues rows. */}
       <span className="flex shrink-0 flex-col items-end gap-1">
         <SentimentPie totals={pieTotals(issue)} variant="mini" />
-        <span className="text-base tabular-nums text-muted-foreground">{(issue.reach / 1_000_000).toFixed(1)}M reach</span>
+        <span className="text-base tabular-nums text-muted-foreground">{fmtCount(issue.reach)} reach</span>
       </span>
     </span>
   );
