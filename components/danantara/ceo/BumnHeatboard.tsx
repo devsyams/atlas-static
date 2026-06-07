@@ -165,7 +165,7 @@ export function BumnHeatboard({
         <Building2 className="h-5 w-5 text-primary" />
         <span className="text-xl font-semibold uppercase tracking-[0.18em]">BUMN Sentiment</span>
         <span className="ml-auto text-base uppercase tracking-widest text-muted-foreground">
-          {rows.length} BUMN · positive & negative topic
+          {rows.length} BUMN · negative & positive topic
         </span>
       </div>
       {/* Column legend. */}

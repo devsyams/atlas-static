@@ -119,7 +119,7 @@ export function IssueBoard({ issues, onSelect }: { issues: CeoIssue[]; onSelect?
         <Flame className="h-5 w-5 text-primary" />
         <span className="text-xl font-semibold uppercase tracking-[0.18em]">Danantara Issues</span>
         <span className="ml-auto text-base uppercase tracking-widest text-muted-foreground">
-          {issues.length} topics · positive vs negative
+          {issues.length} topics · negative vs positive
         </span>
       </div>
       <div
