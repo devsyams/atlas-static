@@ -181,25 +181,29 @@ function TopicCard({ issue, rank }: { issue: CeoIssue; rank: number }) {
       <div className="topic-card-bg grid grid-cols-[3rem_1fr] gap-x-4 p-4 pl-6 sm:grid-cols-[3.5rem_1fr]">
         <div className="topic-rank pt-1 font-mono text-4xl font-extrabold sm:text-5xl">{String(rank).padStart(2, "0")}</div>
 
-        <div className="min-w-0">
-          <div className="flex items-start gap-3">
-            <h3 className="min-w-0 flex-1 text-2xl font-semibold leading-snug text-balance">{issue.title}</h3>
-            <span
-              data-testid="topic-sentiment"
-              className={`inline-flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1 text-base font-bold uppercase tracking-wide ${t.badge}`}
-            >
-              <Icon className="h-4 w-4" /> {t.label}
-            </span>
+        {/* Body: ~70% text · ~30% pie, the donut large and centered. */}
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-[7fr_3fr] sm:items-center">
+          <div className="min-w-0">
+            <div className="flex items-start gap-3">
+              <h3 className="min-w-0 flex-1 text-2xl font-semibold leading-snug text-balance">{issue.title}</h3>
+              <span
+                data-testid="topic-sentiment"
+                className={`inline-flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1 text-base font-bold uppercase tracking-wide ${t.badge}`}
+              >
+                <Icon className="h-4 w-4" /> {t.label}
+              </span>
+            </div>
+
+            {issue.aiLine && <p className="mt-2 text-base leading-relaxed text-muted-foreground">{issue.aiLine}</p>}
+
+            <div className="mt-4 flex flex-wrap items-center gap-x-7 gap-y-3 border-t border-border/40 pt-3">
+              <Stat icon={BarChart3} label="Impressions" caption="total views" value={fmtCount(issue.mentions)} title="Total views across all posts in this topic" />
+              <Stat icon={Eye} label="Reach" caption="users reached" value={fmtCount(issue.reach)} title="Number of users exposed to this topic" />
+            </div>
           </div>
 
-          {issue.aiLine && <p className="mt-2 text-base leading-relaxed text-muted-foreground">{issue.aiLine}</p>}
-
-          <div className="mt-4 flex flex-wrap items-center gap-x-7 gap-y-3 border-t border-border/40 pt-3">
-            <Stat icon={BarChart3} label="Impressions" caption="total views" value={fmtCount(issue.mentions)} title="Total views across all posts in this topic" />
-            <Stat icon={Eye} label="Reach" caption="users reached" value={fmtCount(issue.reach)} title="Number of users exposed to this topic" />
-            <div className="ml-auto">
-              <SentimentPie totals={pieTotals(issue)} variant="mini" />
-            </div>
+          <div className="flex justify-center sm:border-l sm:border-border/40 sm:pl-4">
+            <SentimentPie totals={pieTotals(issue)} variant="full" size={48} layout="stack" />
           </div>
         </div>
       </div>
