@@ -35,7 +35,7 @@
 | **A4** | AI assistant — copilot chat | 3-act | S5 | E7 | 1.0 | Planned |
 | **A5** | AI assistant — briefing, forecast & per-widget ask | 3-act | S5 | E7 | 1.0 | Planned |
 | **A6** | Real-time ticker, alerts & War Room | 3-act | S5–S6 | E8 | 1.0 | Planned |
-| **A7** | Danantara CEO Command Wall (zero-click demo) | 3-act | demo | — | 32.0 | Built |
+| **A7** | Danantara CEO Command Wall (zero-click demo) | 3-act | demo | — | 33.0 | Built |
 
 **Totals:** 24 features · 7 platform · 5 watch · 5 understand · 7 act.
 
@@ -86,3 +86,4 @@
 | 1.30 | 2026-06-04 | A7 → v30.0 Built (empty placeholder topic cell replaces the "No positive/negative topic" text; every BUMN row shows both columns) |
 | 1.31 | 2026-06-07 | A7 → v31.0 Built (Issues board wired to the live garudaperkasa.io topics feed via a server-side BFF route + Vercel cache; BUMN stays simulated) |
 | 1.32 | 2026-06-07 | A7 → v32.0 Built (issue detail modal: replace the empty "Top Coverage" headlines list with a "Description" section showing the topic penjelasan) |
+| 1.33 | 2026-06-07 | A7 → v33.0 Built (issue detail: trend line → sentiment pie with neutral share; remove velocity stat + category tag) |

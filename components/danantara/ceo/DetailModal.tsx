@@ -1,24 +1,16 @@
 "use client";
 
 import { useEffect } from "react";
-import { AlertTriangle, Building2, FileText, Tag, TrendingUp, X } from "lucide-react";
-import { ESCALATING_THRESHOLD, RISING_THRESHOLD } from "@/lib/danantara/ceo/engine";
-import { fmtCount } from "@/lib/danantara/ceo/format";
+import { AlertTriangle, Building2, FileText, X } from "lucide-react";
+import { fmtCount, pieTotals } from "@/lib/danantara/ceo/format";
 import type { CeoState } from "@/lib/danantara/ceo/types";
 import { SECTOR_LABEL } from "@/lib/danantara/ui";
 import { RankBadge } from "./RankBadge";
+import { SentimentPie } from "./SentimentPie";
 import { SentimentSplit } from "./SentimentSplit";
 import { TrendChart } from "./TrendChart";
 
 export type DetailSelection = { type: "issue"; id: string } | { type: "bumn"; id: string };
-
-const CATEGORY_LABEL: Record<string, string> = {
-  "tata-kelola": "Tata Kelola",
-  investasi: "Investasi",
-  kebijakan: "Kebijakan",
-  pasar: "Pasar",
-  sosial: "Sosial",
-};
 
 const STATUS_BADGE: Record<string, { label: string; cls: string }> = {
   normal: { label: "", cls: "" },
@@ -54,7 +46,6 @@ export function DetailModal({
     const issue = state.issues.find((i) => i.id === selection.id);
     if (!issue) return null;
 
-    const escalating = issue.status === "escalating";
     const badge = STATUS_BADGE[issue.status];
     const relatedBumn = issue.relatedBumn
       .map((id) => state.bumn.find((b) => b.id === id))
@@ -110,27 +101,10 @@ export function DetailModal({
                 <span className="text-muted-foreground">
                   <span className="font-semibold text-foreground">{fmtCount(issue.mentions)}</span> mentions
                 </span>
-                <span
-                  className={`flex items-center gap-0.5 font-semibold ${
-                    issue.velocity >= ESCALATING_THRESHOLD
-                      ? "text-destructive"
-                      : issue.velocity >= RISING_THRESHOLD
-                        ? "text-warning"
-                        : "text-muted-foreground"
-                  }`}
-                >
-                  <TrendingUp className="h-3.5 w-3.5" />
-                  {issue.velocity >= 0 ? "+" : ""}
-                  {Math.round(issue.velocity)}% velocity
-                </span>
-                <span className="flex items-center gap-1 text-muted-foreground">
-                  <Tag className="h-3 w-3" />
-                  {CATEGORY_LABEL[issue.category] ?? issue.category}
-                </span>
               </div>
 
-              {/* Trend chart */}
-              <TrendChart history={issue.history} escalating={escalating} className="h-40 w-full" />
+              {/* Sentiment breakdown (pie, with neutral share) — replaces the trend line */}
+              <SentimentPie totals={pieTotals(issue)} variant="full" />
 
               {/* Sentiment split */}
               <SentimentSplit pos={issue.posMentions} neg={issue.negMentions} total={issue.mentions} variant="full" />
