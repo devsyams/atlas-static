@@ -35,8 +35,8 @@
 | **A4** | AI assistant — copilot chat | 3-act | S5 | E7 | 1.0 | Planned |
 | **A5** | AI assistant — briefing, forecast & per-widget ask | 3-act | S5 | E7 | 1.0 | Planned |
 | **A6** | Real-time ticker, alerts & War Room | 3-act | S5–S6 | E8 | 1.0 | Planned |
-| **A7** | Danantara CEO Command Wall (zero-click demo) | 3-act | demo | — | 41.3 | Built |
-| **A8** | Per-BUMN CEO sentiment dashboards | 3-act | demo | — | 3.9 | Built |
+| **A7** | Danantara CEO Command Wall (zero-click demo) | 3-act | demo | — | 41.4 | Built |
+| **A8** | Per-BUMN CEO sentiment dashboards | 3-act | demo | — | 3.10 | Built |
 | **A9** | Communication Response Calculator | 3-act | demo | — | 3.1 | Built |
 
 **Totals:** 25 features · 7 platform · 5 watch · 5 understand · 8 act.
@@ -127,3 +127,5 @@
 | 1.69 | 2026-06-08 | A9 → v2.2 Built — gimmick is now a **faux Nexorus-AI terminal** (8 boot lines + blinking cursor, ~3.7s) that plays **once** on first scroll-in; tier switches are **instant** (no re-animation) |
 | 1.70 | 2026-06-08 | A9 → v3.0 Built — **WhatsApp Response dispatch**: a button in the Counter-Noise panel opens `wa.me/‹env number›` with a pre-filled brief (topic · sentiment · reach · **penjelasan** · selected-tier plan); new pure `response-dispatch.ts` |
 | 1.71 | 2026-06-08 | A9 → v3.1 Built — rename the panel/feature to **"Communication Response Calculator"** (UI label + WhatsApp brief; internal `counter-noise` names kept) |
+| 1.72 | 2026-06-08 | A7 → v41.4 Built — **/danantara responsive for mobile**: page scrolls on phones (wall only at `xl`), Issues columns stack, BUMN rows reflow to one column (legend hidden), count tiles shrink; fixed a Tailwind-JIT template-literal class bug |
+| 1.73 | 2026-06-08 | A8 → v3.10 Built — show the dominant sentiment % in the **centre of each BUMN topic pie** (tone-coloured centre label on the shared `SentimentPie` full variant) |

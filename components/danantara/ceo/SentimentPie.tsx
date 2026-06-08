@@ -118,9 +118,23 @@ export function SentimentPie({
   const stroke = R >= 38 ? 14 : 10;
   const segments = buildSegments(slices, totals.total, 2 * Math.PI * R);
   const stack = layout === "stack";
+  // Dominant ("final") sentiment shown in the centre of the donut.
+  const dominant = totals.total > 0 ? [...slices].sort((a, b) => b.pct - a.pct)[0] : null;
   return (
     <div data-testid="sentiment-pie" className={stack ? "flex flex-col items-center gap-3" : "flex items-center gap-3"}>
-      <Donut segments={segments} r={R} stroke={stroke} />
+      <span className="relative inline-flex shrink-0 items-center justify-center">
+        <Donut segments={segments} r={R} stroke={stroke} />
+        {dominant && (
+          <span
+            data-testid="sentiment-pie-center"
+            className="pointer-events-none absolute inset-0 flex items-center justify-center"
+          >
+            <span className={`font-mono font-extrabold tabular-nums ${dominant.text} ${R >= 44 ? "text-xl" : "text-lg"}`}>
+              {dominant.pct}%
+            </span>
+          </span>
+        )}
+      </span>
       <div className={stack ? "space-y-1" : "min-w-0 flex-1 space-y-0.5"}>
         {slices.map((s) => (
           <div key={s.key} className="flex items-center gap-1.5 text-base">

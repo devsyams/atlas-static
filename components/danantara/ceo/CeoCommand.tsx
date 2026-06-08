@@ -85,7 +85,7 @@ export function CeoCommand() {
   );
 
   return (
-    <div className="flex h-full flex-col gap-3">
+    <div className="flex flex-col gap-3 xl:h-full">
       <HeaderStrip
         state={headerState}
         source={issuesLive}
@@ -99,7 +99,7 @@ export function CeoCommand() {
       {/* Running narration sits broadcast-style at the top, right under the headline numbers. */}
       <AiBriefTicker state={headerState} />
 
-      <div data-testid="ceo-wall" className="grid min-h-0 flex-1 grid-cols-1 gap-3 xl:grid-cols-2">
+      <div data-testid="ceo-wall" className="grid grid-cols-1 gap-3 xl:min-h-0 xl:flex-1 xl:grid-cols-2">
         {/* Phone order matches AC7: header → ticker → issues → BUMN. */}
         <div className="min-h-0">
           <IssueBoard issues={issues} loading={issuesLive === "loading"} onSelect={(id) => setDetail({ type: "issue", id })} />
