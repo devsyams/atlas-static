@@ -46,15 +46,23 @@ const TINY_TEXT = /text-(?:xs|sm)(?![\w-])|text-\[(?:[1-9]|1[0-5])(?:\.\d+)?px\]
 describe("BumnDashboard (A8)", () => {
   afterEach(() => vi.restoreAllMocks());
 
-  it("renders the sentiment summary pie, intent pie, and a full topic row (T6 / T8 / AC3-5)", async () => {
+  it("shows a shimmering topics skeleton while the feed has not responded yet", () => {
+    // A fetch that never resolves keeps the dashboard in its loading state.
+    vi.stubGlobal("fetch", vi.fn(() => new Promise<Response>(() => {})));
+    render(<BumnDashboard name="PLN" topicCode="danantara_pln" />);
+    expect(screen.getByTestId("bumn-topics-skeleton")).toBeInTheDocument();
+    expect(screen.queryByTestId("bumn-empty")).not.toBeInTheDocument();
+  });
+
+  it("renders the sentiment summary, intent share leaderboard, and a full topic row (T6 / T8 / AC3-5)", async () => {
     vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify(FULL), { status: 200 })));
     render(<BumnDashboard name="PLN" topicCode="danantara_pln" />);
 
-    await waitFor(() => expect(screen.getByText("Topik Uji PLN")).toBeInTheDocument());
-    // Sentiment summary (new verdict viz) + intent pie present.
+    await waitFor(() => expect(screen.getAllByText("Topik Uji PLN").length).toBeGreaterThan(0));
+    // Sentiment summary (new verdict viz) + intent share leaderboard present.
     expect(screen.getByTestId("sentiment-summary")).toBeInTheDocument();
     expect(screen.getByTestId("sentiment-verdict")).toBeInTheDocument();
-    expect(screen.getByTestId("intent-pie")).toBeInTheDocument();
+    expect(screen.getByTestId("intent-share")).toBeInTheDocument();
     // Topic detail bits + an explicit per-topic sentiment badge.
     const list = screen.getByTestId("bumn-topics");
     expect(list.textContent).toContain("Penjelasan topik ini."); // description
@@ -75,11 +83,11 @@ describe("BumnDashboard (A8)", () => {
     expect(calledUrl).toContain("code=danantara_pln");
   });
 
-  it("shows the empty-topics state but still renders the intent pie (T9 / AC6)", async () => {
+  it("shows the empty-topics state but still renders the intent share leaderboard (T9 / AC6)", async () => {
     vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify(EMPTY), { status: 200 })));
     render(<BumnDashboard name="Bank BRI" topicCode="danantara_bri" />);
 
-    await waitFor(() => expect(screen.getByTestId("intent-pie")).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByTestId("intent-share")).toBeInTheDocument());
     expect(screen.getByTestId("bumn-empty")).toBeInTheDocument();
     expect(screen.getByText(/no topics/i)).toBeInTheDocument();
   });
@@ -87,7 +95,7 @@ describe("BumnDashboard (A8)", () => {
   it("uses a readable type scale (no text below 16px) and a v2-style header (T12 / AC8)", async () => {
     vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify(FULL), { status: 200 })));
     const { container } = render(<BumnDashboard name="PLN" topicCode="danantara_pln" />);
-    await waitFor(() => expect(screen.getByText("Topik Uji PLN")).toBeInTheDocument());
+    await waitFor(() => expect(screen.getAllByText("Topik Uji PLN").length).toBeGreaterThan(0));
 
     const offenders = [...container.querySelectorAll("*")]
       .map((el) => el.getAttribute("class") ?? "")

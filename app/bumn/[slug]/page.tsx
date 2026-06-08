@@ -10,7 +10,7 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
 
   return (
     <AppShell>
-      <BumnDashboard name={bumn.name} topicCode={bumn.topicCode} />
+      <BumnDashboard name={bumn.name} topicCode={bumn.topicCode} slug={bumn.slug} short={bumn.short} sector={bumn.sector} />
     </AppShell>
   );
 }

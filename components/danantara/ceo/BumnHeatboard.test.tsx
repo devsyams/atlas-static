@@ -96,6 +96,14 @@ describe("BumnHeatboard one row per BUMN: identity | negative topic | positive t
     expect(logoWrap?.contains(rank)).toBe(true);
   });
 
+  it("shows a shimmering skeleton (no real rows) while the board is loading", () => {
+    render(<BumnHeatboard rows={[]} issues={[]} loading />);
+    expect(screen.getByTestId("bumn-skeleton")).toBeInTheDocument();
+    expect(screen.getByTestId("ceo-bumn").textContent).toContain("Loading…");
+    expect(screen.queryByTestId("bumn-list")).not.toBeInTheDocument();
+    expect(screen.queryAllByTestId(/^bumn-tile-/)).toHaveLength(0);
+  });
+
   it("links the BUMN logo to its dashboard, and a topic cell opens that topic (v40.0)", () => {
     const onSelectTopic = vi.fn();
     render(<BumnHeatboard rows={rows} issues={issues} onSelectTopic={onSelectTopic} />);
