@@ -117,7 +117,7 @@ describe("DetailModal (T10 / AC10)", () => {
     expect(container.firstChild).toBeNull();
   });
 
-  it("shows the Counter-Noise calculator with clipper / kol / homeless counts + tier selector for a negative topic (A9 v2.0 / T6)", () => {
+  it("shows the Communication Response calculator with clipper / kol / homeless counts + tier selector for a negative topic (A9 v2.0 / T6)", () => {
     render(<DetailModal selection={{ type: "issue", id: topIssue.id }} state={state} onClose={vi.fn()} onNavigate={vi.fn()} />);
     const panel = screen.getByTestId("counter-noise");
     for (const ch of ["clipper", "kol", "homeless"]) {
@@ -153,10 +153,10 @@ describe("DetailModal (T10 / AC10)", () => {
     const text = decodeURIComponent(href.split("text=")[1] ?? "");
     expect(text).toContain(topIssue.title); // topic content
     expect(text).toContain(topIssue.aiLine); // the Nexorus AI penjelasan
-    expect(text).toContain("Counter-Noise plan"); // the response plan
+    expect(text).toContain("Communication Response plan"); // the response plan
   });
 
-  it("omits the Counter-Noise calculator for a positive topic (A9 / T7 / AC4)", () => {
+  it("omits the Communication Response calculator for a positive topic (A9 / T7 / AC4)", () => {
     const positive: CeoIssue = { ...issue, id: "pos-topic", posMentions: 800, negMentions: 100, sentiment: 60 };
     const posState: CeoState = { tickCount: 0, issues: [positive], bumn: [] };
     render(<DetailModal selection={{ type: "issue", id: "pos-topic" }} state={posState} onClose={vi.fn()} onNavigate={vi.fn()} />);
