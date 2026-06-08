@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
-import { Building2, TrendingDown, TrendingUp } from "lucide-react";
+import { Building2, ThumbsDown, ThumbsUp } from "lucide-react";
 import { topicsForBumn } from "@/lib/danantara/ceo/engine";
 import { fmtCount, pieTotals, sentimentTint } from "@/lib/danantara/ceo/format";
 import { RankBadge } from "./RankBadge";
@@ -58,10 +58,10 @@ function TopicCell({
   onSelect?: (id: string) => void;
 }) {
   const positive = variant === "positive";
-  const Icon = positive ? TrendingUp : TrendingDown;
+  const Icon = positive ? ThumbsUp : ThumbsDown;
   if (!issue) {
     // Empty topic slot — keeps every BUMN row showing both columns (v30.0).
-    // A muted, dashed, tone-tinted cell with the trend icon + em-dash; never a
+    // A muted, dashed, tone-tinted cell with the tone icon + em-dash; never a
     // "No … topic" text line. Tone presence is computed live from drifting
     // sentiment, so the absence is handled here in the view, not the seed data.
     return (
@@ -205,8 +205,12 @@ export function BumnHeatboard({
       {/* Column legend. */}
       <div className={`grid ${GRID} items-center gap-2.5 border-b border-border/60 bg-card px-3 py-1.5 text-base font-bold tracking-[0.14em] text-muted-foreground`}>
         <span className="text-center">BUMN</span>
-        <span className="text-destructive">NEGATIVE TOPICS</span>
-        <span className="text-success">POSITIVE TOPICS</span>
+        <span className="flex items-center gap-1.5 text-destructive">
+          <ThumbsDown className="h-4 w-4 shrink-0" /> NEGATIVE TOPICS
+        </span>
+        <span className="flex items-center gap-1.5 text-success">
+          <ThumbsUp className="h-4 w-4 shrink-0" /> POSITIVE TOPICS
+        </span>
       </div>
       {loading ? (
         <ol data-testid="bumn-skeleton" aria-busy className="min-h-0 flex-1 overflow-y-auto">

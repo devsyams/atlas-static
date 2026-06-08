@@ -35,8 +35,8 @@
 | **A4** | AI assistant — copilot chat | 3-act | S5 | E7 | 1.0 | Planned |
 | **A5** | AI assistant — briefing, forecast & per-widget ask | 3-act | S5 | E7 | 1.0 | Planned |
 | **A6** | Real-time ticker, alerts & War Room | 3-act | S5–S6 | E8 | 1.0 | Planned |
-| **A7** | Danantara CEO Command Wall (zero-click demo) | 3-act | demo | — | 40.2 | Built |
-| **A8** | Per-BUMN CEO sentiment dashboards | 3-act | demo | — | 3.8 | Built |
+| **A7** | Danantara CEO Command Wall (zero-click demo) | 3-act | demo | — | 40.4 | Built |
+| **A8** | Per-BUMN CEO sentiment dashboards | 3-act | demo | — | 3.9 | Built |
 
 **Totals:** 25 features · 7 platform · 5 watch · 5 understand · 8 act.
 
@@ -113,3 +113,5 @@
 | 1.56 | 2026-06-08 | A8 → v3.6 Built (Sentiment Summary gains a Key Drivers block — loudest negative + positive topic by reach — filling the panel's blank area below the legend) |
 | 1.57 | 2026-06-08 | A8 → v3.7 Built (BUMN logo added to the dashboard header, left of the BUMN name; shared `BumnLogo` extracted with monogram fallback) |
 | 1.58 | 2026-06-08 | A7 → v40.2, A8 → v3.8 Built (shrink Danantara issue title 24→20px; add shimmering skeleton loaders to the Danantara Issues, BUMN Sentiment, and BUMN topic lists while the feed is loading) |
+| 1.59 | 2026-06-08 | A7 → v40.3 Built (swap trend-arrow icons for thumbs-up/down on the Danantara Issues group headers, BUMN topic cells, and the BUMN Sentiment column legend) |
+| 1.60 | 2026-06-08 | A7 → v40.4, A8 → v3.9 Built (stripped app-shell chrome on /danantara + /bumn/*: hide the AI search bar + notifications bell, gear menu shows the Dashboards group only) |

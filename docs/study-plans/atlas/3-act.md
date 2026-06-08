@@ -266,7 +266,7 @@ learn a high-severity incident just landed. Push-based updates for the ticker an
 
 ### A7. Danantara CEO Command Wall (zero-click demo)
 
-- **Version:** 40.2 · **Stage:** 3-act · **Sprint:** demo · **Status:** Built · **Spec ref:** `docs/superpowers/specs/2026-06-02-danantara-ceo-command-design.md` · **Owner:** Dev A
+- **Version:** 40.4 · **Stage:** 3-act · **Sprint:** demo · **Status:** Built · **Spec ref:** `docs/superpowers/specs/2026-06-02-danantara-ceo-command-design.md` · **Owner:** Dev A
 
 #### PM
 *(v31.0)* The wall graduates from a self-running **simulation** to a **live feed** for the Danantara
@@ -602,12 +602,14 @@ of an abstract pie. One BUMN, one positive topic, one negative topic, per line.
 | 40.0 | 2026-06-08 | Client: in the BUMN board, **clicking a topic cell opens that single topic's detail** (the Danantara brief — no list of all topics); **the logo links to that BUMN's `/bumn/<slug>` dashboard**; and the topic detail gains an **"Open <BUMN> dashboard"** button (the related-BUMN chip became a dashboard link). AC10/AC18 amended. Status → Built |
 | 40.1 | 2026-06-08 | Bugfix: client-side nav to `/danantara` (and `/bumn/<slug>`) showed no data until a manual refresh — the `mountedRef` guard latched `false` on React's dev double-mount. Reset it in the mount effect (`CeoCommand`, shared with A8's dashboard). Status → Built |
 | 40.2 | 2026-06-08 | Client: **shrink the Danantara issue topic title** from `text-2xl`→`text-xl` (24→20px, still ≥16px for 40–60 y/o readability); and add a **shimmering skeleton loader** to both boards (Danantara Issues + BUMN Sentiment) while the feed has not responded yet (`loading` prop driven by `issuesLive`/`bumnLive`; shared `.skeleton` sweep). Presentation only (no AC change). Status → Built (51 tests green, lint clean, screenshot-confirmed on live data) |
+| 40.3 | 2026-06-08 | Client: swap the **trend-arrow icons for thumbs-up/down** on the Danantara Issues group headers (POSITIVE/NEGATIVE TOPICS), the BUMN topic cells, **and the BUMN Sentiment column legend** (`TrendingUp`/`TrendingDown` → `ThumbsUp`/`ThumbsDown`). Presentation only (no AC change). Status → Built (34 tests green, lint clean, screenshot-confirmed on live data) |
+| 40.4 | 2026-06-08 | Client: run a **stripped app-shell chrome on the executive dashboards** (`/danantara` + every `/bumn/*`) — hide the "Tanya Nexorus AI" search bar and the notifications bell, and reduce the gear menu to the **Dashboards** group only (drop Operations + System) via a `minimalChrome` route flag in `AppShell`. Other dashboards keep full chrome. Presentation only (no AC change). Status → Built (lint clean, screenshot-confirmed on /danantara + /bumn + home) |
 
 ---
 
 ### A8. Per-BUMN CEO sentiment dashboards
 
-- **Version:** 3.8 · **Stage:** 3-act · **Sprint:** demo · **Status:** Built · **Spec ref:** built on A7's live topics feed (`docs/superpowers/specs/2026-06-02-danantara-ceo-command-design.md`) · **Owner:** Dev A
+- **Version:** 3.9 · **Stage:** 3-act · **Sprint:** demo · **Status:** Built · **Spec ref:** built on A7's live topics feed (`docs/superpowers/specs/2026-06-02-danantara-ceo-command-design.md`) · **Owner:** Dev A
 
 #### PM
 **Background (why):** Danantara is the **holding company over all BUMN**, but the Danantara CEO Command wall (A7) is one aggregate view. The boss wants a **dedicated dashboard per BUMN**, each aimed at **that BUMN's own CEO** — a focused, low-density read of *"how is the public talking about my company right now"*. These users are **40–60 years old**, non-analyst executives, so the dashboard must be **simple and readable** (large type, no operator chrome) and **zero-config** (open the URL, see your company). It also has to be **access-scoped**: each BUMN CEO signs in as their own user and only ever sees their own company's dashboard — they must not wander into Danantara-wide or other BUMN data during a demo. The live feed already exposes a **topic code per BUMN** (`danantara_‹bumn›`), so each dashboard is the same A7 topics endpoint pointed at a different code — real data, not a mock. Launch set: **7 BUMN** (Mandiri, PLN, Telkom, Pertamina, BNI, BRI, Jasa Marga).
@@ -673,3 +675,4 @@ of an abstract pie. One BUMN, one positive topic, one negative topic, per line.
 | 3.6 | 2026-06-08 | Client ("blank area in the sentiment summary — any other idea?"): fill it with a **Key Drivers** block (`SentimentSummary` v2.2) — the loudest **negative** and **positive** topic (title + reach, picked by reach within dominant tone), shown under the legend with tone icons. Adds the "why" behind the verdict and balances the panel height against the Intent leaderboard. AC3 amended. Status → Built (16 bumn tests green, lint clean, screenshot-confirmed on live Pertamina data) |
 | 3.7 | 2026-06-08 | Client: add the **BUMN logo to the dashboard header**, on the **left of the name** (eyebrow / name / subtitle stack) — extract a shared `BumnLogo` (real `/bumn/‹slug›.png`, monogram fallback); thread `slug`/`short`/`sector` from the page. *(Corrected from a first pass that wrongly placed it inside the sentiment verdict box.)* AC1 amended. Status → Built (16 bumn tests green, lint clean, screenshot-confirmed on live Pertamina data) |
 | 3.8 | 2026-06-08 | Client: add a **shimmering skeleton loader** to the BUMN dashboard's **topic list** while the feed has not responded (replaces the plain "Loading topics…" text with shaped `TopicCardSkeleton`s; shared `.skeleton` sweep). Presentation only (no AC change). Status → Built (51 tests green, lint clean) |
+| 3.9 | 2026-06-08 | Client: each `/bumn/*` board runs the **stripped app-shell chrome** (no AI search bar, no notifications bell, gear menu = Dashboards only) — shared with A7 v40.4 via the `minimalChrome` route flag in `AppShell`. Presentation only (no AC change). Status → Built (lint clean, screenshot-confirmed) |
