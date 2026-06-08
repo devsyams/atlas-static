@@ -40,7 +40,7 @@ function IssueRow({ issue, rank, onSelect }: { issue: CeoIssue; rank: number; on
         {/* Left: full title + status badge, with a muted AI context line beneath (AC12 v18.0). */}
         <div className="min-w-0 flex-1 pt-0.5">
           <div className="flex items-start gap-2">
-            <span data-testid="issue-title" className="text-2xl font-semibold leading-snug text-balance">{issue.title}</span>
+            <span data-testid="issue-title" className="text-xl font-semibold leading-snug text-balance">{issue.title}</span>
             {badge.label && (
               <span className={`mt-0.5 shrink-0 rounded border px-1.5 py-px text-base font-bold tracking-wider ${badge.cls}`}>
                 {badge.label}
@@ -104,13 +104,59 @@ function IssueGroup({
   );
 }
 
+/** A shimmering placeholder row, matching IssueRow's shape, shown while the feed loads. */
+function IssueSkeletonRow() {
+  return (
+    <li className="flex items-start gap-2.5 border-b border-border/40 px-3 py-2.5 last:border-b-0">
+      <div className="skeleton mt-0.5 h-5 w-6 shrink-0" />
+      <div className="min-w-0 flex-1 space-y-2 pt-0.5">
+        <div className="skeleton h-5 w-[85%]" />
+        <div className="skeleton h-4 w-[55%]" />
+      </div>
+      <div className="skeleton mt-0.5 h-10 w-10 shrink-0 rounded-full" />
+    </li>
+  );
+}
+
+/** One loading column: the sentiment header + a few skeleton rows. */
+function IssueSkeletonColumn({ variant }: { variant: "positive" | "negative" }) {
+  const positive = variant === "positive";
+  const Icon = positive ? TrendingUp : TrendingDown;
+  return (
+    <section data-testid={`issue-skeleton-${variant}`} aria-busy>
+      <div
+        className={`sticky top-0 z-10 flex items-center gap-2 border-y border-border/60 bg-card px-3 py-2 ${
+          positive ? "text-success" : "text-destructive"
+        }`}
+      >
+        <Icon className="h-4 w-4" />
+        <span className="text-lg font-bold tracking-[0.18em]">{positive ? "POSITIVE TOPICS" : "NEGATIVE TOPICS"}</span>
+      </div>
+      <ol>
+        {Array.from({ length: 4 }, (_, i) => (
+          <IssueSkeletonRow key={i} />
+        ))}
+      </ol>
+    </section>
+  );
+}
+
 /**
  * Danantara topic board (AC12 v9.0): topics grouped by dominant sentiment into a
  * POSITIVE TOPICS and a NEGATIVE TOPICS sub-column, rendered side by side, each
  * ranked by reach. Every row is a stacked card (title over a pie + velocity meta
- * line) carrying a green↔red sentiment tint and its own per-topic pie.
+ * line) carrying a green↔red sentiment tint and its own per-topic pie. While the
+ * feed is still loading (`loading`) the columns show a shimmering skeleton.
  */
-export function IssueBoard({ issues, onSelect }: { issues: CeoIssue[]; onSelect?: (id: string) => void }) {
+export function IssueBoard({
+  issues,
+  loading = false,
+  onSelect,
+}: {
+  issues: CeoIssue[];
+  loading?: boolean;
+  onSelect?: (id: string) => void;
+}) {
   const { positive, negative } = groupIssuesBySentiment(issues);
 
   return (
@@ -119,16 +165,25 @@ export function IssueBoard({ issues, onSelect }: { issues: CeoIssue[]; onSelect?
         <Flame className="h-5 w-5 text-primary" />
         <span className="text-xl font-semibold uppercase tracking-[0.18em]">Danantara Issues</span>
         <span className="ml-auto text-base uppercase tracking-widest text-muted-foreground">
-          {issues.length} topics · negative vs positive
+          {loading ? "Loading…" : `${issues.length} topics · negative vs positive`}
         </span>
       </div>
       <div
         data-testid="issue-groups"
         className="grid min-h-0 flex-1 grid-cols-2 items-start gap-x-1.5 overflow-y-auto"
       >
-        {/* Negative topics on the left (client/boss direction) — problems lead. */}
-        <IssueGroup variant="negative" issues={negative} onSelect={onSelect} />
-        <IssueGroup variant="positive" issues={positive} onSelect={onSelect} />
+        {loading ? (
+          <>
+            {/* Negative on the left (client/boss direction) — problems lead. */}
+            <IssueSkeletonColumn variant="negative" />
+            <IssueSkeletonColumn variant="positive" />
+          </>
+        ) : (
+          <>
+            <IssueGroup variant="negative" issues={negative} onSelect={onSelect} />
+            <IssueGroup variant="positive" issues={positive} onSelect={onSelect} />
+          </>
+        )}
       </div>
     </div>
   );

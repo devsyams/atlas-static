@@ -93,6 +93,28 @@ describe("IssueBoard grouped by sentiment (T12 / AC12 v9.0)", () => {
     }
   });
 
+  it("shows a shimmering skeleton (no real rows) while the feed is loading", () => {
+    render(<IssueBoard issues={[]} loading />);
+    expect(screen.getByTestId("issue-skeleton-negative")).toBeInTheDocument();
+    expect(screen.getByTestId("issue-skeleton-positive")).toBeInTheDocument();
+    expect(screen.getByTestId("ceo-issues").textContent).toContain("Loading…");
+    expect(screen.queryByTestId("issue-group-negative")).not.toBeInTheDocument();
+    expect(screen.queryAllByTestId(/^issue-row-/)).toHaveLength(0);
+  });
+
+  it("renders the real groups (no skeleton) once data has arrived", () => {
+    render(<IssueBoard issues={issues} />);
+    expect(screen.queryByTestId("issue-skeleton-negative")).not.toBeInTheDocument();
+    expect(screen.getByTestId("issue-group-negative")).toBeInTheDocument();
+  });
+
+  it("renders the topic title smaller than before but at/above the 16px floor (text-xl = 20px)", () => {
+    render(<IssueBoard issues={issues} />);
+    const title = screen.getAllByTestId("issue-title")[0];
+    expect(title.className).toContain("text-xl");
+    expect(title.className).not.toContain("text-2xl");
+  });
+
   it("still fires onSelect when a row is clicked (AC10)", () => {
     const onSelect = vi.fn();
     render(<IssueBoard issues={issues} onSelect={onSelect} />);

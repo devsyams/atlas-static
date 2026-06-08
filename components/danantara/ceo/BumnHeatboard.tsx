@@ -153,19 +153,43 @@ function BumnRow({
   );
 }
 
+/** A shimmering placeholder row, matching BumnRow's grid, shown while the board loads. */
+function BumnSkeletonRow() {
+  return (
+    <li className={`grid ${GRID} items-stretch gap-2.5 border-b border-border/40 px-3 py-2.5 last:border-b-0`}>
+      <div className="flex flex-col items-center gap-1.5 pt-0.5">
+        <div className="skeleton h-9 w-9 rounded-md" />
+        <div className="skeleton h-4 w-12" />
+      </div>
+      {[0, 1].map((i) => (
+        <div key={i} className="flex items-start gap-2 rounded-md border border-border/40 p-2">
+          <div className="min-w-0 flex-1 space-y-2">
+            <div className="skeleton h-4 w-[90%]" />
+            <div className="skeleton h-4 w-[60%]" />
+          </div>
+          <div className="skeleton h-9 w-9 shrink-0 rounded-full" />
+        </div>
+      ))}
+    </li>
+  );
+}
+
 /**
  * BUMN sentiment board (AC18 v24.0): one row per BUMN (most-negative first), each
  * row = BUMN identity | its negative topic | its positive topic, every topic cell
  * carrying its own sentiment pie. Rows keep the green↔red net-sentiment tint and
- * open the BUMN detail on click (AC10).
+ * open the BUMN detail on click (AC10). While the board is still loading
+ * (`loading`) the rows show a shimmering skeleton.
  */
 export function BumnHeatboard({
   rows,
   issues,
+  loading = false,
   onSelectTopic,
 }: {
   rows: BumnSentiment[];
   issues: CeoIssue[];
+  loading?: boolean;
   /** Open a specific topic's detail (a topic cell was clicked). */
   onSelectTopic?: (id: string) => void;
 }) {
@@ -175,7 +199,7 @@ export function BumnHeatboard({
         <Building2 className="h-5 w-5 text-primary" />
         <span className="text-xl font-semibold uppercase tracking-[0.18em]">BUMN Sentiment</span>
         <span className="ml-auto text-base uppercase tracking-widest text-muted-foreground">
-          {rows.length} BUMN · negative & positive topic
+          {loading ? "Loading…" : `${rows.length} BUMN · negative & positive topic`}
         </span>
       </div>
       {/* Column legend. */}
@@ -184,11 +208,19 @@ export function BumnHeatboard({
         <span className="text-destructive">NEGATIVE TOPICS</span>
         <span className="text-success">POSITIVE TOPICS</span>
       </div>
-      <ol data-testid="bumn-list" className="min-h-0 flex-1 overflow-y-auto">
-        {rows.map((row, idx) => (
-          <BumnRow key={row.id} row={row} rank={idx + 1} issues={issues} onSelectTopic={onSelectTopic} />
-        ))}
-      </ol>
+      {loading ? (
+        <ol data-testid="bumn-skeleton" aria-busy className="min-h-0 flex-1 overflow-y-auto">
+          {Array.from({ length: 6 }, (_, i) => (
+            <BumnSkeletonRow key={i} />
+          ))}
+        </ol>
+      ) : (
+        <ol data-testid="bumn-list" className="min-h-0 flex-1 overflow-y-auto">
+          {rows.map((row, idx) => (
+            <BumnRow key={row.id} row={row} rank={idx + 1} issues={issues} onSelectTopic={onSelectTopic} />
+          ))}
+        </ol>
+      )}
     </div>
   );
 }

@@ -6,7 +6,8 @@ import { SentimentPie } from "@/components/danantara/ceo/SentimentPie";
 import { fmtCount, pieTotals } from "@/lib/danantara/ceo/format";
 import type { CeoIssue } from "@/lib/danantara/ceo/types";
 import type { TopicIntent, TopicsSummary } from "@/lib/danantara/ceo/topics-source";
-import { IntentPie } from "./IntentPie";
+import { BumnLogo } from "./BumnLogo";
+import { IntentShare } from "./IntentShare";
 import { SentimentSummary } from "./SentimentSummary";
 
 interface Payload {
@@ -30,7 +31,19 @@ function hasSummary(summary: TopicsSummary | null | undefined): summary is Topic
  * a list of topics each with its own breakdown. Simple, readable (≥16px) for a
  * 40–60 y/o executive; header mirrors the shared /danantara-v2 style.
  */
-export function BumnDashboard({ name, topicCode }: { name: string; topicCode: string }) {
+export function BumnDashboard({
+  name,
+  topicCode,
+  slug,
+  short,
+  sector,
+}: {
+  name: string;
+  topicCode: string;
+  slug?: string;
+  short?: string;
+  sector?: string;
+}) {
   const [data, setData] = useState<Payload | null>(null);
   const [live, setLive] = useState<LiveState>("loading");
   const [refreshing, setRefreshing] = useState(false);
@@ -78,12 +91,15 @@ export function BumnDashboard({ name, topicCode }: { name: string; topicCode: st
     <div className="space-y-5">
       {/* Header — shared /danantara-v2 style. */}
       <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <div className="text-base font-bold uppercase tracking-[0.08em] text-primary">BUMN · Sentiment Command</div>
-          <h1 className="mt-1 text-2xl font-bold leading-tight sm:text-[28px]">{name}</h1>
-          <p className="mt-1.5 text-base text-muted-foreground">
-            Public sentiment &amp; topics for {name} · last 7 days · Nexorus AI
-          </p>
+        <div className="flex items-center gap-4">
+          {slug && <BumnLogo slug={slug} name={name} short={short ?? name} colorKey={sector} size={56} className="self-center" />}
+          <div>
+            <div className="text-base font-bold uppercase tracking-[0.08em] text-primary">BUMN · Sentiment Command</div>
+            <h1 className="mt-1 text-2xl font-bold leading-tight sm:text-[28px]">{name}</h1>
+            <p className="mt-1.5 text-base text-muted-foreground">
+              Public sentiment &amp; topics for {name} · last 7 days · Nexorus AI
+            </p>
+          </div>
         </div>
         <div className="flex flex-wrap items-center justify-end gap-2">
           {live === "offline" ? (
@@ -127,6 +143,10 @@ export function BumnDashboard({ name, topicCode }: { name: string; topicCode: st
                   percentage={summary.percentage}
                   totalImpressions={summary.total_impressions}
                   totalReach={summary.total_reach}
+                  drivers={{
+                    negative: topDriver(issues, "Negative"),
+                    positive: topDriver(issues, "Positive"),
+                  }}
                 />
               ) : (
                 <p className="text-base text-muted-foreground">No sentiment data in this window.</p>
@@ -134,7 +154,7 @@ export function BumnDashboard({ name, topicCode }: { name: string; topicCode: st
             </section>
             <section className="panel p-4">
               <h2 className="mb-3 text-lg font-semibold uppercase tracking-[0.14em] text-muted-foreground">Intent Share</h2>
-              <IntentPie intents={intents} />
+              <IntentShare intents={intents} />
             </section>
           </div>
 
@@ -143,9 +163,15 @@ export function BumnDashboard({ name, topicCode }: { name: string; topicCode: st
             <h2 className="text-lg font-semibold uppercase tracking-[0.14em] text-muted-foreground">
               Topics {issues.length > 0 && <span className="font-mono">({issues.length})</span>}
             </h2>
-            {issues.length === 0 ? (
+            {issues.length === 0 && live === "loading" ? (
+              <div data-testid="bumn-topics-skeleton" aria-busy className="space-y-3">
+                {Array.from({ length: 4 }, (_, i) => (
+                  <TopicCardSkeleton key={i} />
+                ))}
+              </div>
+            ) : issues.length === 0 ? (
               <div data-testid="bumn-empty" className="rounded-lg border border-border/60 bg-card/40 p-6 text-base text-muted-foreground">
-                {live === "loading" ? "Loading topics…" : "No topics in this window."}
+                No topics in this window.
               </div>
             ) : (
               issues.map((issue, idx) => <TopicCard key={issue.id} issue={issue} rank={idx + 1} />)
@@ -155,6 +181,39 @@ export function BumnDashboard({ name, topicCode }: { name: string; topicCode: st
       )}
     </div>
   );
+}
+
+/** A shimmering placeholder card, matching TopicCard's shape, shown while topics load. */
+function TopicCardSkeleton() {
+  return (
+    <div className="panel overflow-hidden p-0">
+      <div className="grid grid-cols-[3rem_1fr] gap-x-4 p-4 pl-6 sm:grid-cols-[3.5rem_1fr]">
+        <div className="skeleton h-10 w-10 rounded-md" />
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-[7fr_3fr] sm:items-center">
+          <div className="min-w-0 space-y-3">
+            <div className="skeleton h-6 w-[80%]" />
+            <div className="skeleton h-4 w-[95%]" />
+            <div className="skeleton h-4 w-[60%]" />
+            <div className="flex gap-6 pt-2">
+              <div className="skeleton h-8 w-24" />
+              <div className="skeleton h-8 w-24" />
+            </div>
+          </div>
+          <div className="flex justify-center">
+            <div className="skeleton h-24 w-24 rounded-full" />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** The loudest topic (by reach) whose dominant tone matches — the "why" behind the verdict. */
+function topDriver(issues: CeoIssue[], want: "Negative" | "Positive"): { title: string; reach: number } | undefined {
+  const top = issues
+    .filter((i) => topicTone(i).label === want)
+    .sort((a, b) => b.reach - a.reach)[0];
+  return top ? { title: top.title, reach: top.reach } : undefined;
 }
 
 /** Dominant tone of a topic from its positive/neutral/negative mention split. */
