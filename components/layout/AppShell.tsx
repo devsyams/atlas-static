@@ -70,8 +70,14 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   // Danantara-scoped demo users only ever see their own dashboard.
   const nav = scope === "danantara" ? NAV.filter((n) => n.to.startsWith("/danantara")) : NAV;
-  const groups = Array.from(new Set(nav.map((n) => n.group)));
   const homeHref = scope === "danantara" ? "/danantara" : "/";
+
+  // Executive dashboards (Danantara CEO v2 + each per-BUMN board) run a stripped
+  // chrome for their 40–60 y/o CEO audience: only the Dashboards menu group, no
+  // "Tanya Nexorus AI" search bar, and no notifications bell.
+  const minimalChrome = pathname === "/danantara" || pathname.startsWith("/bumn");
+  const menuNav = minimalChrome ? nav.filter((n) => n.group === "Dashboards") : nav;
+  const groups = Array.from(new Set(menuNav.map((n) => n.group)));
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -108,28 +114,32 @@ export function AppShell({ children }: { children: ReactNode }) {
           />
         </Link>
 
-        {/* Search bar — centered */}
-        <div className="mx-auto flex w-full max-w-xl items-center px-4">
-          <button
-            type="button"
-            onClick={() => setCopilotOpen(true)}
-            className="group flex w-full items-center gap-2 rounded-md border border-border bg-background/40 px-3 py-1.5 text-[12px] text-muted-foreground hover:border-primary/40 hover:text-foreground"
-          >
-            <Sparkles className="h-3.5 w-3.5 shrink-0 text-primary/70 group-hover:text-primary" />
-            <span className="flex-1 text-left">Tanya Nexorus AI…</span>
-            <kbd className="hidden rounded border border-border bg-muted/40 px-1 py-0.5 text-[9px] tracking-wider sm:inline">
-              ⌘K
-            </kbd>
-          </button>
-        </div>
+        {/* Search bar — centered. Hidden on the executive dashboards. */}
+        {minimalChrome ? (
+          <div className="flex-1" />
+        ) : (
+          <div className="mx-auto flex w-full max-w-xl items-center px-4">
+            <button
+              type="button"
+              onClick={() => setCopilotOpen(true)}
+              className="group flex w-full items-center gap-2 rounded-md border border-border bg-background/40 px-3 py-1.5 text-[12px] text-muted-foreground hover:border-primary/40 hover:text-foreground"
+            >
+              <Sparkles className="h-3.5 w-3.5 shrink-0 text-primary/70 group-hover:text-primary" />
+              <span className="flex-1 text-left">Tanya Nexorus AI…</span>
+              <kbd className="hidden rounded border border-border bg-muted/40 px-1 py-0.5 text-[9px] tracking-wider sm:inline">
+                ⌘K
+              </kbd>
+            </button>
+          </div>
+        )}
 
         <div className="flex items-center gap-1.5">
           <IconBtn label="Fullscreen" onClick={onFullscreen}>
             <Maximize2 className="h-3.5 w-3.5" />
           </IconBtn>
 
-          {/* Notifications */}
-          <NotificationsMenu />
+          {/* Notifications — hidden on the executive dashboards. */}
+          {!minimalChrome && <NotificationsMenu />}
 
           {/* Settings / Nav dropdown */}
           <Dropdown
@@ -153,7 +163,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                     <div className="px-2 py-1.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
                       {group}
                     </div>
-                    {nav.filter((n) => n.group === group).map((item) => {
+                    {menuNav.filter((n) => n.group === group).map((item) => {
                       const Icon = item.icon;
                       const active =
                         pathname === item.to && (item.to !== "/" || item.label === "MBG Crisis Command");
