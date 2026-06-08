@@ -6,6 +6,7 @@ import { ArrowRight, BarChart3, Building2, Eye, LayoutDashboard, Sparkles, X } f
 import { fmtCount, pieTotals } from "@/lib/danantara/ceo/format";
 import type { CeoState } from "@/lib/danantara/ceo/types";
 import { SECTOR_LABEL } from "@/lib/danantara/ui";
+import { CounterNoisePanel } from "./CounterNoisePanel";
 import { RankBadge } from "./RankBadge";
 import { SentimentPie } from "./SentimentPie";
 
@@ -132,6 +133,9 @@ export function DetailModal({
                   </p>
                 </section>
               )}
+
+              {/* Counter-Noise — below the penjelasan; only for a negative topic. */}
+              {tone.label === "Negative" && <CounterNoisePanel issue={issue} />}
 
               {/* Jump to the related BUMN's own dashboard. */}
               {relatedBumn.length > 0 && (

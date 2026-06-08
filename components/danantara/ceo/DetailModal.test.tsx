@@ -116,4 +116,50 @@ describe("DetailModal (T10 / AC10)", () => {
     );
     expect(container.firstChild).toBeNull();
   });
+
+  it("shows the Counter-Noise calculator with clipper / kol / homeless counts + tier selector for a negative topic (A9 v2.0 / T6)", () => {
+    render(<DetailModal selection={{ type: "issue", id: topIssue.id }} state={state} onClose={vi.fn()} onNavigate={vi.fn()} />);
+    const panel = screen.getByTestId("counter-noise");
+    for (const ch of ["clipper", "kol", "homeless"]) {
+      expect(screen.getByTestId(`counter-${ch}`).textContent).toMatch(/\d/); // a count is shown
+    }
+    // Service-tier selector + the negative-baseline caption (always rendered).
+    for (const tier of ["basic", "professional", "enterprise"]) {
+      expect(screen.getByTestId(`tier-${tier}`)).toBeInTheDocument();
+    }
+    expect(panel.textContent?.toLowerCase()).toContain("negative posts");
+    // No text below the 16px floor (AC6/AC15).
+    const TINY = /text-(?:xs|sm)(?![\w-])|text-\[(?:[1-9]|1[0-5])(?:\.\d+)?px\]/;
+    const offenders = [...panel.querySelectorAll("*")].map((el) => el.getAttribute("class") ?? "").filter((c) => TINY.test(c));
+    expect(offenders).toEqual([]);
+  });
+
+  it("recomputes the plan when the service tier changes (A9 v2.0)", () => {
+    render(<DetailModal selection={{ type: "issue", id: topIssue.id }} state={state} onClose={vi.fn()} onNavigate={vi.fn()} />);
+    const panel = screen.getByTestId("counter-noise");
+    expect(panel.textContent).toContain("× 3"); // professional default (×3)
+    expect(panel.textContent).toContain("Professional");
+    fireEvent.click(screen.getByTestId("tier-enterprise")); // ×5
+    expect(panel.textContent).toContain("× 5");
+    expect(panel.textContent).toContain("Enterprise");
+  });
+
+  it("offers a WhatsApp Response dispatch carrying the topic brief + plan (A9 v3.0)", () => {
+    render(<DetailModal selection={{ type: "issue", id: topIssue.id }} state={state} onClose={vi.fn()} onNavigate={vi.fn()} />);
+    const link = screen.getByTestId("response-dispatch");
+    expect(link).toHaveAttribute("target", "_blank");
+    const href = link.getAttribute("href") ?? "";
+    expect(href.startsWith("https://wa.me/")).toBe(true);
+    const text = decodeURIComponent(href.split("text=")[1] ?? "");
+    expect(text).toContain(topIssue.title); // topic content
+    expect(text).toContain(topIssue.aiLine); // the Nexorus AI penjelasan
+    expect(text).toContain("Counter-Noise plan"); // the response plan
+  });
+
+  it("omits the Counter-Noise calculator for a positive topic (A9 / T7 / AC4)", () => {
+    const positive: CeoIssue = { ...issue, id: "pos-topic", posMentions: 800, negMentions: 100, sentiment: 60 };
+    const posState: CeoState = { tickCount: 0, issues: [positive], bumn: [] };
+    render(<DetailModal selection={{ type: "issue", id: "pos-topic" }} state={posState} onClose={vi.fn()} onNavigate={vi.fn()} />);
+    expect(screen.queryByTestId("counter-noise")).not.toBeInTheDocument();
+  });
 });

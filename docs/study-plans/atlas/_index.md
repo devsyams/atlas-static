@@ -35,8 +35,9 @@
 | **A4** | AI assistant — copilot chat | 3-act | S5 | E7 | 1.0 | Planned |
 | **A5** | AI assistant — briefing, forecast & per-widget ask | 3-act | S5 | E7 | 1.0 | Planned |
 | **A6** | Real-time ticker, alerts & War Room | 3-act | S5–S6 | E8 | 1.0 | Planned |
-| **A7** | Danantara CEO Command Wall (zero-click demo) | 3-act | demo | — | 40.4 | Built |
+| **A7** | Danantara CEO Command Wall (zero-click demo) | 3-act | demo | — | 41.3 | Built |
 | **A8** | Per-BUMN CEO sentiment dashboards | 3-act | demo | — | 3.9 | Built |
+| **A9** | Counter-Noise — Response Calculator | 3-act | demo | — | 3.0 | Built |
 
 **Totals:** 25 features · 7 platform · 5 watch · 5 understand · 8 act.
 
@@ -115,3 +116,13 @@
 | 1.58 | 2026-06-08 | A7 → v40.2, A8 → v3.8 Built (shrink Danantara issue title 24→20px; add shimmering skeleton loaders to the Danantara Issues, BUMN Sentiment, and BUMN topic lists while the feed is loading) |
 | 1.59 | 2026-06-08 | A7 → v40.3 Built (swap trend-arrow icons for thumbs-up/down on the Danantara Issues group headers, BUMN topic cells, and the BUMN Sentiment column legend) |
 | 1.60 | 2026-06-08 | A7 → v40.4, A8 → v3.9 Built (stripped app-shell chrome on /danantara + /bumn/*: hide the AI search bar + notifications bell, gear menu shows the Dashboards group only) |
+| 1.61 | 2026-06-08 | A7 → v41.0 Built (rework Danantara Issues list: side-by-side columns kept, each row redesigned as a compact issue-briefing card — verdict chip + segmented sentiment bar instead of the pie, A8 dossier styling) |
+| 1.62 | 2026-06-08 | A7 → v41.1 Built (Danantara logo on the left of the CEO header; real mark sourced to public/danantara.png) |
+| 1.63 | 2026-06-08 | A7 → v41.2 Built (Danantara issue cards mirror the BUMN Sentiment Summary: title → penjelasan → Sentiment·Impressions·Reach row → breakdown bar → value of each sentiment) |
+| 1.64 | 2026-06-08 | A7 → v41.3 Built (de-dup: shared `SentimentBreakdown` bar+legend used by the Danantara issue cards and A8's SentimentSummary; issue card trimmed so the sentiment % shows once) |
+| 1.65 | 2026-06-08 | Added A9 (Counter-Noise — Response Calculator) at v1.0 Planned — negative-topic detail recommends a count of KOL/clipper/homeless counter-actions sized to contain escalation; 25→26 features |
+| 1.66 | 2026-06-08 | A9 → v1.0 Built (TDD) — pure `counterNoisePlan` + `CounterNoisePanel` in the negative-topic detail (KOL / clipper / homeless counts + containment gauge); 9 tests green |
+| 1.67 | 2026-06-08 | A9 → v2.0 Built — adopt the boss's model (`negative_baseline × tier multiplier`, clipper 50/homeless 20/kol 30; Basic ×1 / Pro ×3 / Enterprise ×5 selector); baseline estimated from negative impressions; panel moved below the penjelasan + scroll-triggered "calculating" animation |
+| 1.68 | 2026-06-08 | A9 → v2.1 Built — rework the gimmick into a **Nexorus AI analysis pipeline** (Fetching → Analyzing → Modeling → Synthesizing, progress bar + scan + shimmer, then count-up reveal); fixed the scroll trigger (IO threshold 0 + fallback) |
+| 1.69 | 2026-06-08 | A9 → v2.2 Built — gimmick is now a **faux Nexorus-AI terminal** (8 boot lines + blinking cursor, ~3.7s) that plays **once** on first scroll-in; tier switches are **instant** (no re-animation) |
+| 1.70 | 2026-06-08 | A9 → v3.0 Built — **WhatsApp Response dispatch**: a button in the Counter-Noise panel opens `wa.me/‹env number›` with a pre-filled brief (topic · sentiment · reach · **penjelasan** · selected-tier plan); new pure `response-dispatch.ts` |

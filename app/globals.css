@@ -742,6 +742,41 @@
 }
 .intent-bar { animation: intent-grow 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
 
+/* Counter-Noise: AI "analysis" sequence — a soft glow, a progress bar that
+   fills as the pipeline runs, and a scanning sweep over the working panel. */
+@keyframes cn-scan {
+  from { transform: translateX(-130%); }
+  to   { transform: translateX(130%); }
+}
+@keyframes cn-fill {
+  from { width: 0%; }
+  to   { width: 100%; }
+}
+@keyframes cn-blip {
+  0%, 100% { opacity: 0.35; transform: scale(0.8); }
+  50%      { opacity: 1; transform: scale(1); }
+}
+.cn-analyzing { box-shadow: 0 0 30px -10px var(--color-primary); border-color: color-mix(in oklch, var(--color-primary) 55%, var(--color-border)); }
+.cn-analyzing::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent, color-mix(in oklch, var(--color-primary) 16%, transparent), transparent);
+  animation: cn-scan 1.1s ease-in-out infinite;
+}
+.cn-bar { animation: cn-fill 1.5s cubic-bezier(0.4, 0, 0.2, 1) both; }
+.cn-blip { animation: cn-blip 0.9s ease-in-out infinite; }
+@keyframes cn-blink { 0%, 49% { opacity: 1; } 50%, 100% { opacity: 0; } }
+.cn-cursor { animation: cn-blink 1s steps(1) infinite; }
+@keyframes cn-line-in { from { opacity: 0; transform: translateY(3px); } to { opacity: 1; transform: none; } }
+.cn-line { animation: cn-line-in 0.18s ease-out both; }
+@media (prefers-reduced-motion: reduce) {
+  .cn-analyzing::after { animation: none; }
+  .cn-bar { animation: none; width: 100%; }
+  .cn-blip, .cn-cursor, .cn-line { animation: none; }
+}
+
 /* Skeleton loader: a soft gradient sweep for topic lists awaiting the feed. */
 @keyframes skeleton-sweep {
   from { background-position: 200% 0; }
