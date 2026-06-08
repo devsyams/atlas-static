@@ -32,4 +32,24 @@ describe("SentimentSummary (A8 v2.0 / AC3)", () => {
     render(<SentimentSummary percentage={{ positive: 0, negative: 0, neutral: 0 }} totalImpressions={0} totalReach={0} />);
     expect(screen.getByTestId("sentiment-summary")).toBeInTheDocument();
   });
+
+  it("shows a Key Drivers block naming the loudest negative & positive topics (v2.2)", () => {
+    render(
+      <SentimentSummary
+        percentage={PCT}
+        totalImpressions={2484080}
+        totalReach={1656053}
+        drivers={{ negative: { title: "Antrean BBM langka", reach: 8_900_000 }, positive: { title: "Laba naik", reach: 5_000_000 } }}
+      />,
+    );
+    const drivers = screen.getByTestId("sentiment-drivers");
+    expect(drivers.textContent).toContain("Antrean BBM langka");
+    expect(screen.getByTestId("driver-negative").textContent).toContain("8.9M");
+    expect(screen.getByTestId("driver-positive").textContent).toContain("Laba naik");
+  });
+
+  it("omits the Key Drivers block when no drivers are provided", () => {
+    render(<SentimentSummary percentage={PCT} totalImpressions={1} totalReach={1} />);
+    expect(screen.queryByTestId("sentiment-drivers")).not.toBeInTheDocument();
+  });
 });

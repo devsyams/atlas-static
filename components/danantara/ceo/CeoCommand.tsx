@@ -24,7 +24,7 @@ export function CeoCommand() {
   const [bumn, setBumn] = useState<BumnSentiment[]>([]); // BUMN board rows
   const [bumnIssues, setBumnIssues] = useState<CeoIssue[]>([]); // per-BUMN topics
   const [issuesLive, setIssuesLive] = useState<Live>("loading");
-  const [, setBumnLive] = useState<Live>("loading");
+  const [bumnLive, setBumnLive] = useState<Live>("loading");
   const [refreshing, setRefreshing] = useState(false);
   const [detail, setDetail] = useState<DetailSelection | null>(null);
   const mountedRef = useRef(true);
@@ -102,10 +102,15 @@ export function CeoCommand() {
       <div data-testid="ceo-wall" className="grid min-h-0 flex-1 grid-cols-1 gap-3 xl:grid-cols-2">
         {/* Phone order matches AC7: header → ticker → issues → BUMN. */}
         <div className="min-h-0">
-          <IssueBoard issues={issues} onSelect={(id) => setDetail({ type: "issue", id })} />
+          <IssueBoard issues={issues} loading={issuesLive === "loading"} onSelect={(id) => setDetail({ type: "issue", id })} />
         </div>
         <div className="min-h-0">
-          <BumnHeatboard rows={rankedBumn} issues={bumnIssues} onSelectTopic={(id) => setDetail({ type: "issue", id })} />
+          <BumnHeatboard
+            rows={rankedBumn}
+            issues={bumnIssues}
+            loading={bumnLive === "loading"}
+            onSelectTopic={(id) => setDetail({ type: "issue", id })}
+          />
         </div>
       </div>
 

@@ -35,8 +35,8 @@
 | **A4** | AI assistant — copilot chat | 3-act | S5 | E7 | 1.0 | Planned |
 | **A5** | AI assistant — briefing, forecast & per-widget ask | 3-act | S5 | E7 | 1.0 | Planned |
 | **A6** | Real-time ticker, alerts & War Room | 3-act | S5–S6 | E8 | 1.0 | Planned |
-| **A7** | Danantara CEO Command Wall (zero-click demo) | 3-act | demo | — | 40.1 | Built |
-| **A8** | Per-BUMN CEO sentiment dashboards | 3-act | demo | — | 3.3 | Built |
+| **A7** | Danantara CEO Command Wall (zero-click demo) | 3-act | demo | — | 40.2 | Built |
+| **A8** | Per-BUMN CEO sentiment dashboards | 3-act | demo | — | 3.8 | Built |
 
 **Totals:** 25 features · 7 platform · 5 watch · 5 understand · 8 act.
 
@@ -108,3 +108,8 @@
 | 1.51 | 2026-06-08 | A7 → v39.0 Built (topic detail redesigned as a sentiment-driven brief — hero verdict, stat tiles, AI-analysis card) |
 | 1.52 | 2026-06-08 | A7 → v40.0 Built (BUMN board: topic cell → single topic detail; logo → /bumn/<slug> dashboard; topic detail gains an Open-dashboard button) |
 | 1.53 | 2026-06-08 | Fix: client-side nav to /bumn/<slug> (and /danantara) loaded no data until a hard refresh — the mountedRef guard was never reset on remount, so the fetch result was discarded. A8 → v3.3, A7 → v40.1 |
+| 1.54 | 2026-06-08 | A8 → v3.4 Built (BUMN dashboard: impressions/reach promoted from grey footnote to bold KPI tiles in a hero band right of the sentiment verdict) |
+| 1.55 | 2026-06-08 | A8 → v3.5 Built (Intent Share donut → ranked share-of-voice bar leaderboard: `IntentPie` renamed `IntentShare`, bars sorted by share + scaled to the leader, impressions + % per row) |
+| 1.56 | 2026-06-08 | A8 → v3.6 Built (Sentiment Summary gains a Key Drivers block — loudest negative + positive topic by reach — filling the panel's blank area below the legend) |
+| 1.57 | 2026-06-08 | A8 → v3.7 Built (BUMN logo added to the dashboard header, left of the BUMN name; shared `BumnLogo` extracted with monogram fallback) |
+| 1.58 | 2026-06-08 | A7 → v40.2, A8 → v3.8 Built (shrink Danantara issue title 24→20px; add shimmering skeleton loaders to the Danantara Issues, BUMN Sentiment, and BUMN topic lists while the feed is loading) |
