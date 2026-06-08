@@ -37,7 +37,7 @@
 | **A6** | Real-time ticker, alerts & War Room | 3-act | S5–S6 | E8 | 1.0 | Planned |
 | **A7** | Danantara CEO Command Wall (zero-click demo) | 3-act | demo | — | 41.3 | Built |
 | **A8** | Per-BUMN CEO sentiment dashboards | 3-act | demo | — | 3.9 | Built |
-| **A9** | Counter-Noise — Response Calculator | 3-act | demo | — | 3.0 | Built |
+| **A9** | Communication Response Calculator | 3-act | demo | — | 3.1 | Built |
 
 **Totals:** 25 features · 7 platform · 5 watch · 5 understand · 8 act.
 
@@ -126,3 +126,4 @@
 | 1.68 | 2026-06-08 | A9 → v2.1 Built — rework the gimmick into a **Nexorus AI analysis pipeline** (Fetching → Analyzing → Modeling → Synthesizing, progress bar + scan + shimmer, then count-up reveal); fixed the scroll trigger (IO threshold 0 + fallback) |
 | 1.69 | 2026-06-08 | A9 → v2.2 Built — gimmick is now a **faux Nexorus-AI terminal** (8 boot lines + blinking cursor, ~3.7s) that plays **once** on first scroll-in; tier switches are **instant** (no re-animation) |
 | 1.70 | 2026-06-08 | A9 → v3.0 Built — **WhatsApp Response dispatch**: a button in the Counter-Noise panel opens `wa.me/‹env number›` with a pre-filled brief (topic · sentiment · reach · **penjelasan** · selected-tier plan); new pure `response-dispatch.ts` |
+| 1.71 | 2026-06-08 | A9 → v3.1 Built — rename the panel/feature to **"Communication Response Calculator"** (UI label + WhatsApp brief; internal `counter-noise` names kept) |

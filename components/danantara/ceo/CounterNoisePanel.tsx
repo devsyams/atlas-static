@@ -108,13 +108,13 @@ export function CounterNoisePanel({ issue }: { issue: Topic }) {
 
   // The terminal boot lines (baseline interpolated). First line is the command.
   const lines = [
-    "nexorus-ai analyze --topic danantara --mode counter-noise",
+    "nexorus-ai analyze --topic danantara --mode comms-response",
     "establishing secure feed · garudaperkasa.io",
     "fetching negative-signal cluster",
     `parsing anti-client posts … ${baseline.toLocaleString("en-US")} flagged`,
     "analyzing narrative & sentiment vectors",
     "cross-referencing channel reach · kol/clipper/homeless",
-    "modeling counter-noise propagation",
+    "modeling communication-response spread",
     "synthesizing response matrix",
   ];
 
@@ -158,7 +158,7 @@ export function CounterNoisePanel({ issue }: { issue: Topic }) {
     >
       <div className="flex flex-wrap items-center gap-2">
         <div className="flex items-center gap-1.5 text-base font-bold uppercase tracking-[0.18em] text-primary">
-          <Calculator className="h-4 w-4" /> Counter-Noise · Response Calculator
+          <Calculator className="h-4 w-4" /> Communication Response Calculator
         </div>
         <div className="ml-auto flex rounded-lg border border-border/60 bg-background/40 p-0.5">
           {TIERS.map((t) => (
@@ -231,7 +231,7 @@ export function CounterNoisePanel({ issue }: { issue: Topic }) {
             <span className="h-2.5 w-2.5 rounded-full bg-destructive/70" />
             <span className="h-2.5 w-2.5 rounded-full bg-warning/70" />
             <span className="h-2.5 w-2.5 rounded-full bg-success/70" />
-            <span className="ml-2 text-base text-muted-foreground">nexorus-ai — counter-noise</span>
+            <span className="ml-2 text-base text-muted-foreground">nexorus-ai — comms-response</span>
           </div>
           <div className="min-h-[11rem] space-y-1 px-3 py-2.5 text-base leading-relaxed">
             {lines.slice(0, lineIdx).map((line, i) => {

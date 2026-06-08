@@ -49,7 +49,7 @@ export function buildResponseBrief(topic: ResponseTopic, plan: CounterNoisePlan)
   if (topic.aiLine) lines.push("", `Nexorus AI: ${topic.aiLine}`);
   lines.push(
     "",
-    `Counter-Noise plan (${TIER_LABEL[plan.tier]}):`,
+    `Communication Response plan (${TIER_LABEL[plan.tier]}):`,
     `• Clipper clips: ${plan.clipper.toLocaleString("en-US")}`,
     `• KOL posts: ${plan.kol.toLocaleString("en-US")}`,
     `• Homeless posts: ${plan.homeless.toLocaleString("en-US")}`,
