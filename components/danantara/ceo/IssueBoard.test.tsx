@@ -61,10 +61,30 @@ describe("IssueBoard grouped by sentiment (T12 / AC12 v9.0)", () => {
     ]);
   });
 
-  it("keeps a mini sentiment pie on every row and no panel-level pie", () => {
+  it("shows a segmented sentiment bar per row instead of a pie (v41.0)", () => {
     render(<IssueBoard issues={issues} />);
-    expect(screen.getAllByTestId("sentiment-pie-mini")).toHaveLength(issues.length);
+    // The mini-pie is gone; each card carries a segmented sentiment bar.
+    expect(screen.queryAllByTestId("sentiment-pie-mini")).toHaveLength(0);
     expect(screen.queryByTestId("sentiment-pie")).not.toBeInTheDocument();
+    expect(screen.getAllByTestId("sentiment-bar")).toHaveLength(issues.length);
+  });
+
+  it("renders the BUMN-Sentiment-Summary layout per card: metrics row + bar + per-sentiment values (v41.2)", () => {
+    render(
+      <IssueBoard
+        issues={[makeIssue({ id: "x", title: "Topik uji", aiLine: "Penjelasan singkat.", mentions: 1000, posMentions: 200, negMentions: 600, reach: 9_000_000 })]}
+      />,
+    );
+    const card = screen.getByTestId("issue-row-x");
+    // Penjelasan + a Sentiment·Impressions·Reach metrics row.
+    expect(card.textContent).toContain("Penjelasan singkat.");
+    expect(card.textContent).toContain("impressions");
+    expect(card.textContent).toContain("reach");
+    // The "value of each sentiment" legend names all three shares.
+    const legend = card.querySelector("[data-testid='sentiment-legend']") as HTMLElement;
+    expect(legend.textContent).toContain("Positive 20%");
+    expect(legend.textContent).toContain("Neutral 20%");
+    expect(legend.textContent).toContain("Negative 60%");
   });
 
   it("renders no per-row sparkline (AC2 v7.0)", () => {
@@ -80,7 +100,7 @@ describe("IssueBoard grouped by sentiment (T12 / AC12 v9.0)", () => {
     );
     const ctx = screen.getByTestId("issue-ailine");
     expect(ctx.textContent).toContain("Konteks singkat soal topik ini.");
-    // Smaller than the 20px title, but not below the 16px readability floor (AC15).
+    // Smaller than the 18px title, but not below the 16px readability floor (AC15).
     expect(ctx.className).toContain("text-base");
     expect(ctx.className).toContain("text-muted-foreground");
     expect(ctx.className).toContain("line-clamp-2");
@@ -108,10 +128,10 @@ describe("IssueBoard grouped by sentiment (T12 / AC12 v9.0)", () => {
     expect(screen.getByTestId("issue-group-negative")).toBeInTheDocument();
   });
 
-  it("renders the topic title smaller than before but at/above the 16px floor (text-xl = 20px)", () => {
+  it("renders the topic title compact for the side-by-side columns, at/above the 16px floor (text-lg = 18px)", () => {
     render(<IssueBoard issues={issues} />);
     const title = screen.getAllByTestId("issue-title")[0];
-    expect(title.className).toContain("text-xl");
+    expect(title.className).toContain("text-lg");
     expect(title.className).not.toContain("text-2xl");
   });
 

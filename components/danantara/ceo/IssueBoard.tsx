@@ -1,71 +1,90 @@
 "use client";
 
-import { Flame, ThumbsDown, ThumbsUp } from "lucide-react";
+import { type CSSProperties } from "react";
+import { BarChart3, Eye, Flame, ThumbsDown, ThumbsUp } from "lucide-react";
 import { groupIssuesBySentiment } from "@/lib/danantara/ceo/engine";
-import { fmtCount, pieTotals, sentimentTint } from "@/lib/danantara/ceo/format";
-import { RankBadge } from "./RankBadge";
-import { SentimentPie } from "./SentimentPie";
+import { fmtCount } from "@/lib/danantara/ceo/format";
 import type { CeoIssue } from "@/lib/danantara/ceo/types";
+import { SentimentBreakdown, TONE, readSentiment } from "./SentimentBreakdown";
 
 const STATUS_BADGE: Record<CeoIssue["status"], { label: string; cls: string }> = {
   normal: { label: "", cls: "" },
-  rising: { label: "RISING", cls: "bg-warning/15 text-warning border-warning/40" },
-  escalating: { label: "ESCALATING", cls: "bg-destructive/15 text-destructive border-destructive/50 ceo-siren" },
+  rising: { label: "RISING", cls: "border-warning/40 bg-warning/15 text-warning" },
+  escalating: { label: "ESCALATING", cls: "border-destructive/50 bg-destructive/15 text-destructive ceo-siren" },
 };
 
 /**
- * One topic row (AC12/AC14 v14.0): rank + full title on the left (title wraps,
- * never truncates) with a muted AI context line beneath it (sneak peek, 2-line
- * clamp, v18.0), and the sentiment pie stacked over the reach value on the right.
+ * One Danantara topic, rendered as a compact **issue-briefing card** (v41.2)
+ * mirroring the BUMN Sentiment Summary: a glowing tone spine + editorial rank
+ * numeral, the full title, the `penjelasan` (aiLine), a metrics row
+ * (Sentiment · Impressions · Reach), the sentiment **breakdown bar** (no pie),
+ * and the **value of each sentiment** below it. Tuned to read cleanly inside the
+ * side-by-side Negative/Positive columns for a 40–60 y/o exec. Lifts/glows on
+ * hover; staggers in on load. Clicking opens the topic detail.
  */
-function IssueRow({ issue, rank, onSelect }: { issue: CeoIssue; rank: number; onSelect?: (id: string) => void }) {
-  const badge = STATUS_BADGE[issue.status];
+function IssueCard({ issue, rank, onSelect }: { issue: CeoIssue; rank: number; onSelect?: (id: string) => void }) {
+  const { key, share } = readSentiment(issue);
+  const t = TONE[key];
+  const { Icon } = t;
+  const status = STATUS_BADGE[issue.status];
+
   return (
-    <li
-      data-testid={`issue-row-${issue.id}`}
-      className={`border-b border-border/40 last:border-b-0 ${issue.status === "escalating" ? "ceo-flash" : ""}`}
-      style={{ backgroundColor: sentimentTint(issue.sentiment) }}
-    >
+    <li data-testid={`issue-row-${issue.id}`} className="topic-rise" style={{ animationDelay: `${(rank - 1) * 55}ms` } as CSSProperties}>
       <button
         type="button"
         data-testid={`btn-issue-row-${issue.id}`}
         onClick={() => onSelect?.(issue.id)}
-        className="ceo-row flex w-full cursor-pointer items-start gap-2.5 px-3 py-2.5 text-left hover:bg-card/40"
+        className="topic-card panel block w-full cursor-pointer overflow-hidden p-0 text-left"
+        style={{ "--tone": t.tone } as CSSProperties}
       >
-        {/* Rank number + movement badge. */}
-        <div className="flex w-9 shrink-0 flex-col items-end gap-0.5 pt-0.5">
-          <span className="font-mono text-xl tabular-nums text-muted-foreground">{rank}.</span>
-          <RankBadge delta={issue.rankDelta} />
-        </div>
-        {/* Left: full title + status badge, with a muted AI context line beneath (AC12 v18.0). */}
-        <div className="min-w-0 flex-1 pt-0.5">
-          <div className="flex items-start gap-2">
-            <span data-testid="issue-title" className="text-xl font-semibold leading-snug text-balance">{issue.title}</span>
-            {badge.label && (
-              <span className={`mt-0.5 shrink-0 rounded border px-1.5 py-px text-base font-bold tracking-wider ${badge.cls}`}>
-                {badge.label}
-              </span>
+        <span className="topic-spine" aria-hidden />
+        <div className="topic-card-bg grid grid-cols-[1.75rem_1fr] gap-x-2.5 p-3 pl-4">
+          <div className="topic-rank pt-0.5 font-mono text-2xl font-extrabold sm:text-3xl">{String(rank).padStart(2, "0")}</div>
+
+          <div className="min-w-0">
+            {/* Title. */}
+            <div className="flex items-start gap-2">
+              <h3 data-testid="issue-title" className="min-w-0 flex-1 text-lg font-semibold leading-snug text-balance text-foreground">
+                {issue.title}
+              </h3>
+              {status.label && (
+                <span className={`shrink-0 rounded border px-1.5 py-0.5 text-base font-bold tracking-wider ${status.cls}`}>{status.label}</span>
+              )}
+            </div>
+
+            {/* Penjelasan. */}
+            {issue.aiLine && (
+              <p data-testid="issue-ailine" className="mt-1 line-clamp-2 text-base font-normal leading-snug text-muted-foreground">
+                {issue.aiLine}
+              </p>
             )}
+
+            {/* Metrics row — Sentiment · Impressions · Reach (mirrors the BUMN Sentiment Summary).
+                The verdict here is the qualitative tone; the exact %s live once in the legend below. */}
+            <div className="mt-2.5 flex flex-wrap items-center gap-x-4 gap-y-1.5 border-t border-border/40 pt-2.5 text-base">
+              <span className={`flex items-center gap-1.5 font-bold ${t.text}`} title="Dominant public sentiment">
+                <Icon className="h-5 w-5 shrink-0" /> {t.label}
+              </span>
+              <span className="flex items-center gap-1.5 text-muted-foreground" title="Total impressions">
+                <BarChart3 className="h-4 w-4 shrink-0 text-primary/70" />
+                <span className="font-bold tabular-nums text-foreground">{fmtCount(issue.mentions)}</span> impressions
+              </span>
+              <span className="flex items-center gap-1.5 text-muted-foreground" title="Users reached">
+                <Eye className="h-4 w-4 shrink-0 text-primary/70" />
+                <span className="font-bold tabular-nums text-foreground">{fmtCount(issue.reach)}</span> reach
+              </span>
+            </div>
+
+            {/* Sentiment breakdown bar + value of each sentiment (shared component). */}
+            <SentimentBreakdown share={share} size="sm" className="mt-2.5" />
           </div>
-          {issue.aiLine && (
-            <p data-testid="issue-ailine" className="mt-1 line-clamp-2 text-base font-normal leading-snug text-muted-foreground">
-              {issue.aiLine}
-            </p>
-          )}
-        </div>
-        {/* Right: sentiment pie stacked over the reach value (AC14 v14.0). */}
-        <div className="flex shrink-0 flex-col items-end gap-1 pt-0.5">
-          <SentimentPie totals={pieTotals(issue)} variant="mini" />
-          <span className="text-base tabular-nums text-muted-foreground">
-            {fmtCount(issue.reach)} reach
-          </span>
         </div>
       </button>
     </li>
   );
 }
 
-function IssueGroup({
+function IssueSection({
   variant,
   issues,
   onSelect,
@@ -84,19 +103,15 @@ function IssueGroup({
         }`}
       >
         <Icon className="h-4 w-4" />
-        <span className="text-lg font-bold tracking-[0.18em]">
-          {positive ? "POSITIVE TOPICS" : "NEGATIVE TOPICS"}
-        </span>
+        <span className="text-lg font-bold tracking-[0.18em]">{positive ? "POSITIVE TOPICS" : "NEGATIVE TOPICS"}</span>
         <span className="font-mono text-lg tabular-nums">({issues.length})</span>
       </div>
       {issues.length === 0 ? (
-        <p className="px-3 py-3 text-base text-muted-foreground">
-          No {positive ? "positive" : "negative"} topics right now.
-        </p>
+        <p className="px-3 py-3 text-base text-muted-foreground">No {positive ? "positive" : "negative"} topics right now.</p>
       ) : (
-        <ol>
+        <ol className="space-y-2.5 p-2">
           {issues.map((issue, idx) => (
-            <IssueRow key={issue.id} issue={issue} rank={idx + 1} onSelect={onSelect} />
+            <IssueCard key={issue.id} issue={issue} rank={idx + 1} onSelect={onSelect} />
           ))}
         </ol>
       )}
@@ -104,21 +119,23 @@ function IssueGroup({
   );
 }
 
-/** A shimmering placeholder row, matching IssueRow's shape, shown while the feed loads. */
-function IssueSkeletonRow() {
+/** A shimmering placeholder card while the feed loads. */
+function IssueSkeletonCard() {
   return (
-    <li className="flex items-start gap-2.5 border-b border-border/40 px-3 py-2.5 last:border-b-0">
-      <div className="skeleton mt-0.5 h-5 w-6 shrink-0" />
-      <div className="min-w-0 flex-1 space-y-2 pt-0.5">
-        <div className="skeleton h-5 w-[85%]" />
-        <div className="skeleton h-4 w-[55%]" />
+    <li className="panel overflow-hidden p-0">
+      <div className="grid grid-cols-[1.75rem_1fr] gap-x-2.5 p-3 pl-4">
+        <div className="skeleton h-7 w-7 rounded-md" />
+        <div className="space-y-2.5">
+          <div className="skeleton h-5 w-[85%]" />
+          <div className="skeleton h-4 w-[55%]" />
+          <div className="skeleton h-2 w-full rounded-full" />
+          <div className="skeleton h-4 w-2/3" />
+        </div>
       </div>
-      <div className="skeleton mt-0.5 h-10 w-10 shrink-0 rounded-full" />
     </li>
   );
 }
 
-/** One loading column: the sentiment header + a few skeleton rows. */
 function IssueSkeletonColumn({ variant }: { variant: "positive" | "negative" }) {
   const positive = variant === "positive";
   const Icon = positive ? ThumbsUp : ThumbsDown;
@@ -132,9 +149,9 @@ function IssueSkeletonColumn({ variant }: { variant: "positive" | "negative" }) 
         <Icon className="h-4 w-4" />
         <span className="text-lg font-bold tracking-[0.18em]">{positive ? "POSITIVE TOPICS" : "NEGATIVE TOPICS"}</span>
       </div>
-      <ol>
-        {Array.from({ length: 4 }, (_, i) => (
-          <IssueSkeletonRow key={i} />
+      <ol className="space-y-2.5 p-2">
+        {Array.from({ length: 3 }, (_, i) => (
+          <IssueSkeletonCard key={i} />
         ))}
       </ol>
     </section>
@@ -142,11 +159,11 @@ function IssueSkeletonColumn({ variant }: { variant: "positive" | "negative" }) 
 }
 
 /**
- * Danantara topic board (AC12 v9.0): topics grouped by dominant sentiment into a
- * POSITIVE TOPICS and a NEGATIVE TOPICS sub-column, rendered side by side, each
- * ranked by reach. Every row is a stacked card (title over a pie + velocity meta
- * line) carrying a green↔red sentiment tint and its own per-topic pie. While the
- * feed is still loading (`loading`) the columns show a shimmering skeleton.
+ * Danantara topic board (AC12 v41.0): two **side-by-side** columns — NEGATIVE
+ * topics on the left (problems lead) and POSITIVE on the right — each a stack of
+ * compact issue-briefing cards. Sentiment reads as a verdict chip + segmented
+ * bar (no tiny pie); titles get room, type is ≥16px. While the feed loads
+ * (`loading`) the columns show a shimmering skeleton.
  */
 export function IssueBoard({
   issues,
@@ -168,20 +185,17 @@ export function IssueBoard({
           {loading ? "Loading…" : `${issues.length} topics · negative vs positive`}
         </span>
       </div>
-      <div
-        data-testid="issue-groups"
-        className="grid min-h-0 flex-1 grid-cols-2 items-start gap-x-1.5 overflow-y-auto"
-      >
+      <div data-testid="issue-groups" className="grid min-h-0 flex-1 grid-cols-2 items-start gap-x-2 overflow-y-auto">
         {loading ? (
           <>
-            {/* Negative on the left (client/boss direction) — problems lead. */}
             <IssueSkeletonColumn variant="negative" />
             <IssueSkeletonColumn variant="positive" />
           </>
         ) : (
           <>
-            <IssueGroup variant="negative" issues={negative} onSelect={onSelect} />
-            <IssueGroup variant="positive" issues={positive} onSelect={onSelect} />
+            {/* Negative on the left (client/boss direction) — problems lead. */}
+            <IssueSection variant="negative" issues={negative} onSelect={onSelect} />
+            <IssueSection variant="positive" issues={positive} onSelect={onSelect} />
           </>
         )}
       </div>

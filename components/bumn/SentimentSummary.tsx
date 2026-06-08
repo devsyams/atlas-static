@@ -1,5 +1,6 @@
-import { BarChart3, Eye, Minus, ThumbsDown, ThumbsUp } from "lucide-react";
+import { BarChart3, Eye } from "lucide-react";
 import { fmtCount } from "@/lib/danantara/ceo/format";
+import { SentimentBreakdown, TONE, type ToneKey } from "@/components/danantara/ceo/SentimentBreakdown";
 
 interface Pct {
   positive: number;
@@ -7,24 +8,16 @@ interface Pct {
   neutral: number;
 }
 
-type Tone = "positive" | "negative" | "neutral";
-
-const TONE = {
-  positive: { label: "Positive", text: "text-success", bar: "bg-success", soft: "border-success/40 bg-success/10", Icon: ThumbsUp },
-  neutral: { label: "Neutral", text: "text-muted-foreground", bar: "bg-muted-foreground/45", soft: "border-border bg-muted/10", Icon: Minus },
-  negative: { label: "Negative", text: "text-destructive", bar: "bg-destructive", soft: "border-destructive/40 bg-destructive/10", Icon: ThumbsDown },
-} as const;
-
 export interface Driver {
   title: string;
   reach: number;
 }
 
 /**
- * Sentiment summary (A8 v2.2) — a CEO-glanceable read that replaces the 3-slice
+ * Sentiment summary (A8 v2.3) — a CEO-glanceable read that replaces the 3-slice
  * donut: a hero band pairing the dominant-sentiment verdict with the feed's
- * total impressions/reach as bold KPI tiles (scale reads next to feeling), a
- * segmented bar + legend, then a **Key Drivers** block naming the loudest
+ * total impressions/reach as bold KPI tiles (scale reads next to feeling), the
+ * shared `SentimentBreakdown` bar + legend, then a **Key Drivers** block naming the loudest
  * negative and positive topic — the "why" behind the verdict. Readable type for
  * 40–60 y/o (≥16px).
  */
@@ -39,7 +32,7 @@ export function SentimentSummary({
   totalReach: number;
   drivers?: { negative?: Driver; positive?: Driver };
 }) {
-  const rows: { tone: Tone; pct: number }[] = [
+  const rows: { tone: ToneKey; pct: number }[] = [
     { tone: "positive", pct: percentage.positive },
     { tone: "neutral", pct: percentage.neutral },
     { tone: "negative", pct: percentage.negative },
@@ -68,24 +61,11 @@ export function SentimentSummary({
         </div>
       </div>
 
-      {/* Segmented bar. */}
-      <div className="flex h-5 w-full overflow-hidden rounded-full bg-muted/30">
-        {rows.map((r) => (
-          <span key={r.tone} className={`h-full ${TONE[r.tone].bar}`} style={{ width: `${r.pct}%` }} />
-        ))}
-      </div>
-
-      {/* Legend. */}
-      <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-lg">
-        {rows.map((r) => {
-          const t = TONE[r.tone];
-          return (
-            <span key={r.tone} className={`flex items-center gap-1.5 font-semibold tabular-nums ${t.text}`}>
-              <span className={`h-3 w-3 rounded-full ${t.bar}`} /> {t.label} {Math.round(r.pct)}%
-            </span>
-          );
-        })}
-      </div>
+      {/* Segmented bar + legend (shared with the Danantara issue cards). */}
+      <SentimentBreakdown
+        share={{ positive: percentage.positive, neutral: percentage.neutral, negative: percentage.negative }}
+        size="md"
+      />
 
       {/* Key drivers — the loudest story behind the verdict (the "why"). */}
       {(drivers?.negative || drivers?.positive) && (

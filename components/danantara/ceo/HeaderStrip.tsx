@@ -1,6 +1,7 @@
 "use client";
 
-import { Landmark, Radio, RotateCw } from "lucide-react";
+import Image from "next/image";
+import { Radio, RotateCw } from "lucide-react";
 import { useEffect, useState } from "react";
 import type { CeoState } from "@/lib/danantara/ceo/types";
 
@@ -34,8 +35,10 @@ export function HeaderStrip({
 
   return (
     <div data-testid="ceo-header" className="panel flex flex-wrap items-center gap-x-6 gap-y-2 px-4 py-3">
-      <div className="flex items-center gap-2.5">
-        <Landmark className="h-7 w-7 text-primary" />
+      <div className="flex items-center gap-3">
+        <span className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-white/95 p-1 shadow-sm">
+          <Image src="/danantara.png" alt="Danantara" width={36} height={36} priority className="h-full w-full object-contain" />
+        </span>
         <div>
           <div className="text-xl font-semibold leading-tight">Danantara — CEO Command</div>
           <div className="text-base uppercase tracking-[0.2em] text-muted-foreground">Media Intelligence &amp; BUMN Sentiment</div>
