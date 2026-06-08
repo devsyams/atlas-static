@@ -177,7 +177,7 @@ export function IssueBoard({
   const { positive, negative } = groupIssuesBySentiment(issues);
 
   return (
-    <div data-testid="ceo-issues" className="panel flex h-full flex-col overflow-hidden">
+    <div data-testid="ceo-issues" className="panel flex flex-col overflow-hidden xl:h-full">
       <div className="flex items-center gap-2 border-b border-border px-3 py-2.5">
         <Flame className="h-5 w-5 text-primary" />
         <span className="text-xl font-semibold uppercase tracking-[0.18em]">Danantara Issues</span>
@@ -185,7 +185,7 @@ export function IssueBoard({
           {loading ? "Loading…" : `${issues.length} topics · negative vs positive`}
         </span>
       </div>
-      <div data-testid="issue-groups" className="grid min-h-0 flex-1 grid-cols-2 items-start gap-x-2 overflow-y-auto">
+      <div data-testid="issue-groups" className="grid min-h-0 flex-1 grid-cols-1 items-start gap-2 overflow-y-auto sm:grid-cols-2 sm:gap-x-2">
         {loading ? (
           <>
             <IssueSkeletonColumn variant="negative" />

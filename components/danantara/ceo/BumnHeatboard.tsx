@@ -10,7 +10,9 @@ import { RankBadge } from "./RankBadge";
 import { SentimentPie } from "./SentimentPie";
 import type { BumnSentiment, CeoIssue } from "@/lib/danantara/ceo/types";
 
-const GRID = "grid-cols-[5rem_1fr_1fr]";
+// Full literal (incl. the `sm:` variant) so Tailwind's JIT detects the arbitrary value.
+// Mobile: single column (identity, then both topic cells stacked); sm+: 3-col row.
+const GRID = "grid-cols-1 sm:grid-cols-[5rem_1fr_1fr]";
 
 /** Stable monogram background from the sector key (logo fallback). */
 function monogramColor(key: string): string {
@@ -122,7 +124,7 @@ function BumnRow({
   return (
     <li
       data-testid={`bumn-tile-${row.id}`}
-      className={`grid ${GRID} items-stretch gap-2.5 border-b border-border/40 px-3 py-2.5 last:border-b-0`}
+      className={`grid ${GRID} gap-2.5 border-b border-border/40 px-3 py-2.5 last:border-b-0 sm:items-stretch`}
       style={{ backgroundColor: sentimentTint(row.sentiment) }}
     >
       {/* Identity → the BUMN's own dashboard. Click the logo to open it. */}
@@ -130,7 +132,7 @@ function BumnRow({
         href={`/bumn/${row.id}`}
         data-testid={`btn-bumn-tile-${row.id}`}
         title={`Open ${row.name} dashboard`}
-        className="flex flex-col items-center gap-1 rounded-md pt-0.5 text-center transition-colors hover:bg-card/50"
+        className="flex flex-row items-center justify-center gap-2 rounded-md pt-0.5 text-center transition-colors hover:bg-card/50 sm:flex-col sm:gap-1"
       >
         <span className="relative inline-block">
           <BumnLogo row={row} />
@@ -156,7 +158,7 @@ function BumnRow({
 /** A shimmering placeholder row, matching BumnRow's grid, shown while the board loads. */
 function BumnSkeletonRow() {
   return (
-    <li className={`grid ${GRID} items-stretch gap-2.5 border-b border-border/40 px-3 py-2.5 last:border-b-0`}>
+    <li className={`grid ${GRID} gap-2.5 border-b border-border/40 px-3 py-2.5 last:border-b-0 sm:items-stretch`}>
       <div className="flex flex-col items-center gap-1.5 pt-0.5">
         <div className="skeleton h-9 w-9 rounded-md" />
         <div className="skeleton h-4 w-12" />
@@ -194,7 +196,7 @@ export function BumnHeatboard({
   onSelectTopic?: (id: string) => void;
 }) {
   return (
-    <div data-testid="ceo-bumn" className="panel flex h-full flex-col overflow-hidden">
+    <div data-testid="ceo-bumn" className="panel flex flex-col overflow-hidden xl:h-full">
       <div className="flex items-center gap-2 border-b border-border px-3 py-2.5">
         <Building2 className="h-5 w-5 text-primary" />
         <span className="text-xl font-semibold uppercase tracking-[0.18em]">BUMN Sentiment</span>
@@ -202,8 +204,8 @@ export function BumnHeatboard({
           {loading ? "Loading…" : `${rows.length} BUMN · negative & positive topic`}
         </span>
       </div>
-      {/* Column legend. */}
-      <div className={`grid ${GRID} items-center gap-2.5 border-b border-border/60 bg-card px-3 py-1.5 text-base font-bold tracking-[0.14em] text-muted-foreground`}>
+      {/* Column legend — hidden on phones (the cells carry their own tone). */}
+      <div className={`hidden ${GRID} gap-2.5 border-b border-border/60 bg-card px-3 py-1.5 text-base font-bold tracking-[0.14em] text-muted-foreground sm:grid sm:items-center`}>
         <span className="text-center">BUMN</span>
         <span className="flex items-center gap-1.5 text-destructive">
           <ThumbsDown className="h-4 w-4 shrink-0" /> NEGATIVE TOPICS

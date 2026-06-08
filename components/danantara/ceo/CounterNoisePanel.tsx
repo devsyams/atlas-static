@@ -197,7 +197,7 @@ export function CounterNoisePanel({ issue }: { issue: Topic }) {
                 className="flex flex-col items-center rounded-lg border border-border/60 bg-card/40 px-2 py-3 text-center"
               >
                 <Icon className="h-5 w-5 shrink-0 text-primary/80" />
-                <div className="mt-1.5 font-mono text-3xl font-extrabold tabular-nums text-foreground sm:text-4xl">
+                <div className="mt-1.5 font-mono text-2xl font-extrabold tabular-nums text-foreground sm:text-4xl">
                   {(revealing && !tierTouched ? animated[key] : planValue[key]).toLocaleString("en-US")}
                 </div>
                 <div className="mt-0.5 text-base leading-tight text-muted-foreground">
