@@ -1,6 +1,6 @@
 "use client";
 
-import { Flame, TrendingDown, TrendingUp } from "lucide-react";
+import { Flame, ThumbsDown, ThumbsUp } from "lucide-react";
 import { groupIssuesBySentiment } from "@/lib/danantara/ceo/engine";
 import { fmtCount, pieTotals, sentimentTint } from "@/lib/danantara/ceo/format";
 import { RankBadge } from "./RankBadge";
@@ -75,7 +75,7 @@ function IssueGroup({
   onSelect?: (id: string) => void;
 }) {
   const positive = variant === "positive";
-  const Icon = positive ? TrendingUp : TrendingDown;
+  const Icon = positive ? ThumbsUp : ThumbsDown;
   return (
     <section data-testid={`issue-group-${variant}`}>
       <div
@@ -121,7 +121,7 @@ function IssueSkeletonRow() {
 /** One loading column: the sentiment header + a few skeleton rows. */
 function IssueSkeletonColumn({ variant }: { variant: "positive" | "negative" }) {
   const positive = variant === "positive";
-  const Icon = positive ? TrendingUp : TrendingDown;
+  const Icon = positive ? ThumbsUp : ThumbsDown;
   return (
     <section data-testid={`issue-skeleton-${variant}`} aria-busy>
       <div
