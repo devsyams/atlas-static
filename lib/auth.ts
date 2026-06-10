@@ -78,7 +78,13 @@ export function scopeAllowsPath(scope: Scope, pathname: string): boolean {
   const slug = bumnSlug(scope);
   if (slug) {
     // A BUMN CEO only ever sees their own dashboard — not the index, not others.
-    return pathname === `/bumn/${slug}` || pathname.startsWith(`/bumn/${slug}/`);
+    // Both layout options are theirs: /bumn/<slug> (v1) and /bumn-v2/<slug> (v2).
+    return (
+      pathname === `/bumn/${slug}` ||
+      pathname.startsWith(`/bumn/${slug}/`) ||
+      pathname === `/bumn-v2/${slug}` ||
+      pathname.startsWith(`/bumn-v2/${slug}/`)
+    );
   }
   return false;
 }

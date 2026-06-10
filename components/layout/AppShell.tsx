@@ -24,6 +24,7 @@ import {
   LogOut,
   TrafficCone,
   Landmark,
+  Building2,
 } from "lucide-react";
 import { Dropdown } from "@/components/ui/Dropdown";
 import { NexorusCopilot } from "@/components/ai/NexorusCopilot";
@@ -41,6 +42,8 @@ const NAV: NavItem[] = [
   { to: "/jasamarga", label: "JasaMarga Ops Command", icon: TrafficCone, group: "Dashboards" },
   { to: "/danantara-v2", label: "Danantara CEO Command (v1)", icon: Landmark, group: "Dashboards" },
   { to: "/danantara", label: "Danantara CEO Command (v2)", icon: Landmark, group: "Dashboards" },
+  { to: "/bumn", label: "BUMN Dashboards (v1)", icon: Building2, group: "Dashboards" },
+  { to: "/bumn-v2", label: "BUMN Dashboards (v2)", icon: Building2, group: "Dashboards" },
 
   { to: "/", label: "Command Center", icon: LayoutDashboard, group: "Operations" },
   { to: "/", label: "Presentation Workspace", icon: Presentation, group: "Operations" },

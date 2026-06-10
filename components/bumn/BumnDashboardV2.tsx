@@ -2,12 +2,13 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Radio, RotateCw } from "lucide-react";
+import { TONE } from "@/components/danantara/ceo/SentimentBreakdown";
 import type { CeoIssue } from "@/lib/danantara/ceo/types";
 import type { TopicIntent, TopicsSummary } from "@/lib/danantara/ceo/topics-source";
 import { BumnLogo } from "./BumnLogo";
 import { IntentShare } from "./IntentShare";
-import { SentimentSummary } from "./SentimentSummary";
-import { TopicCard, TopicCardSkeleton, topDriver } from "./TopicCard";
+import { CLUSTER_ID, SentimentSummarySplit } from "./SentimentSummarySplit";
+import { TopicCard, TopicCardSkeleton, topDriver, topicTone } from "./TopicCard";
 
 interface Payload {
   issues?: CeoIssue[];
@@ -25,12 +26,13 @@ function hasSummary(summary: TopicsSummary | null | undefined): summary is Topic
 }
 
 /**
- * Per-BUMN CEO sentiment dashboard (A8). Reads the shared live topics feed for
- * this BUMN's code, and shows a sentiment-summary pie + an intent-share pie, then
- * a list of topics each with its own breakdown. Simple, readable (≥16px) for a
- * 40–60 y/o executive; header mirrors the shared /danantara-v2 style.
+ * Per-BUMN CEO sentiment dashboard — **option 2** (A8 v4.0 / AC10). Same data,
+ * header, and BFF call as `/bumn`'s `BumnDashboard`, but: the Sentiment Summary
+ * is split into side-by-side **Negative (left) / Positive (right)** boxes, and
+ * the topics are **clustered by dominant tone — Negative first, Positive after,
+ * Neutral trailing**. Clicking a summary box jumps to its cluster.
  */
-export function BumnDashboard({
+export function BumnDashboardV2({
   name,
   topicCode,
   slug,
@@ -86,9 +88,14 @@ export function BumnDashboard({
   const intents = data?.intent ?? [];
   const summary = data?.summary;
 
+  // Cluster the topics by dominant tone — negative first (AC10b).
+  const negatives = issues.filter((i) => topicTone(i).label === "Negative");
+  const positives = issues.filter((i) => topicTone(i).label === "Positive");
+  const neutrals = issues.filter((i) => topicTone(i).label === "Neutral");
+
   return (
     <div className="space-y-5">
-      {/* Header — shared /danantara-v2 style. */}
+      {/* Header — identical to the /bumn option. */}
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="flex items-center gap-4">
           {slug && <BumnLogo slug={slug} name={name} short={short ?? name} colorKey={sector} size={56} className="self-center" />}
@@ -133,51 +140,72 @@ export function BumnDashboard({
         </div>
       ) : (
         <>
-          {/* Sentiment summary + intent share. */}
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-            <section className="panel p-4">
-              <h2 className="mb-3 text-lg font-semibold uppercase tracking-[0.14em] text-muted-foreground">Sentiment Summary</h2>
-              {hasSummary(summary) ? (
-                <SentimentSummary
-                  percentage={summary.percentage}
-                  totalImpressions={summary.total_impressions}
-                  totalReach={summary.total_reach}
-                  drivers={{
-                    negative: topDriver(issues, "Negative"),
-                    positive: topDriver(issues, "Positive"),
-                  }}
-                />
-              ) : (
-                <p className="text-base text-muted-foreground">No sentiment data in this window.</p>
-              )}
-            </section>
-            <section className="panel p-4">
-              <h2 className="mb-3 text-lg font-semibold uppercase tracking-[0.14em] text-muted-foreground">Intent Share</h2>
-              <IntentShare intents={intents} />
-            </section>
-          </div>
-
-          {/* Topics list. */}
-          <section data-testid="bumn-topics" className="space-y-3">
-            <h2 className="text-lg font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-              Topics {issues.length > 0 && <span className="font-mono">({issues.length})</span>}
-            </h2>
-            {issues.length === 0 && live === "loading" ? (
-              <div data-testid="bumn-topics-skeleton" aria-busy className="space-y-3">
-                {Array.from({ length: 4 }, (_, i) => (
-                  <TopicCardSkeleton key={i} />
-                ))}
-              </div>
-            ) : issues.length === 0 ? (
-              <div data-testid="bumn-empty" className="rounded-lg border border-border/60 bg-card/40 p-6 text-base text-muted-foreground">
-                No topics in this window.
-              </div>
+          {/* Split sentiment summary — the negative/positive kanan-kiri boxes. */}
+          <section className="panel p-4">
+            <h2 className="mb-3 text-lg font-semibold uppercase tracking-[0.14em] text-muted-foreground">Sentiment Summary</h2>
+            {hasSummary(summary) ? (
+              <SentimentSummarySplit
+                percentage={summary.percentage}
+                totalImpressions={summary.total_impressions}
+                totalReach={summary.total_reach}
+                counts={{ negative: negatives.length, positive: positives.length }}
+                drivers={{
+                  negative: topDriver(issues, "Negative"),
+                  positive: topDriver(issues, "Positive"),
+                }}
+              />
             ) : (
-              issues.map((issue, idx) => <TopicCard key={issue.id} issue={issue} rank={idx + 1} />)
+              <p className="text-base text-muted-foreground">No sentiment data in this window.</p>
             )}
           </section>
+
+          <section className="panel p-4">
+            <h2 className="mb-3 text-lg font-semibold uppercase tracking-[0.14em] text-muted-foreground">Intent Share</h2>
+            <IntentShare intents={intents} />
+          </section>
+
+          {/* Topic clusters — negative first, positive after, neutral trailing. */}
+          {issues.length === 0 && live === "loading" ? (
+            <section data-testid="bumn-topics-skeleton" aria-busy className="space-y-3">
+              {Array.from({ length: 4 }, (_, i) => (
+                <TopicCardSkeleton key={i} />
+              ))}
+            </section>
+          ) : (
+            <>
+              <TopicCluster tone="negative" issues={negatives} always />
+              <TopicCluster tone="positive" issues={positives} always />
+              <TopicCluster tone="neutral" issues={neutrals} />
+            </>
+          )}
         </>
       )}
     </div>
+  );
+}
+
+/**
+ * One tone cluster: a tinted header (icon + label + count) over the dossier
+ * cards, ranked within the cluster. With `always`, an empty cluster still
+ * renders a placeholder — so the summary boxes always have a jump target.
+ */
+function TopicCluster({ tone, issues, always = false }: { tone: "negative" | "positive" | "neutral"; issues: CeoIssue[]; always?: boolean }) {
+  if (issues.length === 0 && !always) return null;
+  const t = TONE[tone];
+  const Icon = t.Icon;
+  return (
+    <section id={CLUSTER_ID[tone]} data-testid={CLUSTER_ID[tone]} className="scroll-mt-24 space-y-3">
+      <h2 className={`flex items-center gap-2 rounded-lg border px-4 py-2.5 text-lg font-semibold uppercase tracking-[0.14em] ${t.soft} ${t.text}`}>
+        <Icon className="h-5 w-5 shrink-0" /> {t.label} Topics{" "}
+        {issues.length > 0 && <span className="font-mono">({issues.length})</span>}
+      </h2>
+      {issues.length === 0 ? (
+        <div className="rounded-lg border border-border/60 bg-card/40 p-6 text-base text-muted-foreground">
+          No {t.label.toLowerCase()} topics in this window.
+        </div>
+      ) : (
+        issues.map((issue, idx) => <TopicCard key={issue.id} issue={issue} rank={idx + 1} />)
+      )}
+    </section>
   );
 }
