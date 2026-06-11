@@ -129,25 +129,18 @@ describe("GET /api/v1/danantara/topics (T20 / AC19)", () => {
     expect(urls.at(-1)).not.toContain("danantara_evil");
   });
 
-  it("widens a 0-topic 7-day window to 28 days (T4 / AC2)", async () => {
-    let call = 0;
-    const fetchMock = vi.fn(async () => {
-      call += 1;
-      return new Response(JSON.stringify(call === 1 ? EMPTY : SAMPLE), { status: 200 });
+  it("sends no startdate/enddate upstream — its default 7-day window applies (T4 / AC2 v5.0)", async () => {
+    let calledUrl = "";
+    const fetchMock = vi.fn(async (url: string) => {
+      calledUrl = String(url);
+      return new Response(JSON.stringify(SAMPLE), { status: 200 });
     });
     vi.stubGlobal("fetch", fetchMock);
 
-    const res = await GET(reqWith("code=danantara_pln"));
-    const body = await res.json();
-    expect(fetchMock).toHaveBeenCalledTimes(2); // 7d empty → widened to 28d
-    expect(body.issues).toHaveLength(2); // the 28-day result is used
-  });
-
-  it("uses a non-empty 7-day window as-is, without widening (T4 / AC2)", async () => {
-    const fetchMock = vi.fn(async () => new Response(JSON.stringify(SAMPLE), { status: 200 }));
-    vi.stubGlobal("fetch", fetchMock);
-
     await GET(reqWith("code=danantara_pln"));
-    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock).toHaveBeenCalledTimes(1); // one window — no widening retry
+    expect(calledUrl).toContain("topic=danantara_pln");
+    expect(calledUrl).not.toContain("startdate");
+    expect(calledUrl).not.toContain("enddate");
   });
 });

@@ -51,30 +51,13 @@ export interface MappedTopics {
 
 /* ------------------------------- helpers -------------------------------- */
 
-/** ISO date (UTC, YYYY-MM-DD) for a Date. */
-function isoDate(d: Date): string {
-  return d.toISOString().slice(0, 10);
-}
-
-/** A rolling window ending today: { startdate: today − days, enddate: today }. */
-export function rollingWindow(today: Date, days: number): { startdate: string; enddate: string } {
-  const start = new Date(today.getTime() - days * 86_400_000);
-  return { startdate: isoDate(start), enddate: isoDate(today) };
-}
-
-/** Build the upstream request URL (topic code, window and api_key as query params). */
-export function buildTopicsUrl(
-  base: string,
-  topicCode: string,
-  apiKey: string,
-  window: { startdate: string; enddate: string },
-): string {
-  const qs = new URLSearchParams({
-    topic: topicCode,
-    startdate: window.startdate,
-    enddate: window.enddate,
-    api_key: apiKey,
-  });
+/**
+ * Build the upstream request URL (topic code + api_key only). No
+ * startdate/enddate — the upstream applies its own default 7-day window
+ * (v42.0; the explicit rolling window and 7d→28d widening are retired).
+ */
+export function buildTopicsUrl(base: string, topicCode: string, apiKey: string): string {
+  const qs = new URLSearchParams({ topic: topicCode, api_key: apiKey });
   return `${base}?${qs.toString()}`;
 }
 
