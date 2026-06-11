@@ -19,6 +19,7 @@
 | **P5** | Authentication — email/password + sessions | 0-platform | S2 | E3 | 1.0 | Planned |
 | **P6** | RBAC, route guards & audit log | 0-platform | S2 | E3 | 1.0 | Planned |
 | **P7** | Observability, hardening, backups & launch | 0-platform | S1,S6 | E8,E9 | 1.0 | Planned |
+| **P8** | Nexorus OpenGate cross-app link (autologin) | 0-platform | demo | — | 1.0 | Planned |
 | **W1** | Source registry & scheduler | 1-watch | S3 | E4 | 1.0 | Planned |
 | **W2** | RSS & news-API connectors | 1-watch | S3 | E4 | 1.0 | Planned |
 | **W3** | Social connectors (X/IG/FB/TikTok) | 1-watch | S3–S4 | E4 | 1.0 | Planned |
@@ -39,7 +40,7 @@
 | **A8** | Per-BUMN CEO sentiment dashboards | 3-act | demo | — | 4.1 | Built |
 | **A9** | Communication Response Calculator | 3-act | demo | — | 3.1 | Built |
 
-**Totals:** 25 features · 7 platform · 5 watch · 5 understand · 8 act.
+**Totals:** 27 features · 8 platform · 5 watch · 5 understand · 9 act.
 
 ## Sprint → feature map (delivery view)
 
@@ -131,3 +132,4 @@
 | 1.73 | 2026-06-08 | A8 → v3.10 Built — show the dominant sentiment % in the **centre of each BUMN topic pie** (tone-coloured centre label on the shared `SentimentPie` full variant) |
 | 1.74 | 2026-06-10 | A8 → v4.0 Built — **`/bumn-v2` alternate option page** (original `/bumn` untouched): split Negative/Positive sentiment-summary boxes (kanan-kiri), topics clustered negative-first then positive (neutral trails), summary boxes click-jump to their cluster |
 | 1.75 | 2026-06-10 | A8 → v4.1 Built — **stale-empty cache bugfix** in shared `topics-feed.ts`: a transient hollow upstream window (0 topics) no longer sticks for ~1 h; the BFF confirms an empty cacheable result against the live `no-store` upstream and prefers live data (fixes "Pertamina shows 0 while Postman has data"). Also hardens A7 |
+| 1.76 | 2026-06-11 | Added P8 (Nexorus OpenGate cross-app link) at v1.0 Planned — gear-menu item mints an OpenGate autologin link via a session-gated BFF redirect; 26→27 features |
