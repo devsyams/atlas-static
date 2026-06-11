@@ -12,4 +12,12 @@ describe("BumnIndex (T2 / AC1)", () => {
       expect(link).toHaveAttribute("href", `/bumn/${b.slug}`);
     }
   });
+
+  it("links against a custom basePath for the /bumn-v2 option index (T17 / AC10)", () => {
+    render(<BumnIndex basePath="/bumn-v2" />);
+    for (const b of listBumn()) {
+      const link = screen.getByRole("link", { name: new RegExp(b.name, "i") });
+      expect(link).toHaveAttribute("href", `/bumn-v2/${b.slug}`);
+    }
+  });
 });

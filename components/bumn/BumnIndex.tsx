@@ -2,8 +2,12 @@ import Link from "next/link";
 import { ArrowRight, Building2 } from "lucide-react";
 import { listBumn } from "@/lib/bumn/registry";
 
-/** Super-admin index of all per-BUMN dashboards (gated to the `all` scope by middleware). */
-export function BumnIndex() {
+/**
+ * Super-admin index of all per-BUMN dashboards (gated to the `all` scope by
+ * middleware). `basePath` points the links at a layout option — `/bumn` (v1,
+ * default) or `/bumn-v2` (the clustered split-summary option, A8 v4.0).
+ */
+export function BumnIndex({ basePath = "/bumn" }: { basePath?: string }) {
   return (
     <div className="space-y-5">
       <div>
@@ -16,7 +20,7 @@ export function BumnIndex() {
         {listBumn().map((b) => (
           <li key={b.slug}>
             <Link
-              href={`/bumn/${b.slug}`}
+              href={`${basePath}/${b.slug}`}
               className="flex items-center gap-3 rounded-lg border border-border/60 bg-card/40 px-4 py-3.5 transition-colors hover:border-primary/50 hover:bg-primary/5"
             >
               <Building2 className="h-5 w-5 shrink-0 text-primary" />

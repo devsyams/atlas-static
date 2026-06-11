@@ -1,0 +1,98 @@
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { TopicsApiResponse } from "./ceo/topics-source";
+import { fetchTopicsForCode } from "./topics-feed";
+
+/** Two-topic payload. */
+const SAMPLE: TopicsApiResponse = {
+  success: true,
+  status_code: 200,
+  meta: { topic: "danantara_pertamina", startdate: "2026-06-03", enddate: "2026-06-10" },
+  data: {
+    topics: [
+      { topik: "Kenaikan Harga Pertamax", impressions: 1000, reach: 800, sentiment: "negative", stats_sentiment: { positive: 5, negative: 85, neutral: 10 }, penjelasan: "..." },
+      { topik: "Laba Pertamina Naik", impressions: 2000, reach: 1500, sentiment: "positive", stats_sentiment: { positive: 70, negative: 10, neutral: 20 }, penjelasan: "..." },
+    ],
+    summary: { total_impressions: 3000, total_reach: 2300, percentage: { positive: 24.8, negative: 52.22, neutral: 22.98 } },
+    intent: [{ intent: "Keluhan", deskripsi: "", impressions: 100, share_of_voice: 60 }],
+  },
+};
+
+/** Same shape, but a hollow window: no topics, null summary, intent still present
+ * (the real transient-/stale-empty the upstream serves while slow/recomputing). */
+const HOLLOW: TopicsApiResponse = {
+  success: true,
+  status_code: 200,
+  meta: { topic: "danantara_pertamina", startdate: "2026-05-13", enddate: "2026-06-10" },
+  data: { topics: [], summary: null as unknown as TopicsApiResponse["data"]["summary"], intent: [{ intent: "Keluhan", deskripsi: "", impressions: 100, share_of_voice: 60 }] },
+};
+
+const KEY = "SECRET-KEY";
+
+/** A fetch mock that returns the i-th payload in `seq` (the last repeats). */
+function seqFetch(seq: TopicsApiResponse[]) {
+  let i = 0;
+  // Args are still captured in `mock.calls` for asserting the cache init.
+  return vi.fn(async () => {
+    const r = seq[Math.min(i, seq.length - 1)];
+    i += 1;
+    return new Response(JSON.stringify(r), { status: 200 });
+  });
+}
+
+describe("fetchTopicsForCode — stale/transient empty does not stick (A8 v4.1)", () => {
+  beforeEach(() => {
+    process.env.DANANTARA_TOPICS_API_BASE = "https://api.example.io/topics";
+    process.env.DANANTARA_TOPICS_API_KEY = KEY;
+  });
+  afterEach(() => {
+    vi.restoreAllMocks();
+    delete process.env.DANANTARA_TOPICS_API_BASE;
+    delete process.env.DANANTARA_TOPICS_API_KEY;
+  });
+
+  it("self-heals a cached/transient empty: confirms against the live upstream and uses live data", async () => {
+    // Cacheable 7-day + 28-day both hollow (a stale empty), but the live feed has data.
+    const fetchMock = seqFetch([HOLLOW, HOLLOW, SAMPLE]);
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await fetchTopicsForCode("danantara_pertamina");
+
+    expect(result.issues).toHaveLength(2); // live data shown, not the cached empty
+    const inits = fetchMock.mock.calls.map((c) => c[1]);
+    expect(inits[0]).toEqual({ next: { revalidate: 3600 } }); // primary path is cacheable
+    expect(inits).toContainEqual({ cache: "no-store" }); // a live (uncached) confirm happened
+  });
+
+  it("does NOT add a live re-fetch when the cacheable window already has topics", async () => {
+    const fetchMock = seqFetch([SAMPLE]);
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await fetchTopicsForCode("danantara_pln");
+
+    expect(result.issues).toHaveLength(2);
+    expect(fetchMock).toHaveBeenCalledTimes(1); // no widening, no confirm on the happy path
+    expect(fetchMock.mock.calls[0][1]).toEqual({ next: { revalidate: 3600 } });
+  });
+
+  it("leaves a genuinely empty result empty (no fabricated data) after confirming live", async () => {
+    const fetchMock = seqFetch([HOLLOW]); // every window, cached and live, is empty
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await fetchTopicsForCode("danantara_bri");
+
+    expect(result.issues).toHaveLength(0);
+    const inits = fetchMock.mock.calls.map((c) => c[1]);
+    expect(inits).toContainEqual({ cache: "no-store" }); // it did try the live upstream
+  });
+
+  it("on ?fresh=1 the path is already live, so it does not add a redundant confirm", async () => {
+    const fetchMock = seqFetch([HOLLOW]);
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await fetchTopicsForCode("danantara_bri", { fresh: true });
+
+    expect(result.issues).toHaveLength(0);
+    expect(fetchMock).toHaveBeenCalledTimes(2); // 7d + 28d widen only — no extra confirm
+    for (const c of fetchMock.mock.calls) expect(c[1]).toEqual({ cache: "no-store" });
+  });
+});

@@ -40,6 +40,14 @@ describe("BUMN scopes (T10 / AC7)", () => {
     expect(scopeAllowsPath("all", "/bumn/telkom")).toBe(true);
   });
 
+  it("lets a bumn-scoped user reach only its own /bumn-v2 option page (T17 / AC10)", () => {
+    expect(scopeAllowsPath("bumn:pln", "/bumn-v2/pln")).toBe(true);
+    expect(scopeAllowsPath("bumn:pln", "/bumn-v2/pln/anything")).toBe(true);
+    expect(scopeAllowsPath("bumn:pln", "/bumn-v2/bri")).toBe(false);
+    expect(scopeAllowsPath("bumn:pln", "/bumn-v2")).toBe(false);
+    expect(scopeAllowsPath("all", "/bumn-v2")).toBe(true);
+  });
+
   it("parses and routes home for a bumn scope (valid slug only)", () => {
     expect(parseScope("bumn:pln")).toBe("bumn:pln");
     expect(homeForScope("bumn:pln")).toBe("/bumn/pln");

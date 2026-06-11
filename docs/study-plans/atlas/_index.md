@@ -36,7 +36,7 @@
 | **A5** | AI assistant — briefing, forecast & per-widget ask | 3-act | S5 | E7 | 1.0 | Planned |
 | **A6** | Real-time ticker, alerts & War Room | 3-act | S5–S6 | E8 | 1.0 | Planned |
 | **A7** | Danantara CEO Command Wall (zero-click demo) | 3-act | demo | — | 41.4 | Built |
-| **A8** | Per-BUMN CEO sentiment dashboards | 3-act | demo | — | 3.10 | Built |
+| **A8** | Per-BUMN CEO sentiment dashboards | 3-act | demo | — | 4.1 | Built |
 | **A9** | Communication Response Calculator | 3-act | demo | — | 3.1 | Built |
 
 **Totals:** 25 features · 7 platform · 5 watch · 5 understand · 8 act.
@@ -129,3 +129,5 @@
 | 1.71 | 2026-06-08 | A9 → v3.1 Built — rename the panel/feature to **"Communication Response Calculator"** (UI label + WhatsApp brief; internal `counter-noise` names kept) |
 | 1.72 | 2026-06-08 | A7 → v41.4 Built — **/danantara responsive for mobile**: page scrolls on phones (wall only at `xl`), Issues columns stack, BUMN rows reflow to one column (legend hidden), count tiles shrink; fixed a Tailwind-JIT template-literal class bug |
 | 1.73 | 2026-06-08 | A8 → v3.10 Built — show the dominant sentiment % in the **centre of each BUMN topic pie** (tone-coloured centre label on the shared `SentimentPie` full variant) |
+| 1.74 | 2026-06-10 | A8 → v4.0 Built — **`/bumn-v2` alternate option page** (original `/bumn` untouched): split Negative/Positive sentiment-summary boxes (kanan-kiri), topics clustered negative-first then positive (neutral trails), summary boxes click-jump to their cluster |
+| 1.75 | 2026-06-10 | A8 → v4.1 Built — **stale-empty cache bugfix** in shared `topics-feed.ts`: a transient hollow upstream window (0 topics) no longer sticks for ~1 h; the BFF confirms an empty cacheable result against the live `no-store` upstream and prefers live data (fixes "Pertamina shows 0 while Postman has data"). Also hardens A7 |

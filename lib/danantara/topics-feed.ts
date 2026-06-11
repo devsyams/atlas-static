@@ -40,10 +40,35 @@ async function fetchWindow(
   return { ...mapTopicsResponse(json), meta: json.meta };
 }
 
+/** A rolling 7-day window that auto-widens to 28 days when 7 days has no topics. */
+async function fetchWidened(
+  base: string,
+  code: string,
+  apiKey: string,
+  fresh: boolean,
+): Promise<FeedResult> {
+  const result = await fetchWindow(base, code, apiKey, PRIMARY_DAYS, fresh);
+  if (result.issues.length > 0) return result;
+  try {
+    return await fetchWindow(base, code, apiKey, FALLBACK_DAYS, fresh);
+  } catch {
+    return result; // keep the (empty) 7-day result rather than failing
+  }
+}
+
 /**
  * Fetch + map one topic code: a rolling 7-day window that auto-widens to 28 days
- * when the 7-day window has no topics. `fresh` bypasses the data cache. Throws
- * `FeedNotConfiguredError` if no key, or a generic error on upstream failure.
+ * when empty. `fresh` bypasses the data cache. Throws `FeedNotConfiguredError`
+ * if no key, or a generic error on upstream failure.
+ *
+ * Stale-empty guard: the upstream intermittently serves a *hollow* window (no
+ * `topics`, null `summary`) for a code that has data — typically when it is slow
+ * or recomputing. Because a cacheable response is held for an hour, that blip
+ * would otherwise mask real data until the cache expires (Postman, hitting the
+ * upstream uncached, would meanwhile show the data). So when the cacheable path
+ * comes back empty, we confirm **once** against the live (no-store) upstream and
+ * prefer any live data — a transient/stale empty self-heals on the next load
+ * instead of sticking. A genuinely sparse BUMN (Mandiri/BRI) stays empty.
  */
 export async function fetchTopicsForCode(
   code: string,
@@ -54,12 +79,17 @@ export async function fetchTopicsForCode(
   if (!apiKey) throw new FeedNotConfiguredError("Topics feed not configured.");
 
   const fresh = opts.fresh ?? false;
-  let result = await fetchWindow(base, code, apiKey, PRIMARY_DAYS, fresh);
-  if (result.issues.length === 0) {
+  const result = await fetchWidened(base, code, apiKey, fresh);
+
+  // Already empty *and* served from cache → re-check the live upstream once, so a
+  // recovered feed isn't hidden behind a stale cached empty. `fresh` is already
+  // live, so it needs no confirm.
+  if (!fresh && result.issues.length === 0) {
     try {
-      result = await fetchWindow(base, code, apiKey, FALLBACK_DAYS, fresh);
+      const live = await fetchWidened(base, code, apiKey, true);
+      if (live.issues.length > 0) return live;
     } catch {
-      /* keep the (empty) 7-day result rather than failing */
+      /* keep the cached empty rather than failing the request */
     }
   }
   return result;
