@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildTopicsUrl, mapTopicsResponse, type TopicsApiResponse } from "./topics-source";
+import { buildTopicsUrl, mapTopicsResponse, rollingWindow, type TopicsApiResponse } from "./topics-source";
 
 /** Trimmed real-shape payload from api.garudaperkasa.io/api-nexorus/topics. */
 const SAMPLE: TopicsApiResponse = {
@@ -36,14 +36,30 @@ const SAMPLE: TopicsApiResponse = {
   },
 };
 
-describe("buildTopicsUrl (T19 / AC19, amended v42.0)", () => {
-  it("injects only the topic code and api_key — no startdate/enddate (upstream defaults to 7d)", () => {
+describe("rollingWindow (T19 / AC19)", () => {
+  it("returns enddate = today and startdate = today − N days as ISO YYYY-MM-DD", () => {
+    const today = new Date("2026-06-07T09:30:00Z");
+    expect(rollingWindow(today, 28)).toEqual({ startdate: "2026-05-10", enddate: "2026-06-07" });
+  });
+});
+
+describe("buildTopicsUrl (T19 / AC19, amended v42.0/v43.0)", () => {
+  it("by default injects only the topic code and api_key — no startdate/enddate", () => {
     const url = buildTopicsUrl("https://api.example.io/topics", "danantara_main", "SECRET-KEY");
     expect(url).toContain("https://api.example.io/topics?");
     expect(url).toContain("topic=danantara_main");
     expect(url).toContain("api_key=SECRET-KEY");
     expect(url).not.toContain("startdate");
     expect(url).not.toContain("enddate");
+  });
+
+  it("includes the window when one is given (the 28-day widening fallback)", () => {
+    const url = buildTopicsUrl("https://api.example.io/topics", "danantara_main", "SECRET-KEY", {
+      startdate: "2026-05-10",
+      enddate: "2026-06-07",
+    });
+    expect(url).toContain("startdate=2026-05-10");
+    expect(url).toContain("enddate=2026-06-07");
   });
 });
 

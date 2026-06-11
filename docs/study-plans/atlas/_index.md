@@ -36,8 +36,8 @@
 | **A4** | AI assistant — copilot chat | 3-act | S5 | E7 | 1.0 | Planned |
 | **A5** | AI assistant — briefing, forecast & per-widget ask | 3-act | S5 | E7 | 1.0 | Planned |
 | **A6** | Real-time ticker, alerts & War Room | 3-act | S5–S6 | E8 | 1.0 | Planned |
-| **A7** | Danantara CEO Command Wall (zero-click demo) | 3-act | demo | — | 42.0 | Built |
-| **A8** | Per-BUMN CEO sentiment dashboards | 3-act | demo | — | 5.0 | Built |
+| **A7** | Danantara CEO Command Wall (zero-click demo) | 3-act | demo | — | 43.0 | Built |
+| **A8** | Per-BUMN CEO sentiment dashboards | 3-act | demo | — | 6.0 | Built |
 | **A9** | Communication Response Calculator | 3-act | demo | — | 3.1 | Built |
 
 **Totals:** 27 features · 8 platform · 5 watch · 5 understand · 9 act.
@@ -135,3 +135,4 @@
 | 1.76 | 2026-06-11 | Added P8 (Nexorus OpenGate cross-app link) at v1.0 Planned — gear-menu item mints an OpenGate autologin link via a session-gated BFF redirect; 26→27 features |
 | 1.77 | 2026-06-11 | P8 → v1.0 Built (TDD) — session-gated `/api/v1/opengate/autologin` 307 BFF + fixed gear-menu footer item; 13 tests green |
 | 1.78 | 2026-06-11 | A7 → v42.0, A8 → v5.0 Built — topics requests drop `startdate`/`enddate` (upstream defaults to 7d); rolling window + 7d→28d widening removed from the shared feed; stale-empty confirm kept |
+| 1.79 | 2026-06-11 | A7 → v43.0, A8 → v6.0 Built — 28-day widening restored as a fallback on the date-less default (v42.0 emptied BMRI/TLKM/PLN whose coverage is older than 7d); applies to every topic code |
