@@ -62,19 +62,22 @@ export function rollingWindow(today: Date, days: number): { startdate: string; e
   return { startdate: isoDate(start), enddate: isoDate(today) };
 }
 
-/** Build the upstream request URL (topic code, window and api_key as query params). */
+/**
+ * Build the upstream request URL. By default only `topic` + `api_key` are sent
+ * — the upstream applies its own default 7-day window (v42.0). Pass `window`
+ * only for the 28-day widening fallback (v43.0), which needs explicit dates.
+ */
 export function buildTopicsUrl(
   base: string,
   topicCode: string,
   apiKey: string,
-  window: { startdate: string; enddate: string },
+  window?: { startdate: string; enddate: string },
 ): string {
-  const qs = new URLSearchParams({
-    topic: topicCode,
-    startdate: window.startdate,
-    enddate: window.enddate,
-    api_key: apiKey,
-  });
+  const qs = new URLSearchParams({ topic: topicCode, api_key: apiKey });
+  if (window) {
+    qs.set("startdate", window.startdate);
+    qs.set("enddate", window.enddate);
+  }
   return `${base}?${qs.toString()}`;
 }
 

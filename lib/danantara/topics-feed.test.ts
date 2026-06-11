@@ -31,8 +31,8 @@ const KEY = "SECRET-KEY";
 /** A fetch mock that returns the i-th payload in `seq` (the last repeats). */
 function seqFetch(seq: TopicsApiResponse[]) {
   let i = 0;
-  // Args are still captured in `mock.calls` for asserting the cache init.
-  return vi.fn(async () => {
+  // Declared fetch-like params so `mock.calls` is typed [url, init] for assertions.
+  return vi.fn(async (_url: string, _init?: RequestInit) => {
     const r = seq[Math.min(i, seq.length - 1)];
     i += 1;
     return new Response(JSON.stringify(r), { status: 200 });
@@ -51,7 +51,7 @@ describe("fetchTopicsForCode — stale/transient empty does not stick (A8 v4.1)"
   });
 
   it("self-heals a cached/transient empty: confirms against the live upstream and uses live data", async () => {
-    // Cacheable 7-day + 28-day both hollow (a stale empty), but the live feed has data.
+    // Cacheable default + 28d widen both hollow (a stale empty), but the live feed has data.
     const fetchMock = seqFetch([HOLLOW, HOLLOW, SAMPLE]);
     vi.stubGlobal("fetch", fetchMock);
 
@@ -61,6 +61,33 @@ describe("fetchTopicsForCode — stale/transient empty does not stick (A8 v4.1)"
     const inits = fetchMock.mock.calls.map((c) => c[1]);
     expect(inits[0]).toEqual({ next: { revalidate: 3600 } }); // primary path is cacheable
     expect(inits).toContainEqual({ cache: "no-store" }); // a live (uncached) confirm happened
+  });
+
+  it("sends no startdate/enddate by default — the upstream's own window applies (v42.0/v5.0)", async () => {
+    const fetchMock = seqFetch([SAMPLE]);
+    vi.stubGlobal("fetch", fetchMock);
+
+    await fetchTopicsForCode("danantara_pertamina");
+
+    const url = String(fetchMock.mock.calls[0][0]);
+    expect(url).toContain("topic=danantara_pertamina");
+    expect(url).toContain(`api_key=${KEY}`);
+    expect(url).not.toContain("startdate");
+    expect(url).not.toContain("enddate");
+  });
+
+  it("widens an empty default window once to an explicit 28-day window (v43.0/v6.0)", async () => {
+    const fetchMock = seqFetch([HOLLOW, SAMPLE]); // default empty → 28d has data
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await fetchTopicsForCode("danantara_mandiri");
+
+    expect(result.issues).toHaveLength(2); // the widened result is used
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    const [firstUrl, secondUrl] = fetchMock.mock.calls.map((c) => String(c[0]));
+    expect(firstUrl).not.toContain("startdate"); // default request stays date-less
+    expect(secondUrl).toContain("startdate="); // the retry pins an explicit window
+    expect(secondUrl).toContain("enddate=");
   });
 
   it("does NOT add a live re-fetch when the cacheable window already has topics", async () => {
@@ -75,12 +102,13 @@ describe("fetchTopicsForCode — stale/transient empty does not stick (A8 v4.1)"
   });
 
   it("leaves a genuinely empty result empty (no fabricated data) after confirming live", async () => {
-    const fetchMock = seqFetch([HOLLOW]); // every window, cached and live, is empty
+    const fetchMock = seqFetch([HOLLOW]); // cached and live both empty
     vi.stubGlobal("fetch", fetchMock);
 
     const result = await fetchTopicsForCode("danantara_bri");
 
     expect(result.issues).toHaveLength(0);
+    expect(fetchMock).toHaveBeenCalledTimes(4); // (default + 28d) cached, then (default + 28d) live
     const inits = fetchMock.mock.calls.map((c) => c[1]);
     expect(inits).toContainEqual({ cache: "no-store" }); // it did try the live upstream
   });
@@ -92,7 +120,7 @@ describe("fetchTopicsForCode — stale/transient empty does not stick (A8 v4.1)"
     const result = await fetchTopicsForCode("danantara_bri", { fresh: true });
 
     expect(result.issues).toHaveLength(0);
-    expect(fetchMock).toHaveBeenCalledTimes(2); // 7d + 28d widen only — no extra confirm
+    expect(fetchMock).toHaveBeenCalledTimes(2); // default + 28d widen only — no extra confirm
     for (const c of fetchMock.mock.calls) expect(c[1]).toEqual({ cache: "no-store" });
   });
 });

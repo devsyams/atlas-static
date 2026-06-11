@@ -25,6 +25,7 @@ import {
   TrafficCone,
   Landmark,
   Building2,
+  ExternalLink,
 } from "lucide-react";
 import { Dropdown } from "@/components/ui/Dropdown";
 import { NexorusCopilot } from "@/components/ai/NexorusCopilot";
@@ -186,6 +187,19 @@ export function AppShell({ children }: { children: ReactNode }) {
                     })}
                   </div>
                 ))}
+                {/* Fixed footer item — outside the grouped nav so the scope and
+                    minimal-chrome filters never hide the OpenGate escape hatch. */}
+                <div className="my-1 h-px bg-border" />
+                <a
+                  href="/api/v1/opengate/autologin"
+                  target="_blank"
+                  rel="noopener"
+                  onClick={close}
+                  className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 hover:bg-sidebar-accent"
+                >
+                  <ExternalLink className="h-3.5 w-3.5" />
+                  <span className="text-[12px]">Nexorus Opengate</span>
+                </a>
               </>
             )}
           </Dropdown>

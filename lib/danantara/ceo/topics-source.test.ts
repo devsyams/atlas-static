@@ -43,17 +43,23 @@ describe("rollingWindow (T19 / AC19)", () => {
   });
 });
 
-describe("buildTopicsUrl (T19 / AC19)", () => {
-  it("injects topic code, window and api_key as query params", () => {
+describe("buildTopicsUrl (T19 / AC19, amended v42.0/v43.0)", () => {
+  it("by default injects only the topic code and api_key — no startdate/enddate", () => {
+    const url = buildTopicsUrl("https://api.example.io/topics", "danantara_main", "SECRET-KEY");
+    expect(url).toContain("https://api.example.io/topics?");
+    expect(url).toContain("topic=danantara_main");
+    expect(url).toContain("api_key=SECRET-KEY");
+    expect(url).not.toContain("startdate");
+    expect(url).not.toContain("enddate");
+  });
+
+  it("includes the window when one is given (the 28-day widening fallback)", () => {
     const url = buildTopicsUrl("https://api.example.io/topics", "danantara_main", "SECRET-KEY", {
       startdate: "2026-05-10",
       enddate: "2026-06-07",
     });
-    expect(url).toContain("https://api.example.io/topics?");
-    expect(url).toContain("topic=danantara_main");
     expect(url).toContain("startdate=2026-05-10");
     expect(url).toContain("enddate=2026-06-07");
-    expect(url).toContain("api_key=SECRET-KEY");
   });
 });
 

@@ -302,3 +302,84 @@ breach is invisible until it hurts. This is the gate between "feature-complete" 
 | Version | Date | Change |
 |---|---|---|
 | 1.0 | 2026-05-25 | Initial plan from architecture spec |
+
+---
+
+### P8. Nexorus OpenGate cross-app link (autologin)
+
+- **Version:** 1.0 · **Stage:** 0-platform · **Sprint:** demo · **Status:** Built
+  · **Spec ref:** — (client request, 2026-06-11) · **Owner:** platform
+
+#### PM
+**Background (why):** The ATLAS dashboards are deliberately glanceable; when a demo user (the
+boss's client, or an exec on the Danantara/BUMN boards) wants to dig deeper, the detail lives in
+**Nexorus OpenGate** (`opengate.nexorus.io`) — a separate, already-live app with its own login.
+Asking the user to log in again mid-demo kills the flow and hides the fact that the two products
+are one platform. OpenGate exposes an autologin magic-link API
+(`GET /autologin/autologin_generate?api_key=…` → `{ ok, login_url, expires_in }`); one click in
+the ATLAS gear menu should land the user in OpenGate already signed in.
+
+**Acceptance criteria (Given / When / Then):**
+- **AC1** — *Given* a signed-in ATLAS user on any page (including the minimal-chrome executive
+  dashboards and a `danantara`-scoped demo user), *When* they open the gear menu, *Then* a
+  **"Nexorus Opengate"** item with an external-link icon is visible as a fixed entry at the bottom
+  of the dropdown, below a divider.
+- **AC2** — *Given* the gear menu is open, *When* the user clicks "Nexorus Opengate", *Then* a
+  **new tab** opens that lands on the `login_url` returned by OpenGate's autologin API (user is
+  signed in to OpenGate), and the ATLAS tab stays where it was.
+- **AC3** — *Given* OpenGate is unreachable, times out, returns `ok: false`, or omits
+  `login_url`, *When* the user clicks the item, *Then* the new tab is redirected to
+  `https://opengate.nexorus.io` (normal login page) as a graceful fallback — never a raw error.
+- **AC4** — *Given* any request/response visible to the browser, *Then* the OpenGate API key
+  never appears in any URL, header, or body (it is used server-side only).
+- **AC5** — *Given* a request to the autologin BFF route **without** a valid ATLAS session
+  cookie, *When* it is hit directly, *Then* it redirects to `/login` and no OpenGate link is
+  generated (the route must not be an anonymous OpenGate-session minter; middleware skips
+  `/api`, so the route checks the cookie itself).
+
+#### Architecture
+**Impact — files add/change:**
+- `add` `app/api/v1/opengate/autologin/route.ts` — GET BFF: checks `atlas_auth` cookie (AC5),
+  server-side fetch of `${OPENGATE_AUTOLOGIN_BASE}?api_key=…` with a 5 s timeout, validates
+  `ok === true` and a non-empty `login_url`, replies **307 → `login_url`**; any failure replies
+  **307 → `https://opengate.nexorus.io`** (AC3). Marked `dynamic = "force-dynamic"`; never cached
+  (each click mints a fresh link, so `expires_in` needs no client bookkeeping).
+- `add` `app/api/v1/opengate/autologin/route.test.ts` — vitest unit tests (see QA).
+- `change` `components/layout/AppShell.tsx` — fixed footer item in the gear `Dropdown`, rendered
+  **outside** the grouped-nav loop (survives the `danantara` scope filter and the
+  `minimalChrome` Dashboards-only filter): divider + `<a href="/api/v1/opengate/autologin"
+  target="_blank" rel="noopener">` with an `ExternalLink` lucide icon, labelled "Nexorus Opengate".
+- `change` `.env.example` — document `OPENGATE_AUTOLOGIN_BASE` (default
+  `https://opengate.nexorus.io/autologin/autologin_generate`) and `OPENGATE_API_KEY`
+  (falls back to `DANANTARA_TOPICS_API_KEY`, which is the key in use today).
+
+**Data-model / API changes:** one new endpoint `GET /api/v1/opengate/autologin` (307 redirect;
+no JSON contract consumed by the UI). No DB changes.
+
+**Reuse:** server-side-key + env-config pattern from the Danantara topics BFF (A7 v31.0);
+existing `Dropdown` and gear menu in `AppShell`; `atlas_auth` cookie convention from
+`middleware.ts`/`lib/auth.ts`.
+
+**Risks:** (1) magic links are short-lived/single-use → mitigated by generating a fresh link per
+click, never prefetching; (2) upstream latency blocks the new tab on a blank page → 5 s abort +
+fallback redirect; (3) the key is shared with the topics feed today → `OPENGATE_API_KEY` override
+exists the day OpenGate issues its own key; (4) popup blockers → item is a real `<a>` so the
+browser treats it as a user-gesture navigation, no `window.open` after `await`.
+
+#### QA
+| # | Maps to | Test case | Type |
+|---|---|---|---|
+| T1 | AC1 | gear menu renders a "Nexorus Opengate" anchor (`target="_blank"`, `rel="noopener"`, href `/api/v1/opengate/autologin`) below a divider; still present with `atlas_scope=danantara` and on a minimal-chrome path (`/danantara`) | component |
+| T2 | AC2 | route: upstream 200 `{ok:true, login_url}` → 307 with `Location: login_url` | unit |
+| T3 | AC3 | route: upstream network error · timeout · `ok:false` · missing `login_url` · non-200 → 307 with `Location: https://opengate.nexorus.io` | unit |
+| T4 | AC4 | route responses (success + every failure mode) contain the API key in no header/body | unit |
+| T5 | AC5 | route without `atlas_auth=1` cookie → 307 to `/login`; upstream is never called | unit |
+
+**Governance edge cases:** key stays server-side and is never logged; route accepts **no client
+params** (cannot be repointed as an open proxy); session-gated per AC5; degradation per AC3 is a
+redirect to OpenGate's own login, never a dead end; no cost ledger impact (no LLM call).
+
+#### Revision history
+| Version | Date | Change |
+|---|---|---|
+| 1.0 | 2026-06-11 | Initial plan — gear-menu autologin deep link into OpenGate (client request) |
