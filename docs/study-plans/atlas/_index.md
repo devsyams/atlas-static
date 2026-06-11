@@ -19,7 +19,7 @@
 | **P5** | Authentication — email/password + sessions | 0-platform | S2 | E3 | 1.0 | Planned |
 | **P6** | RBAC, route guards & audit log | 0-platform | S2 | E3 | 1.0 | Planned |
 | **P7** | Observability, hardening, backups & launch | 0-platform | S1,S6 | E8,E9 | 1.0 | Planned |
-| **P8** | Nexorus OpenGate cross-app link (autologin) | 0-platform | demo | — | 1.0 | Planned |
+| **P8** | Nexorus OpenGate cross-app link (autologin) | 0-platform | demo | — | 1.0 | Built |
 | **W1** | Source registry & scheduler | 1-watch | S3 | E4 | 1.0 | Planned |
 | **W2** | RSS & news-API connectors | 1-watch | S3 | E4 | 1.0 | Planned |
 | **W3** | Social connectors (X/IG/FB/TikTok) | 1-watch | S3–S4 | E4 | 1.0 | Planned |
@@ -133,3 +133,4 @@
 | 1.74 | 2026-06-10 | A8 → v4.0 Built — **`/bumn-v2` alternate option page** (original `/bumn` untouched): split Negative/Positive sentiment-summary boxes (kanan-kiri), topics clustered negative-first then positive (neutral trails), summary boxes click-jump to their cluster |
 | 1.75 | 2026-06-10 | A8 → v4.1 Built — **stale-empty cache bugfix** in shared `topics-feed.ts`: a transient hollow upstream window (0 topics) no longer sticks for ~1 h; the BFF confirms an empty cacheable result against the live `no-store` upstream and prefers live data (fixes "Pertamina shows 0 while Postman has data"). Also hardens A7 |
 | 1.76 | 2026-06-11 | Added P8 (Nexorus OpenGate cross-app link) at v1.0 Planned — gear-menu item mints an OpenGate autologin link via a session-gated BFF redirect; 26→27 features |
+| 1.77 | 2026-06-11 | P8 → v1.0 Built (TDD) — session-gated `/api/v1/opengate/autologin` 307 BFF + fixed gear-menu footer item; 13 tests green |

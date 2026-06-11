@@ -307,7 +307,7 @@ breach is invisible until it hurts. This is the gate between "feature-complete" 
 
 ### P8. Nexorus OpenGate cross-app link (autologin)
 
-- **Version:** 1.0 · **Stage:** 0-platform · **Sprint:** demo · **Status:** Planned
+- **Version:** 1.0 · **Stage:** 0-platform · **Sprint:** demo · **Status:** Built
   · **Spec ref:** — (client request, 2026-06-11) · **Owner:** platform
 
 #### PM
