@@ -19,13 +19,16 @@ RUN npm run build
 # --- runner: minimal runtime image ---
 FROM base AS runner
 WORKDIR /app
+# libc6-compat must be present at runtime too: the traced node_modules inside
+# .next/standalone may carry native bindings that rely on the glibc shim.
+RUN apk add --no-cache libc6-compat
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 RUN addgroup --system --gid 1001 nodejs \
  && adduser --system --uid 1001 nextjs
 
 # standalone does NOT include public/ or .next/static — copy them explicitly
-COPY --from=builder /app/public ./public
+COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
