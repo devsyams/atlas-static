@@ -1,0 +1,19 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: danantara
+  labels:
+    app.kubernetes.io/name: danantara
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: danantara.example.com # replaced by each overlay
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: danantara
+                port:
+                  number: 80
