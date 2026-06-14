@@ -19,6 +19,13 @@ import { NextResponse } from "next/server";
  * proxy nor an open redirect; it requires the `atlas_auth` session cookie itself
  * because the middleware matcher skips `/api`. Every failure degrades to the
  * dashboard home, never a dead end.
+ *
+ * Token expiry: the magic-link token is short-lived (~2 min) and single-use, but
+ * that needs no client bookkeeping — it is minted HERE on each click and the
+ * browser is 307'd straight onto it, so it is consumed within seconds, then the
+ * Nexorus session cookie takes over. `force-dynamic` + `no-store` keep it fresh;
+ * never bake the minted `login_url` into page HTML (that is what would let it go
+ * stale or leak).
  */
 
 const DEFAULT_AUTOLOGIN_BASE = "https://nexorus.garudaperkasa.io/autologin/autologin_generate";
