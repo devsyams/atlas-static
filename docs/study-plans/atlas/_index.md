@@ -19,7 +19,7 @@
 | **P5** | Authentication — email/password + sessions | 0-platform | S2 | E3 | 1.0 | Planned |
 | **P6** | RBAC, route guards & audit log | 0-platform | S2 | E3 | 1.0 | Planned |
 | **P7** | Observability, hardening, backups & launch | 0-platform | S1,S6 | E8,E9 | 1.0 | Planned |
-| **P8** | Nexorus OpenGate cross-app link (autologin) | 0-platform | demo | — | 1.0 | Built |
+| **P8** | Nexorus cross-app link (autologin: home + per-topic deep link) | 0-platform | demo | — | 2.0 | In progress |
 | **W1** | Source registry & scheduler | 1-watch | S3 | E4 | 1.0 | Planned |
 | **W2** | RSS & news-API connectors | 1-watch | S3 | E4 | 1.0 | Planned |
 | **W3** | Social connectors (X/IG/FB/TikTok) | 1-watch | S3–S4 | E4 | 1.0 | Planned |
@@ -136,3 +136,4 @@
 | 1.77 | 2026-06-11 | P8 → v1.0 Built (TDD) — session-gated `/api/v1/opengate/autologin` 307 BFF + fixed gear-menu footer item; 13 tests green |
 | 1.78 | 2026-06-11 | A7 → v42.0, A8 → v5.0 Built — topics requests drop `startdate`/`enddate` (upstream defaults to 7d); rolling window + 7d→28d widening removed from the shared feed; stale-empty confirm kept |
 | 1.79 | 2026-06-11 | A7 → v43.0, A8 → v6.0 Built — 28-day widening restored as a fallback on the date-less default (v42.0 emptied BMRI/TLKM/PLN whose coverage is older than 7d); applies to every topic code |
+| 1.80 | 2026-06-14 | P8 → v2.0 In progress (MAJOR) — per-topic "View in Nexorus" deep link in the topic detail modal: topics `idQuery` plumbed → `CeoIssue` → `DetailModal`; P8 BFF forwards a validated `idquery` so the magic link lands on the topic (`dashboard_demo?id=monitoring&idquery=…`); gear-menu home unchanged. AC6–AC9 added; spec `2026-06-14-nexorus-topic-deeplink-design.md` |

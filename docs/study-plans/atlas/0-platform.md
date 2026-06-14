@@ -305,10 +305,11 @@ breach is invisible until it hurts. This is the gate between "feature-complete" 
 
 ---
 
-### P8. Nexorus OpenGate cross-app link (autologin)
+### P8. Nexorus cross-app link (autologin: home + per-topic deep link)
 
-- **Version:** 1.0 · **Stage:** 0-platform · **Sprint:** demo · **Status:** Built
-  · **Spec ref:** — (client request, 2026-06-11) · **Owner:** platform
+- **Version:** 2.0 · **Stage:** 0-platform · **Sprint:** demo · **Status:** In progress
+  · **Spec ref:** `docs/superpowers/specs/2026-06-14-nexorus-topic-deeplink-design.md`
+  (client request, 2026-06-11; topic deep link 2026-06-14) · **Owner:** platform
 
 #### PM
 **Background (why):** The ATLAS dashboards are deliberately glanceable; when a demo user (the
@@ -318,6 +319,17 @@ Asking the user to log in again mid-demo kills the flow and hides the fact that 
 are one platform. OpenGate exposes an autologin magic-link API
 (`GET /autologin/autologin_generate?api_key=…` → `{ ok, login_url, expires_in }`); one click in
 the ATLAS gear menu should land the user in OpenGate already signed in.
+
+**v2.0 — per-topic deep link (2026-06-14):** the topics API now returns an `idQuery` per topic,
+and Nexorus has a per-topic detail page at
+`https://nexorus.garudaperkasa.io/dashboard_demo?id=monitoring&idquery=<idQuery>`. Landing on the
+Nexorus *home* still requires the exec to find the same topic by hand. The autologin magic link
+already lands the user on the right destination **based on `idquery`** (same mechanism as the
+gear-menu home link; `api_key` stays server-side). So we extend the cross-app link with a
+**"View in Nexorus"** deep link inside the ATLAS topic detail modal that carries the topic's
+`idQuery` through the magic-link BFF, landing the user on **that topic** in Nexorus, signed in.
+The gear-menu home item is unchanged (OpenGate == Nexorus dashboard home). `id=monitoring` is a
+constant; only `idquery` varies per topic.
 
 **Acceptance criteria (Given / When / Then):**
 - **AC1** — *Given* a signed-in ATLAS user on any page (including the minimal-chrome executive
@@ -336,6 +348,20 @@ the ATLAS gear menu should land the user in OpenGate already signed in.
   cookie, *When* it is hit directly, *Then* it redirects to `/login` and no OpenGate link is
   generated (the route must not be an anonymous OpenGate-session minter; middleware skips
   `/api`, so the route checks the cookie itself).
+- **AC6** *(v2.0)* — *Given* a topic in the Danantara/BUMN detail modal whose feed payload
+  carries an `idQuery`, *When* the user opens that topic's detail, *Then* a **"View in Nexorus"**
+  item with an external-link icon is visible in the issue detail body.
+- **AC7** *(v2.0)* — *Given* the topic detail is open, *When* the user clicks "View in Nexorus",
+  *Then* a **new tab** opens that lands (signed in) on the Nexorus topic page
+  (`dashboard_demo?id=monitoring&idquery=<idQuery>`), and the ATLAS tab stays where it was.
+- **AC8** *(v2.0)* — *Given* a topic whose feed payload has **no** `idQuery`, *When* the user
+  opens its detail, *Then* **no** "View in Nexorus" item renders (graceful degradation; older
+  payloads keep working).
+- **AC9** *(v2.0)* — *Given* the autologin BFF is called with an `idquery` param, *When* the
+  upstream succeeds, *Then* the route forwards `idquery` to the magic-link call and 307s to the
+  topic `login_url`; *When* `idquery` is missing, empty, or fails validation, *Then* the route
+  behaves exactly as the home link (AC2/AC3). `idquery` is the **only** accepted client param and
+  is strictly validated/encoded (no open-redirect or injection).
 
 #### Architecture
 **Impact — files add/change:**
@@ -353,12 +379,35 @@ the ATLAS gear menu should land the user in OpenGate already signed in.
   `https://opengate.nexorus.io/autologin/autologin_generate`) and `OPENGATE_API_KEY`
   (falls back to `DANANTARA_TOPICS_API_KEY`, which is the key in use today).
 
-**Data-model / API changes:** one new endpoint `GET /api/v1/opengate/autologin` (307 redirect;
-no JSON contract consumed by the UI). No DB changes.
+**v2.0 — files add/change (per-topic deep link):**
+- `change` `app/api/v1/opengate/autologin/route.ts` — accept an optional `idquery` query param,
+  strictly validated (allowlisted charset, e.g. `^[A-Za-z0-9]+$`); when present and valid, forward
+  it to the upstream `autologin_generate` call so the returned `login_url` lands on the topic
+  (`dashboard_demo?id=monitoring&idquery=…`); when absent/empty/invalid, behave exactly as today
+  (home). All existing guardrails kept (cookie gate, `force-dynamic`, 5 s timeout, home fallback).
+- `change` `lib/danantara/ceo/topics-source.ts` — add `idQuery` to `UpstreamTopic`; map it through
+  `toIssue` onto the `CeoIssue`.
+- `change` `lib/danantara/ceo/types.ts` — add `idQuery?: string` to `CeoIssue`.
+- `change` `components/danantara/ceo/DetailModal.tsx` — in the issue detail body, render a
+  **"View in Nexorus"** `<a href="/api/v1/opengate/autologin?idquery=<encoded>" target="_blank"
+  rel="noopener">` with an `ExternalLink` icon **only when** the issue has an `idQuery`.
+- `change` `app/api/v1/opengate/autologin/route.test.ts`,
+  `lib/danantara/ceo/topics-source.test.ts`, `components/danantara/ceo/DetailModal.test.tsx` —
+  new vitest cases (see QA T6–T9).
+
+**Data-model / API changes:** the BFF `GET /api/v1/opengate/autologin` now accepts one optional
+client param `idquery` (307 redirect; still no JSON contract consumed by the UI). Upstream topics
+payload gains an `idQuery` field per topic (read-only, passed through). No DB changes.
 
 **Reuse:** server-side-key + env-config pattern from the Danantara topics BFF (A7 v31.0);
 existing `Dropdown` and gear menu in `AppShell`; `atlas_auth` cookie convention from
-`middleware.ts`/`lib/auth.ts`.
+`middleware.ts`/`lib/auth.ts`; v2.0 reuses the **same** P8 BFF route + the existing topics →
+`CeoIssue` mapping pipeline (`topics-source.ts` → `DetailModal`).
+
+**v2.0 — contract details to verify at build (both degrade to home if wrong):** (1) the real
+upstream JSON key — client called it `idQuery`, the URL param is `idquery`; confirm against a live
+`topics` payload before finalizing the mapping. (2) the autologin param name — assumed
+`autologin_generate` accepts `idquery` directly; confirm against the live autologin response.
 
 **Risks:** (1) magic links are short-lived/single-use → mitigated by generating a fresh link per
 click, never prefetching; (2) upstream latency blocks the new tab on a blank page → 5 s abort +
@@ -374,12 +423,19 @@ browser treats it as a user-gesture navigation, no `window.open` after `await`.
 | T3 | AC3 | route: upstream network error · timeout · `ok:false` · missing `login_url` · non-200 → 307 with `Location: https://opengate.nexorus.io` | unit |
 | T4 | AC4 | route responses (success + every failure mode) contain the API key in no header/body | unit |
 | T5 | AC5 | route without `atlas_auth=1` cookie → 307 to `/login`; upstream is never called | unit |
+| T6 | AC6/AC8 | DetailModal issue **with** `idQuery` renders a "View in Nexorus" anchor (`target="_blank"`, `rel="noopener"`, href `/api/v1/opengate/autologin?idquery=<encoded>`); issue **without** `idQuery` renders none | component |
+| T7 | AC7/AC9 | route: `idquery` present + upstream 200 → 307 to the topic `login_url`, and `idquery` is forwarded to the upstream call | unit |
+| T8 | AC9 | route: missing · empty · invalid-charset `idquery` → behaves as the home link (307 to `login_url`/home), `idquery` never reaches the redirect target unencoded (no open-redirect/injection) | unit |
+| T9 | AC6/AC8 | mapping: upstream `idQuery` survives onto the `CeoIssue`; absent → `idQuery` undefined, no crash | unit |
 
-**Governance edge cases:** key stays server-side and is never logged; route accepts **no client
-params** (cannot be repointed as an open proxy); session-gated per AC5; degradation per AC3 is a
-redirect to OpenGate's own login, never a dead end; no cost ledger impact (no LLM call).
+**Governance edge cases:** key stays server-side and is never logged; route accepts **exactly one**
+client param (`idquery`), strictly validated — still cannot be repointed as an open proxy or open
+redirect; session-gated per AC5; degradation per AC3/AC9 is a redirect to the Nexorus/OpenGate home,
+never a dead end; topics with no `idQuery` simply hide the deep link; no cost ledger impact (no LLM
+call).
 
 #### Revision history
 | Version | Date | Change |
 |---|---|---|
 | 1.0 | 2026-06-11 | Initial plan — gear-menu autologin deep link into OpenGate (client request) |
+| 2.0 | 2026-06-14 | **MAJOR** — per-topic "View in Nexorus" deep link in the topic detail modal: topics API `idQuery` plumbed `UpstreamTopic`→`CeoIssue`→`DetailModal`; P8 BFF extended to forward a validated `idquery` so the magic link lands on the topic (`dashboard_demo?id=monitoring&idquery=…`); gear-menu home link unchanged. AC6–AC9 added; renamed "OpenGate cross-app link" → "Nexorus cross-app link" |
