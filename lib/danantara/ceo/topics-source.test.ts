@@ -118,44 +118,22 @@ describe("mapTopicsResponse (T18 / AC19)", () => {
   });
 });
 
-describe("mapTopicsResponse — Nexorus idQuery (T9 / AC6,AC8)", () => {
+describe("mapTopicsResponse — Nexorus idquery (board-level, from meta) (T9 / AC6,AC8)", () => {
+  // The real upstream returns ONE idquery per topic-code, in `meta` (lowercase) —
+  // it identifies that brand's Nexorus monitoring board, not an individual topic.
   const withIdQuery: TopicsApiResponse = {
     ...SAMPLE,
-    data: {
-      ...SAMPLE.data,
-      topics: [
-        { ...SAMPLE.data.topics[0], idQuery: "694368b190153" }, // has a deep-link id
-        { ...SAMPLE.data.topics[1] }, // none → should map to undefined
-      ],
-    },
+    meta: { ...SAMPLE.meta, idquery: "68ca1a83408aa" },
   };
 
-  it("carries idQuery from the upstream topic onto the CeoIssue", () => {
+  it("stamps meta.idquery onto every issue's idQuery", () => {
     const { issues } = mapTopicsResponse(withIdQuery);
-    const tagged = issues.find((i) => i.title.startsWith("Kontroversi"))!;
-    expect(tagged.idQuery).toBe("694368b190153");
+    expect(issues.length).toBeGreaterThan(0);
+    for (const i of issues) expect(i.idQuery).toBe("68ca1a83408aa");
   });
 
-  it("leaves idQuery undefined when the upstream topic omits it (no crash)", () => {
-    const { issues } = mapTopicsResponse(withIdQuery);
-    const untagged = issues.find((i) => i.title.startsWith("Kunjungan"))!;
-    expect(untagged.idQuery).toBeUndefined();
+  it("leaves idQuery undefined when meta has no idquery (no crash)", () => {
+    const { issues } = mapTopicsResponse(SAMPLE); // SAMPLE.meta carries no idquery
+    for (const i of issues) expect(i.idQuery).toBeUndefined();
   });
-
-  // The upstream is otherwise snake_case (stats_sentiment, total_impressions…),
-  // so accept whichever casing it actually uses for the deep-link id.
-  it.each(["idQuery", "idquery", "id_query"])(
-    "reads the deep-link id from the upstream `%s` key",
-    (key) => {
-      const payload = {
-        ...SAMPLE,
-        data: {
-          ...SAMPLE.data,
-          topics: [{ ...SAMPLE.data.topics[0], [key]: "abc123" }],
-        },
-      } as TopicsApiResponse;
-      const { issues } = mapTopicsResponse(payload);
-      expect(issues[0].idQuery).toBe("abc123");
-    },
-  );
 });
