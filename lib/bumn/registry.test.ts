@@ -1,19 +1,19 @@
 import { describe, expect, it } from "vitest";
 import { BUMN_REGISTRY, getBumn, isAllowedTopicCode, listBumn } from "./registry";
 
-/** The full 36-BUMN portfolio (v7.0), by slug. */
+/** The 33-BUMN portfolio (v7.0), by slug. */
 const ROSTER = [
   "mandiri", "pln", "telkom", "pertamina", "bni", "bri", "jasamarga",
   "bsi", "adhikarya", "hutamakarya", "pembangunanperumahan", "waskitakarya",
   "wijayakarya", "asabri", "askrindo", "askrindosyariah", "jamkrindo",
-  "jamkrindosyariah", "asdpindonesia", "whoosh", "pelindo", "pelni",
-  "posindonesia", "garudaindonesia", "citilink", "pelitaair", "hotelnatatour",
-  "injourney", "wisataborobudur", "sarinah", "kimiafarma", "pertamina_rspp",
+  "jamkrindosyariah", "asdpindonesia", "pelindo", "pelni",
+  "posindonesia", "garudaindonesia", "citilink", "pelitaair",
+  "injourney", "sarinah", "kimiafarma", "pertamina_rspp",
   "pegadaian", "manajemenaset", "galangankapal", "agrinaspalma",
 ];
 
 describe("BUMN registry (T1 / AC1)", () => {
-  it("registers the full 36-BUMN portfolio (v7.0)", () => {
+  it("registers the 33-BUMN portfolio (v7.0)", () => {
     expect(listBumn().map((b) => b.slug).sort()).toEqual([...ROSTER].sort());
   });
 

@@ -48,7 +48,6 @@ export const BUMN_REGISTRY: Bumn[] = [
   { slug: "pembangunanperumahan", name: "PT PP (Pembangunan Perumahan)", short: "PTPP", sector: "infrastruktur", topicCode: "danantara_pembangunanperumahan" },
   { slug: "waskitakarya", name: "Waskita Karya", short: "WSKT", sector: "infrastruktur", topicCode: "danantara_waskitakarya" },
   { slug: "wijayakarya", name: "Wijaya Karya", short: "WIKA", sector: "infrastruktur", topicCode: "danantara_wijayakarya" },
-  { slug: "whoosh", name: "Whoosh", short: "Whoosh", sector: "infrastruktur", topicCode: "danantara_whoosh" },
   { slug: "pelindo", name: "Pelindo", short: "Pelindo", sector: "infrastruktur", topicCode: "danantara_pelindo" },
   { slug: "asdpindonesia", name: "ASDP Indonesia Ferry", short: "ASDP", sector: "infrastruktur", topicCode: "danantara_asdpindonesia" },
   { slug: "pelni", name: "PELNI", short: "PELNI", sector: "infrastruktur", topicCode: "danantara_pelni" },
@@ -61,9 +60,7 @@ export const BUMN_REGISTRY: Bumn[] = [
   { slug: "galangankapal", name: "Galangan Kapal", short: "Galangan", sector: "industri", topicCode: "danantara_galangankapal" },
   { slug: "kimiafarma", name: "Kimia Farma", short: "KAEF", sector: "industri", topicCode: "danantara_kimiafarma" },
   { slug: "pertamina_rspp", name: "RS Pusat Pertamina (RSPP)", short: "RSPP", sector: "industri", topicCode: "danantara_pertamina_rspp" },
-  { slug: "hotelnatatour", name: "Hotel Indonesia Natour", short: "HIN", sector: "industri", topicCode: "danantara_hotelnatatour" },
   { slug: "injourney", name: "InJourney", short: "InJourney", sector: "industri", topicCode: "danantara_injourney" },
-  { slug: "wisataborobudur", name: "Wisata Borobudur (TWC)", short: "Borobudur", sector: "industri", topicCode: "danantara_wisataborobudur" },
 
   // Pangan & konsumer
   { slug: "agrinaspalma", name: "AgriNas Palma", short: "AgriNas", sector: "pangan", topicCode: "danantara_agrinaspalma" },
