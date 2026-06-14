@@ -56,9 +56,14 @@ export function rankIssues(issues: CeoIssue[]): CeoIssue[] {
   return [...issues].sort((a, b) => b.reach - a.reach);
 }
 
-/** BUMN ranked most-negative first — the CEO's job is spotting problems. */
+/**
+ * BUMN ranked by **negative reach** (loudest negative audience first), tie-broken
+ * by **positive reach** — the CEO's job is spotting the problems heard by the most
+ * people, not the highest net-negative %. `negMentions`/`posMentions` are the
+ * impression-weighted reach derived from each feed's sentiment split.
+ */
 export function rankBumn(rows: BumnSentiment[]): BumnSentiment[] {
-  return [...rows].sort((a, b) => a.sentiment - b.sentiment);
+  return [...rows].sort((a, b) => b.negMentions - a.negMentions || b.posMentions - a.posMentions);
 }
 
 /** Max history entries kept per issue (~24 ticks ≈ 96 s of wall time). */
@@ -177,11 +182,15 @@ export function tick(state: CeoState, rand: () => number, arcs: EscalationArc[])
     return { ...issue, mentions, reach, history, velocity: vel, status };
   });
 
+  // Recompute pos/neg reach from the drifted sentiment *before* ranking, so
+  // rankBumn (negative-reach order) sees the fresh figures and the output stays
+  // sorted by the same values it ranks on.
   const bumn = state.bumn.map((row) => {
     const drift = (rand() * 2 - 1) * SENTIMENT_DRIFT;
     const sentiment = Math.max(-100, Math.min(100, row.sentiment + drift));
     const trend = [...row.trend, sentiment].slice(-HISTORY_LIMIT);
-    return { ...row, sentiment, trend };
+    const { pos, neg } = sentimentBreakdown(sentiment, row.mentions);
+    return { ...row, sentiment, trend, posMentions: pos, negMentions: neg };
   });
 
   const rankedIssues = rankIssues(issues).map((issue, idx) => {
@@ -192,8 +201,7 @@ export function tick(state: CeoState, rand: () => number, arcs: EscalationArc[])
 
   const rankedBumn = rankBumn(bumn).map((row, idx) => {
     const rankHistory = [...row.rankHistory, idx + 1].slice(-HISTORY_LIMIT);
-    const { pos, neg } = sentimentBreakdown(row.sentiment, row.mentions);
-    return { ...row, rankHistory, rankDelta: rankMovement(rankHistory), posMentions: pos, negMentions: neg };
+    return { ...row, rankHistory, rankDelta: rankMovement(rankHistory) };
   });
 
   return { tickCount, issues: rankedIssues, bumn: rankedBumn };
