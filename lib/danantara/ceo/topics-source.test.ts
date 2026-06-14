@@ -117,3 +117,23 @@ describe("mapTopicsResponse (T18 / AC19)", () => {
     expect(intent[0].share_of_voice).toBe(61);
   });
 });
+
+describe("mapTopicsResponse — Nexorus idquery (board-level, from meta) (T9 / AC6,AC8)", () => {
+  // The real upstream returns ONE idquery per topic-code, in `meta` (lowercase) —
+  // it identifies that brand's Nexorus monitoring board, not an individual topic.
+  const withIdQuery: TopicsApiResponse = {
+    ...SAMPLE,
+    meta: { ...SAMPLE.meta, idquery: "68ca1a83408aa" },
+  };
+
+  it("stamps meta.idquery onto every issue's idQuery", () => {
+    const { issues } = mapTopicsResponse(withIdQuery);
+    expect(issues.length).toBeGreaterThan(0);
+    for (const i of issues) expect(i.idQuery).toBe("68ca1a83408aa");
+  });
+
+  it("leaves idQuery undefined when meta has no idquery (no crash)", () => {
+    const { issues } = mapTopicsResponse(SAMPLE); // SAMPLE.meta carries no idquery
+    for (const i of issues) expect(i.idQuery).toBeUndefined();
+  });
+});

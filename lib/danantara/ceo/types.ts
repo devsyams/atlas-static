@@ -30,6 +30,7 @@ export interface CeoIssue {
   rankDelta: number; // rank one window ago − current rank; positive = climbed (derived)
   posMentions: number; // positive-tone mention count (derived)
   negMentions: number; // negative-tone mention count (derived)
+  idQuery?: string; // Nexorus dashboard deep-link id (P8 v2.0); absent for older feeds
 }
 
 /** One of the top-20 BUMN, scored by net public sentiment. */

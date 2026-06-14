@@ -49,6 +49,24 @@ describe("GET /api/v1/danantara/bumn-board (T-A20 / AC20)", () => {
     expect(body.issues.every((i: { relatedBumn: string[] }) => i.relatedBumn.length === 1)).toBe(true);
   });
 
+  it("caps the in-flight upstream fan-out so a big roster can't hammer the upstream (T19 / AC1 v7.0)", async () => {
+    let inFlight = 0;
+    let maxInFlight = 0;
+    vi.stubGlobal("fetch", vi.fn(async () => {
+      inFlight += 1;
+      maxInFlight = Math.max(maxInFlight, inFlight);
+      await new Promise((r) => setTimeout(r, 5)); // hold the slot so calls overlap
+      inFlight -= 1;
+      return new Response(JSON.stringify(sample()), { status: 200 });
+    }));
+
+    const res = await GET(req());
+    const body = await res.json();
+    expect(body.bumn).toHaveLength(BUMN_REGISTRY.length); // every BUMN still produced
+    expect(BUMN_REGISTRY.length).toBeGreaterThan(8); // guard: the cap is actually exercised
+    expect(maxInFlight).toBeLessThanOrEqual(8); // never more than the cap at once
+  });
+
   it("never leaks the api key in the response", async () => {
     vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify(sample()), { status: 200 })));
     const res = await GET(req());

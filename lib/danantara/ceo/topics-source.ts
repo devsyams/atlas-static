@@ -39,7 +39,9 @@ export interface TopicIntent {
 export interface TopicsApiResponse {
   success: boolean;
   status_code: number;
-  meta: { topic: string; startdate: string; enddate: string };
+  // `idquery` (P8 v2.0) is the Nexorus monitoring-board id for this whole topic code —
+  // one per response, used to deep-link into that board's Nexorus dashboard view.
+  meta: { topic: string; idquery?: string; startdate: string; enddate: string };
   data: { topics: UpstreamTopic[]; summary: TopicsSummary; intent: TopicIntent[] };
 }
 
@@ -127,10 +129,12 @@ function toIssue(t: UpstreamTopic, idx: number): CeoIssue {
  */
 export function mapTopicsResponse(json: TopicsApiResponse): MappedTopics {
   const raw = json.data.topics.map(toIssue);
+  const idQuery = json.meta?.idquery; // board-level Nexorus monitoring id (shared by every topic)
   const issues = rankIssues(raw).map((issue, idx) => ({
     ...issue,
     rankHistory: Array.from({ length: 8 }, () => idx + 1), // flat: zero movement on a snapshot
     rankDelta: 0,
+    idQuery,
   }));
   return { issues, summary: json.data.summary, intent: json.data.intent };
 }
