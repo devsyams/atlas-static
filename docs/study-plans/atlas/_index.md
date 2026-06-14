@@ -37,7 +37,7 @@
 | **A5** | AI assistant — briefing, forecast & per-widget ask | 3-act | S5 | E7 | 1.0 | Planned |
 | **A6** | Real-time ticker, alerts & War Room | 3-act | S5–S6 | E8 | 1.0 | Planned |
 | **A7** | Danantara CEO Command Wall (zero-click demo) | 3-act | demo | — | 43.0 | Built |
-| **A8** | Per-BUMN CEO sentiment dashboards | 3-act | demo | — | 6.0 | Built |
+| **A8** | Per-BUMN CEO sentiment dashboards | 3-act | demo | — | 7.0 | Built |
 | **A9** | Communication Response Calculator | 3-act | demo | — | 3.1 | Built |
 
 **Totals:** 27 features · 8 platform · 5 watch · 5 understand · 9 act.
@@ -137,3 +137,4 @@
 | 1.78 | 2026-06-11 | A7 → v42.0, A8 → v5.0 Built — topics requests drop `startdate`/`enddate` (upstream defaults to 7d); rolling window + 7d→28d widening removed from the shared feed; stale-empty confirm kept |
 | 1.79 | 2026-06-11 | A7 → v43.0, A8 → v6.0 Built — 28-day widening restored as a fallback on the date-less default (v42.0 emptied BMRI/TLKM/PLN whose coverage is older than 7d); applies to every topic code |
 | 1.80 | 2026-06-14 | P8 → v2.0 Built (MAJOR, TDD) — "View in Nexorus" deep link in the topic detail modal. After live verification: `idquery` sourced from `meta.idquery` (board-level, not per-topic); **new** garudaperkasa deep-link BFF `app/api/v1/nexorus/topic` (separate service from OpenGate) mints a magic link + 307s with a same-origin `redirect` to `dashboard_demo?id=monitoring&idquery=…`; OpenGate gear link unchanged. AC6–AC9, T6–T10; **243 tests green**, tsc + lint clean. Live finding: magic link ignores `redirect` today → interim signs into dashboard; backend ask filed (`docs/integrations/nexorus-dashboard-deeplink.md`). Spec `2026-06-14-nexorus-topic-deeplink-design.md` |
+| 1.81 | 2026-06-14 | A8 → v7.0 Built (MAJOR, TDD) — list the **full 36-BUMN portfolio** (was 7); client supplied the topic codes, all verified live. 29 new registry rows (name/short/sector derived, monogram logo fallback); registry-driven so dashboards/logins/index/allowlist/board follow automatically. CEO-wall board fan-out gains a concurrency cap (A7 board perf, no AC change). **245 tests green**, tsc + lint clean |

@@ -23,6 +23,7 @@ export interface Bumn {
 }
 
 export const BUMN_REGISTRY: Bumn[] = [
+  // Launch set (A8 v1.0)
   { slug: "mandiri", name: "Bank Mandiri", short: "BMRI", sector: "perbankan", topicCode: "danantara_mandiri" },
   { slug: "pln", name: "PLN", short: "PLN", sector: "energi", topicCode: "danantara_pln" },
   { slug: "telkom", name: "Telkom Indonesia", short: "TLKM", sector: "telko", topicCode: "danantara_telkom" },
@@ -30,6 +31,43 @@ export const BUMN_REGISTRY: Bumn[] = [
   { slug: "bni", name: "Bank BNI", short: "BBNI", sector: "perbankan", topicCode: "danantara_bni" },
   { slug: "bri", name: "Bank BRI", short: "BBRI", sector: "perbankan", topicCode: "danantara_bri" },
   { slug: "jasamarga", name: "Jasa Marga", short: "JSMR", sector: "infrastruktur", topicCode: "danantara_jasamarga" },
+
+  // Portfolio expansion (A8 v7.0) — financial services
+  { slug: "bsi", name: "Bank Syariah Indonesia", short: "BRIS", sector: "perbankan", topicCode: "danantara_bsi" },
+  { slug: "asabri", name: "ASABRI", short: "ASABRI", sector: "perbankan", topicCode: "danantara_asabri" },
+  { slug: "askrindo", name: "Askrindo", short: "Askrindo", sector: "perbankan", topicCode: "danantara_askrindo" },
+  { slug: "askrindosyariah", name: "Askrindo Syariah", short: "Askrindo Sy", sector: "perbankan", topicCode: "danantara_askrindosyariah" },
+  { slug: "jamkrindo", name: "Jamkrindo", short: "Jamkrindo", sector: "perbankan", topicCode: "danantara_jamkrindo" },
+  { slug: "jamkrindosyariah", name: "Jamkrindo Syariah", short: "Jamkrindo Sy", sector: "perbankan", topicCode: "danantara_jamkrindosyariah" },
+  { slug: "pegadaian", name: "Pegadaian", short: "Pegadaian", sector: "perbankan", topicCode: "danantara_pegadaian" },
+  { slug: "manajemenaset", name: "Danantara Manajemen Aset", short: "Aset", sector: "perbankan", topicCode: "danantara_manajemenaset" },
+
+  // Construction & transport networks
+  { slug: "adhikarya", name: "Adhi Karya", short: "ADHI", sector: "infrastruktur", topicCode: "danantara_adhikarya" },
+  { slug: "hutamakarya", name: "Hutama Karya", short: "HK", sector: "infrastruktur", topicCode: "danantara_hutamakarya" },
+  { slug: "pembangunanperumahan", name: "PT PP (Pembangunan Perumahan)", short: "PTPP", sector: "infrastruktur", topicCode: "danantara_pembangunanperumahan" },
+  { slug: "waskitakarya", name: "Waskita Karya", short: "WSKT", sector: "infrastruktur", topicCode: "danantara_waskitakarya" },
+  { slug: "wijayakarya", name: "Wijaya Karya", short: "WIKA", sector: "infrastruktur", topicCode: "danantara_wijayakarya" },
+  { slug: "whoosh", name: "Whoosh", short: "Whoosh", sector: "infrastruktur", topicCode: "danantara_whoosh" },
+  { slug: "pelindo", name: "Pelindo", short: "Pelindo", sector: "infrastruktur", topicCode: "danantara_pelindo" },
+  { slug: "asdpindonesia", name: "ASDP Indonesia Ferry", short: "ASDP", sector: "infrastruktur", topicCode: "danantara_asdpindonesia" },
+  { slug: "pelni", name: "PELNI", short: "PELNI", sector: "infrastruktur", topicCode: "danantara_pelni" },
+
+  // Industri & logistik
+  { slug: "posindonesia", name: "Pos Indonesia", short: "Pos", sector: "industri", topicCode: "danantara_posindonesia" },
+  { slug: "garudaindonesia", name: "Garuda Indonesia", short: "GIAA", sector: "industri", topicCode: "danantara_garudaindonesia" },
+  { slug: "citilink", name: "Citilink", short: "Citilink", sector: "industri", topicCode: "danantara_citilink" },
+  { slug: "pelitaair", name: "Pelita Air", short: "Pelita Air", sector: "industri", topicCode: "danantara_pelitaair" },
+  { slug: "galangankapal", name: "Galangan Kapal", short: "Galangan", sector: "industri", topicCode: "danantara_galangankapal" },
+  { slug: "kimiafarma", name: "Kimia Farma", short: "KAEF", sector: "industri", topicCode: "danantara_kimiafarma" },
+  { slug: "pertamina_rspp", name: "RS Pusat Pertamina (RSPP)", short: "RSPP", sector: "industri", topicCode: "danantara_pertamina_rspp" },
+  { slug: "hotelnatatour", name: "Hotel Indonesia Natour", short: "HIN", sector: "industri", topicCode: "danantara_hotelnatatour" },
+  { slug: "injourney", name: "InJourney", short: "InJourney", sector: "industri", topicCode: "danantara_injourney" },
+  { slug: "wisataborobudur", name: "Wisata Borobudur (TWC)", short: "Borobudur", sector: "industri", topicCode: "danantara_wisataborobudur" },
+
+  // Pangan & konsumer
+  { slug: "agrinaspalma", name: "AgriNas Palma", short: "AgriNas", sector: "pangan", topicCode: "danantara_agrinaspalma" },
+  { slug: "sarinah", name: "Sarinah", short: "Sarinah", sector: "pangan", topicCode: "danantara_sarinah" },
 ];
 
 /** The Danantara-wide code served by the CEO command wall (A7). */
