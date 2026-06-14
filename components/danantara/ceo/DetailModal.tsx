@@ -146,7 +146,7 @@ export function DetailModal({
                   </div>
                   <a
                     data-testid="nexorus-deeplink"
-                    href={`/api/v1/opengate/autologin?idquery=${encodeURIComponent(issue.idQuery)}`}
+                    href={`/api/v1/nexorus/topic?idquery=${encodeURIComponent(issue.idQuery)}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-2 rounded-lg border border-primary/40 bg-primary/10 px-4 py-2 text-base font-semibold text-primary transition-colors hover:bg-primary/20"

@@ -171,7 +171,7 @@ describe("DetailModal (T10 / AC10)", () => {
     const link = screen.getByTestId("nexorus-deeplink");
     expect(link).toHaveAttribute("target", "_blank");
     expect(link).toHaveAttribute("rel", expect.stringContaining("noopener"));
-    expect(link).toHaveAttribute("href", "/api/v1/opengate/autologin?idquery=694368b190153");
+    expect(link).toHaveAttribute("href", "/api/v1/nexorus/topic?idquery=694368b190153");
   });
 
   it("hides the 'View in Nexorus' deep link when the topic has no idQuery (P8 v2.0 / T6 / AC8)", () => {

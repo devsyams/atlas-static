@@ -3,6 +3,19 @@
 > Date: 2026-06-14 · Feature: **P8** (Nexorus cross-app link) → **v2.0** · Stage: 0-platform
 > Status: design approved, pre-implementation
 
+> **⚠ As-built correction (2026-06-14, after live verification).** Two assumptions below
+> were wrong and were corrected during the build — see the P8 v2.0 block in
+> `docs/study-plans/atlas/0-platform.md` for the accurate record:
+> 1. **`idquery` is board-level, in `meta.idquery`** (lowercase) — not a per-topic field.
+>    It is stamped onto every issue.
+> 2. **The dashboard is `nexorus.garudaperkasa.io`**, a *different* service from OpenGate
+>    (`opengate.nexorus.io`). The deep link uses a **new** route `app/api/v1/nexorus/topic`,
+>    not the OpenGate route (which is unchanged).
+> 3. **The magic link ignores destination params today** (lands on `dashboard_demo?id=topics`);
+>    the deep link is wired with a `redirect` and becomes topic-precise once the backend honors
+>    it — backend ask: `docs/integrations/nexorus-dashboard-deeplink.md`.
+> The sections below preserve the original (pre-verification) design intent.
+
 ## Problem
 
 The topics API now returns an `idQuery` per topic. Nexorus exposes a per-topic detail
