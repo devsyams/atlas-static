@@ -307,7 +307,7 @@ breach is invisible until it hurts. This is the gate between "feature-complete" 
 
 ### P8. Nexorus cross-app link (autologin: home + per-topic deep link)
 
-- **Version:** 2.0 · **Stage:** 0-platform · **Sprint:** demo · **Status:** In progress
+- **Version:** 2.0 · **Stage:** 0-platform · **Sprint:** demo · **Status:** Built
   · **Spec ref:** `docs/superpowers/specs/2026-06-14-nexorus-topic-deeplink-design.md`
   (client request, 2026-06-11; topic deep link 2026-06-14) · **Owner:** platform
 
@@ -404,10 +404,12 @@ existing `Dropdown` and gear menu in `AppShell`; `atlas_auth` cookie convention 
 `middleware.ts`/`lib/auth.ts`; v2.0 reuses the **same** P8 BFF route + the existing topics →
 `CeoIssue` mapping pipeline (`topics-source.ts` → `DetailModal`).
 
-**v2.0 — contract details to verify at build (both degrade to home if wrong):** (1) the real
-upstream JSON key — client called it `idQuery`, the URL param is `idquery`; confirm against a live
-`topics` payload before finalizing the mapping. (2) the autologin param name — assumed
-`autologin_generate` accepts `idquery` directly; confirm against the live autologin response.
+**v2.0 — contract details (both degrade to home if wrong):** (1) the real upstream JSON key —
+client called it `idQuery`, but the rest of the feed is snake_case; **resolved by reading all three
+casings** (`idQuery` / `idquery` / `id_query`) in `toIssue`, so any casing works without a code
+change. (2) the autologin param name — the BFF forwards `idquery` to `autologin_generate` (assumed
+per "it's based on the idquery"); **still to confirm against the live autologin response** — if the
+upstream expects a different param the deep link safely degrades to the dashboard home.
 
 **Risks:** (1) magic links are short-lived/single-use → mitigated by generating a fresh link per
 click, never prefetching; (2) upstream latency blocks the new tab on a blank page → 5 s abort +
@@ -438,4 +440,4 @@ call).
 | Version | Date | Change |
 |---|---|---|
 | 1.0 | 2026-06-11 | Initial plan — gear-menu autologin deep link into OpenGate (client request) |
-| 2.0 | 2026-06-14 | **MAJOR** — per-topic "View in Nexorus" deep link in the topic detail modal: topics API `idQuery` plumbed `UpstreamTopic`→`CeoIssue`→`DetailModal`; P8 BFF extended to forward a validated `idquery` so the magic link lands on the topic (`dashboard_demo?id=monitoring&idquery=…`); gear-menu home link unchanged. AC6–AC9 added; renamed "OpenGate cross-app link" → "Nexorus cross-app link" |
+| 2.0 | 2026-06-14 | **MAJOR** — per-topic "View in Nexorus" deep link in the topic detail modal: topics API `idQuery` plumbed `UpstreamTopic`→`CeoIssue`→`DetailModal`; P8 BFF extended to forward a validated `idquery` so the magic link lands on the topic (`dashboard_demo?id=monitoring&idquery=…`); gear-menu home link unchanged. AC6–AC9 added; renamed "OpenGate cross-app link" → "Nexorus cross-app link". Built (TDD): 9 new tests (T6–T9), full suite 237 green, tsc clean. Mapping reads `idQuery`/`idquery`/`id_query` (casing tolerant); live autologin `idquery` param still to confirm (degrades to home) |

@@ -87,13 +87,16 @@ feed payloads keep working unchanged).
   (`target="_blank"`, `rel="noopener"`, `href` with encoded `idquery`); issue **without**
   `idQuery` renders no button.
 
-## Two contract details to verify at build (both degrade to home if wrong)
+## Two contract details (both degrade to home if wrong)
 
-1. **Upstream field name** — client called it `idQuery`; the example URL param is `idquery`.
-   Confirm the real JSON key against a live `topics` payload before finalizing the mapping.
-2. **Autologin param name** — assumed `autologin_generate` accepts `idquery` directly (per
-   "it's based on the idquery"). Confirm the param name / mechanism against the live
-   autologin response.
+1. **Upstream field name** — client called it `idQuery`, but the rest of the feed is
+   snake_case (`stats_sentiment`, `total_impressions`…). **Resolved:** `toIssue` reads all
+   three casings (`idQuery ?? idquery ?? id_query`), so whichever the upstream uses works
+   without a code change. No live probe was possible (no local API key).
+2. **Autologin param name** — the BFF forwards `idquery` to `autologin_generate` (assumed
+   per "it's based on the idquery"). **Still to confirm** against the live autologin
+   response; if the upstream expects a different param, the deep link safely lands on the
+   dashboard home instead of the topic.
 
 ## Governance
 

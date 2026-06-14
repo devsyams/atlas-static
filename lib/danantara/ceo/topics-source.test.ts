@@ -117,3 +117,45 @@ describe("mapTopicsResponse (T18 / AC19)", () => {
     expect(intent[0].share_of_voice).toBe(61);
   });
 });
+
+describe("mapTopicsResponse — Nexorus idQuery (T9 / AC6,AC8)", () => {
+  const withIdQuery: TopicsApiResponse = {
+    ...SAMPLE,
+    data: {
+      ...SAMPLE.data,
+      topics: [
+        { ...SAMPLE.data.topics[0], idQuery: "694368b190153" }, // has a deep-link id
+        { ...SAMPLE.data.topics[1] }, // none → should map to undefined
+      ],
+    },
+  };
+
+  it("carries idQuery from the upstream topic onto the CeoIssue", () => {
+    const { issues } = mapTopicsResponse(withIdQuery);
+    const tagged = issues.find((i) => i.title.startsWith("Kontroversi"))!;
+    expect(tagged.idQuery).toBe("694368b190153");
+  });
+
+  it("leaves idQuery undefined when the upstream topic omits it (no crash)", () => {
+    const { issues } = mapTopicsResponse(withIdQuery);
+    const untagged = issues.find((i) => i.title.startsWith("Kunjungan"))!;
+    expect(untagged.idQuery).toBeUndefined();
+  });
+
+  // The upstream is otherwise snake_case (stats_sentiment, total_impressions…),
+  // so accept whichever casing it actually uses for the deep-link id.
+  it.each(["idQuery", "idquery", "id_query"])(
+    "reads the deep-link id from the upstream `%s` key",
+    (key) => {
+      const payload = {
+        ...SAMPLE,
+        data: {
+          ...SAMPLE.data,
+          topics: [{ ...SAMPLE.data.topics[0], [key]: "abc123" }],
+        },
+      } as TopicsApiResponse;
+      const { issues } = mapTopicsResponse(payload);
+      expect(issues[0].idQuery).toBe("abc123");
+    },
+  );
+});

@@ -21,6 +21,11 @@ export interface UpstreamTopic {
   sentiment: string; // "positive" | "negative" | "neutral" (categorical)
   stats_sentiment: { positive: number; negative: number; neutral: number }; // percentages
   penjelasan: string;
+  // Nexorus dashboard deep-link id (P8 v2.0); not always present, and the upstream's
+  // casing is unconfirmed — accept camelCase, lowercase, or snake_case.
+  idQuery?: string;
+  idquery?: string;
+  id_query?: string;
 }
 
 export interface TopicsSummary {
@@ -118,6 +123,7 @@ function toIssue(t: UpstreamTopic, idx: number): CeoIssue {
     rankDelta: 0,
     posMentions: Math.round((mentions * positive) / 100),
     negMentions: Math.round((mentions * negative) / 100),
+    idQuery: t.idQuery ?? t.idquery ?? t.id_query,
   };
 }
 

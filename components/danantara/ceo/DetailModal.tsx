@@ -2,7 +2,7 @@
 
 import { useEffect, type CSSProperties } from "react";
 import Link from "next/link";
-import { ArrowRight, BarChart3, Building2, Eye, LayoutDashboard, Sparkles, X } from "lucide-react";
+import { ArrowRight, BarChart3, Building2, ExternalLink, Eye, LayoutDashboard, Sparkles, X } from "lucide-react";
 import { fmtCount, pieTotals } from "@/lib/danantara/ceo/format";
 import type { CeoState } from "@/lib/danantara/ceo/types";
 import { SECTOR_LABEL } from "@/lib/danantara/ui";
@@ -136,6 +136,25 @@ export function DetailModal({
 
               {/* Counter-Noise — below the penjelasan; only for a negative topic. */}
               {tone.label === "Negative" && <CounterNoisePanel issue={issue} />}
+
+              {/* Open this same topic in the Nexorus dashboard (deep link via the
+                  session-gated autologin BFF). Only when the feed carries an idQuery. */}
+              {issue.idQuery && (
+                <div>
+                  <div className="mb-2 flex items-center gap-1.5 text-lg font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                    <ExternalLink className="h-4 w-4" /> Nexorus Dashboard
+                  </div>
+                  <a
+                    data-testid="nexorus-deeplink"
+                    href={`/api/v1/opengate/autologin?idquery=${encodeURIComponent(issue.idQuery)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 rounded-lg border border-primary/40 bg-primary/10 px-4 py-2 text-base font-semibold text-primary transition-colors hover:bg-primary/20"
+                  >
+                    View in Nexorus <ArrowRight className="h-4 w-4" />
+                  </a>
+                </div>
+              )}
 
               {/* Jump to the related BUMN's own dashboard. */}
               {relatedBumn.length > 0 && (
