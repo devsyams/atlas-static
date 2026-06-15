@@ -163,7 +163,7 @@ describe("DetailModal (T10 / AC10)", () => {
     expect(screen.queryByTestId("counter-noise")).not.toBeInTheDocument();
   });
 
-  it("shows a 'View in Nexorus' deep link when the topic has an idQuery (P8 v2.0 / T6 / AC6,AC7)", () => {
+  it("shows a 'View Nexorus Opengate' deep link when the topic has an idQuery (P8 v3.1 / T6 / AC6,AC7)", () => {
     const deep: CeoIssue = { ...issue, id: "deep-topic", idQuery: "694368b190153" };
     const st: CeoState = { tickCount: 0, issues: [deep], bumn: [] };
     render(<DetailModal selection={{ type: "issue", id: "deep-topic" }} state={st} onClose={vi.fn()} onNavigate={vi.fn()} />);
@@ -174,7 +174,7 @@ describe("DetailModal (T10 / AC10)", () => {
     expect(link).toHaveAttribute("href", "/api/v1/nexorus/topic?idquery=694368b190153");
   });
 
-  it("hides the 'View in Nexorus' deep link when the topic has no idQuery (P8 v2.0 / T6 / AC8)", () => {
+  it("hides the 'View Nexorus Opengate' deep link when the topic has no idQuery (P8 v3.1 / T6 / AC8)", () => {
     render(<DetailModal selection={{ type: "issue", id: topIssue.id }} state={state} onClose={vi.fn()} onNavigate={vi.fn()} />);
     expect(screen.queryByTestId("nexorus-deeplink")).not.toBeInTheDocument();
   });

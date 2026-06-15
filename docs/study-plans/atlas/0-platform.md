@@ -307,7 +307,7 @@ breach is invisible until it hurts. This is the gate between "feature-complete" 
 
 ### P8. Nexorus cross-app link (autologin: home + per-topic deep link)
 
-- **Version:** 3.0 · **Stage:** 0-platform · **Sprint:** demo · **Status:** Built
+- **Version:** 3.1 · **Stage:** 0-platform · **Sprint:** demo · **Status:** Built
   · **Spec ref:** `docs/superpowers/specs/2026-06-14-nexorus-topic-deeplink-design.md`
   (client request, 2026-06-11; topic deep link 2026-06-14; OpenGate `redirect` resolution 2026-06-15) · **Owner:** platform
 
@@ -374,17 +374,19 @@ the deep link topic-precise — no more interim "signed-in dashboard home" landi
   cookie, *When* it is hit directly, *Then* it redirects to `/login` and no OpenGate link is
   generated (the route must not be an anonymous OpenGate-session minter; middleware skips
   `/api`, so the route checks the cookie itself).
-- **AC6** *(v2.0)* — *Given* a topic in the detail modal whose feed `meta.idquery` is present (so
-  the issue carries an `idQuery`), *When* the user opens that topic's detail, *Then* a
-  **"View in Nexorus"** item with an external-link icon is visible in the issue detail body.
-- **AC7** *(v2.0, amended v3.0)* — *Given* the topic detail is open, *When* the user clicks "View in
-  Nexorus", *Then* a **new tab** opens that signs the user in via a fresh **OpenGate** magic link
+- **AC6** *(v2.0, label v3.1)* — *Given* a topic in the detail modal whose feed `meta.idquery` is
+  present (so the issue carries an `idQuery`), *When* the user opens that topic's detail, *Then* a
+  **"View Nexorus Opengate"** item *(v3.1: was "View in Nexorus")* with an external-link icon is
+  visible in the issue detail body.
+- **AC7** *(v2.0, amended v3.0, label v3.1)* — *Given* the topic detail is open, *When* the user
+  clicks "View Nexorus Opengate", *Then* a **new tab** opens that signs the user in via a fresh
+  **OpenGate** magic link
   whose `redirect` lands them on the topic's monitoring view
   (`dashboard_demo?id=monitoring&idquery=…`), and the ATLAS tab stays where it was. *(**v3.0:** the
   landing is **topic-precise now** — OpenGate honors `redirect`; the v2.0 interim "dashboard home"
   caveat is removed.)*
 - **AC8** *(v2.0)* — *Given* a topic whose feed has **no** `meta.idquery`, *When* the user opens
-  its detail, *Then* **no** "View in Nexorus" item renders (graceful degradation).
+  its detail, *Then* **no** "View Nexorus Opengate" item renders (graceful degradation).
 - **AC9** *(v2.0, amended v3.0)* — *Given* the dashboard deep-link BFF is called with an `idquery`
   param, *When* the upstream succeeds, *Then* it mints the **OpenGate** magic link by calling
   `autologin_generate` with `redirect=<url-encoded query string `id=monitoring&idquery=…`>` **baked
@@ -439,7 +441,8 @@ the deep link topic-precise — no more interim "signed-in dashboard home" landi
 - `change` `lib/danantara/ceo/topics-source.ts` — add `idquery?` to the `meta` type; stamp
   `meta.idquery` onto every `CeoIssue` in `mapTopicsResponse` (board-level, not per-topic).
 - `change` `lib/danantara/ceo/types.ts` — add `idQuery?: string` to `CeoIssue`.
-- `change` `components/danantara/ceo/DetailModal.tsx` — render a **"View in Nexorus"**
+- `change` `components/danantara/ceo/DetailModal.tsx` — render a **"View Nexorus Opengate"**
+  *(v3.1; was "View in Nexorus")*
   `<a href="/api/v1/nexorus/topic?idquery=<encoded>" target="_blank" rel="noopener noreferrer">`
   with an `ExternalLink` icon **only when** the issue has an `idQuery`.
 - `change` `.env.example` — `NEXORUS_DASHBOARD_AUTOLOGIN_BASE`, `NEXORUS_DASHBOARD_BASE`,
@@ -490,7 +493,7 @@ browser treats it as a user-gesture navigation, no `window.open` after `await`.
 | T3 | AC3 | route: upstream network error · timeout · `ok:false` · missing `login_url` · non-200 → 307 with `Location: https://opengate.nexorus.io` | unit |
 | T4 | AC4 | route responses (success + every failure mode) contain the API key in no header/body | unit |
 | T5 | AC5 | route without `atlas_auth=1` cookie → 307 to `/login`; upstream is never called | unit |
-| T6 | AC6/AC8 | DetailModal issue **with** `idQuery` renders a "View in Nexorus" anchor (`target="_blank"`, `rel="noopener noreferrer"`, href `/api/v1/nexorus/topic?idquery=<encoded>`); issue **without** `idQuery` renders none | component |
+| T6 | AC6/AC8 | DetailModal issue **with** `idQuery` renders a "View Nexorus Opengate" anchor *(v3.1 label)* (`target="_blank"`, `rel="noopener noreferrer"`, href `/api/v1/nexorus/topic?idquery=<encoded>`); issue **without** `idQuery` renders none | component |
 | T7 | AC7/AC9 | nexorus/topic route *(v3.0)*: valid `idquery` + upstream 200 → the **generate call** carries `redirect=<encoded `id=monitoring&idquery=…`>` (query string only — **no** `dashboard_demo`/`://` in the param), response **307s to `login_url` as-is** (no redirect appended); `api_key` sent upstream, never in the response | unit |
 | T8 | AC8/AC9 | nexorus/topic route *(v3.0)*: missing · empty · invalid-charset `idquery` → **generate call carries no `redirect`**, 307 to `login_url`; bad value never appears in the generate URL or `Location` | unit |
 | T9 | AC6/AC8 | mapping: `meta.idquery` stamped onto **every** `CeoIssue.idQuery`; absent `meta.idquery` → `idQuery` undefined, no crash | unit |
@@ -507,4 +510,5 @@ no `idQuery` simply hide the deep link; no cost ledger impact (no LLM call).
 |---|---|---|
 | 1.0 | 2026-06-11 | Initial plan — gear-menu autologin deep link into OpenGate (client request) |
 | 2.0 | 2026-06-14 | **MAJOR** — "View in Nexorus" deep link in the topic detail modal. As built (after live verification): `idquery` sourced from `meta.idquery` (board-level) and stamped onto every issue; **new** garudaperkasa deep-link BFF `app/api/v1/nexorus/topic` (separate service from OpenGate) mints a magic link and 307s with a same-origin `redirect` to `dashboard_demo?id=monitoring&idquery=…`; modal renders the link only when `idQuery` present; OpenGate gear-menu link unchanged. AC6–AC9, T6–T10. TDD: full suite **243 green**, tsc clean, lint clean. **Live finding:** the magic link ignores `redirect` today (lands on `dashboard_demo?id=topics`) → interim is a signed-in dashboard; backend ask filed (`docs/integrations/nexorus-dashboard-deeplink.md`). Corrects the first draft's wrong per-topic/OpenGate assumptions |
+| 3.1 | 2026-06-15 | **MINOR** (presentation, no behaviour change) — rename the topic deep-link button **"View in Nexorus" → "View Nexorus Opengate"** (matches the gear-menu "Nexorus Opengate" wording), after live confirmation the deep link works. Label only; ACs/T6 quote updated. `DetailModal.tsx` |
 | 3.0 | 2026-06-15 | **MAJOR** — backend ask resolved (OpenGate team). The deep link now mints through **OpenGate's** `autologin_generate` with `redirect` **baked into the generate call** (url-encoded) and 307s straight to the returned `login_url`. **Live-corrected:** OpenGate **hosts the dashboard** and appends the decoded `redirect` after a fixed `dashboard_demo?`, so the param is the **query string only** (`id=monitoring&idquery=…`), **not** a full URL (a URL nested as `…/dashboard_demo?https://…/dashboard_demo?…`); target is OpenGate, garudaperkasa no longer involved. **Topic-precise now** — the v2.0 interim "signed-in dashboard home" landing is gone. Route repointed to `OPENGATE_AUTOLOGIN_BASE` + `OPENGATE_API_KEY`, fallback = OpenGate origin; `NEXORUS_DASHBOARD_AUTOLOGIN_BASE`/`NEXORUS_DASHBOARD_API_KEY`/`NEXORUS_DASHBOARD_BASE` retired. AC7/AC9 amended, T7/T8 reworked; integration doc marked resolved |
