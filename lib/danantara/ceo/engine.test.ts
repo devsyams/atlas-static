@@ -87,17 +87,34 @@ describe("rankIssues (T2 / AC2)", () => {
 });
 
 describe("rankBumn (T3 / AC3)", () => {
-  it("sorts most-negative sentiment first", () => {
+  it("sorts by highest negative reach first", () => {
     const ranked = rankBumn([
-      makeBumn({ id: "good", sentiment: 60 }),
-      makeBumn({ id: "bad", sentiment: -70 }),
-      makeBumn({ id: "neutral", sentiment: 0 }),
+      makeBumn({ id: "quiet", negMentions: 100, posMentions: 50 }),
+      makeBumn({ id: "loud", negMentions: 9000, posMentions: 50 }),
+      makeBumn({ id: "mid", negMentions: 5000, posMentions: 50 }),
     ]);
-    expect(ranked.map((b) => b.id)).toEqual(["bad", "neutral", "good"]);
+    expect(ranked.map((b) => b.id)).toEqual(["loud", "mid", "quiet"]);
+  });
+
+  it("tie-breaks equal negative reach by positive reach (desc)", () => {
+    const ranked = rankBumn([
+      makeBumn({ id: "lowpos", negMentions: 1000, posMentions: 100 }),
+      makeBumn({ id: "highpos", negMentions: 1000, posMentions: 900 }),
+    ]);
+    expect(ranked.map((b) => b.id)).toEqual(["highpos", "lowpos"]);
+  });
+
+  it("ranks by negative reach regardless of net sentiment", () => {
+    // `big` is net-positive but has far more negative reach than the net-negative `small`.
+    const ranked = rankBumn([
+      makeBumn({ id: "small", sentiment: -80, negMentions: 90, posMentions: 10 }),
+      makeBumn({ id: "big", sentiment: 40, negMentions: 9000, posMentions: 12000 }),
+    ]);
+    expect(ranked.map((b) => b.id)).toEqual(["big", "small"]);
   });
 
   it("does not mutate the input array", () => {
-    const input = [makeBumn({ id: "a", sentiment: 10 }), makeBumn({ id: "b", sentiment: -10 })];
+    const input = [makeBumn({ id: "a", negMentions: 10 }), makeBumn({ id: "b", negMentions: 20 })];
     rankBumn(input);
     expect(input.map((b) => b.id)).toEqual(["a", "b"]);
   });
@@ -127,17 +144,17 @@ describe("tick (T2 / AC2)", () => {
     expect(next.issues[0].history[next.issues[0].history.length - 1]).toBe(next.issues[0].mentions);
   });
 
-  it("keeps issues ranked by reach and bumn by sentiment after ticking", () => {
+  it("keeps issues ranked by reach and bumn by negative reach after ticking", () => {
     const state = makeState(
       [makeIssue({ id: "a", reach: 100 }), makeIssue({ id: "b", reach: 200 })],
-      [makeBumn({ id: "x", sentiment: 50 }), makeBumn({ id: "y", sentiment: -50 })],
+      [makeBumn({ id: "x", negMentions: 200 }), makeBumn({ id: "y", negMentions: 800 })],
     );
     const next = tick(state, mulberry32(1), []);
     for (let i = 1; i < next.issues.length; i++) {
       expect(next.issues[i - 1].reach).toBeGreaterThanOrEqual(next.issues[i].reach);
     }
     for (let i = 1; i < next.bumn.length; i++) {
-      expect(next.bumn[i - 1].sentiment).toBeLessThanOrEqual(next.bumn[i].sentiment);
+      expect(next.bumn[i - 1].negMentions).toBeGreaterThanOrEqual(next.bumn[i].negMentions);
     }
   });
 

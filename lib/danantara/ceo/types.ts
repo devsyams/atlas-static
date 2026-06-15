@@ -61,5 +61,5 @@ export interface EscalationArc {
 export interface CeoState {
   tickCount: number;
   issues: CeoIssue[]; // ALWAYS sorted by reach desc (rankIssues)
-  bumn: BumnSentiment[]; // ALWAYS sorted most-negative first (rankBumn)
+  bumn: BumnSentiment[]; // ALWAYS sorted by negative reach desc, then positive reach desc (rankBumn)
 }
