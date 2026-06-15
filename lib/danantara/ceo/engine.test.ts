@@ -87,19 +87,29 @@ describe("rankIssues (T2 / AC2)", () => {
 });
 
 describe("rankBumn (T3 / AC3)", () => {
-  it("sorts by highest negative reach first", () => {
+  it("sorts by highest negative reach first (negReach, not impressions)", () => {
     const ranked = rankBumn([
-      makeBumn({ id: "quiet", negMentions: 100, posMentions: 50 }),
-      makeBumn({ id: "loud", negMentions: 9000, posMentions: 50 }),
-      makeBumn({ id: "mid", negMentions: 5000, posMentions: 50 }),
+      makeBumn({ id: "quiet", negReach: 100, posReach: 50 }),
+      makeBumn({ id: "loud", negReach: 9_000_000, posReach: 50 }),
+      makeBumn({ id: "mid", negReach: 5_000_000, posReach: 50 }),
     ]);
     expect(ranked.map((b) => b.id)).toEqual(["loud", "mid", "quiet"]);
   });
 
+  it("ranks by reach, NOT impression-based negMentions", () => {
+    // `bigReach` has huge negative reach but tiny negMentions; `bigMentions` is
+    // the reverse. The reach one must win — guards against the v44.0 regression.
+    const ranked = rankBumn([
+      makeBumn({ id: "bigMentions", negMentions: 9_000_000, negReach: 100 }),
+      makeBumn({ id: "bigReach", negMentions: 1, negReach: 9_000_000 }),
+    ]);
+    expect(ranked.map((b) => b.id)).toEqual(["bigReach", "bigMentions"]);
+  });
+
   it("tie-breaks equal negative reach by positive reach (desc)", () => {
     const ranked = rankBumn([
-      makeBumn({ id: "lowpos", negMentions: 1000, posMentions: 100 }),
-      makeBumn({ id: "highpos", negMentions: 1000, posMentions: 900 }),
+      makeBumn({ id: "lowpos", negReach: 1_000_000, posReach: 100 }),
+      makeBumn({ id: "highpos", negReach: 1_000_000, posReach: 900 }),
     ]);
     expect(ranked.map((b) => b.id)).toEqual(["highpos", "lowpos"]);
   });
@@ -107,14 +117,14 @@ describe("rankBumn (T3 / AC3)", () => {
   it("ranks by negative reach regardless of net sentiment", () => {
     // `big` is net-positive but has far more negative reach than the net-negative `small`.
     const ranked = rankBumn([
-      makeBumn({ id: "small", sentiment: -80, negMentions: 90, posMentions: 10 }),
-      makeBumn({ id: "big", sentiment: 40, negMentions: 9000, posMentions: 12000 }),
+      makeBumn({ id: "small", sentiment: -80, negReach: 90, posReach: 10 }),
+      makeBumn({ id: "big", sentiment: 40, negReach: 9_000_000, posReach: 12_000_000 }),
     ]);
     expect(ranked.map((b) => b.id)).toEqual(["big", "small"]);
   });
 
   it("does not mutate the input array", () => {
-    const input = [makeBumn({ id: "a", negMentions: 10 }), makeBumn({ id: "b", negMentions: 20 })];
+    const input = [makeBumn({ id: "a", negReach: 10 }), makeBumn({ id: "b", negReach: 20 })];
     rankBumn(input);
     expect(input.map((b) => b.id)).toEqual(["a", "b"]);
   });
@@ -147,14 +157,14 @@ describe("tick (T2 / AC2)", () => {
   it("keeps issues ranked by reach and bumn by negative reach after ticking", () => {
     const state = makeState(
       [makeIssue({ id: "a", reach: 100 }), makeIssue({ id: "b", reach: 200 })],
-      [makeBumn({ id: "x", negMentions: 200 }), makeBumn({ id: "y", negMentions: 800 })],
+      [makeBumn({ id: "x", reach: 1000 }), makeBumn({ id: "y", reach: 4000 })],
     );
     const next = tick(state, mulberry32(1), []);
     for (let i = 1; i < next.issues.length; i++) {
       expect(next.issues[i - 1].reach).toBeGreaterThanOrEqual(next.issues[i].reach);
     }
     for (let i = 1; i < next.bumn.length; i++) {
-      expect(next.bumn[i - 1].negMentions).toBeGreaterThanOrEqual(next.bumn[i].negMentions);
+      expect(next.bumn[i - 1].negReach).toBeGreaterThanOrEqual(next.bumn[i].negReach);
     }
   });
 

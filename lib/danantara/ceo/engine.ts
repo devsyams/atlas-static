@@ -59,11 +59,12 @@ export function rankIssues(issues: CeoIssue[]): CeoIssue[] {
 /**
  * BUMN ranked by **negative reach** (loudest negative audience first), tie-broken
  * by **positive reach** — the CEO's job is spotting the problems heard by the most
- * people, not the highest net-negative %. `negMentions`/`posMentions` are the
- * impression-weighted reach derived from each feed's sentiment split.
+ * people, not the highest net-negative %. `negReach`/`posReach` are reach-weighted
+ * (`total_reach × tone%`), NOT impression-weighted (v45.0 fix — v44.0 used
+ * `negMentions`, which is impressions-based and gave the wrong order).
  */
 export function rankBumn(rows: BumnSentiment[]): BumnSentiment[] {
-  return [...rows].sort((a, b) => b.negMentions - a.negMentions || b.posMentions - a.posMentions);
+  return [...rows].sort((a, b) => b.negReach - a.negReach || b.posReach - a.posReach);
 }
 
 /** Max history entries kept per issue (~24 ticks ≈ 96 s of wall time). */
@@ -189,8 +190,9 @@ export function tick(state: CeoState, rand: () => number, arcs: EscalationArc[])
     const drift = (rand() * 2 - 1) * SENTIMENT_DRIFT;
     const sentiment = Math.max(-100, Math.min(100, row.sentiment + drift));
     const trend = [...row.trend, sentiment].slice(-HISTORY_LIMIT);
-    const { pos, neg } = sentimentBreakdown(sentiment, row.mentions);
-    return { ...row, sentiment, trend, posMentions: pos, negMentions: neg };
+    const m = sentimentBreakdown(sentiment, row.mentions); // impressions-based (pie)
+    const r = sentimentBreakdown(sentiment, row.reach); // reach-based (rank key)
+    return { ...row, sentiment, trend, posMentions: m.pos, negMentions: m.neg, posReach: r.pos, negReach: r.neg };
   });
 
   const rankedIssues = rankIssues(issues).map((issue, idx) => {
