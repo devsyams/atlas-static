@@ -20,9 +20,14 @@ export interface BumnRowResult {
 export function buildBumnRow(b: Bumn, feed: FeedResult | null): BumnRowResult {
   const pct = feed?.summary?.percentage;
   const ti = feed?.summary?.total_impressions ?? 0;
+  const tr = feed?.summary?.total_reach ?? 0;
   const sentiment = pct ? Math.round(pct.positive - pct.negative) : 0;
   const posMentions = pct ? Math.round((ti * pct.positive) / 100) : 0;
   const negMentions = pct ? Math.round((ti * pct.negative) / 100) : 0;
+  // Reach-weighted tone — the BUMN board ranks on negReach (loudest negative
+  // audience first), so use total_reach, not impressions (A7 v45.0).
+  const posReach = pct ? Math.round((tr * pct.positive) / 100) : 0;
+  const negReach = pct ? Math.round((tr * pct.negative) / 100) : 0;
 
   // Re-tag each topic to this BUMN; prefix ids so they're unique across BUMN.
   const issues: CeoIssue[] = (feed?.issues ?? []).map((i) => ({
@@ -44,6 +49,9 @@ export function buildBumnRow(b: Bumn, feed: FeedResult | null): BumnRowResult {
     rankDelta: 0,
     posMentions,
     negMentions,
+    reach: tr,
+    posReach,
+    negReach,
   };
 
   return { row, issues };

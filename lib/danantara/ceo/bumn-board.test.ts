@@ -40,6 +40,20 @@ describe("buildBumnRow (T-A20 / AC20)", () => {
     expect(row.short).toBe("PLN");
   });
 
+  it("derives reach-weighted tone from total_reach (the rank key, v45.0)", () => {
+    const { row } = buildBumnRow(PLN, feed(3));
+    expect(row.reach).toBe(9_000_000);
+    expect(row.posReach).toBe(630_000); // 9M × 7%
+    expect(row.negReach).toBe(6_840_000); // 9M × 76%
+  });
+
+  it("zeroes reach fields when the feed failed (null)", () => {
+    const { row } = buildBumnRow(PLN, null);
+    expect(row.reach).toBe(0);
+    expect(row.posReach).toBe(0);
+    expect(row.negReach).toBe(0);
+  });
+
   it("re-tags each topic to the BUMN with a unique id", () => {
     const { issues } = buildBumnRow(PLN, feed(2));
     expect(issues).toHaveLength(2);

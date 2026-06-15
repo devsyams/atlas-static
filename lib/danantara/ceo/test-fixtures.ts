@@ -37,6 +37,9 @@ export function makeBumn(over: Partial<BumnSentiment> & { id: string }): BumnSen
     rankDelta: 0,
     posMentions: 350,
     negMentions: 350,
+    reach: 1000,
+    posReach: 350,
+    negReach: 350,
     ...over,
   };
 }
