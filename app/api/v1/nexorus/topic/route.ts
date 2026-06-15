@@ -1,22 +1,23 @@
 import { NextResponse } from "next/server";
 
 /**
- * P8 v2.0 — Nexorus dashboard topic deep link. Mints a fresh garudaperkasa
- * autologin magic link server-side and 307-redirects the browser to it, asking
- * (via a `redirect` param) to land on that topic's monitoring view
- * (`dashboard_demo?id=monitoring&idquery=…`) after sign-in. The gear-menu
- * OpenGate link (`/api/v1/opengate/autologin`) is a different service and is
- * unchanged.
+ * P8 v3.0 — Nexorus dashboard topic deep link. Mints a fresh **OpenGate**
+ * autologin magic link server-side and 307-redirects the browser to it. The
+ * post-login destination — that topic's monitoring view
+ * (`dashboard_demo?id=monitoring&idquery=…` on the garudaperkasa dashboard) — is
+ * baked into the **generate** call via `redirect=<url-encoded>`, so the returned
+ * `login_url` already carries it and the browser is 307'd straight onto it
+ * (OpenGate is the shared SSO; its session lands the user on the dashboard).
  *
- * NOTE (verified 2026-06-14 against the live service): the magic link currently
- * IGNORES the `redirect` param and always lands on `dashboard_demo?id=topics`,
- * so today this signs the user into the dashboard but not the exact topic. The
- * `redirect` is wired and ready so the deep link becomes topic-precise the moment
- * the backend honors it (see docs/integrations/nexorus-dashboard-deeplink.md).
+ * v3.0 resolves the v2.0 gap: the OpenGate team confirmed `autologin_generate`
+ * honors `redirect`, so the deep link is topic-precise now (no more interim
+ * "signed-in dashboard home"). The gear-menu OpenGate home link
+ * (`/api/v1/opengate/autologin`) is the same service, just without a `redirect`.
  *
  * Guardrails: the `api_key` never leaves the server; the route accepts exactly
  * one client param (`idquery`), strictly validated so it can be neither an open
- * proxy nor an open redirect; it requires the `atlas_auth` session cookie itself
+ * proxy nor an open redirect (the redirect target is built server-side to a fixed
+ * same-origin dashboard URL); it requires the `atlas_auth` session cookie itself
  * because the middleware matcher skips `/api`. Every failure degrades to the
  * dashboard home, never a dead end.
  *
@@ -28,7 +29,7 @@ import { NextResponse } from "next/server";
  * stale or leak).
  */
 
-const DEFAULT_AUTOLOGIN_BASE = "https://nexorus.garudaperkasa.io/autologin/autologin_generate";
+const DEFAULT_AUTOLOGIN_BASE = "https://opengate.nexorus.io/autologin/autologin_generate";
 const DEFAULT_DASHBOARD_BASE = "https://nexorus.garudaperkasa.io/dashboard_demo";
 const UPSTREAM_TIMEOUT_MS = 5_000;
 
@@ -49,13 +50,12 @@ export async function GET(req: Request) {
   const dashBase = process.env.NEXORUS_DASHBOARD_BASE || DEFAULT_DASHBOARD_BASE;
   const fallback = new URL(dashBase).origin;
 
-  const apiKey = process.env.NEXORUS_DASHBOARD_API_KEY || process.env.DANANTARA_TOPICS_API_KEY;
+  const apiKey = process.env.OPENGATE_API_KEY || process.env.DANANTARA_TOPICS_API_KEY;
   if (!apiKey) {
     return NextResponse.redirect(fallback);
   }
 
-  const genBase = process.env.NEXORUS_DASHBOARD_AUTOLOGIN_BASE || DEFAULT_AUTOLOGIN_BASE;
-  const upstream = `${genBase}?api_key=${encodeURIComponent(apiKey)}`;
+  const genBase = process.env.OPENGATE_AUTOLOGIN_BASE || DEFAULT_AUTOLOGIN_BASE;
 
   // Only a well-formed idquery becomes a post-login destination; anything else
   // just signs the user in (no topic redirect, no open redirect).
@@ -64,6 +64,11 @@ export async function GET(req: Request) {
     idQuery && ID_QUERY_RE.test(idQuery)
       ? `${dashBase}?id=monitoring&idquery=${encodeURIComponent(idQuery)}`
       : null;
+
+  // Bake the destination into the generate call: OpenGate encodes it into the
+  // magic-link token, so the returned login_url lands the user there after sign-in.
+  let upstream = `${genBase}?api_key=${encodeURIComponent(apiKey)}`;
+  if (topicTarget) upstream += `&redirect=${encodeURIComponent(topicTarget)}`;
 
   try {
     const res = await fetch(upstream, {
@@ -77,11 +82,8 @@ export async function GET(req: Request) {
       return NextResponse.redirect(fallback);
     }
 
-    const loginUrl = body.login_url;
-    if (!topicTarget) return NextResponse.redirect(loginUrl);
-
-    const sep = loginUrl.includes("?") ? "&" : "?";
-    return NextResponse.redirect(`${loginUrl}${sep}redirect=${encodeURIComponent(topicTarget)}`);
+    // The destination is carried by the token — 307 straight to the magic link.
+    return NextResponse.redirect(body.login_url);
   } catch {
     return NextResponse.redirect(fallback);
   }

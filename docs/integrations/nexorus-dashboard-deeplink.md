@@ -1,5 +1,14 @@
 # Backend ask — Nexorus dashboard topic deep link (autologin `redirect`)
 
+> **✅ RESOLVED (2026-06-15).** The OpenGate team shipped `redirect` support on the
+> **OpenGate** autologin instead of garudaperkasa:
+> `GET https://opengate.nexorus.io/autologin/autologin_generate?api_key=…&redirect=<url-encoded>`
+> mints a magic link that signs the user in and then lands on `redirect`. ATLAS
+> (P8 v3.0) now mints through OpenGate with the redirect baked into the generate
+> call and 307s to the returned `login_url`; the redirect target is the same
+> garudaperkasa `dashboard_demo?id=monitoring&idquery=…` (OpenGate is the shared
+> SSO). The original ask below is kept for history.
+
 > For the **Nexorus / garudaperkasa** backend team. Audience: whoever owns
 > `nexorus.garudaperkasa.io/autologin/*`. Verified live on 2026-06-14.
 

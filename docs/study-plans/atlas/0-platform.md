@@ -307,9 +307,9 @@ breach is invisible until it hurts. This is the gate between "feature-complete" 
 
 ### P8. Nexorus cross-app link (autologin: home + per-topic deep link)
 
-- **Version:** 2.0 · **Stage:** 0-platform · **Sprint:** demo · **Status:** Built
+- **Version:** 3.0 · **Stage:** 0-platform · **Sprint:** demo · **Status:** Built
   · **Spec ref:** `docs/superpowers/specs/2026-06-14-nexorus-topic-deeplink-design.md`
-  (client request, 2026-06-11; topic deep link 2026-06-14) · **Owner:** platform
+  (client request, 2026-06-11; topic deep link 2026-06-14; OpenGate `redirect` resolution 2026-06-15) · **Owner:** platform
 
 #### PM
 **Background (why):** The ATLAS dashboards are deliberately glanceable; when a demo user (the
@@ -341,6 +341,16 @@ garudaperkasa magic link currently **ignores all destination params** and always
 topic-precise once the backend honors a `redirect` param — see
 `docs/integrations/nexorus-dashboard-deeplink.md`.
 
+**v3.0 — OpenGate `redirect` resolution (2026-06-15):** the backend ask is **answered**, on the
+**OpenGate** side rather than garudaperkasa. The OpenGate team confirmed
+`GET https://opengate.nexorus.io/autologin/autologin_generate?api_key=…&redirect=<url-encoded path>`
+honors a `redirect`: the minted magic link establishes the session and then lands on `redirect`.
+So the topic deep link now mints through **OpenGate's** generate endpoint with the redirect **baked
+into the generate call** (encoded), and 307s straight to the returned `login_url` — the destination
+is carried by the token, not appended to the login URL. The `redirect` target is unchanged: the
+garudaperkasa monitoring view `dashboard_demo?id=monitoring&idquery=…` (OpenGate is the shared SSO).
+This makes the deep link topic-precise today — no more interim "signed-in dashboard home" landing.
+
 **Acceptance criteria (Given / When / Then):**
 - **AC1** — *Given* a signed-in ATLAS user on any page (including the minimal-chrome executive
   dashboards and a `danantara`-scoped demo user), *When* they open the gear menu, *Then* a
@@ -361,19 +371,22 @@ topic-precise once the backend honors a `redirect` param — see
 - **AC6** *(v2.0)* — *Given* a topic in the detail modal whose feed `meta.idquery` is present (so
   the issue carries an `idQuery`), *When* the user opens that topic's detail, *Then* a
   **"View in Nexorus"** item with an external-link icon is visible in the issue detail body.
-- **AC7** *(v2.0)* — *Given* the topic detail is open, *When* the user clicks "View in Nexorus",
-  *Then* a **new tab** opens that signs the user into the Nexorus dashboard via a fresh magic link,
-  with a `redirect` to the topic's monitoring view (`dashboard_demo?id=monitoring&idquery=…`), and
-  the ATLAS tab stays where it was. *(Until the backend honors `redirect`, the user lands on the
-  dashboard home; the topic-precise landing flips on with no ATLAS change.)*
+- **AC7** *(v2.0, amended v3.0)* — *Given* the topic detail is open, *When* the user clicks "View in
+  Nexorus", *Then* a **new tab** opens that signs the user in via a fresh **OpenGate** magic link
+  whose `redirect` lands them on the topic's monitoring view
+  (`dashboard_demo?id=monitoring&idquery=…`), and the ATLAS tab stays where it was. *(**v3.0:** the
+  landing is **topic-precise now** — OpenGate honors `redirect`; the v2.0 interim "dashboard home"
+  caveat is removed.)*
 - **AC8** *(v2.0)* — *Given* a topic whose feed has **no** `meta.idquery`, *When* the user opens
   its detail, *Then* **no** "View in Nexorus" item renders (graceful degradation).
-- **AC9** *(v2.0)* — *Given* the dashboard deep-link BFF is called with an `idquery` param, *When*
-  the upstream succeeds, *Then* it mints the garudaperkasa magic link and 307s to it with a
-  `redirect` to the same-origin topic URL; *When* `idquery` is missing/empty/invalid, *Then* it
-  signs the user in with **no** topic redirect (no open redirect). `idquery` is the **only** accepted
-  client param, strictly validated/encoded; the `api_key` never reaches the browser; every failure
-  degrades to the dashboard home.
+- **AC9** *(v2.0, amended v3.0)* — *Given* the dashboard deep-link BFF is called with an `idquery`
+  param, *When* the upstream succeeds, *Then* it mints the **OpenGate** magic link by calling
+  `autologin_generate` with `redirect=<encoded same-origin dashboard_demo?id=monitoring&idquery=…>`
+  **baked into the generate call**, and 307s straight to the returned `login_url` (the destination is
+  carried in the token, not appended); *When* `idquery` is missing/empty/invalid, *Then* it mints
+  with **no** `redirect` and signs the user in with no topic redirect (no open redirect). `idquery`
+  is the **only** accepted client param, strictly validated/encoded; the `api_key` never reaches the
+  browser; every failure degrades to the dashboard home.
 
 #### Architecture
 **Impact — files add/change:**
@@ -392,12 +405,28 @@ topic-precise once the backend honors a `redirect` param — see
   (falls back to `DANANTARA_TOPICS_API_KEY`, which is the key in use today).
 
 **v2.0 — files add/change (dashboard topic deep link) — as built:**
-- `add` `app/api/v1/nexorus/topic/route.ts` — **new** GET BFF on the garudaperkasa service: checks
-  `atlas_auth` (AC5); mints `${NEXORUS_DASHBOARD_AUTOLOGIN_BASE}?api_key=…` (5 s timeout, key
-  server-side, `force-dynamic`); validates `ok` + `login_url`; 307s to the magic link with
-  `&redirect=<encoded same-origin dashboard_demo?id=monitoring&idquery=…>` when `idquery` is valid
-  (`^[A-Za-z0-9]+$`), else 307s to the magic link with no redirect. Every failure → 307 to the
-  dashboard origin.
+- `add` `app/api/v1/nexorus/topic/route.ts` — GET BFF: checks `atlas_auth` (AC5); mints the magic
+  link (5 s timeout, key server-side, `force-dynamic`); validates `ok` + `login_url`; builds the
+  same-origin redirect target `dashboard_demo?id=monitoring&idquery=…` when `idquery` is valid
+  (`^[A-Za-z0-9]+$`). Every failure → 307 to the dashboard origin. *(**v3.0** rewires the mint — see
+  below.)*
+
+**v3.0 — files change (OpenGate `redirect` resolution):**
+- `change` `app/api/v1/nexorus/topic/route.ts` — mint through **OpenGate's** generate endpoint
+  (`${OPENGATE_AUTOLOGIN_BASE}?api_key=…`) with `&redirect=<encoded dashboard_demo?id=monitoring&idquery=…>`
+  **appended to the generate call** when `idquery` is valid, then **307 straight to the returned
+  `login_url`** (the destination is baked into the token — no longer appended to `login_url`). Key is
+  `OPENGATE_API_KEY` → `DANANTARA_TOPICS_API_KEY`; redirect target base stays `NEXORUS_DASHBOARD_BASE`;
+  fallback stays the dashboard origin. The garudaperkasa autologin generate is no longer used by this
+  route.
+- `change` `app/api/v1/nexorus/topic/route.test.ts` — assert the generate call carries the encoded
+  `redirect`, the 307 goes to `login_url` as-is, and (no/invalid `idquery`) generate carries no
+  `redirect`.
+- `change` `.env.example` — the topic deep link now uses `OPENGATE_AUTOLOGIN_BASE` + `OPENGATE_API_KEY`
+  for the mint and `NEXORUS_DASHBOARD_BASE` for the redirect target; `NEXORUS_DASHBOARD_AUTOLOGIN_BASE`
+  / `NEXORUS_DASHBOARD_API_KEY` retired.
+- `change` `docs/integrations/nexorus-dashboard-deeplink.md` — mark the ask **resolved** (OpenGate
+  honors `redirect` at generate).
 - `add` `app/api/v1/nexorus/topic/route.test.ts` — 15 vitest cases (see QA).
 - `change` `lib/danantara/ceo/topics-source.ts` — add `idquery?` to the `meta` type; stamp
   `meta.idquery` onto every `CeoIssue` in `mapTopicsResponse` (board-level, not per-topic).
@@ -428,6 +457,13 @@ OpenGate's shape). The magic link currently **ignores `redirect`/`id`/`idquery`*
 becomes topic-precise once the backend honors it (`docs/integrations/nexorus-dashboard-deeplink.md`).
 Until then it degrades to a signed-in dashboard, never a dead end.
 
+**v3.0 — contract resolved (2026-06-15):** the OpenGate team confirmed `redirect` is honored at the
+**generate** step on **OpenGate** (`opengate.nexorus.io/autologin/autologin_generate?api_key=…&redirect=<url-encoded>`):
+the returned `login_url` signs the user in and then lands on the (url-encoded) `redirect`. ATLAS now
+mints through OpenGate with the redirect baked into the generate call and 307s straight to `login_url`.
+The redirect target is the same garudaperkasa monitoring URL (OpenGate is the shared SSO). The interim
+"signed-in dashboard home" landing is gone — the deep link is topic-precise.
+
 **Risks:** (1) magic links are short-lived/single-use → mitigated by generating a fresh link per
 click, never prefetching; (2) upstream latency blocks the new tab on a blank page → 5 s abort +
 fallback redirect; (3) the key is shared with the topics feed today → `OPENGATE_API_KEY` override
@@ -443,8 +479,8 @@ browser treats it as a user-gesture navigation, no `window.open` after `await`.
 | T4 | AC4 | route responses (success + every failure mode) contain the API key in no header/body | unit |
 | T5 | AC5 | route without `atlas_auth=1` cookie → 307 to `/login`; upstream is never called | unit |
 | T6 | AC6/AC8 | DetailModal issue **with** `idQuery` renders a "View in Nexorus" anchor (`target="_blank"`, `rel="noopener noreferrer"`, href `/api/v1/nexorus/topic?idquery=<encoded>`); issue **without** `idQuery` renders none | component |
-| T7 | AC7/AC9 | nexorus/topic route: valid `idquery` + upstream 200 → 307 to the magic `login_url` with `&redirect=<encoded dashboard_demo?id=monitoring&idquery=…>`; `api_key` sent upstream, never in the response | unit |
-| T8 | AC8/AC9 | nexorus/topic route: missing · empty · invalid-charset `idquery` → 307 to the magic link with **no** `redirect` (no open redirect); bad value never appears in `Location` | unit |
+| T7 | AC7/AC9 | nexorus/topic route *(v3.0)*: valid `idquery` + upstream 200 → the **generate call** carries `redirect=<encoded dashboard_demo?id=monitoring&idquery=…>`, response **307s to `login_url` as-is** (no redirect appended); `api_key` sent upstream, never in the response | unit |
+| T8 | AC8/AC9 | nexorus/topic route *(v3.0)*: missing · empty · invalid-charset `idquery` → **generate call carries no `redirect`**, 307 to `login_url`; bad value never appears in the generate URL or `Location` | unit |
 | T9 | AC6/AC8 | mapping: `meta.idquery` stamped onto **every** `CeoIssue.idQuery`; absent `meta.idquery` → `idQuery` undefined, no crash | unit |
 | T10 | AC3/AC5 | nexorus/topic route: no `atlas_auth` → 307 `/login`, upstream untouched; network/timeout/`ok:false`/missing `login_url`/non-200/no-key → 307 to the dashboard home | unit |
 
@@ -459,3 +495,4 @@ no `idQuery` simply hide the deep link; no cost ledger impact (no LLM call).
 |---|---|---|
 | 1.0 | 2026-06-11 | Initial plan — gear-menu autologin deep link into OpenGate (client request) |
 | 2.0 | 2026-06-14 | **MAJOR** — "View in Nexorus" deep link in the topic detail modal. As built (after live verification): `idquery` sourced from `meta.idquery` (board-level) and stamped onto every issue; **new** garudaperkasa deep-link BFF `app/api/v1/nexorus/topic` (separate service from OpenGate) mints a magic link and 307s with a same-origin `redirect` to `dashboard_demo?id=monitoring&idquery=…`; modal renders the link only when `idQuery` present; OpenGate gear-menu link unchanged. AC6–AC9, T6–T10. TDD: full suite **243 green**, tsc clean, lint clean. **Live finding:** the magic link ignores `redirect` today (lands on `dashboard_demo?id=topics`) → interim is a signed-in dashboard; backend ask filed (`docs/integrations/nexorus-dashboard-deeplink.md`). Corrects the first draft's wrong per-topic/OpenGate assumptions |
+| 3.0 | 2026-06-15 | **MAJOR** — backend ask resolved (OpenGate team). The deep link now mints through **OpenGate's** `autologin_generate` with `redirect` **baked into the generate call** (url-encoded) and 307s straight to the returned `login_url`; the OpenGate session lands the user on the garudaperkasa monitoring view `dashboard_demo?id=monitoring&idquery=…`. **Topic-precise now** — the v2.0 interim "signed-in dashboard home" landing is gone. Route repointed to `OPENGATE_AUTOLOGIN_BASE` + `OPENGATE_API_KEY`; `NEXORUS_DASHBOARD_BASE` kept for the redirect target; `NEXORUS_DASHBOARD_AUTOLOGIN_BASE`/`NEXORUS_DASHBOARD_API_KEY` retired. AC7/AC9 amended, T7/T8 reworked; integration doc marked resolved |
