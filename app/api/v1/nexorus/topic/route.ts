@@ -3,11 +3,14 @@ import { NextResponse } from "next/server";
 /**
  * P8 v3.0 — Nexorus dashboard topic deep link. Mints a fresh **OpenGate**
  * autologin magic link server-side and 307-redirects the browser to it. The
- * post-login destination — that topic's monitoring view
- * (`dashboard_demo?id=monitoring&idquery=…` on the garudaperkasa dashboard) — is
- * baked into the **generate** call via `redirect=<url-encoded>`, so the returned
- * `login_url` already carries it and the browser is 307'd straight onto it
- * (OpenGate is the shared SSO; its session lands the user on the dashboard).
+ * post-login destination is baked into the **generate** call via
+ * `redirect=<url-encoded>`, so the returned `login_url` already carries it.
+ *
+ * OpenGate hosts the dashboard itself and lands the user on
+ * `https://opengate.nexorus.io/dashboard_demo?<decoded redirect>` after sign-in —
+ * i.e. it appends the decoded `redirect` after `dashboard_demo?`. So `redirect`
+ * is the **query string only** (`id=monitoring&idquery=…`), NOT a full URL:
+ * passing a URL nests it as `…/dashboard_demo?https://…/dashboard_demo?…`.
  *
  * v3.0 resolves the v2.0 gap: the OpenGate team confirmed `autologin_generate`
  * honors `redirect`, so the deep link is topic-precise now (no more interim
@@ -30,7 +33,6 @@ import { NextResponse } from "next/server";
  */
 
 const DEFAULT_AUTOLOGIN_BASE = "https://opengate.nexorus.io/autologin/autologin_generate";
-const DEFAULT_DASHBOARD_BASE = "https://nexorus.garudaperkasa.io/dashboard_demo";
 const UPSTREAM_TIMEOUT_MS = 5_000;
 
 /** Nexorus deep-link ids are opaque alphanumeric tokens (e.g. 68ca1a83408aa).
@@ -47,28 +49,27 @@ export async function GET(req: Request) {
     return NextResponse.redirect(new URL("/login", req.url));
   }
 
-  const dashBase = process.env.NEXORUS_DASHBOARD_BASE || DEFAULT_DASHBOARD_BASE;
-  const fallback = new URL(dashBase).origin;
+  const genBase = process.env.OPENGATE_AUTOLOGIN_BASE || DEFAULT_AUTOLOGIN_BASE;
+  // OpenGate hosts the dashboard; a failure lands the user on its home page.
+  const fallback = new URL(genBase).origin;
 
   const apiKey = process.env.OPENGATE_API_KEY || process.env.DANANTARA_TOPICS_API_KEY;
   if (!apiKey) {
     return NextResponse.redirect(fallback);
   }
 
-  const genBase = process.env.OPENGATE_AUTOLOGIN_BASE || DEFAULT_AUTOLOGIN_BASE;
-
   // Only a well-formed idquery becomes a post-login destination; anything else
   // just signs the user in (no topic redirect, no open redirect).
   const idQuery = new URL(req.url).searchParams.get("idquery");
-  const topicTarget =
-    idQuery && ID_QUERY_RE.test(idQuery)
-      ? `${dashBase}?id=monitoring&idquery=${encodeURIComponent(idQuery)}`
-      : null;
+  // OpenGate appends the decoded `redirect` after `dashboard_demo?`, so this is
+  // the query string only — a full URL would nest under the dashboard path.
+  const redirectQuery =
+    idQuery && ID_QUERY_RE.test(idQuery) ? `id=monitoring&idquery=${idQuery}` : null;
 
   // Bake the destination into the generate call: OpenGate encodes it into the
   // magic-link token, so the returned login_url lands the user there after sign-in.
   let upstream = `${genBase}?api_key=${encodeURIComponent(apiKey)}`;
-  if (topicTarget) upstream += `&redirect=${encodeURIComponent(topicTarget)}`;
+  if (redirectQuery) upstream += `&redirect=${encodeURIComponent(redirectQuery)}`;
 
   try {
     const res = await fetch(upstream, {

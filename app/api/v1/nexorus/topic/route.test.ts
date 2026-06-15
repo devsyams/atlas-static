@@ -2,12 +2,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { GET } from "./route";
 
 const KEY = "SUPER-SECRET-NEXORUS-KEY";
-// v3.0: the mint goes through OpenGate's generate endpoint; the redirect target
-// is the (separate) garudaperkasa dashboard.
+// v3.0: the mint goes through OpenGate's generate endpoint, which hosts the
+// dashboard itself and appends the (decoded) `redirect` after `dashboard_demo?`.
+// So `redirect` is just the query string `id=monitoring&idquery=…`, NOT a URL.
 const GEN_BASE = "https://opengate.example.io/autologin/autologin_generate";
-const DASH_BASE = "https://dash.example.io/dashboard_demo";
 // NextResponse.redirect normalizes the bare origin with a trailing slash.
-const FALLBACK = "https://dash.example.io/";
+const FALLBACK = "https://opengate.example.io/";
 const LOGIN_URL = "https://opengate.example.io/autologin/autologin_login?token=abc123";
 
 /** Request to the route with a raw query string, signed in by default. */
@@ -22,30 +22,32 @@ const okUpstream = () =>
 describe("GET /api/v1/nexorus/topic (P8 v3.0 — OpenGate redirect deep link)", () => {
   beforeEach(() => {
     process.env.OPENGATE_AUTOLOGIN_BASE = GEN_BASE;
-    process.env.NEXORUS_DASHBOARD_BASE = DASH_BASE;
     process.env.OPENGATE_API_KEY = KEY;
   });
   afterEach(() => {
     vi.restoreAllMocks();
     vi.unstubAllGlobals();
     delete process.env.OPENGATE_AUTOLOGIN_BASE;
-    delete process.env.NEXORUS_DASHBOARD_BASE;
     delete process.env.OPENGATE_API_KEY;
     delete process.env.DANANTARA_TOPICS_API_KEY;
   });
 
-  it("bakes the redirect into the generate call and 307s to login_url as-is (T7 / AC7,AC9)", async () => {
+  it("bakes the redirect query into the generate call and 307s to login_url as-is (T7 / AC7,AC9)", async () => {
     let calledUrl = "";
     vi.stubGlobal("fetch", vi.fn(async (url: string) => { calledUrl = String(url); return okUpstream(); }));
 
     const res = await GET(req("?idquery=68ca1a83408aa"));
 
     expect(res.status).toBe(307);
-    // The redirect destination is encoded onto the GENERATE call (the token carries it)...
-    const target = `${DASH_BASE}?id=monitoring&idquery=68ca1a83408aa`;
+    // OpenGate hosts the dashboard and appends the decoded redirect after
+    // `dashboard_demo?`, so we send only the query string (not a full URL).
+    const redirectQuery = "id=monitoring&idquery=68ca1a83408aa";
     expect(calledUrl.startsWith(GEN_BASE)).toBe(true);
-    expect(calledUrl).toContain(`redirect=${encodeURIComponent(target)}`);
-    // ...so the browser is 307'd straight to the magic login_url, unchanged.
+    expect(calledUrl).toContain(`redirect=${encodeURIComponent(redirectQuery)}`);
+    // We must NOT send a full URL (that nests under opengate.../dashboard_demo?).
+    expect(calledUrl).not.toContain("dashboard_demo");
+    expect(calledUrl).not.toContain(encodeURIComponent("://"));
+    // The browser is 307'd straight to the magic login_url, unchanged.
     expect(res.headers.get("location")).toBe(LOGIN_URL);
   });
 
