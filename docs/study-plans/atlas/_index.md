@@ -19,7 +19,7 @@
 | **P5** | Authentication — email/password + sessions | 0-platform | S2 | E3 | 1.0 | Planned |
 | **P6** | RBAC, route guards & audit log | 0-platform | S2 | E3 | 1.0 | Planned |
 | **P7** | Observability, hardening, backups & launch | 0-platform | S1,S6 | E8,E9 | 1.0 | Planned |
-| **P8** | Nexorus cross-app link (autologin: home + per-topic deep link) | 0-platform | demo | — | 2.0 | Built |
+| **P8** | Nexorus cross-app link (autologin: home + per-topic deep link) | 0-platform | demo | — | 3.1 | Built |
 | **W1** | Source registry & scheduler | 1-watch | S3 | E4 | 1.0 | Planned |
 | **W2** | RSS & news-API connectors | 1-watch | S3 | E4 | 1.0 | Planned |
 | **W3** | Social connectors (X/IG/FB/TikTok) | 1-watch | S3–S4 | E4 | 1.0 | Planned |
@@ -36,7 +36,7 @@
 | **A4** | AI assistant — copilot chat | 3-act | S5 | E7 | 1.0 | Planned |
 | **A5** | AI assistant — briefing, forecast & per-widget ask | 3-act | S5 | E7 | 1.0 | Planned |
 | **A6** | Real-time ticker, alerts & War Room | 3-act | S5–S6 | E8 | 1.0 | Planned |
-| **A7** | Danantara CEO Command Wall (zero-click demo) | 3-act | demo | — | 43.0 | Built |
+| **A7** | Danantara CEO Command Wall (zero-click demo) | 3-act | demo | — | 45.0 | Built |
 | **A8** | Per-BUMN CEO sentiment dashboards | 3-act | demo | — | 7.0 | Built |
 | **A9** | Communication Response Calculator | 3-act | demo | — | 3.1 | Built |
 
@@ -138,5 +138,7 @@
 | 1.79 | 2026-06-11 | A7 → v43.0, A8 → v6.0 Built — 28-day widening restored as a fallback on the date-less default (v42.0 emptied BMRI/TLKM/PLN whose coverage is older than 7d); applies to every topic code |
 | 1.80 | 2026-06-14 | P8 → v2.0 Built (MAJOR, TDD) — "View in Nexorus" deep link in the topic detail modal. After live verification: `idquery` sourced from `meta.idquery` (board-level, not per-topic); **new** garudaperkasa deep-link BFF `app/api/v1/nexorus/topic` (separate service from OpenGate) mints a magic link + 307s with a same-origin `redirect` to `dashboard_demo?id=monitoring&idquery=…`; OpenGate gear link unchanged. AC6–AC9, T6–T10; **243 tests green**, tsc + lint clean. Live finding: magic link ignores `redirect` today → interim signs into dashboard; backend ask filed (`docs/integrations/nexorus-dashboard-deeplink.md`). Spec `2026-06-14-nexorus-topic-deeplink-design.md` |
 | 1.81 | 2026-06-14 | A8 → v7.0 Built (MAJOR, TDD) — list the **33-BUMN portfolio** (was 7); client supplied the topic codes, all verified live (3 later dropped — whoosh, hotelnatatour, wisataborobudur). 26 new registry rows (name/short/sector derived); registry-driven so dashboards/logins/index/allowlist/board follow automatically. CEO-wall board fan-out gains a concurrency cap (A7 board perf, no AC change). Logos sourced/wired per slug, monogram fallback for any gap. Tests green, tsc + lint clean |
+| 1.82 | 2026-06-14 | A7 → v44.0 Built (MAJOR, TDD) — re-rank the BUMN Sentiment board by **highest negative reach first** (`negMentions` desc), tie-broken by **positive reach** (`posMentions` desc); was most-negative net sentiment. `rankBumn` rewritten; AC3/AC18/T3 amended |
+| 1.83 | 2026-06-15 | P8 → v3.0 Built (MAJOR, TDD) — topic deep link resolves: mint through **OpenGate** `autologin_generate` with `redirect=<query string `id=monitoring&idquery=…`>` baked into the generate call (OpenGate hosts the dashboard + appends after `dashboard_demo?` — query only, not a full URL), 307 straight to `login_url`; lands topic-precise on `opengate.nexorus.io/dashboard_demo?id=monitoring&idquery=…`. Route repointed to `OPENGATE_*`, fallback = OpenGate origin; `NEXORUS_DASHBOARD_AUTOLOGIN_BASE`/`_API_KEY`/`_BASE` retired. AC7/AC9 amended, T7/T8 reworked; backend ask resolved |
 | 1.84 | 2026-06-15 | P8 → v3.1 Built (MINOR) — rename the topic deep-link button "View in Nexorus" → **"View Nexorus Opengate"** (matches gear-menu wording) after live confirmation; label only, no behaviour change |
-| 1.83 | 2026-06-15 | P8 → v3.0 Built (MAJOR, TDD) — topic deep link resolves: mint through **OpenGate** `autologin_generate` with `redirect=<query string `id=monitoring&idquery=…`>` baked into the generate call (OpenGate hosts the dashboard + appends after `dashboard_demo?` — query only, not a full URL), 307 straight to `login_url`; lands topic-precise on `opengate.nexorus.io/dashboard_demo?id=monitoring&idquery=…`. Route repointed to `OPENGATE_*`, fallback = OpenGate origin; `NEXORUS_DASHBOARD_AUTOLOGIN_BASE`/`_API_KEY`/`_BASE` retired. AC7/AC9 amended, T7/T8 reworked; backend ask resolved (1.82 reserved by the parallel A7 v44.0 branch) |
+| 1.85 | 2026-06-15 | A7 → v45.0 Built (MAJOR, TDD) — **fix** v44.0: it ranked by `negMentions` (impression-based), not reach. Add `reach`/`posReach`/`negReach` to `BumnSentiment` (from `summary.total_reach`); `rankBumn` now sorts by `negReach` → `posReach`. AC3/AC18/T3 amended; reach-derivation + regression-guard tests |

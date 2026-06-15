@@ -45,8 +45,11 @@ export interface BumnSentiment {
   topIssueId?: string; // dominant CeoIssue id
   rankHistory: number[]; // 1-based rank per tick, oldest → newest, capped at HISTORY_LIMIT (derived)
   rankDelta: number; // rank one window ago − current rank; positive = climbed (derived)
-  posMentions: number; // positive-tone mention count (derived)
-  negMentions: number; // negative-tone mention count (derived)
+  posMentions: number; // positive-tone mention count (derived, impressions-based — for the pie/Impressions)
+  negMentions: number; // negative-tone mention count (derived, impressions-based — for the pie/Impressions)
+  reach: number; // total audience reach (total_reach)
+  posReach: number; // positive-tone reach = reach × positive% (derived)
+  negReach: number; // negative-tone reach = reach × negative% (derived) — the BUMN rank key
 }
 
 /** A scripted mention-spike so a live demo reliably triggers the takeover (AC5). */
@@ -61,5 +64,5 @@ export interface EscalationArc {
 export interface CeoState {
   tickCount: number;
   issues: CeoIssue[]; // ALWAYS sorted by reach desc (rankIssues)
-  bumn: BumnSentiment[]; // ALWAYS sorted most-negative first (rankBumn)
+  bumn: BumnSentiment[]; // ALWAYS sorted by negReach desc, then posReach desc (rankBumn)
 }

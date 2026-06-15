@@ -36,6 +36,9 @@ const bumn: BumnSentiment = {
   rankDelta: 0,
   posMentions: 70,
   negMentions: 760,
+  reach: 9_000_000,
+  posReach: 630_000,
+  negReach: 6_840_000,
 };
 
 const state: CeoState = { tickCount: 0, issues: [issue], bumn: [bumn] };

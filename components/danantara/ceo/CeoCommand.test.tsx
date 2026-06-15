@@ -38,6 +38,9 @@ function mkBumn(slug: string, sentiment: number): BumnSentiment {
     rankDelta: 0,
     posMentions: 200,
     negMentions: 700,
+    reach: 1_000_000,
+    posReach: 200_000,
+    negReach: 700_000,
   };
 }
 
