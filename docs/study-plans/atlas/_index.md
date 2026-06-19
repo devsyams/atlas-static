@@ -19,7 +19,7 @@
 | **P5** | Authentication — email/password + sessions | 0-platform | S2 | E3 | 1.0 | Planned |
 | **P6** | RBAC, route guards & audit log | 0-platform | S2 | E3 | 1.0 | Planned |
 | **P7** | Observability, hardening, backups & launch | 0-platform | S1,S6 | E8,E9 | 1.0 | Planned |
-| **P8** | Nexorus cross-app link (autologin: home + per-topic deep link) | 0-platform | demo | — | 3.1 | Built |
+| **P8** | Nexorus cross-app link (autologin: home + per-topic deep link) | 0-platform | demo | — | 3.2 | Built |
 | **W1** | Source registry & scheduler | 1-watch | S3 | E4 | 1.0 | Planned |
 | **W2** | RSS & news-API connectors | 1-watch | S3 | E4 | 1.0 | Planned |
 | **W3** | Social connectors (X/IG/FB/TikTok) | 1-watch | S3–S4 | E4 | 1.0 | Planned |
@@ -143,3 +143,4 @@
 | 1.84 | 2026-06-15 | P8 → v3.1 Built (MINOR) — rename the topic deep-link button "View in Nexorus" → **"View Nexorus Opengate"** (matches gear-menu wording) after live confirmation; label only, no behaviour change |
 | 1.85 | 2026-06-15 | A7 → v45.0 Built (MAJOR, TDD) — **fix** v44.0: it ranked by `negMentions` (impression-based), not reach. Add `reach`/`posReach`/`negReach` to `BumnSentiment` (from `summary.total_reach`); `rankBumn` now sorts by `negReach` → `posReach`. AC3/AC18/T3 amended; reach-derivation + regression-guard tests |
 | 1.86 | 2026-06-19 | A7 → v46.0, A8 → v8.0 Built (MAJOR, TDD) — widen the topics cache **1 h → 6 h** (`revalidate: 21600`) so page loads hit the Garuda upstream at most once per code per 6 h (lazy stale-while-revalidate; header Refresh still forces fresh). A scheduled cron pre-warm (sequential 2.5 s pace per the OpenGate/upstream team, 05:00/13:00/21:00 WIB) was built then **dropped** — needs Vercel **Pro**; recoverable from git history. Shared `topics-feed.ts`. AC19/AC20 amended, T22 reworked |
+| 1.87 | 2026-06-19 | P8 → v3.2 Built (Bugfix, TDD) — topic deep link mislanded on **Vercel** (generic dashboard, not the topic): both OpenGate routes minted with `OPENGATE_API_KEY \|\| DANANTARA_TOPICS_API_KEY`, and a stale/missing `OPENGATE_API_KEY` on the deploy overrode the shared key. Both routes now read `DANANTARA_TOPICS_API_KEY` directly; `OPENGATE_API_KEY` retired. Per-route key-drift regression tests |

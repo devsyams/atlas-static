@@ -22,7 +22,7 @@ const okUpstream = () =>
 describe("GET /api/v1/nexorus/topic (P8 v3.0 — OpenGate redirect deep link)", () => {
   beforeEach(() => {
     process.env.OPENGATE_AUTOLOGIN_BASE = GEN_BASE;
-    process.env.OPENGATE_API_KEY = KEY;
+    process.env.DANANTARA_TOPICS_API_KEY = KEY; // the shared key the route now reads
   });
   afterEach(() => {
     vi.restoreAllMocks();
@@ -62,14 +62,17 @@ describe("GET /api/v1/nexorus/topic (P8 v3.0 — OpenGate redirect deep link)", 
     expect(res.headers.get("location")).not.toContain(KEY);
   });
 
-  it("falls back to DANANTARA_TOPICS_API_KEY when no OpenGate key is set", async () => {
-    delete process.env.OPENGATE_API_KEY;
+  it("uses DANANTARA_TOPICS_API_KEY and ignores any OPENGATE_API_KEY (Vercel key-drift fix, v3.2)", async () => {
+    // The two keys are the same; a stale/wrong OPENGATE_API_KEY on a deploy must
+    // not override the shared key (this is what broke the Vercel deep link).
+    process.env.OPENGATE_API_KEY = "stale-wrong-key-on-vercel";
     process.env.DANANTARA_TOPICS_API_KEY = "sbz_shared";
     let calledUrl = "";
     vi.stubGlobal("fetch", vi.fn(async (url: string) => { calledUrl = String(url); return okUpstream(); }));
 
     await GET(req("?idquery=68ca1a83408aa"));
     expect(calledUrl).toContain("api_key=sbz_shared");
+    expect(calledUrl).not.toContain("stale-wrong-key-on-vercel");
   });
 
   it.each([
@@ -106,7 +109,7 @@ describe("GET /api/v1/nexorus/topic (P8 v3.0 — OpenGate redirect deep link)", 
   });
 
   it("falls back when no api key is configured at all (AC3)", async () => {
-    delete process.env.OPENGATE_API_KEY;
+    delete process.env.DANANTARA_TOPICS_API_KEY;
     const fetchMock = vi.fn(async () => okUpstream());
     vi.stubGlobal("fetch", fetchMock);
 
