@@ -36,8 +36,8 @@
 | **A4** | AI assistant — copilot chat | 3-act | S5 | E7 | 1.0 | Planned |
 | **A5** | AI assistant — briefing, forecast & per-widget ask | 3-act | S5 | E7 | 1.0 | Planned |
 | **A6** | Real-time ticker, alerts & War Room | 3-act | S5–S6 | E8 | 1.0 | Planned |
-| **A7** | Danantara CEO Command Wall (zero-click demo) | 3-act | demo | — | 45.0 | Built |
-| **A8** | Per-BUMN CEO sentiment dashboards | 3-act | demo | — | 7.0 | Built |
+| **A7** | Danantara CEO Command Wall (zero-click demo) | 3-act | demo | — | 46.0 | Built |
+| **A8** | Per-BUMN CEO sentiment dashboards | 3-act | demo | — | 8.0 | Built |
 | **A9** | Communication Response Calculator | 3-act | demo | — | 3.1 | Built |
 
 **Totals:** 27 features · 8 platform · 5 watch · 5 understand · 9 act.
@@ -142,4 +142,5 @@
 | 1.83 | 2026-06-15 | P8 → v3.0 Built (MAJOR, TDD) — topic deep link resolves: mint through **OpenGate** `autologin_generate` with `redirect=<query string `id=monitoring&idquery=…`>` baked into the generate call (OpenGate hosts the dashboard + appends after `dashboard_demo?` — query only, not a full URL), 307 straight to `login_url`; lands topic-precise on `opengate.nexorus.io/dashboard_demo?id=monitoring&idquery=…`. Route repointed to `OPENGATE_*`, fallback = OpenGate origin; `NEXORUS_DASHBOARD_AUTOLOGIN_BASE`/`_API_KEY`/`_BASE` retired. AC7/AC9 amended, T7/T8 reworked; backend ask resolved |
 | 1.84 | 2026-06-15 | P8 → v3.1 Built (MINOR) — rename the topic deep-link button "View in Nexorus" → **"View Nexorus Opengate"** (matches gear-menu wording) after live confirmation; label only, no behaviour change |
 | 1.85 | 2026-06-15 | A7 → v45.0 Built (MAJOR, TDD) — **fix** v44.0: it ranked by `negMentions` (impression-based), not reach. Add `reach`/`posReach`/`negReach` to `BumnSentiment` (from `summary.total_reach`); `rankBumn` now sorts by `negReach` → `posReach`. AC3/AC18/T3 amended; reach-derivation + regression-guard tests |
-| 1.86 | 2026-06-19 | P8 → v3.2 Built (Bugfix, TDD) — topic deep link mislanded on **Vercel** (generic dashboard, not the topic): both OpenGate routes minted with `OPENGATE_API_KEY \|\| DANANTARA_TOPICS_API_KEY`, and a stale/missing `OPENGATE_API_KEY` on the deploy overrode the shared key. Both routes now read `DANANTARA_TOPICS_API_KEY` directly; `OPENGATE_API_KEY` retired. Per-route key-drift regression tests |
+| 1.86 | 2026-06-19 | A7 → v46.0, A8 → v8.0 Built (MAJOR, TDD) — widen the topics cache **1 h → 6 h** (`revalidate: 21600`) so page loads hit the Garuda upstream at most once per code per 6 h (lazy stale-while-revalidate; header Refresh still forces fresh). A scheduled cron pre-warm (sequential 2.5 s pace per the OpenGate/upstream team, 05:00/13:00/21:00 WIB) was built then **dropped** — needs Vercel **Pro**; recoverable from git history. Shared `topics-feed.ts`. AC19/AC20 amended, T22 reworked |
+| 1.87 | 2026-06-19 | P8 → v3.2 Built (Bugfix, TDD) — topic deep link mislanded on **Vercel** (generic dashboard, not the topic): both OpenGate routes minted with `OPENGATE_API_KEY \|\| DANANTARA_TOPICS_API_KEY`, and a stale/missing `OPENGATE_API_KEY` on the deploy overrode the shared key. Both routes now read `DANANTARA_TOPICS_API_KEY` directly; `OPENGATE_API_KEY` retired. Per-route key-drift regression tests |

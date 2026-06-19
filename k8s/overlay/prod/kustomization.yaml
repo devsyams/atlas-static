@@ -1,15 +1,16 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-  - ../../base
+- ../../base
 images:
-  - name: registry.digitalocean.com/nexorus-registry/danantara
-    newTag: v0.1.0
+- name: registry.digitalocean.com/nexorus-registry/danantara
+  newName: registry.digitalocean.com/nexorus-registry/danantara
+  newTag: sha-17c0f3d
 patches:
-  - target:
-      kind: Ingress
-      name: danantara
-    patch: |
-      - op: replace
-        path: /spec/rules/0/host
-        value: danantara.atlas.nexorus-alpha.io
+- patch: |
+    - op: replace
+      path: /spec/rules/0/host
+      value: danantara.atlas.nexorus-alpha.io
+  target:
+    kind: Ingress
+    name: danantara
