@@ -25,7 +25,9 @@ export async function GET(req: Request) {
     return NextResponse.redirect(new URL("/login", req.url));
   }
 
-  const apiKey = process.env.OPENGATE_API_KEY || process.env.DANANTARA_TOPICS_API_KEY;
+  // Shared key with the topics feed — read it straight from DANANTARA_TOPICS_API_KEY
+  // so a missing/stale OPENGATE_API_KEY on a deploy can't override it (v3.2).
+  const apiKey = process.env.DANANTARA_TOPICS_API_KEY;
   if (!apiKey) {
     return NextResponse.redirect(FALLBACK_URL);
   }

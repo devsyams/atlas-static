@@ -53,7 +53,11 @@ export async function GET(req: Request) {
   // OpenGate hosts the dashboard; a failure lands the user on its home page.
   const fallback = new URL(genBase).origin;
 
-  const apiKey = process.env.OPENGATE_API_KEY || process.env.DANANTARA_TOPICS_API_KEY;
+  // OpenGate's autologin key is the same shared key as the topics feed, so read it
+  // straight from DANANTARA_TOPICS_API_KEY. (v3.2: a missing/stale OPENGATE_API_KEY
+  // on Vercel used to win the `||` and mint against the wrong account, landing the
+  // deep link on the generic dashboard instead of the topic. One key, no drift.)
+  const apiKey = process.env.DANANTARA_TOPICS_API_KEY;
   if (!apiKey) {
     return NextResponse.redirect(fallback);
   }

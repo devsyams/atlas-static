@@ -21,7 +21,7 @@ const okUpstream = () =>
 describe("GET /api/v1/opengate/autologin (P8)", () => {
   beforeEach(() => {
     process.env.OPENGATE_AUTOLOGIN_BASE = BASE;
-    process.env.OPENGATE_API_KEY = KEY;
+    process.env.DANANTARA_TOPICS_API_KEY = KEY; // the shared key the route now reads
   });
   afterEach(() => {
     vi.restoreAllMocks();
@@ -40,8 +40,8 @@ describe("GET /api/v1/opengate/autologin (P8)", () => {
     expect(res.headers.get("location")).toBe(LOGIN_URL);
   });
 
-  it("falls back to DANANTARA_TOPICS_API_KEY when OPENGATE_API_KEY is unset (T2 / AC2)", async () => {
-    delete process.env.OPENGATE_API_KEY;
+  it("uses DANANTARA_TOPICS_API_KEY and ignores any OPENGATE_API_KEY (Vercel key-drift fix, v3.2)", async () => {
+    process.env.OPENGATE_API_KEY = "stale-wrong-key-on-vercel"; // must NOT be used
     process.env.DANANTARA_TOPICS_API_KEY = "sbz_shared";
     let calledUrl = "";
     vi.stubGlobal(
@@ -54,6 +54,7 @@ describe("GET /api/v1/opengate/autologin (P8)", () => {
 
     const res = await GET(req());
     expect(calledUrl).toContain("api_key=sbz_shared");
+    expect(calledUrl).not.toContain("stale-wrong-key-on-vercel");
     expect(res.headers.get("location")).toBe(LOGIN_URL);
   });
 
@@ -82,7 +83,7 @@ describe("GET /api/v1/opengate/autologin (P8)", () => {
   });
 
   it("falls back when no api key is configured at all (T3 / AC3)", async () => {
-    delete process.env.OPENGATE_API_KEY;
+    delete process.env.DANANTARA_TOPICS_API_KEY;
     const fetchMock = vi.fn(async () => okUpstream());
     vi.stubGlobal("fetch", fetchMock);
 

@@ -19,7 +19,7 @@
 | **P5** | Authentication — email/password + sessions | 0-platform | S2 | E3 | 1.0 | Planned |
 | **P6** | RBAC, route guards & audit log | 0-platform | S2 | E3 | 1.0 | Planned |
 | **P7** | Observability, hardening, backups & launch | 0-platform | S1,S6 | E8,E9 | 1.0 | Planned |
-| **P8** | Nexorus cross-app link (autologin: home + per-topic deep link) | 0-platform | demo | — | 3.1 | Built |
+| **P8** | Nexorus cross-app link (autologin: home + per-topic deep link) | 0-platform | demo | — | 3.2 | Built |
 | **W1** | Source registry & scheduler | 1-watch | S3 | E4 | 1.0 | Planned |
 | **W2** | RSS & news-API connectors | 1-watch | S3 | E4 | 1.0 | Planned |
 | **W3** | Social connectors (X/IG/FB/TikTok) | 1-watch | S3–S4 | E4 | 1.0 | Planned |
@@ -142,3 +142,4 @@
 | 1.83 | 2026-06-15 | P8 → v3.0 Built (MAJOR, TDD) — topic deep link resolves: mint through **OpenGate** `autologin_generate` with `redirect=<query string `id=monitoring&idquery=…`>` baked into the generate call (OpenGate hosts the dashboard + appends after `dashboard_demo?` — query only, not a full URL), 307 straight to `login_url`; lands topic-precise on `opengate.nexorus.io/dashboard_demo?id=monitoring&idquery=…`. Route repointed to `OPENGATE_*`, fallback = OpenGate origin; `NEXORUS_DASHBOARD_AUTOLOGIN_BASE`/`_API_KEY`/`_BASE` retired. AC7/AC9 amended, T7/T8 reworked; backend ask resolved |
 | 1.84 | 2026-06-15 | P8 → v3.1 Built (MINOR) — rename the topic deep-link button "View in Nexorus" → **"View Nexorus Opengate"** (matches gear-menu wording) after live confirmation; label only, no behaviour change |
 | 1.85 | 2026-06-15 | A7 → v45.0 Built (MAJOR, TDD) — **fix** v44.0: it ranked by `negMentions` (impression-based), not reach. Add `reach`/`posReach`/`negReach` to `BumnSentiment` (from `summary.total_reach`); `rankBumn` now sorts by `negReach` → `posReach`. AC3/AC18/T3 amended; reach-derivation + regression-guard tests |
+| 1.86 | 2026-06-19 | P8 → v3.2 Built (Bugfix, TDD) — topic deep link mislanded on **Vercel** (generic dashboard, not the topic): both OpenGate routes minted with `OPENGATE_API_KEY \|\| DANANTARA_TOPICS_API_KEY`, and a stale/missing `OPENGATE_API_KEY` on the deploy overrode the shared key. Both routes now read `DANANTARA_TOPICS_API_KEY` directly; `OPENGATE_API_KEY` retired. Per-route key-drift regression tests |
