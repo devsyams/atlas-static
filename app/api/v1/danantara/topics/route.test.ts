@@ -70,12 +70,12 @@ describe("GET /api/v1/danantara/topics (T20 / AC19)", () => {
     expect(body.meta.topic).toBe("danantara_main");
   });
 
-  it("caches the upstream for 1h by default, and bypasses the cache on ?fresh=1 (v36.0)", async () => {
+  it("caches the upstream for 6h by default, and bypasses the cache on ?fresh=1 (v46.0, was 1h)", async () => {
     const fetchMock = vi.fn(async (_url: string, _init?: RequestInit) => new Response(JSON.stringify(SAMPLE), { status: 200 }));
     vi.stubGlobal("fetch", fetchMock);
 
     await GET(req(false));
-    expect(fetchMock.mock.calls[0][1]).toEqual({ next: { revalidate: 3600 } });
+    expect(fetchMock.mock.calls[0][1]).toEqual({ next: { revalidate: 21600 } });
 
     await GET(req(true));
     expect(fetchMock.mock.calls[1][1]).toEqual({ cache: "no-store" });

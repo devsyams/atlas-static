@@ -59,7 +59,7 @@ describe("fetchTopicsForCode — stale/transient empty does not stick (A8 v4.1)"
 
     expect(result.issues).toHaveLength(2); // live data shown, not the cached empty
     const inits = fetchMock.mock.calls.map((c) => c[1]);
-    expect(inits[0]).toEqual({ next: { revalidate: 3600 } }); // primary path is cacheable
+    expect(inits[0]).toEqual({ next: { revalidate: 21600 } }); // primary path is cacheable (6 h)
     expect(inits).toContainEqual({ cache: "no-store" }); // a live (uncached) confirm happened
   });
 
@@ -98,7 +98,7 @@ describe("fetchTopicsForCode — stale/transient empty does not stick (A8 v4.1)"
 
     expect(result.issues).toHaveLength(2);
     expect(fetchMock).toHaveBeenCalledTimes(1); // no widening, no confirm on the happy path
-    expect(fetchMock.mock.calls[0][1]).toEqual({ next: { revalidate: 3600 } });
+    expect(fetchMock.mock.calls[0][1]).toEqual({ next: { revalidate: 21600 } });
   });
 
   it("leaves a genuinely empty result empty (no fabricated data) after confirming live", async () => {
