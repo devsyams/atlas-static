@@ -8,7 +8,7 @@ import { fetchTopicsForCode, FeedNotConfiguredError } from "@/lib/danantara/topi
  * BFF for the CEO-wall BUMN board (A7 v37). Fans out **server-side** to the
  * registered BUMN topic codes — each cached in the shared data cache (the same one
  * the `/bumn/<slug>` dashboards use), so the upstream is hit at most once per BUMN
- * per hour and the browser makes a single request. Returns the board rows + their
+ * per 6 h and the browser makes a single request. Returns the board rows + their
  * topics. A single BUMN's failure degrades only its row; if every BUMN fails the
  * route returns a non-OK status so the client shows an offline state. `api_key`
  * stays server-side only. `?fresh=1` bypasses the cache.
