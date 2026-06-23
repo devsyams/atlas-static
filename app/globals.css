@@ -706,6 +706,17 @@
 }
 .ceo-siren { animation: ceo-siren 1.2s ease-in-out infinite; }
 
+/* Crisis Gate ambient threat glow — a slow, ominous breathe that washes the
+   screen in the band colour. The "stop and look" hook on a walk-by monitor. */
+@keyframes crisis-breathe {
+  0%, 100% { opacity: 0.4; transform: scale(1); }
+  50% { opacity: 0.92; transform: scale(1.06); }
+}
+.crisis-breathe { animation: crisis-breathe 3.6s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .crisis-breathe { animation: none; opacity: 0.7; }
+}
+
 @keyframes ceo-takeover-in {
   0% { opacity: 0; transform: scale(1.04); }
   100% { opacity: 1; transform: scale(1); }

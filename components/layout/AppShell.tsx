@@ -79,7 +79,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   // Executive dashboards (Danantara CEO v2 + each per-BUMN board) run a stripped
   // chrome for their 40–60 y/o CEO audience: only the Dashboards menu group, no
   // "Tanya Nexorus AI" search bar, and no notifications bell.
-  const minimalChrome = pathname === "/danantara" || pathname.startsWith("/bumn");
+  const minimalChrome = pathname === "/danantara" || pathname.startsWith("/danantara/") || pathname.startsWith("/bumn");
   const menuNav = minimalChrome ? nav.filter((n) => n.group === "Dashboards") : nav;
   const groups = Array.from(new Set(menuNav.map((n) => n.group)));
 
@@ -316,7 +316,7 @@ function UserMenu({ scope }: { scope: Scope }) {
   const displayName = isDan ? "Danantara Analyst" : "Operator";
   const initials = isDan ? "DA" : "OP";
   const roleLabel = isDan ? "Sovereign Analyst" : "Super Admin";
-  const emailLabel = isDan ? "danantara@nexorus.io" : "operator@nexorus.io";
+  const emailLabel = isDan ? "danantara" : "operator@nexorus.io";
   return (
     <Dropdown
       align="end"

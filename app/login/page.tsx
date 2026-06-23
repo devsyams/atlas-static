@@ -79,7 +79,7 @@ export default function LoginPage() {
         </p>
 
         <form onSubmit={submit} className="mt-6 space-y-3">
-          <Field label="Email" type="email" value={email} onChange={setEmail} required autoFocus />
+          <Field label="Email or username" type="text" value={email} onChange={setEmail} required autoFocus />
           <Field
             label="Password"
             type="password"
