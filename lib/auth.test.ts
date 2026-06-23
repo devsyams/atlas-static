@@ -1,6 +1,19 @@
 import { describe, expect, it } from "vitest";
-import { DEMO_USERS, homeForScope, parseScope, scopeAllowsPath } from "./auth";
+import { DEMO_USERS, findUser, homeForScope, parseScope, scopeAllowsPath } from "./auth";
 import { listBumn } from "./bumn/registry";
+
+describe("Danantara demo login", () => {
+  it("signs in as `danantara` / danantara2026 and lands on the crisis gate", () => {
+    const user = findUser("danantara", "danantara2026");
+    expect(user).not.toBeNull();
+    expect(user?.scope).toBe("danantara");
+    expect(user?.home).toBe("/danantara/krisis");
+  });
+
+  it("is reachable for a danantara-scoped user (crisis gate is under /danantara)", () => {
+    expect(scopeAllowsPath("danantara", "/danantara/krisis")).toBe(true);
+  });
+});
 
 describe("scopeAllowsPath", () => {
   it("allows everything for the all scope", () => {

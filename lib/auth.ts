@@ -44,10 +44,12 @@ export const DEMO_USERS: DemoUser[] = [
     role: "Super Admin",
   },
   {
-    email: "danantara@nexorus.io",
+    // Demo CEO login: sign in as `danantara` / danantara2026 → drops straight
+    // into the /danantara/krisis fear-first gate.
+    email: "danantara",
     password: "danantara2026",
     scope: "danantara",
-    home: "/danantara",
+    home: "/danantara/krisis",
     name: "Danantara Analyst",
     role: "Sovereign Analyst",
   },
@@ -65,7 +67,7 @@ function bumnSlug(scope: Scope): string | null {
 }
 
 export function homeForScope(scope: Scope): string {
-  if (scope === "danantara") return "/danantara";
+  if (scope === "danantara") return "/danantara/krisis";
   const slug = bumnSlug(scope);
   if (slug) return `/bumn/${slug}`;
   return "/";

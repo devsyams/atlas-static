@@ -767,3 +767,121 @@ of an abstract pie. One BUMN, one positive topic, one negative topic, per line.
 | 3.0 | 2026-06-08 | Client ("a Response button in the topic detail that WhatsApps the topic content to a set number — include the penjelasan / Nexorus analysis"): add a **"Dispatch Response via WhatsApp"** button to the Counter-Noise panel → opens `wa.me/‹NEXT_PUBLIC_RESPONSE_WHATSAPP›` with a pre-filled brief (topic · sentiment · reach/impressions · **Nexorus AI penjelasan** · selected-tier plan). New pure `response-dispatch.ts` (`whatsappResponseLink` / `buildResponseBrief` / `waNumber`). AC7 added. Status → Built (TDD: 4 unit + 1 component test; 192 total green, lint clean, live-verified link + message) |
 | 2.2 | 2026-06-08 | Client ("run the animation once; tier change shouldn't re-animate; make it a terminal + longer"): rebuild the gimmick as a **faux Nexorus-AI terminal** (window chrome + traffic-lights, 8 boot lines line-by-line with a blinking cursor + `[ok]`, ~3.7s) that plays **once** on first scroll-in (`started` ref guard; effect no longer keyed on tier); a **`tierTouched`** flag makes tier switches **instant** (no count-up). AC6 amended. Status → Built (187 tests green, lint clean; live-verified L1→L8 boot then instant tier switches 733 / 3,665 / 2,199) |
 | 2.0 | 2026-06-08 | Client (boss's crisis-dashboard model) — **replace the reach heuristic** with `counter_actions = negative_baseline × noise_multiplier`, split **clipper 50% / homeless 20% / kol 30%**, tier **Basic ×1 / Professional ×3 / Enterprise ×5** (live selector). Baseline = **estimated negative-post count** from negative impressions ÷ 7,500 (feed has no post count). Panel **moved below the penjelasan** + a **scroll-triggered "calculating" gimmick** (count-up + scan sweep). Worked example confirmed live (1,498 @ Pro → 4,494 = 2,247 / 899 / 1,348). AC1–AC6 amended; `responseCalculator` rewrites the pure module. 7 formula + 4 component tests green (187 total), lint clean, screenshot-confirmed. Status → Built |
+
+---
+
+### A10. Danantara Crisis Gate (fear-first executive landing)
+
+- **Version:** 3.3 · **Stage:** 3-act · **Sprint:** demo · **Status:** Built · **Spec ref:** built on A7's Danantara topics feed; CEO feedback 2026-06-22 · **Owner:** Dev A
+
+> **Note (2026-06-22):** a v4.0 "Threat Command" product (full action/containment loop) was built on top of this gate, then **rolled back at the client's request** — they preferred this stripped fear gate. The current behaviour is v3.3; the v4.0 row in the history records the explored-and-reverted work.
+
+#### PM
+**Background (why):** The Danantara CEO reviewed the `/danantara` Command Wall (A7) and gave direct feedback: he sees the split Danantara/BUMN views as *separate products* and wants **one product**, and — most importantly — the landing must be **fearful enough to stop him in his tracks** if he merely walks past the screen. His words: make it **super simple at first**, then reveal detail **only when he clicks**. A7's dense two-column sentiment wall is the *detail*, not the *alarm*: it answers "what's happening" but doesn't deliver a single visceral "how bad is it **right now**" at a glance. A10 adds a deliberately stark **Crisis Gate** in front of that wall — one giant glowing **Crisis Index (0–100)**, a one-word threat band, and the single biggest threat named beneath — and nothing else. It reuses A7's live feed and components; the existing `/danantara` is untouched and becomes the click-through detail layer. (Danantara-wide only for now; the same pattern can later drive a BUMN gate.)
+
+**Acceptance criteria (Given / When / Then):**
+- **AC1** *(v3.0)* — *Given* the live Danantara topics feed (`/api/v1/danantara/topics` → `{ issues, summary }`), *When* `/danantara/krisis` loads, *Then* it renders **one** dominant signal — a **threat dial** ("Indeks Ancaman Danantara", 0–100, **high = danger**) whose needle points at the live score over a green→red arc, with the ends labelled **0 · AMAN** and **KRISIS · 100** so the scale and its direction are self-evident — computed from **real** fields only (overall negative share + reach-weighted negativity + worst-topic severity). A title + one-line subtitle ("Skala 0–100 — makin tinggi, makin berisiko") state plainly what is measured.
+- **AC2** *(v3.3 — English ladder)* — *Given* the score, *When* rendered, *Then* beneath the dial a **huge status word** names the band in its colour — **LOW** `<25` (green) · **GUARDED** `25–44` (amber) · **ELEVATED** `45–64` (orange) · **SEVERE** `≥65` (red) from `SOV_COLORS` — with the precise **`‹score› / 100`** under it; at **SEVERE** the word siren-pulses (`.ceo-siren`). *(The prose readout sentence + `% negatif` line were cut in v3.2 to keep the gate glance-readable.)*
+- **AC3** *(v3.2)* — *Given* the feed's issues, *When* rendered, *Then* the **single biggest threat** — *among genuinely-negative topics* (the wall's NEGATIVE test, `negMentions ≥ posMentions`) the one maximizing `reach × negative share` — is named in **one line** ("Ancaman Terbesar · ‹title›"); *When* no topic is negative, no threat is named. (This keeps the named threat **findable in the /danantara wall's NEGATIVE column** — a net-positive story with a wide negative minority is never labelled the threat.) The per-threat sentiment/reach meta was cut in v3.2 (detail on click). **No fabricated spike/velocity** (the feed is a flat snapshot: `velocity`/`status` are always `0`/`normal`).
+- **AC4** *(v3.3)* — *Given* the gate, *When* the CEO clicks **"View briefing →"**, *Then* it navigates to **`/danantara/brief`** (the A11 Executive Briefing) for the full story. All gate **chrome is English** (title "Danantara Threat Index", "Top Threat", "Refresh", "Data unavailable"); the **topic title stays Indonesian**. The old `/danantara` wall is unchanged and still reachable via the menu.
+- **AC5** — *Given* the upstream is unavailable or returns no issues, *When* the page loads, *Then* it **degrades gracefully** to a neutral "Data tidak tersedia" state (never a crash), per the degradation guardrail.
+- **AC6** *(amaze, v3.0)* — *Given* the page mounts, *Then* the dial's **needle sweeps** and the score **counts up** to its value (driven off the same animated value), the layout is **full-viewport, dark, screenshot-shareable** and **fits one screen with no scroll** (verified to 1366×720), and motion honours `prefers-reduced-motion`.
+
+#### Architecture
+**Impact — files add/change:**
+- `add` `lib/danantara/ceo/crisis.ts` — **pure, side-effect-free**: `crisisIndex(issues, summary)` → `{ score, level, color, siren }`; `crisisBand(score)`; `biggestThreat(issues)` (max `reach × negShare`). Named weight constants (`0.55·negShare + 0.30·weightedNeg + 0.15·worstNeg`, clamped 0–100) + band thresholds 25/45/65.
+- `add` `lib/danantara/ceo/crisis.test.ts` — vitest (TDD target).
+- `add` `components/danantara/ceo/CrisisGate.tsx` — client: fetch the topics feed (reuse the `CeoCommand` fetch/offline pattern), compute index + biggest threat, render the giant index + band word + threat line + `Lihat detail →` link, with offline state.
+- `add` `app/danantara/krisis/page.tsx` — `<AppShell><CrisisGate /></AppShell>` (mirrors `app/danantara/page.tsx`).
+- `change` `app/globals.css` *(maybe)* — count-up / scanline polish if `.ceo-siren` alone isn't enough.
+- `unchanged` `/danantara`, `CeoCommand`, `/api/v1/danantara/topics` (reused as-is).
+
+**Data-model / API changes:** **none** — reuses the existing topics BFF; no DB, no LLM, no new endpoint.
+
+**Reuse:** `AppShell`; `SOV_COLORS` + helpers in `lib/danantara/ui.ts`; `.ceo-siren` + fonts in `app/globals.css`; the `CeoCommand` fetch/`mountedRef`/offline pattern; optionally `SentimentPie` as a ring.
+
+**Risks:** the feed is a **flat snapshot** (no real velocity/spike) → the index is built only from real fields; weights are **named constants tunable in the QA pass**, and the "fear" framing stays credible (no invented numbers). Route is **public** (no auth), consistent with the other standalone demo routes.
+
+#### QA
+| # | Maps to | Test case | Type |
+|---|---|---|---|
+| T1 | AC1 | `crisisIndex` is monotonic in `summary.percentage.negative` (more negative → higher score), clamped 0–100 | unit |
+| T2 | AC1/AC3 | reach-weighted negativity: a loud (high-reach) negative topic raises the score more than a quiet one | unit |
+| T3 | AC2 | `crisisBand` thresholds: 24→Aman, 25→Terkendali, 45→Waspada, 65→Krisis; colour per band | unit |
+| T4 | AC2 | `siren` is `true` only at level Krisis (`score ≥ 65`) | unit |
+| T5 | AC3 | `biggestThreat` returns the issue maximizing `reach × negShare` **among net-negative topics**; ignores net-positive topics (wall consistency); ties resolved deterministically; `null` when none negative | unit |
+| T6 | AC5 | empty issues / null summary → score `0`, level Aman, `biggestThreat` = `null` (no throw) | unit |
+| T7 | AC1/AC2/AC3 | `CrisisGate` renders the index number, band word, and the named biggest threat from seeded feed data | component |
+| T8 | AC5 | fetch failure → "Data tidak tersedia" offline state, no crash | component |
+| T9 | AC4 | the gate exposes a link/route to `/danantara` for drill-down | component |
+
+**Governance edge cases:** public demo route (no RBAC, like A7/A8) — no restricted data, the feed `api_key` stays server-side in the existing BFF; graceful degradation on upstream failure (AC5); index is **deterministic & pure** (same input → same score), computed client-side, no LLM/cost.
+
+#### Revision history
+| Version | Date | Change |
+|---|---|---|
+| 1.0 | 2026-06-22 | Initial plan — **Crisis Gate**: a fear-first `/danantara/krisis` landing showing one 0–100 Crisis Index (high = danger) + threat band + biggest threat, click-through to the A7 wall; reuses A7's live topics feed, `/danantara` untouched. From CEO feedback ("make it fearful, super simple, details on click; one product"). Status → Planned (awaiting sign-off) |
+| 1.0 | 2026-06-22 | Built (TDD) — pure `lib/danantara/ceo/crisis.ts` (`crisisIndex` `0.55·negShare + 0.30·reach-weighted negativity + 0.15·worst-topic`, bands 25/45/65, `crisisBand`, `biggestThreat`) + `CrisisGate.tsx` (giant count-up index, threat band + green→red meter, named biggest threat, `Lihat detail →` /danantara, graceful "Data tidak tersedia" offline) + `/danantara/krisis` route; `AppShell.minimalChrome` extended to `/danantara/*`. 11 new tests (8 unit + 3 component), **261 total green**, tsc + lint clean (new files). Live-verified on the real feed: today reads **24 / Aman** (22.8% negative) with the loudest negative-reach topic as the named threat; red/`.ceo-siren` state triggers when the index reaches Krisis (≥65). |
+| 1.1 | 2026-06-22 | Client: the gate **shouldn't scroll** — reaching "Lihat detail" took a small scroll. Pin the section to the available viewport height (`h-[calc(100dvh-7.75rem)]`, `overflow-hidden`), scale the index with viewport height (`text-[clamp(5rem,22vh,12rem)]`), and tighten the inter-block gaps so the whole gate fits one screen. Presentation only (no AC change). Verified no-scroll with the drill-down button in view at 1440×820 and 1366×720. Status → Built |
+| 2.0 | 2026-06-22 | Client ("can't find the named topic in the topic list"): the "Ancaman Terbesar" was picked by raw negative-reach, so it could be a **net-positive** story (e.g. the Himbara topic, sentiment +10) that the wall files under **POSITIVE** — invisible when looking for a threat. `biggestThreat` now restricts to **net-negative** topics using the wall's exact test (`negMentions ≥ posMentions`), so the named threat always sits in the wall's NEGATIVE column. Confirmed real-data consistency (same `/api/v1/danantara/topics` feed): named threat moved to "Kritikan… Transparansi… Korupsi" (sentiment −80), index 24→32 (Terkendali). AC3 + T5 amended; +1 regression test (net-positive ignored). 262 tests green, tsc + lint clean. Status → Built |
+| 3.0 | 2026-06-22 | Client ("imagine you're the CEO — a bare '47' doesn't say what it represents"): redesign the hero from a bare number into a **threat dial** (`CrisisGauge.tsx`) — a 180° green→red gauge with a needle at the live score, ends labelled **0 · AMAN / KRISIS · 100**, plus a clearer title ("Indeks Ancaman Danantara") + subtitle, a coloured **status pill**, the precise **`score / 100`**, and a one-line plain-language readout per band. The needle sweeps with the count-up. Recompacted (smaller dial, vh gaps, merged readout line) so it still **fits one screen with no scroll** down to 1366×720. AC1/AC2/AC6 amended; presentation only (scoring unchanged). 262 tests green, tsc + lint clean, screenshot-verified at 1280×800 and 1366×720. Status → Built |
+| 3.1 | 2026-06-22 | Client ("font's too little; add more fear — a walk-by hook that makes the CEO stop"): scale the whole hero with **viewport height** (vh-clamped type + dial) so it grows large on the CEO's monitor/TV while staying one-screen on a laptop; turn the band word into a **huge glowing status word** (the hook), and add an **ambient threat glow** (`.crisis-breathe`) that washes the screen in the band colour and breathes harder as the level worsens (calm at Aman → pulsing red at Krisis; honours `prefers-reduced-motion`). Presentation only. 262 tests green, tsc + lint clean, screenshot-verified at 1920×1080 and 1366×720. Status → Built |
+| 3.2 | 2026-06-22 | Client ("still too much text"): strip the gate to glance-readable essentials — **cut** the subtitle, the prose readout sentence, and the `% negatif` line; **merge** the live-eyebrow into the title (one line); **collapse** the threat card to a single line ("Ancaman Terbesar · ‹title›", no sentiment/reach meta). The gate is now ~5 elements: title · dial · status word · `score/100` · one threat line. AC2/AC3 amended; presentation only. 262 tests green, tsc + lint clean, screenshot-verified at 1920×1080 and 1366×720. Status → Built |
+| 4.0 → reverted | 2026-06-22 | Explored **MAJOR tool → product** ("make it addictive"): built the full **Threat Command** Hooked loop on topics-as-board — `FIGHT NOW` → sized A9 response → projected suppression + CONTAINMENT → Neutralized → Command Record + streak, English copy, LOW/GUARDED/ELEVATED/SEVERE ladder, `/krisis` as home (new `command-model.ts`/`command-store.ts`/`CommandDeck`/`ThreatBoard`; 270 tests green; live-verified 47→26 loop). **Client did not like the product direction → rolled back to v3.2** (the stripped fear gate). All v4.0 files removed; `crisis.ts`/`CrisisGate`/`CrisisGauge`/`auth` restored; spec + AC7–11 + T10–15 dropped. Current behaviour = v3.2. 262 tests green, tsc + lint clean |
+| 3.3 | 2026-06-23 | Client: **gate chrome → English** (except topic titles) and **"Lihat detail" → "View briefing"** now opens the new A11 Executive Briefing at `/danantara/brief` (was the `/danantara` wall). `crisis.ts` band ladder → **LOW/GUARDED/ELEVATED/SEVERE** (thresholds/colours unchanged); `CrisisGauge` labels → `0 · LOW` / `SEVERE · 100`; title → "Danantara Threat Index". AC2/AC4 amended. Status → Built |
+
+---
+
+### A11. Danantara Executive Briefing
+
+- **Version:** 2.2 · **Stage:** 3-act · **Sprint:** demo · **Status:** Built · **Spec ref:** `docs/superpowers/specs/2026-06-23-danantara-executive-briefing-design.md` · **Owner:** Dev A
+
+#### PM
+**Background (why):** `/danantara/krisis` (A10) is the CEO's one-glance alarm. When he wants more — *"okay it's ELEVATED, now tell me the whole story"* — he needs a clean drill-down, not the dense analyst wall at `/danantara` (A7). A11 is a new **Executive Briefing** at `/danantara/brief`, driven **only** by `danantara_main` (the Danantara-wide topics feed), in a top-down narrative layout for a time-poor CEO: a written verdict, the win + the concern, share-of-voice, then the topics. `/krisis`'s "View briefing" links here; the old `/danantara` wall is untouched. **English chrome; topic titles/content stay Indonesian.**
+
+**Acceptance criteria (Given / When / Then):**
+- **AC1** — *Given* the live `danantara_main` feed (`/api/v1/danantara/topics`, no code param), *When* `/danantara/brief` loads, *Then* it renders an Executive Briefing: a **verdict hero** (a plain-English one-line read composed from the data + the sentiment split bar + KPI tiles **Total Reach · Impressions · Topics**).
+- **AC2** — *Given* the topics, *When* rendered, *Then* a **"What's driving it"** section shows two cards — **Biggest win** (`topWin`: loudest net-positive topic) and **Biggest concern** (`biggestThreat`: loudest net-negative) — each with the topic title + AI read; clicking either opens the topic `DetailModal`.
+- **AC3** — *Given* the feed's intent data, *When* rendered, *Then* the **Share of Voice** leaderboard (`IntentShare`) shows the dominant conversation themes.
+- **AC4** — *Given* the topics, *When* rendered, *Then* the **ranked topic list** (`TopicCard`) shows every topic; clicking one opens the `DetailModal` (sentiment, AI analysis, A9 response calculator for negatives, P8 Nexorus deep-link).
+- **AC5** — *Given* the upstream is unavailable or empty, *When* the page loads, *Then* it **degrades gracefully** ("Data unavailable", loading skeletons), never a crash.
+- **AC6** — *Given* the product, *Then* all **chrome is English**; **topic titles/content stay Indonesian**; the page is scrollable + responsive; a small **threat-level chip** (same `crisisIndex` band as `/krisis`) ties the two screens together.
+- **AC7** *(v2.1 — 7-day momentum chart)* — *Given* the `sentiment-trend` feed for `danantara_main` (a 7-day daily `{ date, positive, negative, neutral }` series), *When* the verdict hero renders, *Then* a **momentum** element shows a **direction verdict** headline (↑ Improving / ↓ Deteriorating / → Stable + delta in points) over a clean **Positive-vs-Negative two-line chart** (green positive share vs red negative share per day, the gap between them shaded, day labels + y-axis + legend). The **partial trailing day** (today, still accumulating) is excluded from both the chart and the direction read so it never shows a false crash. *Given* the trend feed fails, *Then* the briefing still renders (momentum simply omitted — graceful).
+
+#### Architecture
+**Impact — files add/change:**
+- `add` `lib/danantara/ceo/briefing.ts` — **pure**: `dominantTone(summary)` → `{ tone, pct }`; `topWin(issues)` → loudest net-positive topic (`reach × positive fraction`), `null` when none. + `briefing.test.ts`.
+- `add` `components/danantara/brief/DanantaraBrief.tsx` — page component (fetch + states + layout).
+- `add` `app/danantara/brief/page.tsx` — `<AppShell><DanantaraBrief/></AppShell>`. + `DanantaraBrief.test.tsx`.
+- `change` `components/danantara/ceo/CrisisGate.tsx` — "View briefing" link → `/danantara/brief` (also part of A10 v3.3 English pass).
+- *(v2.0)* `add` `lib/danantara/sentiment-trend-feed.ts` — server-side fetch for the upstream `sentiment-trend` endpoint (key stays server-side, 6 h cache, `TrendNotConfiguredError`), mirroring `topics-feed.ts`. + `app/api/v1/danantara/sentiment-trend/route.ts` (allowlisted `?code=`, defaults to `danantara_main`).
+- *(v2.0)* `add` `lib/danantara/ceo/trend.ts` — **pure**: `trendPoints(data)` (net per day + partial-tail flag) + `trendDirection(points)` (`up`/`down`/`flat` + delta, robust half-vs-half, ignores the partial day). + `trend.test.ts`.
+- *(v2.0–2.1)* `add` `components/danantara/brief/SentimentMomentum.tsx` (verdict headline + **Positive-vs-Negative 7-day line chart**, hand-rolled SVG; `trendPoints` carries daily `pos`/`neg` %); `change` `DanantaraBrief.tsx` to fetch the trend feed + render it in the verdict hero.
+
+**Data-model / API changes:** *(v2.0)* one new read-only BFF route `GET /api/v1/danantara/sentiment-trend` (proxies the upstream daily series; `api_key` server-side). No DB/LLM.
+
+**Reuse:** the topics fetch pattern; `SentimentBreakdown`, `SentimentPie`, `TopicCard` (+`TopicCardSkeleton`), `IntentShare`, `DetailModal` (state `{ tickCount:0, issues, bumn:[] }`, selection `{ type:"issue", id }`); `crisisIndex` / `biggestThreat`; the Danantara logo (`/public/danantara.png`).
+
+**Risks:** the verdict line must be **composed only from real data** (no invented claims); `topWin`/`biggestThreat` use the same negative/positive test as the wall so win vs concern are classified consistently.
+
+#### QA
+| # | Maps to | Test case | Type |
+|---|---|---|---|
+| T1 | AC2 | `topWin` returns the loudest **net-positive** topic by `reach × positive fraction`; ignores net-negative; `null` when none positive | unit |
+| T2 | AC1 | `dominantTone` returns the tone with the max share (positive/negative/neutral) + its % | unit |
+| T3 | AC1/AC2/AC3/AC4 | `DanantaraBrief` renders the verdict hero, both driver cards, `IntentShare`, and a topic row from seeded feed data | component |
+| T4 | AC4 | clicking a topic opens the `DetailModal` | component |
+| T5 | AC5 | feed failure → "Data unavailable" offline state, no crash | component |
+| T6 | AC7 | `trendPoints` computes net `(pos−neg)/total` per day and flags a low-volume **trailing partial day** | unit |
+| T7 | AC7 | `trendDirection`: rising series → `up` (+delta), falling → `down`, flat → `flat`; the partial day is excluded; `<2` complete days → `flat` | unit |
+
+**Governance edge cases:** public demo route (like A7/A8) — feed `api_key` stays server-side (topics **and** sentiment-trend); graceful degradation (AC5/AC7); pure helpers are deterministic; no LLM/cost.
+
+#### Revision history
+| Version | Date | Change |
+|---|---|---|
+| 1.0 | 2026-06-23 | Initial plan — **Executive Briefing** at `/danantara/brief` (danantara_main only): verdict hero + win/concern cards + Share of Voice + topic list, reusing A8 components + `DetailModal`; English chrome, Indonesian topics; `/krisis` "View briefing" links here. From client direction (revamp the Danantara detail, keep `/danantara`). Status → In progress |
+| 1.0 | 2026-06-23 | Built (TDD) — pure `briefing.ts` (`dominantTone` + `topWin`) + `DanantaraBrief.tsx` (verdict hero with `SentimentBreakdown` + KPI tiles, win/concern `DriverCard`s, `IntentShare`, `TopicCard` list → `DetailModal`) + `/danantara/brief` route; reuses the topics feed + A8 components. 7 new tests (4 unit + 3 component), **269 total green**, tsc + lint clean. Live-verified on the real feed: verdict "broadly positive (68%)", win = Obligasi Global, concern = Transparansi/Fiskal, Share-of-Voice + 10 topic cards; threat chip GUARDED·25 ties to /krisis. Status → Built |
+| 2.0 | 2026-06-23 | Client offered a `sentiment-trend` endpoint → add **7-day momentum** to the verdict hero (the CEO's "is it getting better or worse?"). New server-side `sentiment-trend-feed.ts` + `GET /api/v1/danantara/sentiment-trend` BFF (key server-side, 6 h cache); pure `trend.ts` (`trendPoints`/`trendDirection`, **excludes the partial trailing day** so today's incomplete data can't fake a crash); `SentimentMomentum` (↑/↓/→ verdict chip + net-sentiment sparkline). Graceful: briefing still renders if the trend feed fails. AC7 + T6/T7 added. Status → Built |
+| 2.1 | 2026-06-23 | Client ("don't like the chip+sparkline; a chart isn't too much"): replace it with a proper **Positive-vs-Negative 7-day line chart** (hand-rolled SVG — green positive vs red negative share per day, shaded gap, y-axis + date labels + legend) under the same ↑/↓/→ verdict headline. `trendPoints` now carries daily `pos`/`neg` %. Partial day still excluded. AC7 amended; 276 tests green, tsc + lint clean, live-verified on the real feed (Stable, green leads red). Status → Built |
+| 2.2 | 2026-06-23 | Client ("too big; make it cooler"): redesign the chart — **smooth glowing curves** (Catmull-Rom bezier) with **gradient area fills** + glowing end markers, dropped the heavy y-axis/gridlines, and made it a **compact wide strip** (viewBox 660×132 vs 600×188 → far shorter at full width). Same verdict headline + legend; partial day still excluded. 276 tests green, tsc + lint clean, live-verified. Status → Built |

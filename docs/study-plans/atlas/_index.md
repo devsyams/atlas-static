@@ -39,8 +39,10 @@
 | **A7** | Danantara CEO Command Wall (zero-click demo) | 3-act | demo | — | 46.0 | Built |
 | **A8** | Per-BUMN CEO sentiment dashboards | 3-act | demo | — | 8.0 | Built |
 | **A9** | Communication Response Calculator | 3-act | demo | — | 3.1 | Built |
+| **A10** | Danantara Crisis Gate (fear-first executive landing) | 3-act | demo | — | 3.3 | Built |
+| **A11** | Danantara Executive Briefing | 3-act | demo | — | 2.2 | Built |
 
-**Totals:** 27 features · 8 platform · 5 watch · 5 understand · 9 act.
+**Totals:** 29 features · 8 platform · 5 watch · 5 understand · 11 act.
 
 ## Sprint → feature map (delivery view)
 
@@ -144,3 +146,16 @@
 | 1.85 | 2026-06-15 | A7 → v45.0 Built (MAJOR, TDD) — **fix** v44.0: it ranked by `negMentions` (impression-based), not reach. Add `reach`/`posReach`/`negReach` to `BumnSentiment` (from `summary.total_reach`); `rankBumn` now sorts by `negReach` → `posReach`. AC3/AC18/T3 amended; reach-derivation + regression-guard tests |
 | 1.86 | 2026-06-19 | A7 → v46.0, A8 → v8.0 Built (MAJOR, TDD) — widen the topics cache **1 h → 6 h** (`revalidate: 21600`) so page loads hit the Garuda upstream at most once per code per 6 h (lazy stale-while-revalidate; header Refresh still forces fresh). A scheduled cron pre-warm (sequential 2.5 s pace per the OpenGate/upstream team, 05:00/13:00/21:00 WIB) was built then **dropped** — needs Vercel **Pro**; recoverable from git history. Shared `topics-feed.ts`. AC19/AC20 amended, T22 reworked |
 | 1.87 | 2026-06-19 | P8 → v3.2 Built (Bugfix, TDD) — topic deep link mislanded on **Vercel** (generic dashboard, not the topic): both OpenGate routes minted with `OPENGATE_API_KEY \|\| DANANTARA_TOPICS_API_KEY`, and a stale/missing `OPENGATE_API_KEY` on the deploy overrode the shared key. Both routes now read `DANANTARA_TOPICS_API_KEY` directly; `OPENGATE_API_KEY` retired. Per-route key-drift regression tests |
+| 1.88 | 2026-06-22 | Added A10 (Danantara Crisis Gate) at v1.0 Planned — fear-first `/danantara/krisis` landing: one 0–100 Crisis Index (high = danger) + threat band + biggest threat, click-through to the A7 wall; reuses A7's live topics feed, `/danantara` untouched. From CEO feedback ("make it fearful, super simple, details on click; one product"); 27→28 features |
+| 1.89 | 2026-06-22 | A10 → v1.0 Built (TDD) — pure `crisis.ts` (Crisis Index + band + biggest-threat) + `CrisisGate` + `/danantara/krisis` route; `AppShell.minimalChrome` extended to `/danantara/*`. 11 new tests, 261 total green, tsc + lint clean; live-verified (today 24/Aman) |
+| 1.90 | 2026-06-22 | A10 → v1.1 Built — fit the gate to one screen so the "Lihat detail" drill-down needs no scroll (viewport-height section + vh-scaled index + tighter gaps). Presentation only |
+| 1.91 | 2026-06-22 | A10 → v2.0 Built (MAJOR) — the named "Ancaman Terbesar" now restricts to **net-negative** topics (wall's `negMentions ≥ posMentions` test) so it's always findable in /danantara's NEGATIVE column (was picking a net-positive high-negative-reach story). AC3/T5 amended; +1 test, 262 green |
+| 1.92 | 2026-06-22 | A10 → v3.0 Built — redesign the hero from a bare number into a **threat dial** (green→red gauge + needle, 0·AMAN/KRISIS·100 ends, status pill, `score/100`, plain readout) so a CEO instantly reads what the number means; recompacted to stay one-screen no-scroll to 1366×720. AC1/AC2/AC6 amended; presentation only |
+| 1.93 | 2026-06-22 | A10 → v3.1 Built — bigger walk-by hook: vh-scaled type + dial (grows on the CEO's monitor), huge glowing status word, and an **ambient threat glow** that breathes the band colour (calm → pulsing red at Krisis). Presentation only |
+| 1.94 | 2026-06-22 | A10 → v3.2 Built — strip the gate to glance-readable essentials (cut subtitle, readout sentence, % line, threat meta; merge eyebrow into title; threat → one line). ~5 elements total. AC2/AC3 amended; presentation only |
+| 1.95 | 2026-06-22 | A10 → explored v4.0 "Threat Command" product (full action/containment/record loop, English, `/krisis` home) then **rolled back to v3.2** at the client's request — they preferred the stripped fear gate. v4.0 files/spec removed; A10 stays the v3.2 Crisis Gate. 262 tests green |
+| 1.96 | 2026-06-23 | Added A11 (Danantara Executive Briefing) at v1.0 In progress — new `/danantara/brief` drill-down (danantara_main only): verdict hero + win/concern + Share of Voice + topics, reusing A8 components; English chrome, Indonesian topics. A10 → v3.3 (gate chrome English + "View briefing" links to A11). Spec `2026-06-23-danantara-executive-briefing-design.md`; 28→29 features |
+| 1.97 | 2026-06-23 | A11 → v1.0 Built (TDD) — `briefing.ts` + `DanantaraBrief` + `/danantara/brief`; 7 new tests, 269 total green, tsc + lint clean; live-verified (verdict + win/concern + share-of-voice + topics, threat chip ties to /krisis). A10 v3.3 (English gate) Built |
+| 1.98 | 2026-06-23 | A11 → v2.0 Built (TDD) — **7-day sentiment momentum**: new `sentiment-trend` BFF (key server-side) + pure `trend.ts` (excludes partial trailing day) + `SentimentMomentum` (↑/↓/→ verdict + sparkline) in the briefing verdict hero |
+| 1.99 | 2026-06-23 | A11 → v2.1 Built — client preferred a chart: replaced the chip+sparkline with a **Positive-vs-Negative 7-day line chart** (shaded gap, axes, legend) under the same verdict headline. 276 tests green, live-verified |
+| 1.100 | 2026-06-23 | A11 → v2.2 Built — client ("too big; cooler"): smooth glowing gradient-filled curves + compact wide strip (no heavy axes). 276 tests green, live-verified |
