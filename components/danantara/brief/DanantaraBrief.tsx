@@ -6,7 +6,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeft, BarChart3, Eye, Hash, Radio, RefreshCw, ThumbsDown, ThumbsUp } from "lucide-react";
 import type { CeoIssue, CeoState } from "@/lib/danantara/ceo/types";
 import type { TopicIntent, TopicsSummary } from "@/lib/danantara/ceo/topics-source";
-import { biggestThreat, crisisIndex } from "@/lib/danantara/ceo/crisis";
+import { biggestThreat, crisisIndex, CRISIS_LEVEL_LABEL } from "@/lib/danantara/ceo/crisis";
 import { dominantTone, topWin } from "@/lib/danantara/ceo/briefing";
 import type { TrendInputPoint } from "@/lib/danantara/ceo/trend";
 import { fmtCount } from "@/lib/danantara/ceo/format";
@@ -125,7 +125,7 @@ export function DanantaraBrief() {
             className="rounded-full border px-3 py-1 text-sm font-bold uppercase tracking-[0.16em]"
             style={{ color: reading.color, borderColor: withAlpha(reading.color, 0.45), background: withAlpha(reading.color, 0.12) }}
           >
-            {reading.level} · {reading.score}
+            {CRISIS_LEVEL_LABEL[reading.level]} · {reading.score}
           </span>
         )}
         <button

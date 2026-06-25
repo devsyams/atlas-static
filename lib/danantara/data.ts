@@ -21,6 +21,7 @@ import type {
   StrengthIndex,
   VoiceShare,
 } from "./types";
+import { DANANTARA_ACTORS } from "./actors";
 import { reputationBand, SECTOR_LABEL, strengthBand } from "./ui";
 
 const clamp = (n: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, n));
@@ -293,14 +294,7 @@ function buildMedia(now: Date, positivity: number): MediaIntel {
     { claim: "“Dividen BUMN dialihkan ke proyek tertentu tanpa dasar”", status: "Dalam Verifikasi", reach: Math.round(jit(680_000, 120_000)), platforms: ["X", "Facebook"], counter: "Sedang ditelusuri; alokasi dividen mengacu mekanisme RUPS & APBN. Menunggu konfirmasi dokumen resmi.", time: "11 jam lalu" },
   ];
 
-  const actors: MediaActor[] = [
-    { handle: "kontan_id", name: "Harian Kontan", platform: "X", type: "media", reach: 1_900_000, influence: 8.4, credibility: 8.8, stance: "neutral", posts_7d: 42, mentions: 96, note: "Liputan korporasi & pasar; framing faktual atas kinerja portofolio." },
-    { handle: "cnbcindonesia", name: "CNBC Indonesia", platform: "X", type: "media", reach: 3_100_000, influence: 8.9, credibility: 8.5, stance: "neutral", posts_7d: 58, mentions: 121, note: "Volume tinggi; menggerakkan agenda makro & valas yang menyentuh sentimen dana." },
-    { handle: "analis_pasar", name: "Analis Pasar Modal", platform: "X", type: "analis", reach: 420_000, influence: 7.6, credibility: 7.9, stance: "positive", posts_7d: 31, mentions: 64, note: "Pendukung tesis hilirisasi & dividen; kredibel di komunitas investor ritel." },
-    { handle: "ekonom_kritis", name: "Ekonom Independen", platform: "X", type: "analis", reach: 510_000, influence: 7.8, credibility: 7.4, stance: "negative", posts_7d: 27, mentions: 73, note: "Penggerak utama narasi tata kelola & independensi; perlu pelibatan & data tandingan." },
-    { handle: "infoBUMN", name: "Info BUMN (akun komunitas)", platform: "Instagram", type: "influencer", reach: 880_000, influence: 6.9, credibility: 6.2, stance: "neutral", posts_7d: 19, mentions: 88, note: "Amplifier visual; cepat memviralkan kabar baik maupun buruk." },
-    { handle: "danantara_id", name: "Danantara Indonesia", platform: "Instagram", type: "resmi", reach: 540_000, influence: 6.4, credibility: 8.0, stance: "positive", posts_7d: 11, mentions: 11, note: "Kanal resmi; perlu kadens lebih tinggi untuk merebut narasi proaktif." },
-  ];
+  const actors: MediaActor[] = DANANTARA_ACTORS;
 
   const stakeholders: MediaIntel["stakeholders"] = {
     ai_available: true,
