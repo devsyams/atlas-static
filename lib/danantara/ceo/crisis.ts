@@ -30,6 +30,18 @@ export interface CrisisReading extends CrisisBand {
   score: number; // 0..100, HIGH = danger
 }
 
+/**
+ * Indonesian display labels for the threat ladder (BNPB-style: Aman · Waspada ·
+ * Siaga · Awas). The `CrisisLevel` enum stays English for logic/keys/tests; only
+ * what the operator reads is localised.
+ */
+export const CRISIS_LEVEL_LABEL: Record<CrisisLevel, string> = {
+  Low: "Aman",
+  Guarded: "Waspada",
+  Elevated: "Siaga",
+  Severe: "Awas",
+};
+
 /** Weights of the three components (sum = 1). High = more alarming. */
 const W_OVERALL = 0.55; // overall negative share of the conversation
 const W_WEIGHTED = 0.3; // reach-weighted negativity across topics

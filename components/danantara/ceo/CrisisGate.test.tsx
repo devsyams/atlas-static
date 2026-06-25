@@ -47,7 +47,7 @@ describe("CrisisGate (A10 — fear-first landing)", () => {
     render(<CrisisGate />);
     // Score settles to its computed value (count-up).
     await waitFor(() => expect(screen.getByTestId("crisis-score").textContent).toBe("75"), { timeout: 3000 });
-    expect(screen.getByTestId("crisis-band").textContent).toBe("Severe");
+    expect(screen.getByTestId("crisis-band").textContent).toBe("Awas"); // Severe → Indonesian label
     const threat = screen.getByTestId("crisis-threat");
     expect(threat.textContent).toContain("Investasi Hilirisasi Nikel");
   });

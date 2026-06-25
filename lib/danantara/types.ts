@@ -1,5 +1,6 @@
 import type { LeadershipSentiment, MarketTickerItem, Prediction } from "@/lib/mbg/types";
 import type { ConditionChip, OpsInsight } from "@/lib/jasamarga/types";
+import type { IssueCategory } from "@/lib/danantara/ceo/types";
 
 export type { ConditionChip, OpsInsight };
 
@@ -210,6 +211,12 @@ export interface MediaActor {
   posts_7d: number;
   mentions: number; // mentions of Danantara/BUMN
   note: string;
+  /**
+   * Issue categories this actor actively pushes/frames (their narrative beats).
+   * Used to rank who is driving a given top threat (`actorsDrivingThreat`).
+   * Optional so older/foreign actor data stays valid.
+   */
+  drives?: IssueCategory[];
 }
 
 /** An emerging reputational signal for the crisis early-warning radar. */

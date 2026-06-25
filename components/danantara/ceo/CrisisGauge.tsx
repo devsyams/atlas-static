@@ -38,12 +38,22 @@ const ZONES: Array<{ from: number; to: number; color: string }> = [
   { from: 65, to: 100, color: SOV_COLORS.weak },
 ];
 
-export function CrisisGauge({ score, color, live }: { score: number; color: string; live: boolean }) {
+export function CrisisGauge({
+  score,
+  color,
+  live,
+  className = "w-[min(420px,42vh,72vw)]",
+}: {
+  score: number;
+  color: string;
+  live: boolean;
+  className?: string;
+}) {
   const needleDeg = 180 * (Math.min(100, Math.max(0, score)) / 100);
   const tip = R - 26;
 
   return (
-    <svg viewBox="0 0 400 212" className="w-[min(420px,42vh,72vw)]" role="img" aria-label={`Indeks ancaman ${Math.round(score)} dari 100`}>
+    <svg viewBox="0 0 400 212" className={className} role="img" aria-label={`Indeks ancaman ${Math.round(score)} dari 100`}>
       {/* Zone arcs — the colored danger scale. A small gap separates the bands. */}
       {ZONES.map((z, i) => (
         <path
@@ -69,10 +79,10 @@ export function CrisisGauge({ score, color, live }: { score: number; color: stri
 
       {/* End labels — anchor the scale and its direction. */}
       <text x={point(0).x - 4} y={CY + 22} textAnchor="start" className="font-mono" fontSize="13" fill="oklch(0.72 0.16 155)" letterSpacing="1.5">
-        0 · LOW
+        0 · AMAN
       </text>
       <text x={point(100).x + 4} y={CY + 22} textAnchor="end" className="font-mono" fontSize="13" fill="oklch(0.62 0.22 25)" letterSpacing="1.5">
-        SEVERE · 100
+        AWAS · 100
       </text>
     </svg>
   );
