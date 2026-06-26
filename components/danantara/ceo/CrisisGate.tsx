@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ArrowRight, RefreshCw } from "lucide-react";
+import { ArrowRight, CalendarRange, RefreshCw } from "lucide-react";
 import type { CeoIssue } from "@/lib/danantara/ceo/types";
 import type { MediaActor } from "@/lib/danantara/types";
 import type { TopicsSummary } from "@/lib/danantara/ceo/topics-source";
@@ -23,6 +23,21 @@ const FEAR: Record<CrisisLevel, { glow: number; breathe: boolean }> = {
   Elevated: { glow: 0.3, breathe: true },
   Severe: { glow: 0.46, breathe: true },
 };
+
+/** The client this board belongs to — shown as the brand line at the top. */
+const CLIENT_BRAND = "Danantara";
+
+/**
+ * Date-range presets for the dashboard window. Selection is UI-only for now (the
+ * data wiring follows): the default is "Hari ini" so the board reads the issue as it
+ * stands **now**, not a trailing 7-day average.
+ */
+const DATE_RANGES = [
+  { key: "today", label: "Hari ini" },
+  { key: "7d", label: "7 hari" },
+  { key: "30d", label: "30 hari" },
+] as const;
+type RangeKey = (typeof DATE_RANGES)[number]["key"];
 
 const reducedMotion = () =>
   typeof window !== "undefined" && !!window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
@@ -63,8 +78,7 @@ export function CrisisGate() {
   const [summary, setSummary] = useState<TopicsSummary | null>(null);
   const [actors, setActors] = useState<MediaActor[]>([]);
   const [actorsLoading, setActorsLoading] = useState(true);
-  const [summaryPoints, setSummaryPoints] = useState<string[]>([]);
-  const [summaryThreatId, setSummaryThreatId] = useState<string | null>(null);
+  const [range, setRange] = useState<RangeKey>("today");
   const [live, setLive] = useState<Live>("loading");
   const [refreshing, setRefreshing] = useState(false);
   const mountedRef = useRef(true);
@@ -99,28 +113,6 @@ export function CrisisGate() {
   useEffect(() => {
     load(false);
   }, [load]);
-
-  // AI-condensed executive-summary points for the top threat (server-side; the
-  // route degrades to deterministic short points when AI is off). Independent of
-  // the topics fetch — the middle column always falls back to client-side points.
-  const loadSummary = useCallback((fresh = false) => {
-    fetch(`/api/v1/danantara/threat-summary${fresh ? "?fresh=1" : ""}`)
-      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))))
-      .then((j: { threatId?: string | null; points?: string[] }) => {
-        if (!mountedRef.current) return;
-        setSummaryPoints(Array.isArray(j.points) ? j.points : []);
-        setSummaryThreatId(j.threatId ?? null);
-      })
-      .catch(() => {
-        if (!mountedRef.current) return;
-        setSummaryPoints([]);
-        setSummaryThreatId(null);
-      });
-  }, []);
-
-  useEffect(() => {
-    loadSummary(false);
-  }, [loadSummary]);
 
   // The actor roster is static (public-source) — fetch once; the right column
   // degrades to an empty state if it ever fails.
@@ -164,16 +156,53 @@ export function CrisisGate() {
         />
       )}
 
-      {/* Header strip — what this is, the live pulse, and the only two actions. */}
-      <header className="flex shrink-0 flex-wrap items-center justify-between gap-3">
-        <h1 className="flex items-center gap-3 text-[clamp(0.85rem,1.8vh,1.2rem)] font-semibold uppercase tracking-[0.3em] text-muted-foreground">
-          <span className="relative flex h-2.5 w-2.5">
+      {/* Header strip — the client brand, what this is + live pulse, the date-range
+          window, and the two actions. */}
+      <header className="flex shrink-0 flex-wrap items-center justify-between gap-x-4 gap-y-3">
+        <div className="flex items-center gap-3">
+          <span className="relative mt-1 flex h-2.5 w-2.5 self-start">
             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-success/70" />
             <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-success" />
           </span>
-          Threat Index
-        </h1>
-        <div className="flex items-center gap-2">
+          <div>
+            <h1 className="text-[clamp(1.35rem,3vh,2rem)] font-extrabold leading-none tracking-tight text-foreground">
+              {CLIENT_BRAND}
+            </h1>
+            <p className="mt-1 text-xs font-semibold uppercase tracking-[0.24em] text-muted-foreground">
+              Threat Index · Crisis Monitor
+            </p>
+          </div>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Date-range window — default "Hari ini" (issue as it stands now). UI-only
+              for now; data wiring follows. */}
+          <div
+            className="inline-flex items-center gap-0.5 rounded-full border border-border bg-card/50 p-0.5"
+            role="group"
+            aria-label="Rentang tanggal"
+          >
+            <CalendarRange className="ml-2 mr-0.5 h-4 w-4 text-muted-foreground" />
+            {DATE_RANGES.map((r) => {
+              const active = range === r.key;
+              return (
+                <button
+                  key={r.key}
+                  type="button"
+                  onClick={() => setRange(r.key)}
+                  aria-pressed={active}
+                  className={`rounded-full px-3 py-1.5 text-sm font-medium transition-colors ${
+                    active
+                      ? "bg-primary/15 text-primary"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {r.label}
+                </button>
+              );
+            })}
+          </div>
+
           <Link
             href="/danantara/brief"
             data-testid="crisis-detail-link"
@@ -187,7 +216,6 @@ export function CrisisGate() {
             onClick={() => {
               setRefreshing(true);
               load(true);
-              loadSummary(true);
             }}
             aria-label="Refresh"
             title="Refresh"
@@ -200,8 +228,23 @@ export function CrisisGate() {
 
       {/* Three-column command read: meter · threat+topics · actors. */}
       <div className="grid min-h-0 flex-1 grid-cols-1 gap-4 lg:grid-cols-3">
-        {/* Left — the Crisis Index meter. Anchored top→bottom to fill the column. */}
-        <div className="panel flex h-full flex-col p-5 text-center">
+        {/* Left — the Crisis Index meter. Anchored top→bottom to fill the column.
+            Carries a live, glowing outline in the band colour (red when dangerous)
+            so the index reads as "lit up" the worse it gets. */}
+        <div
+          className="panel flex h-full flex-col p-5 text-center transition-shadow duration-500"
+          style={
+            live === "live"
+              ? {
+                  borderColor: withAlpha(reading.color, 0.75),
+                  boxShadow: `0 0 0 1px ${withAlpha(reading.color, 0.5)}, 0 0 32px ${withAlpha(
+                    reading.color,
+                    0.38,
+                  )}, inset 0 0 26px ${withAlpha(reading.color, 0.1)}`,
+                }
+              : undefined
+          }
+        >
           {live === "offline" ? (
             <div className="flex flex-1 items-center justify-center">
               <div
@@ -214,9 +257,7 @@ export function CrisisGate() {
             </div>
           ) : (
             <>
-              <h2 className="text-[12px] font-semibold uppercase tracking-[0.3em] text-muted-foreground">
-                Indeks Ancaman
-              </h2>
+              <h2 className="text-lg font-bold text-foreground">Indeks Ancaman</h2>
 
               {/* The gauge + reading fill the middle, growing into the column. */}
               <div className="flex flex-1 flex-col items-center justify-center gap-[3vh]">
@@ -273,9 +314,6 @@ export function CrisisGate() {
           threat={live === "live" ? threat : null}
           related={live === "live" ? related : []}
           accent={reading.color}
-          summaryPoints={
-            live === "live" && threat && summaryThreatId === threat.id ? summaryPoints : undefined
-          }
         />
 
         {/* Right — who is driving that threat's topic. */}

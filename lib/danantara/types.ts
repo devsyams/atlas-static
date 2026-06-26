@@ -217,6 +217,15 @@ export interface MediaActor {
    * Optional so older/foreign actor data stays valid.
    */
   drives?: IssueCategory[];
+  /** Platform-verified account (blue check). Optional — absent = unverified. */
+  verified?: boolean;
+  /**
+   * Flagged as an automated / bot-amplifier account (vs. a genuine human/org).
+   * Optional — absent = treated as a genuine account.
+   */
+  bot?: boolean;
+  /** Profile image URL (dummy stock avatar for the demo; UI falls back to initials). */
+  avatarUrl?: string;
 }
 
 /** An emerging reputational signal for the crisis early-warning radar. */

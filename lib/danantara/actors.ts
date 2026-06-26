@@ -11,11 +11,17 @@ import type { MediaActor } from "./types";
  * actors behind the current top threat. Amplifier/official accounts carry the full
  * set because they ride (or must answer) whatever trends.
  */
+// NOTE: `verified`, `bot`, and `avatarUrl` are DUMMY demo values (the live feed
+// will supply real verification/authenticity/profile data). Avatars point at the
+// public dummy-photo service i.pravatar.cc with fixed image IDs; the UI degrades to
+// initials if an image fails, so it is never a hard dependency.
+const AVATAR = (id: number) => `https://i.pravatar.cc/120?img=${id}`;
+
 export const DANANTARA_ACTORS: MediaActor[] = [
-  { handle: "kontan_id", name: "Harian Kontan", platform: "X", type: "media", reach: 1_900_000, influence: 8.4, credibility: 8.8, stance: "neutral", posts_7d: 42, mentions: 96, drives: ["pasar", "tata-kelola"], note: "Liputan korporasi & pasar; framing faktual atas kinerja portofolio." },
-  { handle: "cnbcindonesia", name: "CNBC Indonesia", platform: "X", type: "media", reach: 3_100_000, influence: 8.9, credibility: 8.5, stance: "neutral", posts_7d: 58, mentions: 121, drives: ["pasar", "kebijakan"], note: "Volume tinggi; menggerakkan agenda makro & valas yang menyentuh sentimen dana." },
-  { handle: "analis_pasar", name: "Analis Pasar Modal", platform: "X", type: "analis", reach: 420_000, influence: 7.6, credibility: 7.9, stance: "positive", posts_7d: 31, mentions: 64, drives: ["investasi", "kebijakan"], note: "Pendukung tesis hilirisasi & dividen; kredibel di komunitas investor ritel." },
-  { handle: "ekonom_kritis", name: "Ekonom Independen", platform: "X", type: "analis", reach: 510_000, influence: 7.8, credibility: 7.4, stance: "negative", posts_7d: 27, mentions: 73, drives: ["tata-kelola"], note: "Penggerak utama narasi tata kelola & independensi; perlu pelibatan & data tandingan." },
-  { handle: "infoBUMN", name: "Info BUMN (akun komunitas)", platform: "Instagram", type: "influencer", reach: 880_000, influence: 6.9, credibility: 6.2, stance: "neutral", posts_7d: 19, mentions: 88, drives: ["tata-kelola", "investasi", "kebijakan", "pasar", "sosial"], note: "Amplifier visual; cepat memviralkan kabar baik maupun buruk." },
-  { handle: "danantara_id", name: "Danantara Indonesia", platform: "Instagram", type: "resmi", reach: 540_000, influence: 6.4, credibility: 8.0, stance: "positive", posts_7d: 11, mentions: 11, drives: ["tata-kelola", "investasi", "kebijakan", "pasar", "sosial"], note: "Kanal resmi; perlu kadens lebih tinggi untuk merebut narasi proaktif." },
+  { handle: "kontan_id", name: "Harian Kontan", platform: "X", type: "media", reach: 1_900_000, influence: 8.4, credibility: 8.8, stance: "neutral", posts_7d: 42, mentions: 96, drives: ["pasar", "tata-kelola"], verified: true, bot: false, avatarUrl: AVATAR(12), note: "Liputan korporasi & pasar; framing faktual atas kinerja portofolio." },
+  { handle: "cnbcindonesia", name: "CNBC Indonesia", platform: "X", type: "media", reach: 3_100_000, influence: 8.9, credibility: 8.5, stance: "neutral", posts_7d: 58, mentions: 121, drives: ["pasar", "kebijakan"], verified: true, bot: false, avatarUrl: AVATAR(15), note: "Volume tinggi; menggerakkan agenda makro & valas yang menyentuh sentimen dana." },
+  { handle: "analis_pasar", name: "Analis Pasar Modal", platform: "X", type: "analis", reach: 420_000, influence: 7.6, credibility: 7.9, stance: "positive", posts_7d: 31, mentions: 64, drives: ["investasi", "kebijakan"], verified: false, bot: false, avatarUrl: AVATAR(33), note: "Pendukung tesis hilirisasi & dividen; kredibel di komunitas investor ritel." },
+  { handle: "ekonom_kritis", name: "Ekonom Independen", platform: "X", type: "analis", reach: 510_000, influence: 7.8, credibility: 7.4, stance: "negative", posts_7d: 27, mentions: 73, drives: ["tata-kelola"], verified: true, bot: false, avatarUrl: AVATAR(51), note: "Penggerak utama narasi tata kelola & independensi; perlu pelibatan & data tandingan." },
+  { handle: "infoBUMN", name: "Info BUMN (akun komunitas)", platform: "Instagram", type: "influencer", reach: 880_000, influence: 6.9, credibility: 6.2, stance: "neutral", posts_7d: 19, mentions: 88, drives: ["tata-kelola", "investasi", "kebijakan", "pasar", "sosial"], verified: false, bot: true, avatarUrl: AVATAR(68), note: "Amplifier visual; cepat memviralkan kabar baik maupun buruk." },
+  { handle: "danantara_id", name: "Danantara Indonesia", platform: "Instagram", type: "resmi", reach: 540_000, influence: 6.4, credibility: 8.0, stance: "positive", posts_7d: 11, mentions: 11, drives: ["tata-kelola", "investasi", "kebijakan", "pasar", "sosial"], verified: true, bot: false, avatarUrl: AVATAR(5), note: "Kanal resmi; perlu kadens lebih tinggi untuk merebut narasi proaktif." },
 ];
