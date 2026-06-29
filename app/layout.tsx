@@ -1,9 +1,12 @@
 import type { Metadata } from "next";
-import { Space_Grotesk, JetBrains_Mono } from "next/font/google";
+import { Roboto, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 
-const spaceGrotesk = Space_Grotesk({
-  variable: "--font-space-grotesk",
+const roboto = Roboto({
+  variable: "--font-roboto",
+  // Roboto is non-variable here, so weights are explicit. 400/500/700 cover the
+  // UI scale (semibold 600 → 700, extrabold 800 → 700, matching the old font).
+  weight: ["400", "500", "700"],
   subsets: ["latin"],
   display: "swap",
 });
@@ -28,7 +31,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${spaceGrotesk.variable} ${jetbrainsMono.variable} h-full antialiased`}
+      className={`${roboto.variable} ${jetbrainsMono.variable} h-full antialiased`}
     >
       {/* suppressHydrationWarning: some browser extensions (e.g. ColorZilla's
           cz-shortcut-listen) inject attributes on <body> before React hydrates;
