@@ -94,8 +94,11 @@ export function biggestThreat(issues: CeoIssue[]): CeoIssue | null {
 
 /** Map a 0–100 score to a threat band (higher = worse). */
 export function crisisBand(score: number): CrisisBand {
+  // Three-colour traffic-light scale: green (Low) · yellow (the caution middle —
+  // Guarded *and* Elevated) · red (Severe). The four textual levels remain, but
+  // the orange band was dropped so the dial reads green/yellow/red only.
   if (score >= T_SEVERE) return { level: "Severe", color: SOV_COLORS.weak, siren: true };
-  if (score >= T_ELEVATED) return { level: "Elevated", color: SOV_COLORS.watch, siren: false };
+  if (score >= T_ELEVATED) return { level: "Elevated", color: SOV_COLORS.ok, siren: false };
   if (score >= T_GUARDED) return { level: "Guarded", color: SOV_COLORS.ok, siren: false };
   return { level: "Low", color: SOV_COLORS.strong, siren: false };
 }
