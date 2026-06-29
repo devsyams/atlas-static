@@ -15,7 +15,8 @@ describe("actorsDrivingThreat", () => {
   });
 
   it("ranks an on-topic positive defender below the on-topic negative driver", () => {
-    const out = actorsDrivingThreat(DANANTARA_ACTORS, threat("tata-kelola"));
+    // Rank the full roster so this asserts *ordering*, not membership in the top-5.
+    const out = actorsDrivingThreat(DANANTARA_ACTORS, threat("tata-kelola"), DANANTARA_ACTORS.length);
     const driver = out.findIndex((a) => a.actor.handle === "ekonom_kritis");
     const defender = out.findIndex((a) => a.actor.handle === "danantara_id");
     expect(driver).toBeGreaterThanOrEqual(0);

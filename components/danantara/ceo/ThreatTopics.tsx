@@ -34,8 +34,8 @@ export function ThreatTopics({
 
   return (
     <div className="panel flex h-full flex-col overflow-hidden p-4">
-      <h2 className="flex items-center gap-2 text-lg font-bold text-foreground">
-        <span className="h-2 w-2 rounded-full bg-destructive" />
+      <h2 className="flex items-center gap-2.5 text-[clamp(1.5rem,3vh,2.5rem)] font-bold text-foreground">
+        <span className="h-[0.4em] w-[0.4em] rounded-full bg-destructive" />
         Ancaman Utama
       </h2>
 
