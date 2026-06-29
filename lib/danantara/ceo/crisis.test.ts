@@ -68,11 +68,11 @@ describe("crisisBand (English threat ladder, inverted: high score = worse)", () 
     expect(crisisBand(65).level).toBe("Severe");
   });
 
-  it("colours each band from the sovereign palette (green → red)", () => {
-    expect(crisisBand(10).color).toBe(SOV_COLORS.strong);
-    expect(crisisBand(30).color).toBe(SOV_COLORS.ok);
-    expect(crisisBand(50).color).toBe(SOV_COLORS.watch);
-    expect(crisisBand(70).color).toBe(SOV_COLORS.weak);
+  it("colours each band on the green/yellow/red traffic-light scale", () => {
+    expect(crisisBand(10).color).toBe(SOV_COLORS.strong); // Low → green
+    expect(crisisBand(30).color).toBe(SOV_COLORS.ok); // Guarded → yellow
+    expect(crisisBand(50).color).toBe(SOV_COLORS.ok); // Elevated → yellow (no orange)
+    expect(crisisBand(70).color).toBe(SOV_COLORS.weak); // Severe → red
   });
 
   it("sirens only at Severe (score ≥ 65)", () => {

@@ -4,8 +4,8 @@ import { SOV_COLORS } from "@/lib/danantara/ui";
 
 /**
  * The threat dial (A10 v3.0) — the Crisis Gate's signature element. A 180° gauge
- * whose arc runs through the four named zones (green Aman → red Krisis) with a
- * needle pointing at the live score. The needle's position *in a colored zone*
+ * whose arc runs through three traffic-light zones (green Aman → yellow caution →
+ * red Awas) with a needle pointing at the live score. The needle's position *in a colored zone*
  * is the instant read for a CEO at a glance; the ends are labelled 0 · AMAN and
  * KRISIS · 100 so the scale and its direction are unmistakable. Pure visual — it
  * takes the (already animated) score and the active band colour.
@@ -30,11 +30,11 @@ function arc(s0: number, s1: number) {
   return `M ${a.x.toFixed(2)} ${a.y.toFixed(2)} A ${R} ${R} 0 0 1 ${b.x.toFixed(2)} ${b.y.toFixed(2)}`;
 }
 
-// The four named zones, in band order (boundaries 25 / 45 / 65 mirror crisisBand).
+// Three traffic-light zones (boundaries 25 / 65 mirror crisisBand): green Aman →
+// yellow caution (Waspada + Siaga) → red Awas. The orange band was dropped.
 const ZONES: Array<{ from: number; to: number; color: string }> = [
   { from: 0, to: 25, color: SOV_COLORS.strong },
-  { from: 25, to: 45, color: SOV_COLORS.ok },
-  { from: 45, to: 65, color: SOV_COLORS.watch },
+  { from: 25, to: 65, color: SOV_COLORS.ok },
   { from: 65, to: 100, color: SOV_COLORS.weak },
 ];
 

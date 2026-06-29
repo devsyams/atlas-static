@@ -35,8 +35,10 @@
   --color-grid: var(--grid);
   --color-success: var(--success);
   --color-warning: var(--warning);
-  --font-display: var(--font-space-grotesk), "Space Grotesk", system-ui, sans-serif;
-  --font-sans: var(--font-space-grotesk), "Space Grotesk", system-ui, sans-serif;
+  /* Roboto (self-hosted via next/font) — renders on every device, including the
+     65" TV. system-ui keeps a clean fallback before the web font loads. */
+  --font-display: var(--font-roboto), "Roboto", system-ui, sans-serif;
+  --font-sans: var(--font-roboto), "Roboto", system-ui, sans-serif;
   --font-mono: var(--font-jetbrains-mono), "JetBrains Mono", ui-monospace, monospace;
 }
 
