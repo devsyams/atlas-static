@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ArrowRight, CalendarRange, RefreshCw } from "lucide-react";
@@ -133,7 +134,9 @@ export function CrisisGate() {
   const threat = biggestThreat(issues);
   const negatives = groupIssuesBySentiment(issues).negative;
   const related = (threat ? negatives.filter((i) => i.id !== threat.id) : negatives).slice(0, 6);
-  const threatActors = actorsDrivingThreat(actors, threat, 5);
+  // Rank the whole roster (not a top-N slice) so the right column can always pick
+  // its top humans *and* top bots independently — ThreatActors caps each at 2.
+  const threatActors = actorsDrivingThreat(actors, threat, actors.length);
 
   // Only animate once we actually have live data — a loading/offline gate sits at 0.
   const shown = useCountUp(reading.score, live === "live");
@@ -159,16 +162,24 @@ export function CrisisGate() {
       {/* Header strip — the client brand, what this is + live pulse, the date-range
           window, and the two actions. */}
       <header className="flex shrink-0 flex-wrap items-center justify-between gap-x-4 gap-y-3">
-        <div className="flex items-center gap-3">
-          <span className="relative mt-1 flex h-2.5 w-2.5 self-start">
-            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-success/70" />
-            <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-success" />
+        <div className="flex items-center gap-3.5">
+          {/* Danantara brand logo — white backdrop so the black "D" mark reads on the
+              dark board (mirrors HeaderStrip). Scales with viewport for TV legibility. */}
+          <span className="flex h-[clamp(2.75rem,6vh,4.25rem)] w-[clamp(2.75rem,6vh,4.25rem)] shrink-0 items-center justify-center overflow-hidden rounded-xl bg-white/95 p-1.5 shadow-sm">
+            <Image src="/danantara.png" alt="Danantara" width={68} height={68} priority className="h-full w-full object-contain" />
           </span>
           <div>
-            <h1 className="text-[clamp(1.35rem,3vh,2rem)] font-extrabold leading-none tracking-tight text-foreground">
-              {CLIENT_BRAND}
-            </h1>
-            <p className="mt-1 text-xs font-semibold uppercase tracking-[0.24em] text-muted-foreground">
+            <div className="flex items-center gap-2.5">
+              <h1 className="text-[clamp(1.7rem,3.8vh,3rem)] font-extrabold leading-none tracking-tight text-foreground">
+                {CLIENT_BRAND}
+              </h1>
+              {/* Live pulse — sits beside the brand name. */}
+              <span className="relative flex h-2.5 w-2.5">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-success/70" />
+                <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-success" />
+              </span>
+            </div>
+            <p className="mt-1.5 text-[clamp(0.7rem,1.5vh,0.95rem)] font-semibold uppercase tracking-[0.24em] text-muted-foreground">
               Threat Index · Crisis Monitor
             </p>
           </div>
@@ -257,7 +268,7 @@ export function CrisisGate() {
             </div>
           ) : (
             <>
-              <h2 className="text-lg font-bold text-foreground">Indeks Ancaman</h2>
+              <h2 className="text-[clamp(1.5rem,3vh,2.5rem)] font-bold text-foreground">Indeks Ancaman</h2>
 
               {/* The gauge + reading fill the middle, growing into the column. */}
               <div className="flex flex-1 flex-col items-center justify-center gap-[3vh]">
