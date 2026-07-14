@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Sparkles, Copy, Check, Printer, Loader2 } from "lucide-react";
+import { isAiEnabled } from "@/lib/ai-settings";
 import { cn } from "@/lib/utils";
 
 /** Minimal markdown → React: ## / ### headings, - bullets, **bold**, paragraphs. */
@@ -128,7 +129,9 @@ export function BriefingPanel({
     setStage(0);
     setAnimDone(false);
 
-    fetch(endpoint, { method: "POST" })
+    // A12 v2.0 (AC9) — with the AI switch off, ask the route for its scripted
+    // path so the briefing still works but spends no tokens.
+    fetch(isAiEnabled() ? endpoint : `${endpoint}?ai=0`, { method: "POST" })
       .then((r) => r.json())
       .then((d: { content: string; updated_at: string }) => {
         setContent(d.content);

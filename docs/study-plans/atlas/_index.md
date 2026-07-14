@@ -41,8 +41,9 @@
 | **A9** | Communication Response Calculator | 3-act | demo | — | 3.1 | Built |
 | **A10** | Danantara Crisis Gate (fear-first executive landing) | 3-act | demo | — | 3.3 | Built |
 | **A11** | Danantara Executive Briefing | 3-act | demo | — | 2.2 | Built |
+| **A12** | JasaMarga AI Ops Insight & Predictions (LLM-backed) | 3-act | demo | — | 4.0 | Built |
 
-**Totals:** 29 features · 8 platform · 5 watch · 5 understand · 11 act.
+**Totals:** 30 features · 8 platform · 5 watch · 5 understand · 12 act.
 
 ## Sprint → feature map (delivery view)
 

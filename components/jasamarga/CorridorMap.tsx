@@ -5,9 +5,8 @@ import type { FeatureGroup, Map as LeafletMap } from "leaflet";
 import "leaflet/dist/leaflet.css";
 import type { IncidentItem, RouteSegment } from "@/lib/jasamarga/types";
 import type { Corridor } from "@/lib/jasamarga/corridors";
-import { corridorPath, segmentPath } from "@/lib/jasamarga/geo";
-import { FLOW_COLORS, flowDuration, sweepDuration } from "@/lib/jasamarga/ui";
-import { safetyColor } from "@/lib/jasamarga/safety";
+import { corridorPath, segmentPath, snapToPath } from "@/lib/jasamarga/geo";
+import { FLOW_COLORS } from "@/lib/jasamarga/ui";
 
 interface Props {
   corridor: Corridor;
@@ -15,17 +14,14 @@ interface Props {
   incidents: IncidentItem[];
   selected: number | null;
   onSelect: (i: number | null) => void;
-  /** 0–100 Safe Meter score — drives the corridor sweep's color + urgency. */
-  safetyScore: number;
 }
 
-export function CorridorMap({ corridor, segments, incidents, selected, onSelect, safetyScore }: Props) {
+export function CorridorMap({ corridor, segments, incidents, selected, onSelect }: Props) {
   const elRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<LeafletMap | null>(null);
   const groupRef = useRef<FeatureGroup | null>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const LRef = useRef<any>(null);
-  const seenIncidents = useRef<Set<string>>(new Set());
   const [ready, setReady] = useState(false);
 
   // Repaint the corridor + incident layers from the latest props. Reads Leaflet
@@ -36,20 +32,10 @@ export function CorridorMap({ corridor, segments, incidents, selected, onSelect,
     if (!L || !group) return;
     group.clearLayers();
 
+    // One colored line per ruas — the congestion color is the whole message.
     segments.forEach((seg, i) => {
       const isSel = selected === i;
-      const path = segmentPath(corridor, i);
-      // Neon under-glow in the congestion color (blurred halo beneath the road).
-      L.polyline(path, {
-        color: FLOW_COLORS[seg.status],
-        weight: isSel ? 22 : 17,
-        opacity: isSel ? 0.4 : 0.28,
-        lineCap: "round",
-        className: "jm-glow",
-        interactive: false,
-      }).addTo(group);
-      // Base colored road — carries congestion color, click + tooltip.
-      L.polyline(path, {
+      L.polyline(segmentPath(corridor, i), {
         color: FLOW_COLORS[seg.status],
         weight: isSel ? 9 : 6,
         opacity: isSel ? 1 : 0.85,
@@ -58,67 +44,31 @@ export function CorridorMap({ corridor, segments, incidents, selected, onSelect,
         .on("click", () => onSelect(isSel ? null : i))
         .bindTooltip(`${seg.label} · ${seg.speed} km/j · +${seg.delay_min} mnt`, { sticky: true })
         .addTo(group);
-
-      // Animated flow dashes on top — speed-reactive (fast traffic = fast flow).
-      const flow = L.polyline(path, {
-        color: "oklch(0.97 0.02 240)",
-        weight: isSel ? 4 : 3,
-        opacity: 0.85,
-        className: "jm-flow",
-        interactive: false,
-      }).addTo(group);
-      const flowEl = flow.getElement() as SVGPathElement | null;
-      if (flowEl) flowEl.style.animationDuration = `${flowDuration(seg.speed)}s`;
     });
 
-    // Full-corridor sweep pulse — color + urgency react to the Safe Meter.
-    const sweepColor = safetyColor(safetyScore);
-    const sweep = L.polyline(corridorPath(corridor), {
-      color: sweepColor,
-      weight: 5,
-      opacity: 0.95,
-      className: "jm-sweep",
-      interactive: false,
-    }).addTo(group);
-    const sweepEl = sweep.getElement() as SVGPathElement | null;
-    if (sweepEl) {
-      const len = sweepEl.getTotalLength();
-      const dash = Math.max(40, len * 0.06);
-      sweepEl.style.color = sweepColor;
-      sweepEl.style.strokeDasharray = `${dash} ${len}`;
-      sweepEl.style.setProperty("--sweep-travel", String(len + dash));
-      sweepEl.style.animationDuration = `${sweepDuration(safetyScore)}s`;
-    }
+    // Snap every marker onto the corridor we actually drew. Live TomTom incidents
+    // carry real road coordinates, but this line is an anchor approximation of the
+    // road — plotted raw, the dots float beside it. The popup keeps the true KM.
+    const road = corridorPath(corridor);
 
     incidents.forEach((inc) => {
       if (inc.lat == null || inc.lng == null) return;
+      const at = snapToPath(road, [inc.lat, inc.lng]);
       const color = inc.severity >= 7 ? FLOW_COLORS.lumpuh : inc.severity >= 4 ? FLOW_COLORS.macet : FLOW_COLORS.padat;
-      const icon = L.divIcon({
-        className: "",
-        html: `<div class="jm-pin" style="--jm-pin-color:${color}"></div>`,
-        iconSize: [14, 14],
-        iconAnchor: [7, 7],
-      });
-      L.marker([inc.lat, inc.lng], { icon })
+      L.circleMarker(at, {
+        radius: 6,
+        color: "oklch(0.97 0.02 240)",
+        weight: 2,
+        fillColor: color,
+        fillOpacity: 1,
+      })
         .bindPopup(
           `<strong>${inc.type}</strong> · ${inc.km}<br/>${inc.status} · sumber ${inc.source}` +
             (inc.lanes_blocked ? `<br/>${inc.lanes_blocked} lajur tertutup` : ""),
         )
         .addTo(group);
-
-      // One-time shockwave ripple the first time an incident appears.
-      if (!seenIncidents.current.has(inc.id)) {
-        seenIncidents.current.add(inc.id);
-        const ring = L.divIcon({
-          className: "",
-          html: `<div class="jm-shock" style="--jm-pin-color:${color}"></div>`,
-          iconSize: [18, 18],
-          iconAnchor: [9, 9],
-        });
-        L.marker([inc.lat, inc.lng], { icon: ring, interactive: false, keyboard: false }).addTo(group);
-      }
     });
-  }, [corridor, segments, incidents, selected, onSelect, safetyScore]);
+  }, [corridor, segments, incidents, selected, onSelect]);
 
   // Init the map once.
   useEffect(() => {
@@ -172,14 +122,12 @@ export function CorridorMap({ corridor, segments, incidents, selected, onSelect,
     }
   }, [ready, draw, selected, corridor]);
 
-  // Fly to a newly selected corridor (after the initial reveal) and let its
-  // incidents shockwave in again.
+  // Fly to a newly selected corridor (after the initial reveal).
   const corridorIdRef = useRef(corridor.id);
   useEffect(() => {
     if (!ready) return;
     if (corridorIdRef.current === corridor.id) return;
     corridorIdRef.current = corridor.id;
-    seenIncidents.current = new Set();
     const map = mapRef.current;
     const L = LRef.current;
     if (map && L) {

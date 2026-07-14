@@ -18,13 +18,17 @@ export function OpsInsight({
   conditions,
   loadIndex,
   level,
+  aiSource = "scripted",
 }: {
   insight: OpsInsightData;
   conditions: ConditionChip[];
   loadIndex: number;
   level: string;
+  /** Where the words came from — the badge must never claim an LLM wrote template text. */
+  aiSource?: "llm" | "scripted";
 }) {
   const accent = loadColor(loadIndex);
+  const live = aiSource === "llm";
 
   return (
     <div className="relative h-full p-3.5 pl-4">
@@ -45,6 +49,11 @@ export function OpsInsight({
               <span className="relative inline-flex h-2 w-2 rounded-full" style={{ background: accent }} />
             </span>
             <span className="text-gradient text-[10px] font-bold uppercase tracking-[0.18em]">Analisis Nexorus AI</span>
+            <span
+              className={`text-[9px] font-bold uppercase tracking-wide ${live ? "text-success" : "text-muted-foreground"}`}
+            >
+              {live ? "● Nexorus AI · LLM" : "Simulasi"}
+            </span>
           </span>
           <span
             className="inline-flex items-center gap-1 rounded-full border border-current/30 bg-current/10 px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wide"
