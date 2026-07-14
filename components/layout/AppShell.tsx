@@ -58,7 +58,7 @@ const NAV: NavItem[] = [
   { to: "/", label: "AI Report Generator", icon: Sparkles, group: "System" },
   { to: "/", label: "User Administration", icon: Users, group: "System" },
   { to: "/", label: "AI Governance", icon: ShieldCheck, group: "System" },
-  { to: "/", label: "System Settings", icon: Settings, group: "System" },
+  { to: "/settings", label: "System Settings", icon: Settings, group: "System" },
 ];
 
 export function AppShell({ children }: { children: ReactNode }) {

@@ -9,10 +9,8 @@ import {
   CloudRain,
   Gauge,
   Map as MapIcon,
-  Megaphone,
   MessageCircle,
   MonitorPlay,
-  Newspaper,
   Pause,
   Play,
   Route,
@@ -28,7 +26,7 @@ import { PredictionMeters } from "@/components/crisis/PredictionMeters";
 import { ScoreGauge } from "@/components/crisis/ScoreGauge";
 import { CountUp } from "@/components/crisis/CountUp";
 import { BriefingPanel } from "@/components/ai/BriefingPanel";
-import type { CctvFeed, CorridorPulse, Intervention, OpsSnapshot, WeatherZone } from "@/lib/jasamarga/types";
+import type { CorridorPulse, Intervention, OpsSnapshot, WeatherZone } from "@/lib/jasamarga/types";
 import { projectSegments } from "@/lib/jasamarga/data";
 import { loadColor, loadLevel } from "@/lib/jasamarga/ui";
 import { safetyColor } from "@/lib/jasamarga/safety";
@@ -38,18 +36,15 @@ import dynamic from "next/dynamic";
 import { SafeMeter } from "./SafeMeter";
 import { RouteRibbon } from "./RouteRibbon";
 import { OpsInsight } from "./OpsInsight";
+import { useOpsAi } from "./useOpsAi";
 import { IncidentFeed } from "./IncidentFeed";
 import { TopRuas } from "./TopRuas";
 import { TrafficConsole } from "./TrafficConsole";
 import { CommandWall } from "./CommandWall";
 import { SocialPulse } from "./SocialPulse";
-import { OfficialFeed } from "./OfficialFeed";
-import { NewsCoverage } from "./NewsCoverage";
 import { ForecastTimeline } from "./ForecastTimeline";
-import { TravelTimeBoard } from "./TravelTimeBoard";
 import { SourceStatus } from "./SourceStatus";
 import { VisionWall } from "./VisionWall";
-import { CameraModal } from "./CameraModal";
 
 const CorridorMap = dynamic(() => import("./CorridorMap").then((m) => m.CorridorMap), {
   ssr: false,
@@ -58,8 +53,7 @@ const CorridorMap = dynamic(() => import("./CorridorMap").then((m) => m.Corridor
 
 const BRIEFING_STAGES = [
   "Menarik data lalu lintas (Google/Waze)",
-  "Menyapu laporan Waze & media sosial",
-  "Memindai berita & kanal resmi",
+  "Menyapu topik media intelligence (Nexorus)",
   "Memproyeksikan beban lalu lintas",
   "Menyusun laporan piket",
 ];
@@ -82,9 +76,11 @@ export function OpsCommand() {
   const [wallOpen, setWallOpen] = useState(false);
   const [shared, setShared] = useState<Intervention | null>(null);
   const [pulses, setPulses] = useState<Record<string, CorridorPulse>>({});
-  const [activeCam, setActiveCam] = useState<CctvFeed | null>(null);
   const [forecastIdx, setForecastIdx] = useState(0); // 0 = now (live)
   const [playing, setPlaying] = useState(false);
+
+  // A12 — LLM-authored insight + predictions for the snapshot on screen.
+  const ai = useOpsAi(data);
 
   const loadData = useCallback(() => {
     setLive("loading");
@@ -136,29 +132,9 @@ export function OpsCommand() {
   const accent = data ? loadColor(data.load_index) : undefined;
   const seg = selectedSegment != null ? data?.segments[selectedSegment] : null;
 
-  // Map → camera: select a segment AND pop the nearest CCTV feed (by km midpoint).
-  const handleMapSelect = useCallback(
-    (i: number | null) => {
-      setSelectedSegment(i);
-      if (i == null || !data) return;
-      const s = data.segments[i];
-      if (!s) return;
-      const mid = (s.km_from + s.km_to) / 2;
-      let nearest: CctvFeed | null = null;
-      let best = Infinity;
-      for (const c of data.cctv) {
-        const km = parseFloat(c.km.replace(/[^\d.]/g, ""));
-        if (Number.isNaN(km)) continue;
-        const d = Math.abs(km - mid);
-        if (d < best) {
-          best = d;
-          nearest = c;
-        }
-      }
-      if (nearest) setActiveCam(nearest);
-    },
-    [data],
-  );
+  // A12 v4.0 — clicking a segment just selects it. The old behaviour also popped
+  // a "nearest CCTV" modal, but those camera feeds were simulated and are gone.
+  const handleMapSelect = useCallback((i: number | null) => setSelectedSegment(i), []);
 
   // --- Predictive time machine (map-only forecast scrubber) ---
   const fc = data?.forecast ?? [];
@@ -193,7 +169,7 @@ export function OpsCommand() {
             Pemantauan Lalu Lintas — {data?.corridor ?? "Jakarta–Cikampek"}
           </h1>
           <p className="mt-1.5 text-[12px] text-muted-foreground">
-            Diperbarui {data?.updated_at ?? "—"} · 100% dari sumber publik/daring (traffic API, medsos, berita, BMKG, kanal resmi) + analitik Nexorus AI.
+            Diperbarui {data?.updated_at ?? "—"} · 100% dari sumber publik/daring (TomTom Traffic + media intelligence Nexorus) + analitik Nexorus AI.
           </p>
         </div>
         <div className="flex flex-wrap items-center justify-end gap-2">
@@ -315,7 +291,6 @@ export function OpsCommand() {
                   incidents={data.incidents}
                   selected={selectedSegment}
                   onSelect={handleMapSelect}
-                  safetyScore={data.safety.score}
                 />
                 {/* Forecast corner badge — so a screenshot reads as a projection, not live */}
                 {safeIdx > 0 && fcHour && (
@@ -386,15 +361,15 @@ export function OpsCommand() {
 
         {/* AI Vision — CCTV Vision Wall (headline feature) */}
         <Tile
-          title="AI Vision — CCTV Koridor"
+          title="AI Vision — CCTV Live"
           icon={Video}
           className="lg:col-span-6"
           tileClassName="border-primary/40"
-          headerRight={<span className="text-[10px] text-muted-foreground">Nexorus Vision · simulasi</span>}
+          headerRight={<span className="text-[10px] font-semibold text-success">● Nexorus Vision · live</span>}
           bodyClassName="p-2"
           style={{ minHeight: 300 }}
         >
-          {data ? <VisionWall cctv={data.cctv} onOpen={setActiveCam} /> : <Empty state={live} />}
+          <VisionWall />
         </Tile>
 
         {/* Safe Meter — the headline gimmick */}
@@ -439,10 +414,16 @@ export function OpsCommand() {
           )}
         </Tile>
 
-        {/* AI Ops Insight */}
+        {/* AI Ops Insight — LLM-authored when the model is live (A12), else the deterministic read */}
         <Tile title="AI Ops Insight" icon={Activity} className="lg:col-span-5" bodyClassName="p-0">
           {data ? (
-            <OpsInsight insight={data.insight} conditions={data.conditions} loadIndex={data.load_index} level={data.level} />
+            <OpsInsight
+              insight={ai.insight ?? data.insight}
+              conditions={data.conditions}
+              loadIndex={data.load_index}
+              level={data.level}
+              aiSource={ai.source}
+            />
           ) : (
             <Empty state={live} />
           )}
@@ -450,7 +431,7 @@ export function OpsCommand() {
 
         {/* Congestion Forecast */}
         <Tile title="Prediksi Kemacetan" icon={TrendingUp} className="lg:col-span-4">
-          <PredictionMeters predictions={data?.predictions ?? []} updatedAt={data?.updated_at} />
+          <PredictionMeters predictions={ai.predictions ?? data?.predictions ?? []} updatedAt={data?.updated_at} />
         </Tile>
 
         {/* Traffic Engineering Console — the gimmick */}
@@ -473,21 +454,6 @@ export function OpsCommand() {
           {data ? <ForecastTimeline hours={data.forecast} /> : <Empty state={live} />}
         </Tile>
 
-        {/* Travel-Time Board */}
-        <Tile title="Papan Waktu Tempuh" icon={Clock} className="lg:col-span-4" bodyClassName="overflow-auto scrollbar-thin p-3" style={{ maxHeight: 300 }}>
-          {data ? <TravelTimeBoard routes={data.travel_times} /> : <Empty state={live} />}
-        </Tile>
-
-        {/* Official Feed */}
-        <Tile title="Kanal Resmi" icon={Megaphone} className="lg:col-span-4" bodyClassName="overflow-auto scrollbar-thin p-3" style={{ maxHeight: 340 }}>
-          {data ? <OfficialFeed posts={data.official} /> : <Empty state={live} />}
-        </Tile>
-
-        {/* News Coverage */}
-        <Tile title="Liputan Media" icon={Newspaper} className="lg:col-span-4" bodyClassName="overflow-auto scrollbar-thin p-3" style={{ maxHeight: 340 }}>
-          {data ? <NewsCoverage articles={data.news} /> : <Empty state={live} />}
-        </Tile>
-
         {/* Top Ruas */}
         <Tile title="Titik Macet Teratas" icon={Route} className="lg:col-span-4" bodyClassName="overflow-auto scrollbar-thin p-3" style={{ maxHeight: 340 }}>
           {data ? <TopRuas ruas={data.top_ruas} /> : <Empty state={live} />}
@@ -507,7 +473,6 @@ export function OpsCommand() {
 
       <CommandWall open={wallOpen} onClose={() => setWallOpen(false)} data={data} />
 
-      <CameraModal cam={activeCam} onClose={() => setActiveCam(null)} />
     </div>
   );
 }

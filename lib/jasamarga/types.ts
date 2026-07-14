@@ -70,11 +70,33 @@ export interface SocialPost {
 }
 
 /** Public-sentiment pulse from social monitoring (the MBG-style core). */
+/**
+ * One real conversation topic from the media-intelligence feed (A12 v2.0).
+ * Replaces the fabricated `SocialPost` tweets when the live feed is available.
+ */
+export interface SocialTopic {
+  title: string;
+  aiLine: string; // the feed's own AI read of the topic
+  impressions: number;
+  reach: number;
+  sentiment: number; // -100 (hostile) .. 100 (supportive)
+}
+
 export interface SocialPulse {
   mentions_24h: number;
   negativity: number; // 0–10 (high = more negative chatter)
   trend: TrendKeyword[];
   top_posts: SocialPost[];
+  /**
+   * (A12 v2.0) Provenance. "live" = the client's real `danantara_jasamarga`
+   * media-intelligence feed — the same one behind /bumn-v2/jasamarga. "demo" =
+   * the synthetic pulse. Everything below is only populated when live.
+   */
+  source?: "live" | "demo";
+  impressions?: number;
+  reach?: number;
+  sentiment_pct?: { positive: number; negative: number; neutral: number };
+  topics?: SocialTopic[];
 }
 
 /** Scraped official announcement (@PTJASAMARGA / Travoy / press release). */

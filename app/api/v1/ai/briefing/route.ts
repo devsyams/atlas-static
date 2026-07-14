@@ -10,13 +10,17 @@ const BRIEFING_PROMPT =
   "## Ringkasan Eksekutif, ## Insiden Utama, ## Aktor & Narasi, ## Sentimen Kepemimpinan, ## Prediksi, ## Rekomendasi. " +
   "Ringkas, kutip angka dari data, dan beri 2-3 rekomendasi tindakan konkret.";
 
-export async function POST() {
+export async function POST(req: Request) {
   const ctx = buildGroundingContext();
+  // A12 v2.0 (AC9) — `?ai=0` is the client's cost kill switch: skip the model entirely.
+  const aiOff = new URL(req.url).searchParams.get("ai") === "0";
+
   let content: string;
   try {
-    content = hasLiveAI()
-      ? await liveAnswer(`${NEXORUS_SYSTEM}\n\nDATA INTELIJEN:\n${ctx.text}`, BRIEFING_PROMPT, 1600)
-      : scriptedBriefing(ctx);
+    content =
+      hasLiveAI() && !aiOff
+        ? await liveAnswer(`${NEXORUS_SYSTEM}\n\nDATA INTELIJEN:\n${ctx.text}`, BRIEFING_PROMPT, 1600)
+        : scriptedBriefing(ctx);
   } catch {
     content = scriptedBriefing(ctx);
   }

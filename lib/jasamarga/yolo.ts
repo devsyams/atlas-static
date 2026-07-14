@@ -179,8 +179,18 @@ export function loadYolo(): Promise<any> {
   sessionPromise = (async () => {
     const ort = await import("onnxruntime-web/webgpu");
     ort.env.wasm.wasmPaths = `https://cdn.jsdelivr.net/npm/onnxruntime-web@${ORT_VERSION}/dist/`;
+
+    // Quieten ORT's graph-partitioning chatter ("Some nodes were not assigned to
+    // the preferred execution providers…"). It's informational — ORT deliberately
+    // keeps shape ops on CPU — but it is emitted on the console.error channel, so
+    // Next's dev overlay surfaces it as a Console Error. Errors still come through.
+    ort.env.logLevel = "error";
+
     return ort.InferenceSession.create("/models/yolo11n.onnx", {
       executionProviders: ["webgpu", "wasm"],
+      // Session-level severity: 0 verbose … 3 error, 4 fatal. The env-level switch
+      // above doesn't cover warnings raised inside session initialisation.
+      logSeverityLevel: 3,
     });
   })();
   sessionPromise.catch(() => {

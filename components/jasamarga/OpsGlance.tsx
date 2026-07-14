@@ -21,7 +21,6 @@ import {
   CalendarClock,
   CheckCircle2,
   ChevronRight,
-  Clock,
   MessageCircle,
   MonitorPlay,
   Route,
@@ -37,25 +36,24 @@ import { PredictionMeters } from "@/components/crisis/PredictionMeters";
 import { ScoreGauge } from "@/components/crisis/ScoreGauge";
 import { CountUp } from "@/components/crisis/CountUp";
 import { BriefingPanel } from "@/components/ai/BriefingPanel";
-import type { CctvFeed, CorridorPulse, Intervention, OpsSnapshot } from "@/lib/jasamarga/types";
+import type { CorridorPulse, Intervention, OpsSnapshot } from "@/lib/jasamarga/types";
 import { loadColor } from "@/lib/jasamarga/ui";
 import { safetyColor } from "@/lib/jasamarga/safety";
 import { CORRIDORS, getCorridor } from "@/lib/jasamarga/corridors";
 import { cn } from "@/lib/utils";
 
 import { SafeMeter } from "./SafeMeter";
+import type { Prediction } from "@/lib/mbg/types";
+
 import { OpsInsight } from "./OpsInsight";
+import { useOpsAi } from "./useOpsAi";
 import { IncidentFeed } from "./IncidentFeed";
 import { TopRuas } from "./TopRuas";
 import { TrafficConsole } from "./TrafficConsole";
 import { CommandWall } from "./CommandWall";
 import { SocialPulse } from "./SocialPulse";
-import { OfficialFeed } from "./OfficialFeed";
-import { NewsCoverage } from "./NewsCoverage";
 import { ForecastTimeline } from "./ForecastTimeline";
-import { TravelTimeBoard } from "./TravelTimeBoard";
 import { VisionWall } from "./VisionWall";
-import { CameraModal } from "./CameraModal";
 
 const CorridorMap = dynamic(() => import("./CorridorMap").then((m) => m.CorridorMap), {
   ssr: false,
@@ -66,8 +64,7 @@ const CorridorMap = dynamic(() => import("./CorridorMap").then((m) => m.Corridor
 
 const BRIEFING_STAGES = [
   "Menarik data lalu lintas (Google/Waze)",
-  "Menyapu laporan Waze & media sosial",
-  "Memindai berita & kanal resmi",
+  "Menyapu topik media intelligence (Nexorus)",
   "Memproyeksikan beban lalu lintas",
   "Menyusun laporan piket",
 ];
@@ -75,14 +72,13 @@ const BRIEFING_STAGES = [
 type LiveState = "loading" | "live" | "offline";
 
 /** Tier-2 drill tabs — dense panels grouped by question, shown only on demand. */
-type DrillTab = "forecast" | "travel" | "bottleneck" | "cctv" | "social" | "console";
+type DrillTab = "forecast" | "bottleneck" | "cctv" | "social" | "console";
 
 const TABS: { id: DrillTab; label: string; icon: ComponentType<{ className?: string }> }[] = [
   { id: "forecast", label: "Prakiraan", icon: TrendingUp },
-  { id: "travel", label: "Waktu Tempuh", icon: Clock },
   { id: "bottleneck", label: "Titik Macet", icon: Route },
   { id: "cctv", label: "CCTV AI", icon: Video },
-  { id: "social", label: "Sentimen & Kanal", icon: MessageCircle },
+  { id: "social", label: "Sentimen Publik", icon: MessageCircle },
   { id: "console", label: "Rekayasa", icon: TrafficCone },
 ];
 
@@ -92,11 +88,13 @@ export function OpsGlance() {
   const [corridorId, setCorridorId] = useState("japek");
   const [selectedSegment, setSelectedSegment] = useState<number | null>(null);
   const [pulses, setPulses] = useState<Record<string, CorridorPulse>>({});
-  const [activeCam, setActiveCam] = useState<CctvFeed | null>(null);
   const [briefingOpen, setBriefingOpen] = useState(false);
   const [wallOpen, setWallOpen] = useState(false);
   const [shared, setShared] = useState<Intervention | null>(null);
   const [drill, setDrill] = useState<DrillTab | null>(null);
+
+  // A12 — LLM-authored insight + predictions for the snapshot on screen.
+  const ai = useOpsAi(data);
 
   const loadData = useCallback(() => {
     setLive("loading");
@@ -137,28 +135,9 @@ export function OpsGlance() {
     setCorridorId(id);
   };
 
-  const handleMapSelect = useCallback(
-    (i: number | null) => {
-      setSelectedSegment(i);
-      if (i == null || !data) return;
-      const s = data.segments[i];
-      if (!s) return;
-      const mid = (s.km_from + s.km_to) / 2;
-      let nearest: CctvFeed | null = null;
-      let best = Infinity;
-      for (const c of data.cctv) {
-        const km = parseFloat(c.km.replace(/[^\d.]/g, ""));
-        if (Number.isNaN(km)) continue;
-        const d = Math.abs(km - mid);
-        if (d < best) {
-          best = d;
-          nearest = c;
-        }
-      }
-      if (nearest) setActiveCam(nearest);
-    },
-    [data],
-  );
+  // A12 v4.0 — clicking a segment just selects it. The old behaviour also popped
+  // a "nearest CCTV" modal, but those camera feeds were simulated and are gone.
+  const handleMapSelect = useCallback((i: number | null) => setSelectedSegment(i), []);
 
   const accent = data ? loadColor(data.load_index) : undefined;
   const seg = selectedSegment != null ? data?.segments[selectedSegment] : null;
@@ -270,7 +249,6 @@ export function OpsGlance() {
               incidents={data.incidents}
               selected={selectedSegment}
               onSelect={handleMapSelect}
-              safetyScore={data.safety.score}
             />
           ) : (
             <Empty state={live} />
@@ -283,7 +261,13 @@ export function OpsGlance() {
           </Tile>
           <Tile title="AI Ops Insight" icon={Activity} bodyClassName="p-0" className="flex-1">
             {data ? (
-              <OpsInsight insight={data.insight} conditions={data.conditions} loadIndex={data.load_index} level={data.level} />
+              <OpsInsight
+                insight={ai.insight ?? data.insight}
+                conditions={data.conditions}
+                loadIndex={data.load_index}
+                level={data.level}
+                aiSource={ai.source}
+              />
             ) : (
               <Empty state={live} />
             )}
@@ -358,7 +342,7 @@ export function OpsGlance() {
             Pilih tab untuk membuka detail — prakiraan, waktu tempuh, CCTV, sentimen, atau konsol rekayasa.
           </div>
         ) : (
-          <div className="p-3">{data ? <DrillPanel tab={drill} data={data} onOpenCam={setActiveCam} onApply={setShared} accent={accent} /> : <Empty state={live} />}</div>
+          <div className="p-3">{data ? <DrillPanel tab={drill} data={data} predictions={ai.predictions ?? data.predictions ?? []} onApply={setShared} accent={accent} /> : <Empty state={live} />}</div>
         )}
       </div>
 
@@ -374,7 +358,6 @@ export function OpsGlance() {
         docMeta={`JasaMarga Ops Command · ${data?.corridor ?? "Jakarta–Cikampek"} (sumber publik)`}
       />
       <CommandWall open={wallOpen} onClose={() => setWallOpen(false)} data={data} />
-      <CameraModal cam={activeCam} onClose={() => setActiveCam(null)} />
     </div>
   );
 }
@@ -383,13 +366,14 @@ export function OpsGlance() {
 function DrillPanel({
   tab,
   data,
-  onOpenCam,
+  predictions,
   onApply,
   accent,
 }: {
   tab: DrillTab;
   data: OpsSnapshot;
-  onOpenCam: (c: CctvFeed) => void;
+  /** A12 — LLM predictions when live, so the drill-down agrees with the main tile. */
+  predictions: Prediction[];
   onApply: (i: Intervention) => void;
   accent?: string;
 }) {
@@ -412,15 +396,9 @@ function DrillPanel({
             <ForecastTimeline hours={data.forecast} />
           </Panel>
           <Panel title="Prediksi Kemacetan" icon={TrendingUp} className="lg:col-span-4">
-            <PredictionMeters predictions={data.predictions ?? []} updatedAt={data.updated_at} />
+            <PredictionMeters predictions={predictions} updatedAt={data.updated_at} />
           </Panel>
         </div>
-      );
-    case "travel":
-      return (
-        <Panel title="Papan Waktu Tempuh" icon={Clock}>
-          <TravelTimeBoard routes={data.travel_times} />
-        </Panel>
       );
     case "bottleneck":
       return (
@@ -430,23 +408,15 @@ function DrillPanel({
       );
     case "cctv":
       return (
-        <Panel title="AI Vision — CCTV Koridor" icon={Video}>
-          <VisionWall cctv={data.cctv} onOpen={onOpenCam} />
+        <Panel title="AI Vision — CCTV Live" icon={Video}>
+          <VisionWall />
         </Panel>
       );
     case "social":
       return (
-        <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
-          <Panel title="Sentimen Publik" icon={MessageCircle}>
-            <SocialPulse data={data.social} />
-          </Panel>
-          <Panel title="Kanal Resmi" icon={Sparkles}>
-            <OfficialFeed posts={data.official} />
-          </Panel>
-          <Panel title="Liputan Media" icon={Activity}>
-            <NewsCoverage articles={data.news} />
-          </Panel>
-        </div>
+        <Panel title="Sentimen Publik" icon={MessageCircle}>
+          <SocialPulse data={data.social} />
+        </Panel>
       );
     case "console":
       return (

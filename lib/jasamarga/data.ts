@@ -1,4 +1,4 @@
-import type { CctvFeed, CorridorPulse, ForecastHour, IncidentItem, OpsInsight, OpsSnapshot, RouteSegment, RuasLoad, WeatherZone } from "./types";
+import type { CctvFeed, CorridorPulse, ForecastHour, IncidentItem, OpsInsight, OpsSnapshot, RouteSegment, RuasLoad, SocialPulse, WeatherZone } from "./types";
 import { loadLevel, speedStatus } from "./ui";
 import { computeSafety } from "./safety";
 import { kmToLatLng } from "./geo";
@@ -209,7 +209,7 @@ function deriveInsight(
     (incidents.length
       ? `${incidents.length} insiden terpantau${worst ? `, terparah ${worst.type} di ${worst.km} (sumber ${worst.source})` : ""}. `
       : `Tidak ada insiden besar terdeteksi di koridor. `) +
-    `Sebutan media sosial ${mentions.toLocaleString("id-ID")}/24 jam (${c.hashtag}).`;
+    `Volume percakapan publik ${mentions.toLocaleString("id-ID")} (${c.hashtag}).`;
   const divertTo = c.elevatedName ?? c.altRoute;
   const action =
     slowest.speed < 25
@@ -257,6 +257,8 @@ export function buildSnapshot(
   corridorId?: string,
   liveSegments?: RouteSegment[],
   liveIncidents?: IncidentItem[],
+  /** A12 v2.0 — real public sentiment from the media-intelligence feed. Synthetic when absent. */
+  liveSocial?: SocialPulse | null,
 ): OpsSnapshot {
   const c = getCorridor(corridorId);
   const { from: cityFrom, to: cityTo } = endpointNames(c);
@@ -289,8 +291,12 @@ export function buildSnapshot(
   const load_index = +clamp((80 - avg_speed) / 8 + avg_delay_min / 14, 0, 10).toFixed(1);
   const { label: level, emoji } = loadLevel(load_index);
 
-  const mentions_24h = Math.round(jit(3214, 180));
-  const negativity = +clamp(jit(7.2, 0.4), 0, 10).toFixed(1);
+  // A12 v2.0 — when the real media-intelligence feed is attached, the WHOLE
+  // dashboard reads from it: the header KPI, the Safe Meter's sentiment penalty
+  // and the condition chip, not just the Sentimen Publik widget. Otherwise the
+  // widget would say 36% negative while the header said 74%.
+  const mentions_24h = liveSocial?.mentions_24h ?? Math.round(jit(3214, 180));
+  const negativity = liveSocial?.negativity ?? +clamp(jit(7.2, 0.4), 0, 10).toFixed(1);
 
   // 6-hour projection from current congestion, shaped toward the evening peak.
   const baseHour = now.getHours();
@@ -420,10 +426,22 @@ export function buildSnapshot(
       { label: "Tambahan waktu tempuh", value: `+${avg_delay_min} mnt`, delta: 18.0 },
       { label: "Insiden aktif", value: String(incidents.length), delta: 33.3 },
       { label: "Sentimen publik", value: `${Math.round(negativity * 10)}% negatif`, delta: 9.1 },
-      { label: "Sebutan 24 jam", value: mentions_24h.toLocaleString("id-ID") },
+      // The live feed counts impressions, not 24 h mentions — label it honestly.
+      {
+        label: liveSocial ? "Impresi (media intel)" : "Sebutan 24 jam",
+        value: mentions_24h.toLocaleString("id-ID"),
+      },
       { label: "Tren teratas", value: c.hashtag },
       { label: `Cuaca ${worstWeather.zone.split("–").pop()?.trim() ?? ""}`.trim(), value: worstWeather.condition },
-      { label: "Sumber", value: isLive ? "2 live · 4 demo" : "mode demo" },
+      // Kept in step with the `sources` list below: TomTom flow + TomTom incidents
+      // + media intelligence are live; Nexorus Vision is the only demo feed left.
+      {
+        label: "Sumber",
+        value: (() => {
+          const n = (isLive ? 2 : 0) + (liveSocial ? 1 : 0) + 1; // +1 = Nexorus Vision (ATCS)
+          return n === 0 ? "mode demo" : `${n} live · ${4 - n} demo`;
+        })(),
+      },
     ],
 
     segments,
@@ -435,9 +453,10 @@ export function buildSnapshot(
 
     interventions,
 
-    social: {
+    social: liveSocial ?? {
       mentions_24h,
       negativity,
+      source: "demo",
       trend: [
         { keyword: c.hashtag, count: 1240, sentiment: "negative" },
         { keyword: slowest.label.split("–")[0].trim(), count: 680, sentiment: "negative" },
@@ -526,11 +545,19 @@ export function buildSnapshot(
     sources: [
       { name: "Traffic Flow (TomTom)", type: "traffic", status: isLive ? "live" : "demo", items_24h: 1440, last_sync: isLive ? "baru saja" : "—" },
       { name: "Insiden Lalu Lintas (TomTom)", type: "waze", status: isLive ? "live" : "demo", items_24h: incidents.length, last_sync: isLive ? "1 mnt" : "—" },
-      { name: "Media Sosial (X API)", type: "medsos", status: "demo", items_24h: mentions_24h, last_sync: "—" },
-      { name: "Berita Online (RSS)", type: "berita", status: "demo", items_24h: 47, last_sync: "—" },
-      { name: "BMKG Cuaca", type: "cuaca", status: "demo", items_24h: 24, last_sync: "—" },
-      { name: "Kanal Resmi (@PTJASAMARGA)", type: "resmi", status: "demo", items_24h: 9, last_sync: "—" },
-      { name: "Nexorus Vision (CCTV AI)", type: "traffic", status: "demo", items_24h: 4, last_sync: "—" },
+      // A12 v3.0 — the source list only advertises feeds we actually consume.
+      // Media Intelligence is the client's own `danantara_jasamarga` topic feed
+      // (the OpenGate/Nexorus feed behind /bumn-v2/jasamarga), live when attached.
+      {
+        name: "Media Intelligence (Nexorus)",
+        type: "medsos",
+        status: liveSocial ? "live" : "demo",
+        items_24h: mentions_24h,
+        last_sync: liveSocial ? "baru saja" : "—",
+      },
+      // A12 v4.0 — the vision wall now runs real public ATCS HLS feeds through an
+      // on-device detector (YOLO11n / COCO-SSD), so this is genuinely live.
+      { name: "Nexorus Vision (CCTV AI · ATCS)", type: "traffic", status: "live", items_24h: 4, last_sync: "baru saja" },
     ],
 
     cctv: genCctv(c, segments, incidents),

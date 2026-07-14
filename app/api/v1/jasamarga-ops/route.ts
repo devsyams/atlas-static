@@ -1,10 +1,25 @@
 import { NextResponse } from "next/server";
 
+import { fetchTopicsForCode } from "@/lib/danantara/topics-feed";
 import { buildSnapshot } from "@/lib/jasamarga/data";
 import { defaultSource } from "@/lib/jasamarga/connector";
 import { getCorridor } from "@/lib/jasamarga/corridors";
+import { mapTopicsToSocial } from "@/lib/jasamarga/social-feed";
+import type { SocialPulse } from "@/lib/jasamarga/types";
 
 export const dynamic = "force-dynamic";
+
+/** JasaMarga's own topic set in the client's media-intelligence feed (A12 v2.0). */
+const JASAMARGA_TOPIC_CODE = "danantara_jasamarga";
+
+/** Real public sentiment, or null → the snapshot keeps its synthetic pulse (AC10). */
+async function liveSocial(): Promise<SocialPulse | null> {
+  try {
+    return mapTopicsToSocial(await fetchTopicsForCode(JASAMARGA_TOPIC_CODE));
+  } catch {
+    return null;
+  }
+}
 
 /**
  * JasaMarga Ops Command demo feed (Jakarta–Cikampek). Mostly synthetic, but the
@@ -19,6 +34,6 @@ export const dynamic = "force-dynamic";
 export async function GET(req: Request) {
   const id = new URL(req.url).searchParams.get("corridor");
   const c = getCorridor(id);
-  const live = await defaultSource().fetchTraffic(c);
-  return NextResponse.json(buildSnapshot(c.id, live?.segments, live?.incidents));
+  const [live, social] = await Promise.all([defaultSource().fetchTraffic(c), liveSocial()]);
+  return NextResponse.json(buildSnapshot(c.id, live?.segments, live?.incidents, social));
 }

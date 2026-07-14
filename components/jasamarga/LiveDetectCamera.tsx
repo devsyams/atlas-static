@@ -64,7 +64,17 @@ const EMPTY_TALLY: DetectionTally = { mobil: 0, motor: 0, bus: 0, truk: 0, orang
 
 type Prediction = { bbox: [number, number, number, number]; class: string; score: number };
 
-export function LiveDetectCamera({ cameraId }: { cameraId: string }) {
+export function LiveDetectCamera({
+  cameraId,
+  compact = false,
+  detectIntervalMs,
+}: {
+  cameraId: string;
+  /** Wall tile: drop the counts strip for a compact in-frame tally (A12 v4.0). */
+  compact?: boolean;
+  /** Override the detect throttle — the wall runs several tiles at once, so it detects less often. */
+  detectIntervalMs?: number;
+}) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -79,6 +89,12 @@ export function LiveDetectCamera({ cameraId }: { cameraId: string }) {
   const [error, setError] = useState<string | null>(null);
   const [counts, setCounts] = useState<DetectionTally>(EMPTY_TALLY);
   const [attempt, setAttempt] = useState(0);
+
+  // Read inside the rAF loop so changing the throttle never restarts the detector.
+  const intervalRef = useRef(DETECT_INTERVAL_MS);
+  useEffect(() => {
+    intervalRef.current = detectIntervalMs ?? DETECT_INTERVAL_MS;
+  }, [detectIntervalMs]);
 
   const cam = getAtcsCamera(cameraId);
 
@@ -232,7 +248,7 @@ export function LiveDetectCamera({ cameraId }: { cameraId: string }) {
 
     const tick = async (ts: number) => {
       if (stopped) return;
-      if (video.readyState >= 2 && ts - lastDetectRef.current >= DETECT_INTERVAL_MS) {
+      if (video.readyState >= 2 && ts - lastDetectRef.current >= intervalRef.current) {
         lastDetectRef.current = ts;
         const vw = video.videoWidth;
         const vh = video.videoHeight;
@@ -337,28 +353,55 @@ export function LiveDetectCamera({ cameraId }: { cameraId: string }) {
           </span>
         </div>
 
+        {/* Compact (wall tile): the tally rides inside the frame instead of a strip below it. */}
+        {compact && !loading && (
+          <div className="pointer-events-none absolute inset-x-2 bottom-2 flex items-center justify-between gap-2">
+            <span className="inline-flex items-center gap-2 rounded bg-black/60 px-2 py-1 text-[10px] font-bold text-white/90 backdrop-blur-sm">
+              <span className="inline-flex items-center gap-1">
+                <Car className="h-3 w-3 text-cyan-300" /> {counts.mobil}
+              </span>
+              <span className="inline-flex items-center gap-1">
+                <Bike className="h-3 w-3 text-cyan-300" /> {counts.motor}
+              </span>
+              <span className="inline-flex items-center gap-1">
+                <Truck className="h-3 w-3 text-cyan-300" /> {counts.truk}
+              </span>
+              <span className="inline-flex items-center gap-1">
+                <Users className="h-3 w-3 text-amber-300" /> {counts.orang}
+              </span>
+            </span>
+            <span className="rounded bg-cyan-400/20 px-2 py-1 text-[10px] font-extrabold tabular-nums text-cyan-200 backdrop-blur-sm">
+              {counts.total} objek
+            </span>
+          </div>
+        )}
+
         {/* Loading overlay */}
         {loading && (
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/60 text-center">
-            <Loader2 className="h-7 w-7 animate-spin text-cyan-300" />
-            <div className="text-[12px] font-semibold text-white/90">
+            <Loader2 className={cn("animate-spin text-cyan-300", compact ? "h-5 w-5" : "h-7 w-7")} />
+            <div className={cn("font-semibold text-white/90", compact ? "text-[10px]" : "text-[12px]")}>
               {!modelReady ? "Memuat model AI…" : "Menyambungkan CCTV…"}
             </div>
           </div>
         )}
       </div>
 
-      {/* Counts strip */}
-      <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-5">
-        <CountChip Icon={Car} label="Mobil" value={counts.mobil} prominent />
-        <CountChip Icon={Bike} label="Motor" value={counts.motor} prominent />
-        <CountChip label="BUS" value={counts.bus} prominent />
-        <CountChip Icon={Truck} label="Truk" value={counts.truk} prominent />
-        <CountChip Icon={Users} label="Orang" value={counts.orang} />
-      </div>
-      <div className="text-center text-[11px] text-muted-foreground">
-        <span className="font-bold tabular-nums text-foreground">{counts.total}</span> total kendaraan terdeteksi
-      </div>
+      {!compact && (
+        <>
+          {/* Counts strip */}
+          <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-5">
+            <CountChip Icon={Car} label="Mobil" value={counts.mobil} prominent />
+            <CountChip Icon={Bike} label="Motor" value={counts.motor} prominent />
+            <CountChip label="BUS" value={counts.bus} prominent />
+            <CountChip Icon={Truck} label="Truk" value={counts.truk} prominent />
+            <CountChip Icon={Users} label="Orang" value={counts.orang} />
+          </div>
+          <div className="text-center text-[11px] text-muted-foreground">
+            <span className="font-bold tabular-nums text-foreground">{counts.total}</span> total kendaraan terdeteksi
+          </div>
+        </>
+      )}
     </div>
   );
 }
