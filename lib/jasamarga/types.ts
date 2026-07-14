@@ -219,6 +219,8 @@ export interface OpsSnapshot {
   updated_at: string;
   /** Whether the ribbon/segments came from a live traffic API or the synthetic demo. */
   traffic_source: "synthetic" | "tomtom";
+  /** (A12 v5.0) Whether Cuaca Koridor is a real BMKG reading or the static fallback. */
+  weather_source: "bmkg" | "demo";
   load_index: number; // 0–10 congestion index (high = bad)
   level: string; // Lancar / Padat / Macet / Lumpuh
   emoji: string;

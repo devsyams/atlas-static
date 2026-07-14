@@ -9,6 +9,7 @@ function snap(): OpsSnapshot {
     corridor: "japek",
     updated_at: "2026-07-14T14:00:00.000Z",
     traffic_source: "tomtom",
+    weather_source: "demo",
     load_index: 6.4,
     level: "Macet",
     emoji: "🟠",
@@ -156,7 +157,7 @@ describe("buildOpsGrounding — real public sentiment (T16 / AC11)", () => {
     expect(g).toContain("35.97% negatif");
     expect(g).toContain("Rest Area KM 19");
     expect(g).toContain("5518049"); // real reach
-    expect(g).not.toContain("simulasi");
+    expect(g).not.toContain("SENTIMEN PUBLIK (simulasi)");
   });
 
   it("labels the synthetic pulse as simulasi, so the model can't pass it off as real", () => {

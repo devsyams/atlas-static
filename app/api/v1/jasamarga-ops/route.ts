@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { fetchTopicsForCode } from "@/lib/danantara/topics-feed";
+import { fetchCorridorWeather } from "@/lib/jasamarga/bmkg";
 import { buildSnapshot } from "@/lib/jasamarga/data";
 import { defaultSource } from "@/lib/jasamarga/connector";
 import { getCorridor } from "@/lib/jasamarga/corridors";
@@ -34,6 +35,11 @@ async function liveSocial(): Promise<SocialPulse | null> {
 export async function GET(req: Request) {
   const id = new URL(req.url).searchParams.get("corridor");
   const c = getCorridor(id);
-  const [live, social] = await Promise.all([defaultSource().fetchTraffic(c), liveSocial()]);
-  return NextResponse.json(buildSnapshot(c.id, live?.segments, live?.incidents, social));
+  const [live, social, weather] = await Promise.all([
+    defaultSource().fetchTraffic(c),
+    liveSocial(),
+    // A12 v5.0 — real BMKG conditions; null → the corridor's static fallback.
+    fetchCorridorWeather(c.bmkg).catch(() => null),
+  ]);
+  return NextResponse.json(buildSnapshot(c.id, live?.segments, live?.incidents, social, weather));
 }
