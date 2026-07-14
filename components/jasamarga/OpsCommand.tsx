@@ -398,6 +398,14 @@ export function OpsCommand() {
               <div className="mt-2 w-full rounded-md border border-border/50 bg-background/40 px-2 py-1.5">
                 <div className="mb-1 flex items-center gap-1 text-[9px] uppercase tracking-wide text-muted-foreground">
                   <CloudRain className="h-3 w-3" /> Cuaca koridor (BMKG)
+                  <span
+                    className={cn(
+                      "ml-auto font-bold",
+                      data.weather_source === "bmkg" ? "text-success" : "text-muted-foreground",
+                    )}
+                  >
+                    {data.weather_source === "bmkg" ? "● live" : "simulasi"}
+                  </span>
                 </div>
                 {data.weather.map((w) => (
                   <div key={w.zone} className="flex items-center justify-between text-[10px]">

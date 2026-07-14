@@ -259,6 +259,8 @@ export function buildSnapshot(
   liveIncidents?: IncidentItem[],
   /** A12 v2.0 — real public sentiment from the media-intelligence feed. Synthetic when absent. */
   liveSocial?: SocialPulse | null,
+  /** A12 v5.0 — real BMKG conditions per zone. Static corridor values when absent. */
+  liveWeather?: WeatherZone[] | null,
 ): OpsSnapshot {
   const c = getCorridor(corridorId);
   const { from: cityFrom, to: cityTo } = endpointNames(c);
@@ -309,7 +311,10 @@ export function buildSnapshot(
   forecast[0].label = "Sekarang";
   if (peakIdx !== 0) forecast[peakIdx].label = "Puncak";
 
-  const weather: WeatherZone[] = c.weather;
+  // A12 v5.0 — real BMKG when we have it. This one value feeds the Cuaca panel,
+  // the Safe Meter penalty, the header KPI, the condition chip AND the LLM
+  // grounding, so a stale literal here misinforms all five at once.
+  const weather: WeatherZone[] = liveWeather ?? c.weather;
   const worstWeather = [...weather].sort(
     (a, b) => ({ rendah: 0, sedang: 1, tinggi: 2 })[b.impact] - ({ rendah: 0, sedang: 1, tinggi: 2 })[a.impact],
   )[0];
@@ -378,6 +383,7 @@ export function buildSnapshot(
     corridor: c.name,
     updated_at,
     traffic_source: isLive ? "tomtom" : "synthetic",
+    weather_source: liveWeather ? "bmkg" : "demo",
     load_index,
     level,
     emoji,
@@ -438,8 +444,9 @@ export function buildSnapshot(
       {
         label: "Sumber",
         value: (() => {
-          const n = (isLive ? 2 : 0) + (liveSocial ? 1 : 0) + 1; // +1 = Nexorus Vision (ATCS)
-          return n === 0 ? "mode demo" : `${n} live · ${4 - n} demo`;
+          const total = 5; // TomTom flow + TomTom incidents + media intel + BMKG + Vision
+          const n = (isLive ? 2 : 0) + (liveSocial ? 1 : 0) + (liveWeather ? 1 : 0) + 1;
+          return n === 0 ? "mode demo" : `${n} live · ${total - n} demo`;
         })(),
       },
     ],
@@ -557,6 +564,16 @@ export function buildSnapshot(
       },
       // A12 v4.0 — the vision wall now runs real public ATCS HLS feeds through an
       // on-device detector (YOLO11n / COCO-SSD), so this is genuinely live.
+      // A12 v5.0 — BMKG is back, and this time it is real: the corridor's weather
+      // zones are live readings from api.bmkg.go.id (it was dropped in v3.0
+      // precisely because it was a hardcoded literal).
+      {
+        name: "BMKG Cuaca",
+        type: "cuaca",
+        status: liveWeather ? "live" : "demo",
+        items_24h: liveWeather?.length ?? 0,
+        last_sync: liveWeather ? "baru saja" : "—",
+      },
       { name: "Nexorus Vision (CCTV AI · ATCS)", type: "traffic", status: "live", items_24h: 4, last_sync: "baru saja" },
     ],
 

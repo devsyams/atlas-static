@@ -111,9 +111,14 @@ export function buildOpsGrounding(s: OpsSnapshot): string {
       : ["- tidak ada insiden terpantau"]),
   );
 
+  // AC17 — weather is only presented as fact when it actually is one. The model
+  // was previously recommending rain warnings off a hardcoded string literal.
+  const wxReal = s.weather_source === "bmkg";
   lines.push(
     "",
-    `CUACA: ${s.weather.map((w) => `${w.zone}: ${w.condition} ${w.temp}°C (dampak ${w.impact})`).join("; ")}.`,
+    `CUACA ${wxReal ? "(DATA NYATA — BMKG)" : "(simulasi — JANGAN jadikan dasar rekomendasi)"}: ${s.weather
+      .map((w) => `${w.zone}: ${w.condition} ${w.temp}°C (dampak ${w.impact})`)
+      .join("; ")}.`,
   );
   if (worstWeather) lines.push(`Cuaca paling berdampak: ${worstWeather.condition} di ${worstWeather.zone}.`);
 

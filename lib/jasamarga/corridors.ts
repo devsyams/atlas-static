@@ -1,3 +1,4 @@
+import type { BmkgZone } from "./bmkg";
 import type { Landmark, RouteSegment, WeatherZone } from "./types";
 
 /** [latitude, longitude]. */
@@ -26,7 +27,17 @@ export interface Corridor {
   anchors: LatLng[];
   segments: BaseSegment[];
   landmarks: Landmark[];
+  /**
+   * Static fallback only (A12 v5.0). Real conditions come from BMKG via `bmkg`
+   * below; these values are what we show if BMKG is unreachable.
+   */
   weather: WeatherZone[];
+  /**
+   * BMKG lookup for each weather zone — same order as `weather`. `adm4` is the
+   * Kemendagri village code of a point on that stretch of road; every one was
+   * verified against api.bmkg.go.id (it echoes back kabupaten/kecamatan).
+   */
+  bmkg: BmkgZone[];
 }
 
 const JAPEK: Corridor = {
@@ -79,6 +90,11 @@ const JAPEK: Corridor = {
     { zone: "Cikarang – Karawang", condition: "Hujan ringan", temp: 27, impact: "sedang" },
     { zone: "Cikampek", condition: "Berawan", temp: 29, impact: "rendah" },
   ],
+  bmkg: [
+    { zone: "Jakarta – Bekasi", adm4: "32.75.02.1001" },      // Kota Bekasi / Bekasi Barat
+    { zone: "Cikarang – Karawang", adm4: "32.16.20.2001" },   // Kab. Bekasi / Cikarang Pusat
+    { zone: "Cikampek", adm4: "32.15.13.2001" },              // Karawang / Cikampek
+  ],
 };
 
 const JAGORAWI: Corridor = {
@@ -118,6 +134,11 @@ const JAGORAWI: Corridor = {
     { zone: "Jakarta – Cibubur", condition: "Berawan", temp: 30, impact: "rendah" },
     { zone: "Cimanggis – Sentul", condition: "Hujan ringan", temp: 26, impact: "sedang" },
     { zone: "Bogor – Ciawi", condition: "Hujan lebat", temp: 24, impact: "tinggi" },
+  ],
+  bmkg: [
+    { zone: "Jakarta – Cibubur", adm4: "31.75.09.1001" },     // Jakarta Timur / Ciracas
+    { zone: "Cimanggis – Sentul", adm4: "32.76.02.1007" },    // Kota Depok / Cimanggis
+    { zone: "Bogor – Ciawi", adm4: "32.01.24.2001" },         // Kab. Bogor / Ciawi
   ],
 };
 
@@ -159,6 +180,11 @@ const MERAK: Corridor = {
     { zone: "Serang", condition: "Cerah berawan", temp: 31, impact: "rendah" },
     { zone: "Cilegon – Merak", condition: "Angin kencang", temp: 30, impact: "sedang" },
   ],
+  bmkg: [
+    { zone: "Tangerang – Balaraja", adm4: "36.03.01.1001" },  // Kab. Tangerang / Balaraja
+    { zone: "Serang", adm4: "36.73.01.1001" },                // Kota Serang / Serang
+    { zone: "Cilegon – Merak", adm4: "36.72.03.1001" },       // Kota Cilegon / Pulomerak
+  ],
 };
 
 const PURBALEUNYI: Corridor = {
@@ -198,6 +224,11 @@ const PURBALEUNYI: Corridor = {
     { zone: "Cikampek – Purwakarta", condition: "Berawan", temp: 30, impact: "rendah" },
     { zone: "Sadang – Padalarang", condition: "Kabut tipis", temp: 25, impact: "sedang" },
     { zone: "Cimahi – Bandung", condition: "Hujan ringan", temp: 24, impact: "sedang" },
+  ],
+  bmkg: [
+    { zone: "Cikampek – Purwakarta", adm4: "32.14.01.1001" }, // Purwakarta / Purwakarta
+    { zone: "Sadang – Padalarang", adm4: "32.17.08.2001" },   // Bandung Barat / Padalarang
+    { zone: "Cimahi – Bandung", adm4: "32.73.07.1001" },      // Kota Bandung / Sukajadi
   ],
 };
 
