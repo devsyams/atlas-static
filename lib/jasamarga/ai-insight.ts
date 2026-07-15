@@ -1,7 +1,7 @@
 import type { Prediction } from "@/lib/mbg/types";
 
 import { getCorridor } from "./corridors";
-import type { OpsInsight, OpsSnapshot } from "./types";
+import type { ForecastHour, OpsInsight, OpsSnapshot } from "./types";
 
 /**
  * A12 — the grounding + parsing layer that makes the two AI-badged JasaMarga
@@ -16,10 +16,19 @@ import type { OpsInsight, OpsSnapshot } from "./types";
 export interface OpsAi {
   insight: OpsInsight;
   predictions: Prediction[];
+  /**
+   * (A12 v6.0) The 6-hour load projection, LLM-generated in the same call.
+   * Validated independently of insight/predictions (AC21): a bad forecast
+   * drops to undefined without discarding a good analysis.
+   */
+  forecast?: ForecastHour[];
 }
 
 /** Exactly what the Prediksi Kemacetan board renders. */
 const PREDICTION_COUNT = 3;
+
+/** Exactly what the Proyeksi Beban 6 Jam timeline renders. */
+const PROJECTION_COUNT = 6;
 
 export const JASAMARGA_AI_SYSTEM = [
   "Anda adalah analis lalu lintas senior Nexorus AI untuk operasi jalan tol JasaMarga.",
@@ -32,6 +41,9 @@ export const JASAMARGA_AI_SYSTEM = [
   "- `probability` adalah bilangan bulat 0–100 dan harus konsisten dengan bukti di snapshot.",
   "- Tulis dalam Bahasa Indonesia yang ringkas dan operasional (bukan pemasaran).",
   "- Buat tepat 3 skenario prediksi yang saling berbeda dan relevan bagi operator.",
+  "- Buat tepat 6 titik `forecast` yang MEMPROYEKSIKAN beban (load, skala 0.5–10) untuk 6 jam",
+  "  ke depan dari kondisi saat ini + sinyal cuaca ke depan yang tersedia di snapshot — jangan",
+  "  mengarang kurva tetap yang sama untuk setiap koridor/waktu.",
 ].join("\n");
 
 /** JSON Schema for the structured-output call. */
@@ -65,8 +77,21 @@ export const OPS_AI_SCHEMA: Record<string, unknown> = {
         additionalProperties: false,
       },
     },
+    forecast: {
+      type: "array",
+      description: "Tepat 6 titik proyeksi beban per jam ke depan.",
+      items: {
+        type: "object",
+        properties: {
+          hour: { type: "string", description: "Label jam, mis. '18:00'." },
+          load: { type: "number", description: "Proyeksi beban 0.5–10." },
+        },
+        required: ["hour", "load"],
+        additionalProperties: false,
+      },
+    },
   },
-  required: ["insight", "predictions"],
+  required: ["insight", "predictions", "forecast"],
   additionalProperties: false,
 };
 
@@ -78,7 +103,6 @@ export const OPS_AI_SCHEMA: Record<string, unknown> = {
 export function buildOpsGrounding(s: OpsSnapshot): string {
   const c = getCorridor(s.corridor);
   const slowest = [...s.segments].sort((a, b) => a.speed - b.speed)[0];
-  const peak = [...s.forecast].sort((a, b) => b.load - a.load)[0];
   const worstWeather =
     s.weather.find((w) => w.impact === "tinggi") ?? s.weather.find((w) => w.impact === "sedang") ?? s.weather[0];
 
@@ -144,15 +168,56 @@ export function buildOpsGrounding(s: OpsSnapshot): string {
     );
   }
 
+  // A12 v6.0 — the model used to be handed the very curve it was meant to
+  // predict (`PROYEKSI BEBAN 6 JAM: ...`). Now it gets the real basis to
+  // project from instead: the current hour and, when weather is live, BMKG's
+  // forward 3-hourly slots per zone (AC20). No forecast is echoed.
+  lines.push("", `JAM SEKARANG: ${currentHourLabel(s)} WIB.`);
+
+  if (s.weather_source === "bmkg") {
+    const zonesWithOutlook = s.weather.filter((w) => w.outlook && w.outlook.length);
+    if (zonesWithOutlook.length) {
+      lines.push(
+        "",
+        `PRAKIRAAN CUACA (BMKG, ke depan): ${zonesWithOutlook
+          .map(
+            (w) => `${w.zone}: ${w.outlook!.map((o) => `${o.hour} ${o.condition} (dampak ${o.impact})`).join(", ")}`,
+          )
+          .join("; ")}.`,
+      );
+    }
+  }
+
   lines.push(
     "",
-    `PROYEKSI BEBAN 6 JAM: ${s.forecast.map((f) => `${f.hour}=${f.load}`).join(", ")}.`,
-    peak ? `Puncak diperkirakan ${peak.hour} dengan beban ${peak.load}/10.` : "",
+    "PROYEKSIKAN sendiri `forecast`: 6 titik beban (load, skala 0.5–10) untuk 6 jam ke depan dari",
+    "kondisi saat ini + sinyal di atas (kecepatan per ruas, insiden, cuaca ke depan). Jangan mengarang",
+    "kurva tetap yang sama untuk setiap koridor/waktu.",
     "",
     `ALTERNATIF: ${c.altRoute}${c.elevatedName ? `; jalur layang: ${c.elevatedName}` : ""}.`,
   );
 
   return lines.filter((l) => l !== "").join("\n");
+}
+
+/**
+ * The current hour, in WIB (UTC+7). Prefers `s.updated_at` when it's an
+ * actual ISO 8601 timestamp (what the fixtures/tests use), so the grounding
+ * stays deterministic for a given snapshot. In production `updated_at` is a
+ * locale-formatted DISPLAY string (`data.ts` builds it via
+ * `toLocaleString("id-ID", {...})`, e.g. "15 Jul, 08.06" — no year,
+ * period-separated time), which `Date.parse` does NOT reject: it silently
+ * parses it into an unrelated bogus date instead of returning NaN. That sent
+ * the LLM a "now" ~7h off real time (Sekarang landed on 01:00 instead of the
+ * real ~08:00 WIB). Only trust the string when it looks ISO; else use the
+ * real wall clock, same as the deterministic forecast in `data.ts` does.
+ */
+function currentHourLabel(s: OpsSnapshot): string {
+  const looksIso = /^\d{4}-\d{2}-\d{2}T/.test(s.updated_at);
+  const parsed = looksIso ? Date.parse(s.updated_at) : NaN;
+  const ms = Number.isFinite(parsed) ? parsed : Date.now();
+  const h = new Date(ms + 7 * 3600e3).getUTCHours();
+  return `${String(h).padStart(2, "0")}:00`;
 }
 
 function cleanStr(v: unknown): string | null {
@@ -165,6 +230,37 @@ function cleanProb(v: unknown): number | null {
 }
 
 const TONES = new Set(["negative", "neutral", "positive"]);
+
+/**
+ * Validate the `forecast` block independently of `insight`/`predictions`
+ * (AC21): must be exactly `PROJECTION_COUNT` items, each with a non-empty
+ * `hour` and a `load` that is a finite number within 0.5–10 — anything else
+ * and the whole block is dropped (`undefined`), never a partial mix of
+ * model and template hours. Valid loads are rounded to 1 decimal (matching
+ * the deterministic curve's convention) and labelled `Sekarang` / `Puncak`.
+ */
+function parseForecast(raw: unknown): ForecastHour[] | undefined {
+  if (!Array.isArray(raw) || raw.length !== PROJECTION_COUNT) return undefined;
+
+  const points: { hour: string; load: number }[] = [];
+  for (const r of raw) {
+    if (!r || typeof r !== "object") return undefined;
+    const o = r as Record<string, unknown>;
+
+    const hour = cleanStr(o.hour);
+    const load = o.load;
+    if (!hour || typeof load !== "number" || !Number.isFinite(load)) return undefined;
+    if (load < 0.5 || load > 10) return undefined;
+
+    points.push({ hour, load: +load.toFixed(1) });
+  }
+
+  const forecast: ForecastHour[] = points.map((p) => ({ ...p }));
+  const peakIdx = forecast.reduce((m, h, i, a) => (h.load > a[m].load ? i : m), 0);
+  forecast[0].label = "Sekarang";
+  if (peakIdx !== 0) forecast[peakIdx].label = "Puncak";
+  return forecast;
+}
 
 /**
  * Validate an LLM payload into the app's existing `OpsInsight` + `Prediction`
@@ -210,5 +306,5 @@ export function parseOpsAi(raw: unknown): OpsAi | null {
     });
   }
 
-  return { insight: { title, text, action }, predictions };
+  return { insight: { title, text, action }, predictions, forecast: parseForecast(o.forecast) };
 }

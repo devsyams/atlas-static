@@ -137,6 +137,13 @@ export interface WeatherZone {
   condition: string; // Cerah, Hujan ringan, Hujan lebat…
   temp: number;
   impact: "rendah" | "sedang" | "tinggi";
+  /**
+   * (A12 v6.0) BMKG's next 3-hourly slots after now, for this zone — the real
+   * forward-looking signal the LLM projects the load forecast from. Additive:
+   * only populated when `weather_source === "bmkg"`; the static/synthetic path
+   * leaves it undefined.
+   */
+  outlook?: { hour: string; condition: string; impact: WeatherZone["impact"] }[];
 }
 
 /** A connected online feed, surfaced in the "Sumber Data" status strip.

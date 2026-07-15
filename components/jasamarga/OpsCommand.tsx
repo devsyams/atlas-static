@@ -137,7 +137,8 @@ export function OpsCommand() {
   const handleMapSelect = useCallback((i: number | null) => setSelectedSegment(i), []);
 
   // --- Predictive time machine (map-only forecast scrubber) ---
-  const fc = data?.forecast ?? [];
+  // A12 v6.0 — prefer the LLM-projected forecast when available (AC19/AC21).
+  const fc = ai.forecast ?? data?.forecast ?? [];
   // Guard the index against the current forecast length (corridors may differ).
   const safeIdx = fc.length ? Math.min(forecastIdx, fc.length - 1) : 0;
   const projected =
@@ -459,7 +460,11 @@ export function OpsCommand() {
 
         {/* Congestion Forecast Timeline — predictive, from public typical-traffic */}
         <Tile title="Proyeksi Beban 6 Jam" icon={CalendarClock} className="lg:col-span-8" bodyClassName="p-3" style={{ minHeight: 230 }}>
-          {data ? <ForecastTimeline hours={data.forecast} /> : <Empty state={live} />}
+          {data ? (
+            <ForecastTimeline hours={ai.forecast ?? data.forecast} source={ai.forecast ? "llm" : "scripted"} />
+          ) : (
+            <Empty state={live} />
+          )}
         </Tile>
 
         {/* Top Ruas */}

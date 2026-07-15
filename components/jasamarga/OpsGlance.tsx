@@ -36,7 +36,7 @@ import { PredictionMeters } from "@/components/crisis/PredictionMeters";
 import { ScoreGauge } from "@/components/crisis/ScoreGauge";
 import { CountUp } from "@/components/crisis/CountUp";
 import { BriefingPanel } from "@/components/ai/BriefingPanel";
-import type { CorridorPulse, Intervention, OpsSnapshot } from "@/lib/jasamarga/types";
+import type { CorridorPulse, ForecastHour, Intervention, OpsSnapshot } from "@/lib/jasamarga/types";
 import { loadColor } from "@/lib/jasamarga/ui";
 import { safetyColor } from "@/lib/jasamarga/safety";
 import { CORRIDORS, getCorridor } from "@/lib/jasamarga/corridors";
@@ -342,7 +342,21 @@ export function OpsGlance() {
             Pilih tab untuk membuka detail — prakiraan, waktu tempuh, CCTV, sentimen, atau konsol rekayasa.
           </div>
         ) : (
-          <div className="p-3">{data ? <DrillPanel tab={drill} data={data} predictions={ai.predictions ?? data.predictions ?? []} onApply={setShared} accent={accent} /> : <Empty state={live} />}</div>
+          <div className="p-3">
+            {data ? (
+              <DrillPanel
+                tab={drill}
+                data={data}
+                predictions={ai.predictions ?? data.predictions ?? []}
+                forecast={ai.forecast ?? data.forecast}
+                forecastSource={ai.forecast ? "llm" : "scripted"}
+                onApply={setShared}
+                accent={accent}
+              />
+            ) : (
+              <Empty state={live} />
+            )}
+          </div>
         )}
       </div>
 
@@ -367,6 +381,8 @@ function DrillPanel({
   tab,
   data,
   predictions,
+  forecast,
+  forecastSource,
   onApply,
   accent,
 }: {
@@ -374,6 +390,9 @@ function DrillPanel({
   data: OpsSnapshot;
   /** A12 — LLM predictions when live, so the drill-down agrees with the main tile. */
   predictions: Prediction[];
+  /** A12 v6.0 — LLM-projected forecast when live, so the drill-down agrees with the main tile. */
+  forecast: ForecastHour[];
+  forecastSource: "llm" | "scripted";
   onApply: (i: Intervention) => void;
   accent?: string;
 }) {
@@ -393,7 +412,7 @@ function DrillPanel({
             </div>
           </Panel>
           <Panel title="Proyeksi Beban 6 Jam" icon={CalendarClock} className="lg:col-span-5">
-            <ForecastTimeline hours={data.forecast} />
+            <ForecastTimeline hours={forecast} source={forecastSource} />
           </Panel>
           <Panel title="Prediksi Kemacetan" icon={TrendingUp} className="lg:col-span-4">
             <PredictionMeters predictions={predictions} updatedAt={data.updated_at} />

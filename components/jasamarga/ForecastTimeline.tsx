@@ -4,10 +4,12 @@ import { loadColor, loadLevel } from "@/lib/jasamarga/ui";
 import { cn } from "@/lib/utils";
 
 /**
- * 6-hour congestion projection. Buildable from public typical-traffic history
- * (Google/TomTom) + current trend + weather + the holiday calendar.
+ * 6-hour congestion projection. LLM-generated from current state + BMKG's
+ * forward weather signals when live (A12 v6.0); falls back to the
+ * deterministic curve otherwise. `source` badges which one is on screen —
+ * the same live/demo honesty convention as `OpsInsight` (AC21).
  */
-export function ForecastTimeline({ hours }: { hours: ForecastHour[] }) {
+export function ForecastTimeline({ hours, source }: { hours: ForecastHour[]; source?: "llm" | "scripted" }) {
   if (!hours.length) {
     return <div className="py-6 text-center text-[12px] text-muted-foreground">Proyeksi belum tersedia.</div>;
   }
@@ -17,8 +19,20 @@ export function ForecastTimeline({ hours }: { hours: ForecastHour[] }) {
       <div className="mb-1 flex shrink-0 items-center justify-between text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
         <span className="flex items-center gap-1.5">
           <TrendingUp className="h-3.5 w-3.5 text-primary" /> Proyeksi 6 jam ke depan
+          {source && (
+            <span
+              className={cn(
+                "normal-case tracking-normal text-[9px] font-bold",
+                source === "llm" ? "text-success" : "text-muted-foreground",
+              )}
+            >
+              {source === "llm" ? "● Nexorus AI · LLM" : "Simulasi"}
+            </span>
+          )}
         </span>
-        <span className="text-muted-foreground/70 normal-case tracking-normal">Tipikal lalu lintas + cuaca + kalender</span>
+        <span className="text-muted-foreground/70 normal-case tracking-normal">
+          {source === "llm" ? "Proyeksi AI: beban terkini + prakiraan cuaca BMKG" : "Estimasi tren beban (non-kalibrasi)"}
+        </span>
       </div>
 
       <div className="relative min-h-0 flex-1">

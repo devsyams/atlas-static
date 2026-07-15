@@ -73,6 +73,31 @@ export function pickCurrent(series: BmkgForecast[], nowMs: number): BmkgForecast
   return current ?? sorted[0];
 }
 
+/** How many forward slots the forecast projection (A12 v6.0) is grounded on. */
+const OUTLOOK_SLOTS = 3;
+
+/**
+ * The next `n` 3-hourly slots STRICTLY AFTER `nowMs`, sorted ascending, capped
+ * at however many the series actually has. Empty for an empty or all-past
+ * series. Mirrors `pickCurrent`, but looking forward instead of at now — this
+ * is the real signal the LLM forecast projection (A12 v6.0) grounds on,
+ * replacing the fabricated `PROYEKSI BEBAN 6 JAM` echo.
+ */
+export function pickForward(series: BmkgForecast[], nowMs: number, n: number): BmkgForecast[] {
+  if (!series.length || n <= 0) return [];
+
+  return [...series]
+    .sort((a, b) => Date.parse(a.datetime) - Date.parse(b.datetime))
+    .filter((f) => Date.parse(f.datetime) > nowMs)
+    .slice(0, n);
+}
+
+/** BMKG datetime (UTC ISO) -> the WIB (UTC+7) hour label the dashboard shows. */
+function wibHourLabel(datetime: string): string {
+  const h = new Date(Date.parse(datetime) + 7 * 3600e3).getUTCHours();
+  return `${String(h).padStart(2, "0")}:00`;
+}
+
 /** Validate + map one BMKG payload onto a dashboard `WeatherZone`. Null if unusable. */
 export function mapBmkgZone(raw: unknown, zone: string, nowMs: number): WeatherZone | null {
   if (!raw || typeof raw !== "object") return null;
@@ -85,11 +110,20 @@ export function mapBmkgZone(raw: unknown, zone: string, nowMs: number): WeatherZ
   const now = pickCurrent(series, nowMs);
   if (!now || typeof now.t !== "number" || !now.weather_desc) return null;
 
+  const outlook = pickForward(series, nowMs, OUTLOOK_SLOTS)
+    .filter((f) => typeof f.weather_desc === "string" && f.weather_desc)
+    .map((f) => ({
+      hour: wibHourLabel(f.datetime),
+      condition: f.weather_desc,
+      impact: weatherImpact(f.weather, f.weather_desc),
+    }));
+
   return {
     zone,
     condition: now.weather_desc,
     temp: Math.round(now.t),
     impact: weatherImpact(now.weather, now.weather_desc),
+    ...(outlook.length ? { outlook } : {}),
   };
 }
 

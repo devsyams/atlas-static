@@ -41,6 +41,8 @@ const USER_PROMPT =
   "Baca SNAPSHOT KORIDOR di bawah, lalu hasilkan:\n" +
   "1) `insight` — analisis operasional koridor saat ini (judul, 2–3 kalimat, satu rekayasa yang disarankan).\n" +
   "2) `predictions` — tepat 3 skenario berbeda yang relevan bagi operator (kemacetan, sentimen publik, pemulihan).\n" +
+  "3) `forecast` — tepat 6 titik proyeksi beban (load, skala 0.5–10) untuk 6 jam ke depan, diproyeksikan " +
+  "dari kondisi saat ini + sinyal cuaca ke depan di snapshot (bukan kurva tetap).\n" +
   "Kutip angka konkret dari snapshot di setiap `reasoning`. Jangan mengarang angka.\n\n" +
   "SNAPSHOT KORIDOR:\n";
 
@@ -68,7 +70,7 @@ export async function POST(req: Request) {
       JASAMARGA_AI_SYSTEM,
       `${USER_PROMPT}${buildOpsGrounding(snapshot)}`,
       OPS_AI_SCHEMA,
-      1600,
+      2200, // A12 v6.0 — bumped from 1600 to cover the 6 extra `forecast` points.
     );
     const parsed = parseOpsAi(raw);
     if (!parsed) return NextResponse.json({ source: "scripted" as const });

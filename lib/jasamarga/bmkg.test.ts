@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { CORRIDORS } from "./corridors";
 import { buildSnapshot } from "./data";
-import { mapBmkgZone, pickCurrent, weatherImpact, type BmkgForecast } from "./bmkg";
+import { mapBmkgZone, pickCurrent, pickForward, weatherImpact, type BmkgForecast } from "./bmkg";
 
 /** Shaped after the real api.bmkg.go.id payload. */
 function entry(over: Partial<BmkgForecast> = {}): BmkgForecast {
@@ -112,6 +112,76 @@ describe("pickCurrent (T18 / AC16)", () => {
 
   it("returns null for an empty series", () => {
     expect(pickCurrent([], Date.now())).toBeNull();
+  });
+});
+
+describe("pickForward (T20 / AC20)", () => {
+  const series = [
+    entry({ datetime: "2026-07-15T00:00:00Z", t: 24 }),
+    entry({ datetime: "2026-07-15T03:00:00Z", t: 27 }),
+    entry({ datetime: "2026-07-15T06:00:00Z", t: 31 }),
+    entry({ datetime: "2026-07-15T09:00:00Z", t: 29 }),
+  ];
+
+  it("returns the next n slots strictly after now, sorted ascending", () => {
+    const now = Date.parse("2026-07-15T02:00:00Z");
+    const out = pickForward(series, now, 2);
+    expect(out.map((f) => f.datetime)).toEqual(["2026-07-15T03:00:00Z", "2026-07-15T06:00:00Z"]);
+  });
+
+  it("excludes the slot exactly at now (strictly after, not at-or-after)", () => {
+    const now = Date.parse("2026-07-15T03:00:00Z");
+    const out = pickForward(series, now, 2);
+    expect(out.map((f) => f.datetime)).toEqual(["2026-07-15T06:00:00Z", "2026-07-15T09:00:00Z"]);
+  });
+
+  it("caps at however many forward slots the series actually has", () => {
+    const now = Date.parse("2026-07-15T06:00:00Z");
+    const out = pickForward(series, now, 5);
+    expect(out.map((f) => f.datetime)).toEqual(["2026-07-15T09:00:00Z"]);
+  });
+
+  it("returns [] for an empty series", () => {
+    expect(pickForward([], Date.now(), 3)).toEqual([]);
+  });
+
+  it("returns [] when every slot is already in the past", () => {
+    const now = Date.parse("2026-07-16T00:00:00Z");
+    expect(pickForward(series, now, 3)).toEqual([]);
+  });
+
+  it("sorts an out-of-order input series before picking", () => {
+    const shuffled = [series[2], series[0], series[3], series[1]];
+    const now = Date.parse("2026-07-15T02:00:00Z");
+    const out = pickForward(shuffled, now, 2);
+    expect(out.map((f) => f.datetime)).toEqual(["2026-07-15T03:00:00Z", "2026-07-15T06:00:00Z"]);
+  });
+});
+
+describe("mapBmkgZone — forward outlook (T20 / AC20)", () => {
+  const now = Date.parse("2026-07-15T02:00:00Z");
+
+  it("populates outlook from the next 3 forward slots, in WIB hour labels", () => {
+    const z = mapBmkgZone(
+      payload([
+        entry({ datetime: "2026-07-15T00:00:00Z", t: 24, weather: 1, weather_desc: "Cerah Berawan" }),
+        entry({ datetime: "2026-07-15T03:00:00Z", t: 27, weather: 60, weather_desc: "Hujan Ringan" }),
+        entry({ datetime: "2026-07-15T06:00:00Z", t: 29, weather: 63, weather_desc: "Hujan Lebat" }),
+        entry({ datetime: "2026-07-15T09:00:00Z", t: 30, weather: 1, weather_desc: "Cerah Berawan" }),
+      ]),
+      "Cikampek",
+      now,
+    );
+    expect(z?.outlook).toEqual([
+      { hour: "10:00", condition: "Hujan Ringan", impact: "sedang" }, // 03:00 UTC -> WIB
+      { hour: "13:00", condition: "Hujan Lebat", impact: "tinggi" }, // 06:00 UTC -> WIB
+      { hour: "16:00", condition: "Cerah Berawan", impact: "rendah" }, // 09:00 UTC -> WIB
+    ]);
+  });
+
+  it("has no outlook key when there are no forward slots", () => {
+    const z = mapBmkgZone(payload([entry({ datetime: "2026-07-15T00:00:00Z" })]), "Cikampek", now);
+    expect(z?.outlook).toBeUndefined();
   });
 });
 
