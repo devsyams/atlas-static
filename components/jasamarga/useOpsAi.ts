@@ -4,15 +4,17 @@ import { useEffect, useRef, useState } from "react";
 
 import { isAiEnabled, useAiEnabled } from "@/lib/ai-settings";
 import type { OpsAi } from "@/lib/jasamarga/ai-insight";
-import type { OpsSnapshot } from "@/lib/jasamarga/types";
+import type { ForecastHour, OpsSnapshot } from "@/lib/jasamarga/types";
 
 export interface OpsAiState {
   insight: OpsAi["insight"] | null;
   predictions: OpsAi["predictions"] | null;
+  /** (A12 v6.0) The LLM-projected 6-hour load forecast; null when scripted/absent. */
+  forecast: ForecastHour[] | null;
   source: "llm" | "scripted";
 }
 
-const IDLE: OpsAiState = { insight: null, predictions: null, source: "scripted" };
+const IDLE: OpsAiState = { insight: null, predictions: null, forecast: null, source: "scripted" };
 
 /** The analysis, tagged with the corridor it describes. */
 type Held = OpsAiState & { for: string | null };
@@ -71,6 +73,7 @@ export function useOpsAi(data: OpsSnapshot | null): OpsAiState {
         setState({
           insight: payload.insight,
           predictions: payload.predictions,
+          forecast: payload.forecast ?? null,
           source: "llm",
           for: corridor,
         });
