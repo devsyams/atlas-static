@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AlertTriangle, Bike, Car, Loader2, Truck, Users } from "lucide-react";
-import { classifyCoco, getAtcsCamera, tallyDetections, type DetectionTally } from "@/lib/jasamarga/atcs";
+import { cctvSources, classifyCoco, getAtcsCamera, tallyDetections, type DetectionTally } from "@/lib/jasamarga/atcs";
 import { detectYolo, loadYolo } from "@/lib/jasamarga/yolo";
 import { cn } from "@/lib/utils";
 
@@ -126,59 +126,27 @@ export function LiveDetectCamera({
     };
   }, [attempt]);
 
-  /* ---- HLS load (keyed on camera) ---- */
+  /* ---- HLS load (keyed on camera) ----
+   * Direct-first, proxy-fallback: try the camera's direct (CORS-enabled) upstream
+   * before the same-origin proxy. The server-side proxy can fail to egress to the
+   * upstream ATCS hosts even though the browser can reach them directly — both
+   * hosts send `Access-Control-Allow-Origin: *`, so the direct path also keeps the
+   * canvas readable for AI detection. A single reachable source is enough to play. */
   useEffect(() => {
     if (typeof window === "undefined") return;
     const video = videoRef.current;
     if (!video) return;
 
     let destroyed = false;
-    const url = `/api/v1/cctv/playlist?cam=${encodeURIComponent(cameraId)}`;
+    // Derive from cameraId (not the outer `cam`) so the effect's own dependency
+    // (cameraId) fully accounts for the source list — no exhaustive-deps warning.
+    const sources = cctvSources(getAtcsCamera(cameraId));
+    let idx = 0;
+    let settled = false; // has the current source resolved (ok) or been abandoned?
 
-    const onLoadedData = () => {
-      if (!destroyed) setStreamReady(true);
-    };
-    const onVideoError = () => {
-      if (!destroyed) setError("stream");
-    };
-    video.addEventListener("loadeddata", onLoadedData);
-    video.addEventListener("error", onVideoError);
+    video.crossOrigin = "anonymous"; // keep the canvas untainted on the direct (cross-origin) path
 
-    const startPlay = () => {
-      // Autoplay may be rejected (no user gesture) — that's fine, ignore it.
-      video.play().catch(() => {});
-    };
-
-    if (video.canPlayType("application/vnd.apple.mpegurl")) {
-      // Safari / native HLS.
-      video.src = url;
-      startPlay();
-    } else {
-      import("hls.js")
-        .then(({ default: Hls }) => {
-          if (destroyed) return;
-          if (Hls.isSupported()) {
-            const hls = new Hls();
-            hlsRef.current = hls;
-            hls.on(Hls.Events.ERROR, (_evt: unknown, data: { fatal?: boolean }) => {
-              if (data?.fatal && !destroyed) setError("stream");
-            });
-            hls.loadSource(url);
-            hls.attachMedia(video);
-            startPlay();
-          } else {
-            setError("stream");
-          }
-        })
-        .catch(() => {
-          if (!destroyed) setError("stream");
-        });
-    }
-
-    return () => {
-      destroyed = true;
-      video.removeEventListener("loadeddata", onLoadedData);
-      video.removeEventListener("error", onVideoError);
+    const teardownHls = () => {
       if (hlsRef.current) {
         try {
           hlsRef.current.destroy();
@@ -187,6 +155,73 @@ export function LiveDetectCamera({
         }
         hlsRef.current = null;
       }
+    };
+
+    const onLoadedData = () => {
+      if (destroyed) return;
+      settled = true; // this source works — stop trying fallbacks
+      setStreamReady(true);
+    };
+
+    const startPlay = () => {
+      // Autoplay may be rejected (no user gesture) — that's fine, ignore it.
+      video.play().catch(() => {});
+    };
+
+    const attach = () => {
+      if (destroyed) return;
+      const url = sources[idx];
+      if (video.canPlayType("application/vnd.apple.mpegurl")) {
+        // Safari / native HLS; errors surface on the <video> element.
+        video.src = url;
+        startPlay();
+      } else {
+        import("hls.js")
+          .then(({ default: Hls }) => {
+            if (destroyed) return;
+            if (Hls.isSupported()) {
+              teardownHls();
+              const hls = new Hls();
+              hlsRef.current = hls;
+              hls.on(Hls.Events.ERROR, (_evt: unknown, data: { fatal?: boolean }) => {
+                if (data?.fatal) fail();
+              });
+              hls.loadSource(url);
+              hls.attachMedia(video);
+              startPlay();
+            } else {
+              fail();
+            }
+          })
+          .catch(() => fail());
+      }
+    };
+
+    function fail() {
+      if (destroyed || settled) return;
+      settled = true;
+      teardownHls();
+      idx += 1;
+      if (idx < sources.length) {
+        settled = false;
+        attach(); // try the next candidate (the same-origin proxy)
+      } else {
+        setError("stream");
+      }
+    }
+
+    const onVideoError = () => fail();
+
+    video.addEventListener("loadeddata", onLoadedData);
+    video.addEventListener("error", onVideoError);
+
+    attach();
+
+    return () => {
+      destroyed = true;
+      video.removeEventListener("loadeddata", onLoadedData);
+      video.removeEventListener("error", onVideoError);
+      teardownHls();
       try {
         video.pause();
       } catch {

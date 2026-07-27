@@ -41,7 +41,7 @@
 | **A9** | Communication Response Calculator | 3-act | demo | — | 3.1 | Built |
 | **A10** | Danantara Crisis Gate (fear-first executive landing) | 3-act | demo | — | 3.3 | Built |
 | **A11** | Danantara Executive Briefing | 3-act | demo | — | 2.2 | Built |
-| **A12** | JasaMarga AI Ops Insight & Predictions (LLM-backed) | 3-act | demo | — | 6.1 | Built |
+| **A12** | JasaMarga AI Ops Insight & Predictions (LLM-backed) | 3-act | demo | — | 7.0 | Built |
 
 **Totals:** 30 features · 8 platform · 5 watch · 5 understand · 12 act.
 
@@ -161,4 +161,5 @@
 | 1.99 | 2026-06-23 | A11 → v2.1 Built — client preferred a chart: replaced the chip+sparkline with a **Positive-vs-Negative 7-day line chart** (shaded gap, axes, legend) under the same verdict headline. 276 tests green, live-verified |
 | 1.100 | 2026-06-23 | A11 → v2.2 Built — client ("too big; cooler"): smooth glowing gradient-filled curves + compact wide strip (no heavy axes). 276 tests green, live-verified |
 | 1.102 | 2026-07-15 | A12 → v6.1 Built (Bugfix, TDD) — client live-testing v6.0 caught "Sekarang" pointing at 01:00 instead of real ~08:00 WIB. `currentHourLabel()` trusted `Date.parse()` on `updated_at`, a locale display string ("15 Jul, 08.06"), which V8 silently mis-parses to a bogus 2008 date instead of NaN. Now only parses when the string is ISO 8601; else uses the real clock. 1 new test (383 green), tsc clean, live-verified |
+| 1.103 | 2026-07-27 | A12 → v7.0 Built (MAJOR, TDD on Sonnet 5) — prod **CCTV Live** pane blank (*"Aliran CCTV/Model tidak tersedia"*): root-caused on Opus to the prod cluster being unable to **egress** to the ATCS hosts (server proxy `502 upstream unreachable`; model = 200, feeds = 200, BMKG egress fine — a selective block). Both hosts serve playlists + segments with `ACAO:*`. **AC22** — load the CORS-enabled ATCS HLS **directly in the browser** (`crossOrigin="anonymous"`) with the same-origin proxy as automatic fallback (direct-first). New pure `cctvSources` helper + `LiveDetectCamera` fallback state machine; AI detection unchanged. **+2 tests (385 green), tsc clean, 0 new lint.** Live-verify on prod pending redeploy (fix is client-side) |
 | 1.101 | 2026-07-15 | A12 → v6.0 Built (MAJOR, TDD on Sonnet 5) — client asked whether **Proyeksi Beban 6 Jam** was real. It wasn't (a fixed `offsets` curve + `Math.random()` in `buildSnapshot`, then fed back to the model). AC19/20/21: the 6-hour forecast is now **LLM-generated** in the existing structured call (`OPS_AI_SCHEMA` gains `forecast[6]`), grounded on current load + the current hour + **BMKG forward slots** (new `pickForward` + `WeatherZone.outlook[]`), validated independently (out-of-range rejected, not clamped) with the deterministic curve as the graceful fallback + honest LLM/Simulasi badge. **+26 tests (382 green), tsc clean, 0 new lint.** Last fabricated surface on the dashboard; live verification on `/jasamarga` pending |

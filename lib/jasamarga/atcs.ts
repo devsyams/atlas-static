@@ -50,6 +50,13 @@ export function isAllowedAtcsUrl(u: string): boolean {
   }
 }
 
+/** Ordered HLS source candidates for a camera: the direct (CORS-enabled) upstream
+ * first, the same-origin proxy as a fallback. The browser can reach the public
+ * feeds even where the server can't egress; both hosts send `Access-Control-Allow-Origin: *`. */
+export function cctvSources(cam: AtcsCamera): string[] {
+  return [cam.url, `/api/v1/cctv/playlist?cam=${encodeURIComponent(cam.id)}`];
+}
+
 /** Vehicle classes we surface from the COCO-SSD detector (Indonesian labels). */
 export type VehicleClass = "mobil" | "motor" | "bus" | "truk" | "orang" | "lainnya";
 
