@@ -89,6 +89,16 @@ describe("CrisisGate (A10 — fear-first landing)", () => {
     expect(screen.getByText("@YudhaShanny2")).toBeInTheDocument();
   });
 
+  it("shows the top negative topics (reach + neg share) under the threat (AC8, T15)", async () => {
+    stubFetch();
+    render(<CrisisGate />);
+    // The negative topic from /topics appears as a "Topik pendorong" row with its
+    // reach and negative share (distinct from the /threats headline threat).
+    await waitFor(() => expect(screen.getByText("Investasi Hilirisasi Nikel")).toBeInTheDocument());
+    expect(screen.getByText("85% neg")).toBeInTheDocument();
+    expect(screen.getByText("50.0 jt")).toBeInTheDocument();
+  });
+
   it("drills through to the Executive Briefing (AC4)", async () => {
     stubFetch();
     render(<CrisisGate />);
