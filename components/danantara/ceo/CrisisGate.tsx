@@ -5,11 +5,9 @@ import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ArrowRight, CalendarRange, RefreshCw } from "lucide-react";
 import type { CeoIssue } from "@/lib/danantara/ceo/types";
-import type { MediaActor } from "@/lib/danantara/types";
 import type { TopicsSummary } from "@/lib/danantara/ceo/topics-source";
-import { biggestThreat, crisisIndex, CRISIS_LEVEL_LABEL, type CrisisLevel } from "@/lib/danantara/ceo/crisis";
-import { groupIssuesBySentiment } from "@/lib/danantara/ceo/engine";
-import { actorsDrivingThreat } from "@/lib/danantara/ceo/threat-actors";
+import type { DetectedThreat } from "@/lib/danantara/ceo/threats-source";
+import { crisisIndex, CRISIS_LEVEL_LABEL, type CrisisLevel } from "@/lib/danantara/ceo/crisis";
 import { withAlpha } from "@/lib/danantara/ui";
 import { CrisisGauge } from "./CrisisGauge";
 import { ThreatTopics } from "./ThreatTopics";
@@ -67,18 +65,18 @@ function useCountUp(target: number, run: boolean, duration = 1100): number {
 }
 
 /**
- * Crisis Gate (A10 v4.0) — the fear-first Danantara landing, now a three-column
- * command read: **left** the 0–100 Crisis Index meter (high = danger), **middle**
- * the single biggest threat and the topics feeding it, **right** the real
- * social-media actors most responsible for that threat's topic. It still answers
- * "how bad is it, what is it, and who's causing it" in one glance; the full wall is
- * one click away on /danantara.
+ * Crisis Gate (A10 v5.0) — the fear-first Danantara landing, a three-column command
+ * read: **left** the 0–100 Crisis Index meter (high = danger, from the `/topics`
+ * feed), **middle** the single biggest **detected threat** and the keywords fuelling
+ * it, **right** the real accounts driving it — both from the OpenGate `/threats`
+ * feed. It answers "how bad is it, what is it, and who's causing it" in one glance;
+ * the full briefing is one click away on /danantara/brief.
  */
 export function CrisisGate() {
   const [issues, setIssues] = useState<CeoIssue[]>([]);
   const [summary, setSummary] = useState<TopicsSummary | null>(null);
-  const [actors, setActors] = useState<MediaActor[]>([]);
-  const [actorsLoading, setActorsLoading] = useState(true);
+  const [threat, setThreat] = useState<DetectedThreat | null>(null);
+  const [threatLoading, setThreatLoading] = useState(true);
   const [range, setRange] = useState<RangeKey>("today");
   const [live, setLive] = useState<Live>("loading");
   const [refreshing, setRefreshing] = useState(false);
@@ -91,7 +89,7 @@ export function CrisisGate() {
     };
   }, []);
 
-  const load = useCallback((fresh = false) => {
+  const loadTopics = useCallback((fresh = false) => {
     fetch(`/api/v1/danantara/topics${fresh ? "?fresh=1" : ""}`)
       .then((r) => {
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
@@ -111,32 +109,29 @@ export function CrisisGate() {
       });
   }, []);
 
-  useEffect(() => {
-    load(false);
-  }, [load]);
-
-  // The actor roster is static (public-source) — fetch once; the right column
-  // degrades to an empty state if it ever fails.
-  useEffect(() => {
-    fetch("/api/v1/danantara/actors")
+  // The detected threat + its driving accounts (OpenGate `/threats`) power the middle
+  // and right columns. Independent of the topics feed: if it fails, those columns
+  // degrade to their empty states while the left gauge stays live.
+  const loadThreats = useCallback((fresh = false) => {
+    fetch(`/api/v1/danantara/threats${fresh ? "?fresh=1" : ""}`)
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))))
-      .then((j: { actors?: MediaActor[] }) => {
-        if (!mountedRef.current) return;
-        setActors(Array.isArray(j.actors) ? j.actors : []);
+      .then((j: { threat?: DetectedThreat | null }) => {
+        if (mountedRef.current) setThreat(j.threat ?? null);
       })
-      .catch(() => {})
+      .catch(() => {
+        if (mountedRef.current) setThreat(null);
+      })
       .finally(() => {
-        if (mountedRef.current) setActorsLoading(false);
+        if (mountedRef.current) setThreatLoading(false);
       });
   }, []);
 
+  useEffect(() => {
+    loadTopics(false);
+    loadThreats(false);
+  }, [loadTopics, loadThreats]);
+
   const reading = crisisIndex(issues, summary);
-  const threat = biggestThreat(issues);
-  const negatives = groupIssuesBySentiment(issues).negative;
-  const related = (threat ? negatives.filter((i) => i.id !== threat.id) : negatives).slice(0, 6);
-  // Rank the whole roster (not a top-N slice) so the right column can always pick
-  // its top humans *and* top bots independently — ThreatActors caps each at 2.
-  const threatActors = actorsDrivingThreat(actors, threat, actors.length);
 
   // Only animate once we actually have live data — a loading/offline gate sits at 0.
   const shown = useCountUp(reading.score, live === "live");
@@ -226,7 +221,8 @@ export function CrisisGate() {
             type="button"
             onClick={() => {
               setRefreshing(true);
-              load(true);
+              loadTopics(true);
+              loadThreats(true);
             }}
             aria-label="Refresh"
             title="Refresh"
@@ -320,18 +316,18 @@ export function CrisisGate() {
           )}
         </div>
 
-        {/* Middle — the biggest threat and the topics feeding it. */}
+        {/* Middle — the biggest detected threat and the keywords fuelling it. */}
         <ThreatTopics
           threat={live === "live" ? threat : null}
-          related={live === "live" ? related : []}
+          loading={live === "loading" || (live === "live" && threatLoading)}
           accent={reading.color}
         />
 
-        {/* Right — who is driving that threat's topic. */}
+        {/* Right — the real accounts driving that threat. */}
         <ThreatActors
-          items={live === "live" ? threatActors : []}
-          category={live === "live" && threat ? threat.category : null}
-          loading={live === "loading" || (live === "live" && actorsLoading)}
+          drivers={live === "live" && threat ? threat.drivers : []}
+          threatTitle={live === "live" && threat ? threat.title : null}
+          loading={live === "loading" || (live === "live" && threatLoading)}
         />
       </div>
     </section>
