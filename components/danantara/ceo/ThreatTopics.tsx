@@ -1,3 +1,4 @@
+import type { CeoIssue } from "@/lib/danantara/ceo/types";
 import type { DetectedThreat } from "@/lib/danantara/ceo/threats-source";
 import { withAlpha } from "@/lib/danantara/ui";
 
@@ -7,18 +8,33 @@ const DEFAULT_ACCENT = "oklch(0.72 0.17 55)";
 /** Indonesian label for the upstream severity class. */
 const SEVERITY_LABEL: Record<string, string> = { high: "Tinggi", medium: "Sedang", low: "Rendah" };
 
+/** Compact Indonesian reach: 1.9 jt · 880 rb. Mirrors ActorMap's formatter. */
+function fmtReach(n: number): string {
+  if (n >= 1e6) return `${(n / 1e6).toFixed(1)} jt`;
+  if (n >= 1e3) return `${(n / 1e3).toFixed(0)} rb`;
+  return String(n);
+}
+
+/** A topic's negative share, as a whole percent. */
+function negPct(i: CeoIssue): number {
+  return i.mentions > 0 ? Math.round((i.negMentions / i.mentions) * 100) : 0;
+}
+
 /**
  * Middle column of the Crisis Gate — the single biggest **detected threat** (A10 v5.0,
- * from the OpenGate `/threats` feed), named, with its severity/growth, why it matters,
- * and the keywords driving it. Answers "what is the threat, and what's fuelling it".
- * The severity chip + threat headline carry the live crisis colour.
+ * from the OpenGate `/threats` feed), named with its severity/growth, plus the top
+ * negative **topics** feeding the conversation (A10 v5.1, from the `/topics` feed —
+ * each with reach + negative share). Answers "what is the threat, and what topics are
+ * driving it". The severity chip + threat headline carry the live crisis colour.
  */
 export function ThreatTopics({
   threat,
+  related,
   loading,
   accent,
 }: {
   threat: DetectedThreat | null;
+  related: CeoIssue[];
   loading?: boolean;
   accent?: string;
 }) {
@@ -63,27 +79,30 @@ export function ThreatTopics({
             {threat.title}
           </p>
 
-          {/* Why it matters — the one-line impact read (kept short so the gate stays glanceable). */}
-          {threat.impact && (
-            <p className="mt-2 line-clamp-3 text-sm leading-snug text-muted-foreground">{threat.impact}</p>
-          )}
-
-          {/* The keywords fuelling the threat. */}
+          {/* The top negative topics feeding the conversation — title · reach · neg share.
+              Type is sized up for the 40+ CEO audience — this is the scan-the-room read. */}
           <h3 className="mt-5 text-sm font-bold uppercase tracking-[0.18em] text-muted-foreground">Topik pendorong</h3>
-          <div className="mt-3 flex-1 overflow-auto scrollbar-thin pr-1">
-            {threat.trendingKeywords.length === 0 ? (
-              <p className="text-sm text-muted-foreground/70">Tidak ada kata kunci menonjol.</p>
+          <div className="mt-3 flex-1 space-y-2.5 overflow-auto scrollbar-thin pr-1">
+            {related.length === 0 ? (
+              <p className="text-sm text-muted-foreground/70">Tidak ada topik negatif lain.</p>
             ) : (
-              <div className="flex flex-wrap gap-2">
-                {threat.trendingKeywords.map((k) => (
-                  <span
-                    key={k}
-                    className="inline-flex items-center rounded-lg border border-border/50 bg-background/40 px-3 py-1.5 text-sm font-medium text-foreground"
-                  >
-                    {k}
+              related.map((t, i) => (
+                <div
+                  key={t.id}
+                  data-testid="crisis-topic"
+                  className="flex items-start gap-3 rounded-xl border border-border/50 bg-background/40 px-3.5 py-3"
+                >
+                  <span className="w-6 shrink-0 text-center text-base font-bold leading-snug tabular-nums text-muted-foreground">
+                    {i + 1}
                   </span>
-                ))}
-              </div>
+                  {/* Full title — wraps to as many lines as it needs; never truncated. */}
+                  <span className="min-w-0 flex-1 text-base font-medium leading-snug text-foreground">{t.title}</span>
+                  <span className="shrink-0 text-right leading-tight">
+                    <span className="block text-sm tabular-nums text-muted-foreground">{fmtReach(t.reach)}</span>
+                    <span className="block text-sm font-bold tabular-nums text-destructive">{negPct(t)}% neg</span>
+                  </span>
+                </div>
+              ))
             )}
           </div>
         </>

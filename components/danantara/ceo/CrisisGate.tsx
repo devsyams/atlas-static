@@ -8,6 +8,7 @@ import type { CeoIssue } from "@/lib/danantara/ceo/types";
 import type { TopicsSummary } from "@/lib/danantara/ceo/topics-source";
 import type { DetectedThreat } from "@/lib/danantara/ceo/threats-source";
 import { crisisIndex, CRISIS_LEVEL_LABEL, type CrisisLevel } from "@/lib/danantara/ceo/crisis";
+import { groupIssuesBySentiment } from "@/lib/danantara/ceo/engine";
 import { withAlpha } from "@/lib/danantara/ui";
 import { CrisisGauge } from "./CrisisGauge";
 import { ThreatTopics } from "./ThreatTopics";
@@ -132,6 +133,9 @@ export function CrisisGate() {
   }, [loadTopics, loadThreats]);
 
   const reading = crisisIndex(issues, summary);
+  // The top negative topics feeding the conversation (from /topics) — shown under the
+  // detected threat as "Topik pendorong" with each topic's reach + negative share.
+  const related = groupIssuesBySentiment(issues).negative.slice(0, 3);
 
   // Only animate once we actually have live data — a loading/offline gate sits at 0.
   const shown = useCountUp(reading.score, live === "live");
@@ -319,6 +323,7 @@ export function CrisisGate() {
         {/* Middle — the biggest detected threat and the keywords fuelling it. */}
         <ThreatTopics
           threat={live === "live" ? threat : null}
+          related={live === "live" ? related : []}
           loading={live === "loading" || (live === "live" && threatLoading)}
           accent={reading.color}
         />
