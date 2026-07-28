@@ -56,3 +56,37 @@ describe("AppShell gear menu — Nexorus Opengate (P8 / AC1)", () => {
     expect(screen.getByRole("link", { name: /nexorus opengate/i })).toBeInTheDocument();
   });
 });
+
+describe("AppShell gear menu — Danantara Crisis Gate link (A10)", () => {
+  beforeEach(() => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => new Response(JSON.stringify({ anomalies: [] }), { status: 200 })),
+    );
+  });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    document.cookie = "atlas_scope=; path=/; max-age=0";
+  });
+
+  it("links to /danantara/krisis from the gear menu", () => {
+    pathname = "/";
+    render(<AppShell>content</AppShell>);
+    openGearMenu();
+
+    const link = screen.getByRole("link", { name: /crisis gate/i });
+    expect(link).toHaveAttribute("href", "/danantara/krisis");
+  });
+
+  it("keeps the Crisis Gate link on the minimal-chrome danantara dashboards for danantara-scoped users", () => {
+    // The /danantara/krisis page itself runs minimal chrome (Dashboards group only)
+    // and a danantara-scoped user is limited to /danantara* — the link must survive both.
+    pathname = "/danantara/krisis";
+    document.cookie = "atlas_scope=danantara; path=/";
+    render(<AppShell>content</AppShell>);
+    openGearMenu();
+
+    const link = screen.getByRole("link", { name: /crisis gate/i });
+    expect(link).toHaveAttribute("href", "/danantara/krisis");
+  });
+});
