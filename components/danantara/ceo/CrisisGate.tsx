@@ -77,9 +77,9 @@ export function CrisisGate() {
   const [issues, setIssues] = useState<CeoIssue[]>([]);
   const [summary, setSummary] = useState<TopicsSummary | null>(null);
   const [threat, setThreat] = useState<DetectedThreat | null>(null);
-  const [drivers, setDrivers] = useState<ThreatDriver[]>([]);
-  const [driversSource, setDriversSource] = useState<"threat" | "roster" | null>(null);
   const [threatLoading, setThreatLoading] = useState(true);
+  const [drivers, setDrivers] = useState<ThreatDriver[]>([]);
+  const [rosterLoading, setRosterLoading] = useState(true);
   const [range, setRange] = useState<RangeKey>("today");
   const [live, setLive] = useState<Live>("loading");
   const [refreshing, setRefreshing] = useState(false);
@@ -112,33 +112,45 @@ export function CrisisGate() {
       });
   }, []);
 
-  // The detected threat + its driving accounts (OpenGate `/threats`) power the middle
-  // and right columns. Independent of the topics feed: if it fails, those columns
-  // degrade to their empty states while the left gauge stays live.
+  // The #1 detected threat (OpenGate `/threats`) powers the middle column's headline.
+  // Independent of the topics feed; the middle column falls back to the /topics biggest
+  // threat client-side when there's no incident.
   const loadThreats = useCallback((fresh = false) => {
     fetch(`/api/v1/danantara/threats${fresh ? "?fresh=1" : ""}`)
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))))
-      .then((j: { threat?: DetectedThreat | null; drivers?: ThreatDriver[]; driversSource?: "threat" | "roster" }) => {
-        if (!mountedRef.current) return;
-        setThreat(j.threat ?? null);
-        setDrivers(Array.isArray(j.drivers) ? j.drivers : []);
-        setDriversSource(j.driversSource ?? null);
+      .then((j: { threat?: DetectedThreat | null }) => {
+        if (mountedRef.current) setThreat(j.threat ?? null);
       })
       .catch(() => {
-        if (!mountedRef.current) return;
-        setThreat(null);
-        setDrivers([]);
-        setDriversSource(null);
+        if (mountedRef.current) setThreat(null);
       })
       .finally(() => {
         if (mountedRef.current) setThreatLoading(false);
       });
   }, []);
 
+  // The right "Aktor Penggerak" column always reads the /actor-intelligence roster
+  // (v5.3) — it carries real profile pictures, so the actors stay consistent whether or
+  // not a threat is live. Degrades to an empty list if the roster ever fails.
+  const loadRoster = useCallback((fresh = false) => {
+    fetch(`/api/v1/danantara/actor-intelligence${fresh ? "?fresh=1" : ""}`)
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))))
+      .then((j: { actors?: ThreatDriver[] }) => {
+        if (mountedRef.current) setDrivers(Array.isArray(j.actors) ? j.actors : []);
+      })
+      .catch(() => {
+        if (mountedRef.current) setDrivers([]);
+      })
+      .finally(() => {
+        if (mountedRef.current) setRosterLoading(false);
+      });
+  }, []);
+
   useEffect(() => {
     loadTopics(false);
     loadThreats(false);
-  }, [loadTopics, loadThreats]);
+    loadRoster(false);
+  }, [loadTopics, loadThreats, loadRoster]);
 
   const reading = crisisIndex(issues, summary);
   // Panel 2 headline falls back to the /topics biggest threat when /threats has no
@@ -147,14 +159,6 @@ export function CrisisGate() {
   const fallbackThreat = threat ? null : biggestThreat(issues);
   const negatives = groupIssuesBySentiment(issues).negative;
   const related = (fallbackThreat ? negatives.filter((i) => i.id !== fallbackThreat.id) : negatives).slice(0, 3);
-  // Panel 3 caption reflects whether the accounts are a detected threat's drivers or
-  // the calm-period roster fallback (v5.2).
-  const actorsCaption =
-    driversSource === "roster"
-      ? "Aktor kunci dalam percakapan"
-      : threat
-        ? `Penggerak · ${threat.title}`
-        : "Penggerak ancaman utama";
 
   // Only animate once we actually have live data — a loading/offline gate sits at 0.
   const shown = useCountUp(reading.score, live === "live");
@@ -246,6 +250,7 @@ export function CrisisGate() {
               setRefreshing(true);
               loadTopics(true);
               loadThreats(true);
+              loadRoster(true);
             }}
             aria-label="Refresh"
             title="Refresh"
@@ -348,11 +353,12 @@ export function CrisisGate() {
           accent={reading.color}
         />
 
-        {/* Right — the accounts driving the threat, or the roster in calm periods. */}
+        {/* Right — the key actors in the conversation (always the /actor-intelligence
+            roster, so real profile pictures render whether or not a threat is live). */}
         <ThreatActors
           drivers={live === "live" ? drivers : []}
-          caption={actorsCaption}
-          loading={live === "loading" || (live === "live" && threatLoading)}
+          caption="Aktor kunci dalam percakapan"
+          loading={live === "loading" || (live === "live" && rosterLoading)}
         />
       </div>
     </section>

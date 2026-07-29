@@ -44,7 +44,7 @@ const TOPICS_2NEG = {
   summary: { total_impressions: 0, total_reach: 0, percentage: { positive: 22, negative: 70, neutral: 8 } },
 };
 
-// Panels 2 & 3 read /threats — the detected threat + its driving accounts.
+// Panel 2 reads /threats — the detected threat headline only (v5.3: no drivers here).
 const THREAT: DetectedThreat = {
   id: "threat_1",
   title: "Tuduhan Manipulasi Keuangan dan Korupsi",
@@ -61,29 +61,40 @@ const THREAT: DetectedThreat = {
   timeToViral: 24,
   recommendedActions: [],
   drivers: [
+    // These live on the threat but are NO LONGER used for panel 3 (v5.3) — kept to prove decoupling.
     { handle: "nocturnalforsa1", platform: "twitter", followers: 31, credibility: 2, riskLevel: "low", accountType: "real_person", bot: false, engagement: 1361, note: "complainer" },
-    { handle: "YudhaShanny2", platform: "twitter", followers: 13793, credibility: 3, riskLevel: "high", accountType: "propaganda_provocator", bot: true, engagement: 4, note: "provokator" },
   ],
 };
-const THREATS = { threat: THREAT, drivers: THREAT.drivers, driversSource: "threat", stats: { total_threats: 1, high_severity: 1, medium_severity: 0, low_severity: 0 } };
+const THREATS = { threat: THREAT, stats: { total_threats: 1, high_severity: 1, medium_severity: 0, low_severity: 0 } };
+const THREATS_EMPTY = { threat: null, stats: { total_threats: 0, high_severity: 0, medium_severity: 0, low_severity: 0 } };
 
-// The roster fallback the /threats route returns when there is no detected threat.
+// Panel 3 reads /actor-intelligence — always (v5.3).
 const ROSTER_DRIVERS: ThreatDriver[] = [
-  { handle: "neg_influencer", platform: "twitter", followers: 1_200_000, credibility: 7, riskLevel: "high", accountType: "Negative Critic", bot: false, engagement: 0, note: "kritik tata kelola" },
+  { handle: "neg_influencer", platform: "twitter", followers: 1_200_000, credibility: 7, riskLevel: "high", accountType: "Negative Critic", bot: false, engagement: 0, note: "kritik tata kelola", avatarUrl: "data:image/jpg;base64,AAAA" },
 ];
-const THREATS_EMPTY = { threat: null, drivers: ROSTER_DRIVERS, driversSource: "roster", stats: { total_threats: 0, high_severity: 0, medium_severity: 0, low_severity: 0 } };
+const ROSTER_RESPONSE = { actors: ROSTER_DRIVERS };
 
-/** Route the fetch mock by URL so /topics and /threats return their own payloads. */
+/** Route the fetch mock by URL: /actor-intelligence, /threats, or /topics. */
 function stubFetch({
   topics = TOPICS,
   threats = THREATS,
+  roster = ROSTER_RESPONSE,
   topicsStatus = 200,
   threatsStatus = 200,
-}: { topics?: unknown; threats?: unknown; topicsStatus?: number; threatsStatus?: number } = {}) {
+  rosterStatus = 200,
+}: {
+  topics?: unknown;
+  threats?: unknown;
+  roster?: unknown;
+  topicsStatus?: number;
+  threatsStatus?: number;
+  rosterStatus?: number;
+} = {}) {
   vi.stubGlobal(
     "fetch",
     vi.fn(async (url: string) => {
       const u = String(url);
+      if (u.includes("/actor-intelligence")) return new Response(JSON.stringify(roster), { status: rosterStatus });
       if (u.includes("/threats")) return new Response(JSON.stringify(threats), { status: threatsStatus });
       return new Response(JSON.stringify(topics), { status: topicsStatus });
     }),
@@ -93,7 +104,7 @@ function stubFetch({
 describe("CrisisGate (A10 — fear-first landing)", () => {
   afterEach(() => vi.restoreAllMocks());
 
-  it("renders the index + band from /topics and the detected threat from /threats (AC1–AC3, AC8, T14)", async () => {
+  it("renders the index + band from /topics and the detected threat from /threats (AC1–AC3, AC8)", async () => {
     stubFetch();
     render(<CrisisGate />);
     await waitFor(() => expect(screen.getByTestId("crisis-score").textContent).toBe("75"), { timeout: 3000 });
@@ -101,11 +112,12 @@ describe("CrisisGate (A10 — fear-first landing)", () => {
     await waitFor(() => expect(screen.getByTestId("crisis-threat").textContent).toContain("Tuduhan Manipulasi Keuangan"));
   });
 
-  it("lists the real driving accounts from /threats in the actors column (AC8, T14)", async () => {
-    stubFetch();
+  it("shows the /actor-intelligence roster in the actors column even when a threat is detected (AC11, T22)", async () => {
+    stubFetch(); // a detected threat IS present
     render(<CrisisGate />);
-    await waitFor(() => expect(screen.getByText("@nocturnalforsa1")).toBeInTheDocument());
-    expect(screen.getByText("@YudhaShanny2")).toBeInTheDocument();
+    // Panel 3 shows the roster account (with avatar), not the threat's own drivers.
+    await waitFor(() => expect(screen.getByText("@neg_influencer")).toBeInTheDocument());
+    expect(screen.queryByText("@nocturnalforsa1")).not.toBeInTheDocument();
   });
 
   it("shows the top negative topics (reach + neg share) under the threat (AC8, T15)", async () => {
@@ -116,17 +128,13 @@ describe("CrisisGate (A10 — fear-first landing)", () => {
     expect(screen.getByText("50.0 jt")).toBeInTheDocument();
   });
 
-  it("falls back to the /topics biggest threat + roster when /threats has no incident (AC9, T16/T17)", async () => {
+  it("falls back to the /topics biggest threat when /threats has no incident; roster still shows (AC9/AC11, T16/T17)", async () => {
     stubFetch({ topics: TOPICS_2NEG, threats: THREATS_EMPTY });
     render(<CrisisGate />);
-    // Middle headline falls back to the /topics biggestThreat (t0).
     await waitFor(() => expect(screen.getByTestId("crisis-threat").textContent).toContain("Investasi Hilirisasi Nikel"));
-    // The other negative topic still shows in "Topik pendorong"…
     expect(screen.getByText("Sorotan Transparansi Danantara")).toBeInTheDocument();
-    // …and the fallback headline topic is NOT duplicated in the list (T17).
-    expect(screen.getAllByText("Investasi Hilirisasi Nikel")).toHaveLength(1);
-    // Right column falls back to the /actor-intelligence roster.
-    expect(screen.getByText("@neg_influencer")).toBeInTheDocument();
+    expect(screen.getAllByText("Investasi Hilirisasi Nikel")).toHaveLength(1); // headline not duplicated in the list
+    expect(screen.getByText("@neg_influencer")).toBeInTheDocument(); // roster still populates panel 3
   });
 
   it("drills through to the Executive Briefing (AC4)", async () => {
@@ -144,13 +152,12 @@ describe("CrisisGate (A10 — fear-first landing)", () => {
     expect(screen.getByTestId("crisis-detail-link")).toHaveAttribute("href", "/danantara/brief");
   });
 
-  it("falls back to the /topics biggest threat when the /threats feed itself fails (AC9)", async () => {
+  it("keeps panel 3 (roster) alive when the /threats feed itself fails (AC9/AC11)", async () => {
     stubFetch({ threatsStatus: 502 });
     render(<CrisisGate />);
-    // Gauge stays live, and the middle column shows the /topics fallback rather than blanking.
+    // Gauge stays live; middle shows the /topics fallback; panel 3's roster is a separate fetch, so it still shows.
     await waitFor(() => expect(screen.getByTestId("crisis-score").textContent).toBe("75"));
     await waitFor(() => expect(screen.getByTestId("crisis-threat").textContent).toContain("Investasi Hilirisasi Nikel"));
-    // No roster either (the whole /threats call failed) → actors column is empty, no crash.
-    expect(screen.queryByText("@neg_influencer")).not.toBeInTheDocument();
+    expect(screen.getByText("@neg_influencer")).toBeInTheDocument();
   });
 });
