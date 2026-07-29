@@ -6,8 +6,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { ArrowRight, CalendarRange, RefreshCw } from "lucide-react";
 import type { CeoIssue } from "@/lib/danantara/ceo/types";
 import type { TopicsSummary } from "@/lib/danantara/ceo/topics-source";
-import type { DetectedThreat } from "@/lib/danantara/ceo/threats-source";
-import { crisisIndex, CRISIS_LEVEL_LABEL, type CrisisLevel } from "@/lib/danantara/ceo/crisis";
+import type { DetectedThreat, ThreatDriver } from "@/lib/danantara/ceo/threats-source";
+import { biggestThreat, crisisIndex, CRISIS_LEVEL_LABEL, type CrisisLevel } from "@/lib/danantara/ceo/crisis";
 import { groupIssuesBySentiment } from "@/lib/danantara/ceo/engine";
 import { withAlpha } from "@/lib/danantara/ui";
 import { CrisisGauge } from "./CrisisGauge";
@@ -77,6 +77,8 @@ export function CrisisGate() {
   const [issues, setIssues] = useState<CeoIssue[]>([]);
   const [summary, setSummary] = useState<TopicsSummary | null>(null);
   const [threat, setThreat] = useState<DetectedThreat | null>(null);
+  const [drivers, setDrivers] = useState<ThreatDriver[]>([]);
+  const [driversSource, setDriversSource] = useState<"threat" | "roster" | null>(null);
   const [threatLoading, setThreatLoading] = useState(true);
   const [range, setRange] = useState<RangeKey>("today");
   const [live, setLive] = useState<Live>("loading");
@@ -116,11 +118,17 @@ export function CrisisGate() {
   const loadThreats = useCallback((fresh = false) => {
     fetch(`/api/v1/danantara/threats${fresh ? "?fresh=1" : ""}`)
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))))
-      .then((j: { threat?: DetectedThreat | null }) => {
-        if (mountedRef.current) setThreat(j.threat ?? null);
+      .then((j: { threat?: DetectedThreat | null; drivers?: ThreatDriver[]; driversSource?: "threat" | "roster" }) => {
+        if (!mountedRef.current) return;
+        setThreat(j.threat ?? null);
+        setDrivers(Array.isArray(j.drivers) ? j.drivers : []);
+        setDriversSource(j.driversSource ?? null);
       })
       .catch(() => {
-        if (mountedRef.current) setThreat(null);
+        if (!mountedRef.current) return;
+        setThreat(null);
+        setDrivers([]);
+        setDriversSource(null);
       })
       .finally(() => {
         if (mountedRef.current) setThreatLoading(false);
@@ -133,9 +141,20 @@ export function CrisisGate() {
   }, [loadTopics, loadThreats]);
 
   const reading = crisisIndex(issues, summary);
-  // The top negative topics feeding the conversation (from /topics) — shown under the
-  // detected threat as "Topik pendorong" with each topic's reach + negative share.
-  const related = groupIssuesBySentiment(issues).negative.slice(0, 3);
+  // Panel 2 headline falls back to the /topics biggest threat when /threats has no
+  // detected incident (v5.2). The top-3 "Topik pendorong" always show (from /topics),
+  // excluding the fallback headline topic so it isn't listed twice.
+  const fallbackThreat = threat ? null : biggestThreat(issues);
+  const negatives = groupIssuesBySentiment(issues).negative;
+  const related = (fallbackThreat ? negatives.filter((i) => i.id !== fallbackThreat.id) : negatives).slice(0, 3);
+  // Panel 3 caption reflects whether the accounts are a detected threat's drivers or
+  // the calm-period roster fallback (v5.2).
+  const actorsCaption =
+    driversSource === "roster"
+      ? "Aktor kunci dalam percakapan"
+      : threat
+        ? `Penggerak · ${threat.title}`
+        : "Penggerak ancaman utama";
 
   // Only animate once we actually have live data — a loading/offline gate sits at 0.
   const shown = useCountUp(reading.score, live === "live");
@@ -323,15 +342,16 @@ export function CrisisGate() {
         {/* Middle — the biggest detected threat and the keywords fuelling it. */}
         <ThreatTopics
           threat={live === "live" ? threat : null}
+          fallbackThreat={live === "live" ? fallbackThreat : null}
           related={live === "live" ? related : []}
           loading={live === "loading" || (live === "live" && threatLoading)}
           accent={reading.color}
         />
 
-        {/* Right — the real accounts driving that threat. */}
+        {/* Right — the accounts driving the threat, or the roster in calm periods. */}
         <ThreatActors
-          drivers={live === "live" && threat ? threat.drivers : []}
-          threatTitle={live === "live" && threat ? threat.title : null}
+          drivers={live === "live" ? drivers : []}
+          caption={actorsCaption}
           loading={live === "loading" || (live === "live" && threatLoading)}
         />
       </div>

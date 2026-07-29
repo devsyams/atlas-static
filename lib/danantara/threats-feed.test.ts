@@ -30,6 +30,15 @@ const SAMPLE: ThreatsApiResponse = {
   },
 };
 
+/** A hollow window: empty `threats` list but a non-zero severity stat — the real
+ *  transient the upstream serves while slow/recomputing. */
+const EMPTY: ThreatsApiResponse = {
+  success: true,
+  status_code: 200,
+  meta: { topic: "danantara_main" },
+  data: { stats: { total_threats: 0, high_severity: 1, medium_severity: 0, low_severity: 0 }, threats: [] },
+};
+
 const KEY = "SECRET-KEY";
 
 describe("fetchThreatsForCode (A10 v5.0)", () => {
@@ -89,5 +98,66 @@ describe("fetchThreatsForCode (A10 v5.0)", () => {
   it("throws on an upstream non-OK status", async () => {
     vi.stubGlobal("fetch", vi.fn(async () => new Response("down", { status: 500 })));
     await expect(fetchThreatsForCode("danantara_main")).rejects.toThrow();
+  });
+});
+
+describe("fetchThreatsForCode — stale-empty self-heal (A10 v5.2 — T20)", () => {
+  beforeEach(() => {
+    process.env.DANANTARA_TOPICS_API_KEY = KEY;
+  });
+  afterEach(() => {
+    vi.restoreAllMocks();
+    delete process.env.DANANTARA_TOPICS_API_KEY;
+  });
+
+  /** A fetch mock returning the i-th payload in `seq` (the last repeats), recording each call's init. */
+  function seqFetch(seq: ThreatsApiResponse[]) {
+    let i = 0;
+    const inits: (RequestInit | undefined)[] = [];
+    const fn = vi.fn(async (...args: unknown[]) => {
+      inits.push(args[1] as RequestInit | undefined);
+      const r = seq[Math.min(i, seq.length - 1)];
+      i += 1;
+      return new Response(JSON.stringify(r), { status: 200 });
+    });
+    return { fn, inits };
+  }
+
+  it("self-heals a cached/transient hollow: re-confirms live and prefers the live threats", async () => {
+    const { fn, inits } = seqFetch([EMPTY, SAMPLE]); // cacheable hollow → the live upstream has a threat
+    vi.stubGlobal("fetch", fn);
+
+    const r = await fetchThreatsForCode("danantara_main");
+    expect(r.threats).toHaveLength(1); // live data shown, not the cached hollow
+    expect(inits[0]).toEqual({ next: { revalidate: 21600 } }); // primary path is cacheable (6 h)
+    expect(inits).toContainEqual({ cache: "no-store" }); // a live confirm happened
+  });
+
+  it("leaves a genuinely empty feed empty (no fabricated threats) after confirming live", async () => {
+    const { fn, inits } = seqFetch([EMPTY]); // cacheable and live both empty
+    vi.stubGlobal("fetch", fn);
+
+    const r = await fetchThreatsForCode("danantara_main");
+    expect(r.threats).toHaveLength(0);
+    expect(fn).toHaveBeenCalledTimes(2); // cacheable, then one live confirm
+    expect(inits).toContainEqual({ cache: "no-store" });
+  });
+
+  it("on ?fresh=1 the path is already live, so it adds no redundant confirm", async () => {
+    const { fn } = seqFetch([EMPTY]);
+    vi.stubGlobal("fetch", fn);
+
+    const r = await fetchThreatsForCode("danantara_main", { fresh: true });
+    expect(r.threats).toHaveLength(0);
+    expect(fn).toHaveBeenCalledTimes(1); // no extra confirm
+  });
+
+  it("does not add a live confirm when the cacheable window already has threats", async () => {
+    const { fn } = seqFetch([SAMPLE]);
+    vi.stubGlobal("fetch", fn);
+
+    const r = await fetchThreatsForCode("danantara_main");
+    expect(r.threats).toHaveLength(1);
+    expect(fn).toHaveBeenCalledTimes(1);
   });
 });
