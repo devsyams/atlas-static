@@ -77,6 +77,7 @@ export interface ThreatDriver {
   bot: boolean; // coordinated/automated amplifier vs a genuine account
   engagement: number; // this account's loudest post engagement (the ranking key)
   note: string; // AI one-line read of who they are
+  avatarUrl?: string; // profile image (base64 data-URI) — present for the roster fallback, absent for /threats posts
 }
 
 /** The #1 detected threat — the middle-column "Ancaman Utama" read. */

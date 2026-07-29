@@ -1,0 +1,36 @@
+/**
+ * Server-side fetch for the Danantara **actor roster** (A10 v5.2) — the Crisis Gate's
+ * right-column fallback when `/threats` has no detected incident. A sibling of
+ * `threats-feed.ts`: holds the env key + cache so the secret lives once and never
+ * reaches the browser. The upstream (`/actor-intelligence`) returns the key accounts
+ * in the conversation for a topic code. Server-only (reads `process.env`, calls fetch).
+ */
+
+import { mapActorRoster, type ActorRosterApiResponse } from "./ceo/actor-roster-source";
+import type { ThreatDriver } from "./ceo/threats-source";
+
+const DEFAULT_BASE = "https://api.garudaperkasa.io/api-nexorus/actor-intelligence";
+const REVALIDATE_S = 21_600; // 6 h — matches the topics/threats feeds
+
+/** Thrown when the feed has no API key configured (callers map this to 503). */
+export class ActorRosterNotConfiguredError extends Error {}
+
+/**
+ * Fetch + map the actor roster for a topic code → ranked `ThreatDriver[]`. `fresh`
+ * bypasses the data cache. Reuses the topics feed's `DANANTARA_TOPICS_API_KEY` (all
+ * OpenGate routes share one key). Throws `ActorRosterNotConfiguredError` if no key,
+ * or a generic error on upstream failure / malformed payload.
+ */
+export async function fetchActorRosterForCode(code: string, opts: { fresh?: boolean } = {}): Promise<ThreatDriver[]> {
+  const base = process.env.DANANTARA_ACTORS_API_BASE || DEFAULT_BASE;
+  const apiKey = process.env.DANANTARA_TOPICS_API_KEY;
+  if (!apiKey) throw new ActorRosterNotConfiguredError("Actor roster feed not configured.");
+
+  const url = `${base}?${new URLSearchParams({ topic: code, api_key: apiKey }).toString()}`;
+  const res = await fetch(url, opts.fresh ? { cache: "no-store" } : { next: { revalidate: REVALIDATE_S } });
+  if (!res.ok) throw new Error(`upstream ${res.status}`);
+
+  const json = (await res.json()) as ActorRosterApiResponse;
+  if (!json?.success || !Array.isArray(json?.data)) throw new Error("malformed upstream payload");
+  return mapActorRoster(json);
+}

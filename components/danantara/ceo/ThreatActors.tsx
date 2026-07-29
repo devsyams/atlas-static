@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { Bot, ShieldAlert, ShieldCheck, UserRound, Users } from "lucide-react";
 import type { ThreatDriver } from "@/lib/danantara/ceo/threats-source";
 import { cn } from "@/lib/utils";
@@ -22,8 +23,22 @@ function fmtFollowers(n: number): string {
   return String(n);
 }
 
-/** The `/threats` payload carries no avatar → a coloured initials tile. */
-function Avatar({ handle }: { handle: string }) {
+/** Avatar — the roster fallback carries a real (base64) image; `/threats` posts don't,
+ *  so it falls back to a coloured initials tile (also on image load error). */
+function Avatar({ handle, avatarUrl }: { handle: string; avatarUrl?: string }) {
+  const [failed, setFailed] = useState(false);
+  if (avatarUrl && !failed) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element -- base64 data-URI avatar; next/image adds no value
+      <img
+        src={avatarUrl}
+        alt={handle}
+        loading="lazy"
+        onError={() => setFailed(true)}
+        className="h-12 w-12 shrink-0 rounded-lg object-cover"
+      />
+    );
+  }
   return (
     <span
       aria-hidden
@@ -41,7 +56,7 @@ function DriverCard({ d }: { d: ThreatDriver }) {
   return (
     <div className={cn("rounded-2xl border bg-background/40 p-3.5", d.bot ? "border-warning/40" : "border-border/50")}>
       <div className="flex items-center gap-3">
-        <Avatar handle={d.handle} />
+        <Avatar handle={d.handle} avatarUrl={d.avatarUrl} />
         <div className="min-w-0 flex-1">
           <span className="block truncate text-lg font-bold text-foreground">@{d.handle}</span>
           {d.platform && <div className="truncate text-sm capitalize text-muted-foreground">{d.platform}</div>}
@@ -91,26 +106,21 @@ function ColumnHeader({ icon: Icon, label, count, tone }: { icon: typeof Bot; la
   );
 }
 
-/** Truncate a long threat title for the subheader. */
-function short(title: string, max = 48): string {
-  return title.length > max ? `${title.slice(0, max - 1).trimEnd()}…` : title;
-}
-
 /**
- * Right column of the Crisis Gate (A10 v5.0) — the **real accounts driving the top
- * detected threat**, from the OpenGate `/threats` feed (`top_impact_posts` →
- * `actor_intelligence`). The roster is split **left = genuine human/org accounts,
- * right = coordinated provocateur/bot accounts** (by `account_type`), so the
- * human-vs-amplifier distinction is the layout itself. Each card reads who they are
- * (@handle · platform · followers), their risk + credibility, and a one-line AI read.
+ * Right column of the Crisis Gate (A10 v5.0, v5.2) — the accounts to watch. When a
+ * threat is detected, these are its **real drivers** (from `/threats`); in calm periods
+ * they fall back to the always-populated **`/actor-intelligence` roster** (A10 v5.2), so
+ * the column never goes blank. Either way the roster is split **left = genuine
+ * human/org accounts, right = coordinated provocateur/bot accounts** (by classification).
+ * The `caption` says which read it is.
  */
 export function ThreatActors({
   drivers,
-  threatTitle,
+  caption,
   loading,
 }: {
   drivers: ThreatDriver[];
-  threatTitle: string | null;
+  caption: string;
   loading?: boolean;
 }) {
   // Show the two strongest of each kind — a balanced 2 human + 2 bot read.
@@ -129,9 +139,7 @@ export function ThreatActors({
           <span className="shrink-0 text-sm font-medium text-muted-foreground">{shown} akun</span>
         )}
       </div>
-      <p className="mt-0.5 truncate text-sm text-muted-foreground">
-        {threatTitle ? `Penggerak · ${short(threatTitle)}` : "Penggerak ancaman utama"}
-      </p>
+      <p className="mt-0.5 truncate text-sm text-muted-foreground">{caption}</p>
 
       {loading ? (
         <p className="mt-3 text-sm text-muted-foreground">Memuat aktor…</p>
