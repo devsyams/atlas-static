@@ -55,10 +55,11 @@ function DriverCard({ d }: { d: ThreatDriver }) {
   const rm = RISK_META[d.riskLevel] ?? RISK_META.low;
   return (
     <div className={cn("rounded-2xl border bg-background/40 p-3.5", d.bot ? "border-warning/40" : "border-border/50")}>
-      <div className="flex items-center gap-3">
+      <div className="flex items-start gap-3">
         <Avatar handle={d.handle} avatarUrl={d.avatarUrl} />
         <div className="min-w-0 flex-1">
-          <span className="block truncate text-lg font-bold text-foreground">@{d.handle}</span>
+          {/* Long usernames wrap to a new line rather than truncating with an ellipsis. */}
+          <span className="block break-words text-lg font-bold leading-tight text-foreground">@{d.handle}</span>
           {d.platform && <div className="truncate text-sm capitalize text-muted-foreground">{d.platform}</div>}
         </div>
       </div>
