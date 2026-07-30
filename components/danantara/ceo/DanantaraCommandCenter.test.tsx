@@ -99,6 +99,7 @@ describe("DanantaraCommandCenter (A13 — one-page)", () => {
   it("stacks the Crisis Gate and the CEO wall on one page (T2)", async () => {
     stubFetch();
     render(<DanantaraCommandCenter />);
+    await waitFor(() => expect(screen.getByTestId("danantara-command-center")).toBeInTheDocument());
     await waitFor(() => expect(screen.getByTestId("crisis-gate")).toBeInTheDocument());
     await waitFor(() => expect(screen.getByTestId("ceo-wall")).toBeInTheDocument());
   });
@@ -108,8 +109,10 @@ describe("DanantaraCommandCenter (A13 — one-page)", () => {
     render(<DanantaraCommandCenter />);
     await waitFor(() => expect(screen.getByTestId("ceo-wall")).toBeInTheDocument());
     expect(screen.queryByTestId("ceo-header")).not.toBeInTheDocument();
-    // Exactly one Refresh control on the page.
-    expect(screen.getAllByLabelText("Refresh")).toHaveLength(1);
+    // Exactly one Refresh control on the page (accessible name from content —
+    // the gate's button has no aria-label, only `getByRole`'s name-from-content
+    // computation would catch it going missing).
+    expect(screen.getAllByRole("button", { name: /refresh/i })).toHaveLength(1);
   });
 
   it("one Refresh click refetches both blocks with fresh=1, with no double-fetch (T4)", async () => {
