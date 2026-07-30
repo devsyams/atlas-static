@@ -42,8 +42,9 @@
 | **A10** | Danantara Crisis Gate (fear-first executive landing) | 3-act | demo | — | 5.4 | Built |
 | **A11** | Danantara Executive Briefing | 3-act | demo | — | 2.2 | Built |
 | **A12** | JasaMarga AI Ops Insight & Predictions (LLM-backed) | 3-act | demo | — | 7.0 | Built |
+| **A13** | Danantara Command Center (one-page) | 3-act | demo | — | 1.0 | In progress |
 
-**Totals:** 30 features · 8 platform · 5 watch · 5 understand · 12 act.
+**Totals:** 31 features · 8 platform · 5 watch · 5 understand · 13 act.
 
 ## Sprint → feature map (delivery view)
 
@@ -170,3 +171,4 @@
 | 1.108 | 2026-07-29 | A10 → **v5.2 In progress (MINOR, TDD)** — **resilient fallback + self-heal**: `/threats` is event-driven/often-empty (calm) or transiently hollow, blanking panels 2 & 3. Now they fall back to the always-on `/topics` + roster — middle headline → `/topics` `biggestThreat` with the top-3 always shown (deduped); right column → **`/actor-intelligence` roster** (new `actor-roster-source`/`-feed`, deduped, negative-first, real avatars) via a server-side fallback in the `/threats` route (`driversSource`). Added `threats-feed` stale-empty self-heal (mirrors `topics-feed`). AC9/AC10 + T16–T20; **+12 tests, 417/417 green**, tsc + lint clean, live-verified (roster fallback with real avatars during a double-hollow window) |
 | 1.109 | 2026-07-29 | A10 → **v5.3 In progress (client request, TDD)** — **panel 3 always the roster**: `/threats` carries no avatars, so v5.2's threat-driver path drifted the actors column to bare initials whenever a real incident appeared. Decouple panel 3 → new **`/api/v1/danantara/actor-intelligence`** BFF (real profile pictures every time); `/threats` reverts to `{ threat, stats }` (panel-2 headline only). `CrisisGate` third fetch; `driversSource` dropped. AC9 amended + AC11 + T21/T22; **420/420 green**, tsc + lint clean, live-verified (panel 3 always the roster with real avatars; panel-2 `/topics` fallback also seen live once topics recovered) |
 | 1.110 | 2026-07-29 | A10 → **v5.4 Built (presentation only)** — long actor `@handle`s in panel 3 (e.g. `@konveksi_karawang_cikampek`) now **wrap to a new line** instead of truncating: `ThreatActors` handle uses `break-words`/`leading-tight` + `items-start`. No behaviour change |
+| 1.111 | 2026-07-30 | Added **A13 (Danantara Command Center, one-page)** at v1.0 In progress — new `/danantara/command` stacks the A10 Crisis Gate over the A7 CEO wall in one continuously scrolling page (one header, one refresh, no route hop), composed via four opt-in props that default to current behaviour so `/danantara` + `/danantara/krisis` stay byte-identical. A7 → v46.1, A10 → v5.5 (MINOR, props only). From client request ("make it a Single Page Application"); 30→31 features |
