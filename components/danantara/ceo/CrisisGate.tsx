@@ -73,7 +73,18 @@ function useCountUp(target: number, run: boolean, duration = 1100): number {
  * feed. It answers "how bad is it, what is it, and who's causing it" in one glance;
  * the full briefing is one click away on /danantara/brief.
  */
-export function CrisisGate() {
+export function CrisisGate({
+  embedded = false,
+  refreshNonce,
+  onRefresh,
+}: {
+  /** Sit inside a scrolling page (A13) instead of locking to one screen. */
+  embedded?: boolean;
+  /** Parent-driven refresh: refetch when this value *changes* (never on mount). */
+  refreshNonce?: number;
+  /** When provided, the header Refresh delegates to the parent instead of fetching. */
+  onRefresh?: () => void;
+} = {}) {
   const [issues, setIssues] = useState<CeoIssue[]>([]);
   const [summary, setSummary] = useState<TopicsSummary | null>(null);
   const [threat, setThreat] = useState<DetectedThreat | null>(null);
@@ -152,6 +163,18 @@ export function CrisisGate() {
     loadRoster(false);
   }, [loadTopics, loadThreats, loadRoster]);
 
+  // A13: parent-driven refresh. Fires only when the nonce *changes*, so mounting
+  // with a nonce already present never double-fetches the initial load.
+  const nonceRef = useRef(refreshNonce);
+  useEffect(() => {
+    if (refreshNonce === undefined || nonceRef.current === refreshNonce) return;
+    nonceRef.current = refreshNonce;
+    setRefreshing(true);
+    loadTopics(true);
+    loadThreats(true);
+    loadRoster(true);
+  }, [refreshNonce, loadTopics, loadThreats, loadRoster]);
+
   const reading = crisisIndex(issues, summary);
   // Panel 2 headline falls back to the /topics biggest threat when /threats has no
   // detected incident (v5.2). The top-3 "Topik pendorong" always show (from /topics),
@@ -167,7 +190,11 @@ export function CrisisGate() {
   return (
     <section
       data-testid="crisis-gate"
-      className="relative flex min-h-[calc(100dvh-7.75rem)] flex-col gap-4 overflow-hidden lg:h-[calc(100dvh-7.75rem)] lg:min-h-[28rem]"
+      className={
+        embedded
+          ? "relative flex min-h-[calc(100dvh-9rem)] flex-col gap-4 overflow-hidden lg:min-h-[28rem]"
+          : "relative flex min-h-[calc(100dvh-7.75rem)] flex-col gap-4 overflow-hidden lg:h-[calc(100dvh-7.75rem)] lg:min-h-[28rem]"
+      }
     >
       {/* Ambient threat glow — washes the screen in the band colour, breathing
           harder as the level worsens. The walk-by hook. */}
@@ -247,6 +274,12 @@ export function CrisisGate() {
           <button
             type="button"
             onClick={() => {
+              // A13: when a parent owns refresh, bumping its nonce drives the refetch —
+              // firing both paths would fetch every feed twice.
+              if (onRefresh) {
+                onRefresh();
+                return;
+              }
               setRefreshing(true);
               loadTopics(true);
               loadThreats(true);

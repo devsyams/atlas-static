@@ -90,3 +90,38 @@ describe("AppShell gear menu — Danantara Crisis Gate link (A10)", () => {
     expect(link).toHaveAttribute("href", "/danantara/krisis");
   });
 });
+
+describe("AppShell gear menu — Danantara Command Center link (A13)", () => {
+  beforeEach(() => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => new Response(JSON.stringify({ anomalies: [] }), { status: 200 })),
+    );
+  });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    document.cookie = "atlas_scope=; path=/; max-age=0";
+  });
+
+  it("links to /danantara/command from the gear menu (T8)", () => {
+    pathname = "/";
+    render(<AppShell>content</AppShell>);
+    openGearMenu();
+
+    // "Danantara" disambiguates from the Operations-group "Command Center" item.
+    const link = screen.getByRole("link", { name: /danantara command center/i });
+    expect(link).toHaveAttribute("href", "/danantara/command");
+  });
+
+  it("keeps the link on the minimal-chrome danantara pages for danantara-scoped users (T8)", () => {
+    // The page runs minimal chrome (Dashboards group only) and a danantara-scoped
+    // user is limited to /danantara* — the link must survive both filters.
+    pathname = "/danantara/command";
+    document.cookie = "atlas_scope=danantara; path=/";
+    render(<AppShell>content</AppShell>);
+    openGearMenu();
+
+    const link = screen.getByRole("link", { name: /danantara command center/i });
+    expect(link).toHaveAttribute("href", "/danantara/command");
+  });
+});

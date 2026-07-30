@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { CeoIssue } from "@/lib/danantara/ceo/types";
 import type { DetectedThreat, ThreatDriver } from "@/lib/danantara/ceo/threats-source";
@@ -159,5 +159,56 @@ describe("CrisisGate (A10 — fear-first landing)", () => {
     await waitFor(() => expect(screen.getByTestId("crisis-score").textContent).toBe("75"));
     await waitFor(() => expect(screen.getByTestId("crisis-threat").textContent).toContain("Investasi Hilirisasi Nikel"));
     expect(screen.getByText("@neg_influencer")).toBeInTheDocument();
+  });
+
+  // A13 (v5.5) — the props are opt-in; the no-props render must not change.
+  it("without props keeps its locked one-screen height — /danantara/krisis unchanged (T7)", async () => {
+    stubFetch();
+    render(<CrisisGate />);
+    await waitFor(() => expect(screen.getByTestId("crisis-gate")).toBeInTheDocument());
+    expect(screen.getByTestId("crisis-gate").className).toContain("lg:h-[calc(100dvh-7.75rem)]");
+  });
+
+  it("embedded drops the height lock so a page can scroll past it (T6)", async () => {
+    stubFetch();
+    render(<CrisisGate embedded />);
+    await waitFor(() => expect(screen.getByTestId("crisis-gate")).toBeInTheDocument());
+    const cls = screen.getByTestId("crisis-gate").className;
+    expect(cls).not.toContain("lg:h-[calc(100dvh-7.75rem)]");
+    expect(cls).toContain("min-h-[calc(100dvh-9rem)]");
+    // overflow-hidden must stay: the crisis-breathe scale(1.06) on the ambient glow
+    // would otherwise bleed past the section's edge onto the page below it.
+    expect(cls).toContain("overflow-hidden");
+  });
+
+  it("refetches all three feeds when refreshNonce changes, and not on mount (T4 support)", async () => {
+    stubFetch();
+    const fetchMock = globalThis.fetch as unknown as ReturnType<typeof vi.fn>;
+    const { rerender } = render(<CrisisGate refreshNonce={0} />);
+    await waitFor(() => expect(screen.getByTestId("crisis-gate")).toBeInTheDocument());
+    // Mount with a nonce present must NOT double-fetch: 3 feeds, 3 calls, none fresh.
+    expect(fetchMock.mock.calls.filter((c) => String(c[0]).includes("fresh=1"))).toHaveLength(0);
+
+    fetchMock.mockClear();
+    rerender(<CrisisGate refreshNonce={1} />);
+    await waitFor(() => {
+      const fresh = fetchMock.mock.calls.map((c) => String(c[0])).filter((u) => u.includes("fresh=1"));
+      expect(fresh).toHaveLength(3);
+    });
+  });
+
+  it("with onRefresh the header button delegates instead of fetching itself (T4 support)", async () => {
+    stubFetch();
+    const fetchMock = globalThis.fetch as unknown as ReturnType<typeof vi.fn>;
+    const onRefresh = vi.fn();
+    render(<CrisisGate onRefresh={onRefresh} />);
+    await waitFor(() => expect(screen.getByTestId("crisis-gate")).toBeInTheDocument());
+
+    fetchMock.mockClear();
+    fireEvent.click(screen.getByLabelText("Refresh"));
+
+    expect(onRefresh).toHaveBeenCalledTimes(1);
+    // The container owns the refetch (via the nonce) — the button must not also fetch.
+    expect(fetchMock.mock.calls.filter((c) => String(c[0]).includes("fresh=1"))).toHaveLength(0);
   });
 });
