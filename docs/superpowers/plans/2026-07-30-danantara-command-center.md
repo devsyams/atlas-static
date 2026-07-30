@@ -28,9 +28,9 @@
 | `docs/study-plans/atlas/3-act.md` | **modify** — add the A13 block (PM → Architecture → QA → Revision history); add revision rows to A7 and A10 |
 | `docs/study-plans/atlas/_index.md` | **modify** — A13 row, totals 30→31 / act 12→13, index revision row |
 | `components/danantara/ceo/CrisisGate.tsx` | **modify** — accept `embedded` / `refreshNonce` / `onRefresh`; nothing else changes |
-| `components/danantara/ceo/CrisisGate.test.tsx` | **modify (additive)** — 2 new tests: the no-props height regression + the `embedded` behaviour |
+| `components/danantara/ceo/CrisisGate.test.tsx` | **modify (additive)** — 4 new tests: no-props height regression, `embedded`, `refreshNonce`, `onRefresh` delegation |
 | `components/danantara/ceo/CeoCommand.tsx` | **modify** — accept `showHeader` / `refreshNonce`; nothing else changes |
-| `components/danantara/ceo/CeoCommand.test.tsx` | **modify (additive)** — 2 new tests: the no-props header regression + `showHeader={false}` |
+| `components/danantara/ceo/CeoCommand.test.tsx` | **modify (additive)** — 3 new tests: no-props header regression, `showHeader={false}`, `refreshNonce` |
 | `components/danantara/ceo/DanantaraCommandCenter.tsx` | **create** — the container: owns the refresh nonce + the scroll layout, nothing else |
 | `components/danantara/ceo/DanantaraCommandCenter.test.tsx` | **create** — single-header, one-refresh-both-blocks, independent degradation |
 | `app/danantara/command/page.tsx` | **create** — `<AppShell><DanantaraCommandCenter /></AppShell>` |
@@ -425,7 +425,7 @@ Wrap the header render (:89-97) in the flag:
 - [ ] **Step 4: Run the tests to verify they pass**
 
 Run: `npx vitest run components/danantara/ceo/CeoCommand.test.tsx`
-Expected: PASS — 14 tests (11 existing + 3 new).
+Expected: PASS — 13 tests (10 existing + 3 new).
 
 - [ ] **Step 5: Typecheck and lint**
 
@@ -820,7 +820,7 @@ git commit -m "feat(a13): add Danantara Command Center to the gear menu"
 - [ ] **Step 1: Full test suite**
 
 Run: `npm test`
-Expected: **433 passed** (420 baseline + 13 new: 4 CrisisGate, 3 CeoCommand, 4 container, 1 page, 2 AppShell — the totals are 11/14 per the two modified component files).
+Expected: **434 passed** (420 baseline + 14 new: 4 CrisisGate, 3 CeoCommand, 4 container, 1 page, 2 AppShell). Per-file after the change: `CrisisGate.test.tsx` 11, `CeoCommand.test.tsx` 13, `DanantaraCommandCenter.test.tsx` 4, `app/danantara/command/page.test.tsx` 1, `AppShell.test.tsx` 6.
 
 **If `CrisisGate.test.tsx` → "keeps panel 3 (roster) alive when the /threats feed itself fails" is the only failure, it is the known load-flake, not your regression.** Confirm with:
 
@@ -855,7 +855,7 @@ Then confirm the **regression** ACs — the whole point of the approach:
 In `docs/study-plans/atlas/3-act.md`, change the A13 header `**Status:** In progress` → `**Status:** Built`, and append a revision row recording the real numbers:
 
 ```markdown
-| 1.0 | 2026-07-30 | Built (TDD) — `DanantaraCommandCenter` + `/danantara/command`; opt-in props on `CrisisGate` (A10 v5.5) and `CeoCommand` (A7 v46.1). **+13 tests, 433 total green**, tsc + lint clean; live-verified (one header, one refresh → 5 `fresh=1` requests, continuous scroll, `/danantara` + `/danantara/krisis` unchanged). Status → Built |
+| 1.0 | 2026-07-30 | Built (TDD) — `DanantaraCommandCenter` + `/danantara/command`; opt-in props on `CrisisGate` (A10 v5.5) and `CeoCommand` (A7 v46.1). **+14 tests, 434 total green**, tsc + lint clean; live-verified (one header, one refresh → 5 `fresh=1` requests, continuous scroll, `/danantara` + `/danantara/krisis` unchanged). Status → Built |
 ```
 
 In `docs/study-plans/atlas/_index.md`, change the A13 row's `In progress` → `Built`.
@@ -878,7 +878,7 @@ The failure is a `waitFor` default 1000ms timeout under full-suite parallel load
     await waitFor(() => expect(screen.getByTestId("crisis-threat").textContent).toBeTruthy(), { timeout: 5000 });
 ```
 
-Then run `npm test` three times; expect 433 green on all three.
+Then run `npm test` three times; expect 434 green on all three.
 
 ```bash
 git add components/danantara/ceo/CrisisGate.test.tsx
@@ -911,4 +911,4 @@ git commit -m "test(a10): de-flake the roster-fallback waitFor under full-suite 
 
 **Two ambiguities caught and fixed during this review:**
 - The AppShell nav test originally queried `/command center/i`, which would have **matched two links** — there is already an Operations-group item labelled plain "Command Center". Task 6 now queries `/danantara command center/i` and flags why.
-- Task 7's expected test count is stated as an absolute (433) with the per-file breakdown, so a partial run cannot be mistaken for success.
+- Task 7's expected test count is stated as an absolute (434) with the per-file breakdown, so a partial run cannot be mistaken for success. **The first draft of this plan said 433** — it assumed `CeoCommand.test.tsx` had 11 existing tests when it has 10. Counts are now measured (`grep -c "  it("`), not estimated: CrisisGate 7, CeoCommand 10, AppShell 4.
