@@ -195,6 +195,9 @@ Append inside the existing `describe("CrisisGate (A10 — fear-first landing)", 
     const cls = screen.getByTestId("crisis-gate").className;
     expect(cls).not.toContain("lg:h-[calc(100dvh-7.75rem)]");
     expect(cls).toContain("min-h-[calc(100dvh-9rem)]");
+    // overflow-hidden must stay: the crisis-breathe scale(1.06) on the ambient glow
+    // would otherwise bleed past the section's edge onto the page below it.
+    expect(cls).toContain("overflow-hidden");
   });
 
   it("refetches all three feeds when refreshNonce changes, and not on mount (T4 support)", async () => {
@@ -282,11 +285,18 @@ Replace the `<section>` className (:168-171) with the conditional:
       data-testid="crisis-gate"
       className={
         embedded
-          ? "relative flex min-h-[calc(100dvh-9rem)] flex-col gap-4 lg:min-h-[28rem]"
+          ? "relative flex min-h-[calc(100dvh-9rem)] flex-col gap-4 overflow-hidden lg:min-h-[28rem]"
           : "relative flex min-h-[calc(100dvh-7.75rem)] flex-col gap-4 overflow-hidden lg:h-[calc(100dvh-7.75rem)] lg:min-h-[28rem]"
       }
     >
 ```
+
+`overflow-hidden` is kept in **both** branches — dropping only the height lock, not the
+clip. The ambient-glow div is `absolute inset-0`, and at Elevated/Severe crisis levels
+it gets `crisis-breathe`, whose keyframes (`app/globals.css` ~line 713) include
+`transform: scale(1.06)`; a CSS transform paints outside its layout box, so without
+`overflow-hidden` the glow could bleed past the section onto the sibling block below it
+in the combined page — worst exactly when the crisis level is worst.
 
 Replace the refresh button's `onClick` (:249-254) with the delegating version:
 

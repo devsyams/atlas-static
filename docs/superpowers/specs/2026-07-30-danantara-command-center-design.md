@@ -73,7 +73,7 @@ demoed; this spec's central constraint is that neither changes observable behavi
 
 | Prop | Component | Default | Effect when set |
 |---|---|---|---|
-| `embedded` | `CrisisGate` | `false` | Swaps the locked `lg:h-[calc(100dvh-7.75rem)]` for `min-h-[calc(100dvh-9rem)]` — still fills the first screen, no longer fights the page scroll |
+| `embedded` | `CrisisGate` | `false` | Swaps the locked `lg:h-[calc(100dvh-7.75rem)]` for `min-h-[calc(100dvh-9rem)]` — still fills the first screen, no longer fights the page scroll. `overflow-hidden` is retained in both branches: the ambient glow's `crisis-breathe` animation scales to 1.06, and without `overflow-hidden` that transform would bleed past the section's edge onto the block below it |
 | `showHeader` | `CeoCommand` | `true` | `false` omits `<HeaderStrip>`; the block starts at `AiBriefTicker` |
 | `refreshNonce` | both | `undefined` | On **change only** (never on mount), the block refetches its own feeds with `?fresh=1` |
 

@@ -176,6 +176,9 @@ describe("CrisisGate (A10 — fear-first landing)", () => {
     const cls = screen.getByTestId("crisis-gate").className;
     expect(cls).not.toContain("lg:h-[calc(100dvh-7.75rem)]");
     expect(cls).toContain("min-h-[calc(100dvh-9rem)]");
+    // overflow-hidden must stay: the crisis-breathe scale(1.06) on the ambient glow
+    // would otherwise bleed past the section's edge onto the page below it.
+    expect(cls).toContain("overflow-hidden");
   });
 
   it("refetches all three feeds when refreshNonce changes, and not on mount (T4 support)", async () => {

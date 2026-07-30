@@ -192,7 +192,7 @@ export function CrisisGate({
       data-testid="crisis-gate"
       className={
         embedded
-          ? "relative flex min-h-[calc(100dvh-9rem)] flex-col gap-4 lg:min-h-[28rem]"
+          ? "relative flex min-h-[calc(100dvh-9rem)] flex-col gap-4 overflow-hidden lg:min-h-[28rem]"
           : "relative flex min-h-[calc(100dvh-7.75rem)] flex-col gap-4 overflow-hidden lg:h-[calc(100dvh-7.75rem)] lg:min-h-[28rem]"
       }
     >
