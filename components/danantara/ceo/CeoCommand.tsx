@@ -19,7 +19,15 @@ type Live = "loading" | "live" | "offline";
  * on upstream failure the boards show a graceful offline state. Clicking any
  * row/tile is optional drill-down (AC10); a header Refresh forces a fresh pull.
  */
-export function CeoCommand() {
+export function CeoCommand({
+  showHeader = true,
+  refreshNonce,
+}: {
+  /** A13 embeds this wall under the Crisis Gate's header — pass `false` to drop ours. */
+  showHeader?: boolean;
+  /** Parent-driven refresh: refetch when this value *changes* (never on mount). */
+  refreshNonce?: number;
+} = {}) {
   const [issues, setIssues] = useState<CeoIssue[]>([]); // Danantara-wide topics
   const [bumn, setBumn] = useState<BumnSentiment[]>([]); // BUMN board rows
   const [bumnIssues, setBumnIssues] = useState<CeoIssue[]>([]); // per-BUMN topics
@@ -75,6 +83,16 @@ export function CeoCommand() {
     load(false);
   }, [load]);
 
+  // A13: parent-driven refresh. Fires only when the nonce *changes*, so mounting
+  // with a nonce already present never double-fetches the initial load.
+  const nonceRef = useRef(refreshNonce);
+  useEffect(() => {
+    if (refreshNonce === undefined || nonceRef.current === refreshNonce) return;
+    nonceRef.current = refreshNonce;
+    setRefreshing(true);
+    load(true);
+  }, [refreshNonce, load]);
+
   const rankedBumn = useMemo(() => rankBumn(bumn), [bumn]);
   const headerState = useMemo<CeoState>(() => ({ tickCount: 0, issues, bumn: rankedBumn }), [issues, rankedBumn]);
   // The detail modal can show any topic — Danantara-wide or a BUMN's — so it sees
@@ -86,15 +104,17 @@ export function CeoCommand() {
 
   return (
     <div className="flex flex-col gap-3 xl:h-full">
-      <HeaderStrip
-        state={headerState}
-        source={issuesLive}
-        onRefresh={() => {
-          setRefreshing(true);
-          load(true);
-        }}
-        refreshing={refreshing}
-      />
+      {showHeader && (
+        <HeaderStrip
+          state={headerState}
+          source={issuesLive}
+          onRefresh={() => {
+            setRefreshing(true);
+            load(true);
+          }}
+          refreshing={refreshing}
+        />
+      )}
 
       {/* Running narration sits broadcast-style at the top, right under the headline numbers. */}
       <AiBriefTicker state={headerState} />

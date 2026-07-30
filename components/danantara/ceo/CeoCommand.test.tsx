@@ -167,4 +167,33 @@ describe("CeoCommand — live wall (v37.0)", () => {
     expect(metrics.length).toBeGreaterThanOrEqual(2);
     for (const el of metrics) expect(el.className).toMatch(/text-(?:2xl|3xl|4xl)/);
   });
+
+  // A13 (v46.1) — the props are opt-in; the no-props render must not change.
+  it("without props still renders the header strip — /danantara unchanged (T7)", async () => {
+    stubFetch();
+    render(<CeoCommand />);
+    await waitFor(() => expect(screen.getByTestId("ceo-header")).toBeInTheDocument());
+  });
+
+  it("showHeader={false} suppresses the header strip (T3)", async () => {
+    stubFetch();
+    render(<CeoCommand showHeader={false} />);
+    await waitFor(() => expect(screen.getByTestId("ceo-wall")).toBeInTheDocument());
+    expect(screen.queryByTestId("ceo-header")).not.toBeInTheDocument();
+  });
+
+  it("refetches both feeds when refreshNonce changes, and not on mount (T4 support)", async () => {
+    stubFetch();
+    const fetchMock = globalThis.fetch as unknown as ReturnType<typeof vi.fn>;
+    const { rerender } = render(<CeoCommand refreshNonce={0} />);
+    await waitFor(() => expect(screen.getByTestId("ceo-wall")).toBeInTheDocument());
+    expect(fetchMock.mock.calls.filter((c) => String(c[0]).includes("fresh=1"))).toHaveLength(0);
+
+    fetchMock.mockClear();
+    rerender(<CeoCommand refreshNonce={1} />);
+    await waitFor(() => {
+      const fresh = fetchMock.mock.calls.map((c) => String(c[0])).filter((u) => u.includes("fresh=1"));
+      expect(fresh).toHaveLength(2);
+    });
+  });
 });
