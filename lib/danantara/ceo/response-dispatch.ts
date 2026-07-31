@@ -2,9 +2,14 @@
  * Response dispatch (A9 v3.0) — pure helpers that turn a topic + its Counter-Noise
  * plan into a WhatsApp click-to-chat brief, so the comms team can be briefed in one
  * tap from the topic detail. No I/O; the number is supplied by the caller (env).
+ *
+ * A14 adds `buildWarRoomBrief` alongside it — same transport, richer payload (the
+ * counter-narrative and its drafts). `buildResponseBrief` is deliberately untouched.
  */
 
 import { TIER_LABEL, type CounterNoisePlan } from "./counter-noise";
+import { CHANNEL_LABEL, type CounterNarrativePlan } from "./counter-narrative";
+import { DRAFT_TO_CHANNEL, type CounterNarrativeTopic } from "./counter-narrative-ai";
 import { fmtCount, pieTotals } from "./format";
 
 export interface ResponseTopic {
@@ -57,5 +62,39 @@ export function buildResponseBrief(topic: ResponseTopic, plan: CounterNoisePlan)
     "",
     "— Danantara CEO Command",
   );
+  return lines.join("\n");
+}
+
+/**
+ * A14 — the counter-narrative handoff: one topic's attack read, our angle, the
+ * volume plan and the three ready-to-post drafts, in one WhatsApp message.
+ *
+ * Deliberately **per topic**, not one brief for the whole board: `wa.me?text=`
+ * stops being reliable somewhere around 2 000 characters, and three topics with
+ * nine drafts blows straight past it.
+ */
+export function buildWarRoomBrief(topic: CounterNarrativeTopic, plan: CounterNarrativePlan): string {
+  const lines = [
+    "🛡 NEXORUS ATLAS · COUNTER-NARRATIVE",
+    "",
+    `Topic: ${topic.title}`,
+    `Hostile reach: ${fmtCount(plan.hostileReach)} (${plan.negSharePct}% negative)`,
+    "",
+    `Attack: ${topic.attackLine}`,
+    `Counter: ${topic.counterAngle}`,
+    "",
+    `Plan (${TIER_LABEL[plan.tier]}) — ${plan.totalPosts.toLocaleString("en-US")} posts → ${plan.shareOfVoicePct}% share of voice:`,
+    ...plan.channels.map((c) => `• ${CHANNEL_LABEL[c.channel]}: ${c.posts.toLocaleString("en-US")}`),
+    "",
+    "Drafts:",
+  ];
+
+  for (const d of topic.drafts) {
+    const posts = plan.channels.find((c) => c.channel === DRAFT_TO_CHANNEL[d.channel])?.posts ?? 0;
+    lines.push(`▸ ${CHANNEL_LABEL[DRAFT_TO_CHANNEL[d.channel]]} (${posts.toLocaleString("en-US")}× · ${d.platform})`);
+    lines.push(d.hashtags.length > 0 ? `${d.body} ${d.hashtags.join(" ")}` : d.body);
+  }
+
+  lines.push("", "Drafts are talking points for disclosed partners and owned channels.", "— Danantara CEO Command");
   return lines.join("\n");
 }

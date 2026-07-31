@@ -124,4 +124,16 @@ describe("AppShell gear menu — Danantara Command Center link (A13)", () => {
     const link = screen.getByRole("link", { name: /danantara command center/i });
     expect(link).toHaveAttribute("href", "/danantara/command");
   });
+
+  it("links to /danantara/simulation from the gear menu, through both filters (A15 T17)", () => {
+    // Same two gates as T8: minimal chrome keeps only the Dashboards group, and a
+    // danantara-scoped user is limited to /danantara* — the entry must survive both.
+    pathname = "/danantara/command";
+    document.cookie = "atlas_scope=danantara; path=/";
+    render(<AppShell>content</AppShell>);
+    openGearMenu();
+
+    const link = screen.getByRole("link", { name: /crisis simulation room/i });
+    expect(link).toHaveAttribute("href", "/danantara/simulation");
+  });
 });

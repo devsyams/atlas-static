@@ -106,11 +106,41 @@ describe("IssueBoard grouped by sentiment (T12 / AC12 v9.0)", () => {
     expect(ctx.className).toContain("line-clamp-2");
   });
 
-  it("renders topic titles in full, never truncated (AC12 v7.0)", () => {
+  // v47.0 supersedes "titles render in full, never truncated" (AC12 v7.0): a title
+  // that wrapped to one line made its card 25px shorter than a two-line neighbour,
+  // so the Negative and Positive columns stopped lining up. Titles now occupy a
+  // fixed two-line box; the full text is kept in `title=` and in the detail modal.
+  it("gives every card the same height: a fixed two-line title box (AC12 v47.0)", () => {
     render(<IssueBoard issues={issues} />);
     for (const title of screen.getAllByTestId("issue-title")) {
-      expect(title.className).not.toContain("truncate");
+      // Clamp caps a long title; min-height stops a short one collapsing the card.
+      expect(title.className).toContain("line-clamp-2");
+      expect(title.className).toContain("min-h-[2.75em]");
+      expect(title.className).not.toContain("truncate"); // never a single-line ellipsis
     }
+  });
+
+  it("never loses the full title — it stays available on the card and in the modal (AC12 v47.0)", () => {
+    const long =
+      "Isu dan Kritik atas Keterlibatan Danantara dalam Komite Stabilitas Sistem Keuangan (KSSK) yang Berkepanjangan";
+    render(<IssueBoard issues={[makeIssue({ id: "long", title: long, posMentions: 100, negMentions: 900 })]} />);
+    const title = screen.getByTestId("issue-title");
+    expect(title.textContent).toBe(long); // clamping is visual only, never a substring
+    expect(title.getAttribute("title")).toBe(long);
+  });
+
+  it("reserves the penjelasan box even when a topic has none, so cards stay level (AC12 v47.0)", () => {
+    render(
+      <IssueBoard
+        issues={[
+          makeIssue({ id: "with", title: "Punya penjelasan", aiLine: "Ada konteksnya.", posMentions: 100, negMentions: 900 }),
+          makeIssue({ id: "without", title: "Tanpa penjelasan", aiLine: "", posMentions: 100, negMentions: 900 }),
+        ]}
+      />,
+    );
+    const boxes = screen.getAllByTestId("issue-ailine");
+    expect(boxes).toHaveLength(2); // rendered for both, not conditionally dropped
+    for (const b of boxes) expect(b.className).toContain("min-h-[2.75em]");
   });
 
   it("shows a shimmering skeleton (no real rows) while the feed is loading", () => {

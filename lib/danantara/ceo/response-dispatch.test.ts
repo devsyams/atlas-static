@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { responseCalculator } from "./counter-noise";
-import { buildResponseBrief, waNumber, whatsappResponseLink } from "./response-dispatch";
+import { counterNarrativePlan } from "./counter-narrative";
+import type { CounterNarrativeTopic } from "./counter-narrative-ai";
+import { buildResponseBrief, buildWarRoomBrief, waNumber, whatsappResponseLink } from "./response-dispatch";
 
 const topic = {
   title: "Outlook Negatif Moody's terhadap Peringkat Kredit Baa2 Danantara",
@@ -43,5 +45,42 @@ describe("response-dispatch (A9 v3.0 — WhatsApp handoff)", () => {
     const brief = buildResponseBrief({ ...topic, aiLine: undefined }, plan);
     expect(brief).not.toContain("Nexorus AI:");
     expect(brief).toContain(topic.title);
+  });
+});
+
+describe("buildWarRoomBrief (A14 — counter-narrative handoff, T35)", () => {
+  const cn: CounterNarrativeTopic = {
+    topicId: "t0",
+    title: "Investasi Hilirisasi Nikel",
+    attackLine: "Dana publik dipakai untuk investasi berisiko tanpa transparansi.",
+    counterAngle: "Hilirisasi menambah nilai di dalam negeri; tata kelolanya dibuka lewat pelaporan berkala.",
+    drafts: [
+      { channel: "kol", platform: "X / Instagram", body: "Draft KOL berbasis data.", hashtags: ["#Danantara", "#Hilirisasi"] },
+      { channel: "clipper", platform: "TikTok / Reels", body: "Hook video pendek soal nilai tambah.", hashtags: ["#Danantara"] },
+      { channel: "grassroots", platform: "Facebook / WhatsApp", body: "Suara karyawan yang ikut terdampak.", hashtags: ["#Danantara"] },
+    ],
+  };
+  const plan = counterNarrativePlan(
+    { reach: 50_000_000, mentions: 2_000, posMentions: 200, negMentions: 1_700 },
+    "professional",
+  );
+
+  it("carries the topic, the reading, the plan and every draft body", () => {
+    const brief = buildWarRoomBrief(cn, plan);
+
+    expect(brief).toContain(cn.title);
+    expect(brief).toContain(cn.attackLine);
+    expect(brief).toContain(cn.counterAngle);
+    expect(brief).toContain("42.5M"); // hostile reach, fmtCount
+    expect(brief).toContain("Professional");
+    expect(brief).toContain(`${plan.shareOfVoicePct}%`);
+    expect(brief).toContain(plan.totalPosts.toLocaleString("en-US"));
+    for (const d of cn.drafts) expect(brief).toContain(d.body);
+    // The channel split rides along so the room knows how the total is spent.
+    for (const c of plan.channels) expect(brief).toContain(c.posts.toLocaleString("en-US"));
+  });
+
+  it("stays inside the practical wa.me?text= length ceiling", () => {
+    expect(buildWarRoomBrief(cn, plan).length).toBeLessThan(1800);
   });
 });

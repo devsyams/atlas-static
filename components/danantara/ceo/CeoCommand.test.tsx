@@ -182,6 +182,26 @@ describe("CeoCommand — live wall (v37.0)", () => {
     expect(screen.queryByTestId("ceo-header")).not.toBeInTheDocument();
   });
 
+  // A13 v2.0 (A7 v46.2) — the BUMN section is opt-out for the one-page route only.
+  it("showBumn={false} drops the BUMN heatboard and never fetches /bumn-board (T10)", async () => {
+    stubFetch();
+    const fetchMock = globalThis.fetch as unknown as ReturnType<typeof vi.fn>;
+    render(<CeoCommand showBumn={false} />);
+    await waitFor(() => expect(screen.getByTestId("ceo-issues")).toBeInTheDocument());
+    expect(screen.queryByTestId("ceo-bumn")).not.toBeInTheDocument();
+    expect(screen.queryAllByTestId(/^bumn-tile-/)).toHaveLength(0);
+    expect(fetchMock.mock.calls.map((c) => String(c[0])).filter((u) => u.includes("bumn-board"))).toHaveLength(0);
+    // Issue board spans the full width — no two-column split left behind.
+    expect(screen.getByTestId("ceo-wall").className).not.toContain("xl:grid-cols-2");
+  });
+
+  it("without props still renders the BUMN heatboard — /danantara unchanged (T10 regression)", async () => {
+    stubFetch();
+    render(<CeoCommand />);
+    await waitFor(() => expect(screen.getAllByTestId(/^bumn-tile-/)).toHaveLength(7));
+    expect(screen.getByTestId("ceo-bumn")).toBeInTheDocument();
+  });
+
   it("refetches both feeds when refreshNonce changes, and not on mount (T4 support)", async () => {
     stubFetch();
     const fetchMock = globalThis.fetch as unknown as ReturnType<typeof vi.fn>;
