@@ -18,7 +18,7 @@ import { CrisisGate } from "./CrisisGate";
  * All three blocks keep their own fetches and their own live/offline state, so one
  * feed failing degrades only its own block.
  */
-export function DanantaraCommandCenter() {
+export function DanantaraCommandCenter({ mediaIntelligenceHref }: { mediaIntelligenceHref?: string } = {}) {
   // Bumped by the gate's header Refresh; both blocks refetch on the change. The gate
   // delegates rather than fetching directly, so each feed is pulled exactly once.
   const [refreshNonce, setRefreshNonce] = useState(0);
@@ -29,6 +29,7 @@ export function DanantaraCommandCenter() {
         embedded
         refreshNonce={refreshNonce}
         onRefresh={() => setRefreshNonce((n) => n + 1)}
+        mediaIntelligenceHref={mediaIntelligenceHref}
       />
       <CeoCommand showHeader={false} showBumn={false} refreshNonce={refreshNonce} />
       <CounterNarrativeWarRoom refreshNonce={refreshNonce} />
