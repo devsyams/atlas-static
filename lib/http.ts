@@ -10,7 +10,7 @@ import { NextResponse } from "next/server";
  * no host to leak, nothing to spoof, no forwarded-header trust required.
  *
  * Use this for **same-origin** targets only (e.g. `"/login"`,
- * `"/danantara/krisis"`). Keep `NextResponse.redirect(url)` for genuinely
+ * `"/danantara/command"`). Keep `NextResponse.redirect(url)` for genuinely
  * external absolute URLs (OpenGate magic links, fallback origins). It is not
  * `NextResponse.redirect`, which requires an absolute URL and so can't emit a
  * relative `Location`.

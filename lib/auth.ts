@@ -67,7 +67,11 @@ function bumnSlug(scope: Scope): string | null {
 }
 
 export function homeForScope(scope: Scope): string {
-  if (scope === "danantara") return "/danantara/krisis";
+  // The danantara scope's landing (SSO handoff success target in /api/v1/sso, and
+  // the middleware bounce target) is the one-page Command Center. The direct demo
+  // login (`danantara`/danantara2026) still opens the /danantara/krisis fear gate
+  // via its own DEMO_USERS.home — a separate flow.
+  if (scope === "danantara") return "/danantara/command";
   const slug = bumnSlug(scope);
   if (slug) return `/bumn/${slug}`;
   return "/";
