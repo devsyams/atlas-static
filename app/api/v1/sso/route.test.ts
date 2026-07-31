@@ -55,7 +55,7 @@ describe("GET /api/v1/sso (P9)", () => {
     const res = await GET(req(token));
 
     expect(res.status).toBe(302);
-    expect(loc(res)).toBe("/danantara/krisis");
+    expect(loc(res)).toBe("/danantara/command");
     expect(isHostSafe(res)).toBe(true);
 
     const auth = res.cookies.get("atlas_auth");
@@ -82,7 +82,7 @@ describe("GET /api/v1/sso (P9)", () => {
     const res = await GET(req(token));
 
     expect(res.status).toBe(302);
-    expect(loc(res)).toBe("/danantara/krisis");
+    expect(loc(res)).toBe("/danantara/command");
     expect(res.cookies.get("atlas_scope")?.value).toBe("danantara");
   });
 
@@ -112,7 +112,7 @@ describe("GET /api/v1/sso (P9)", () => {
 
     const good = await GET(req(await signSsoToken(claims(), SECRET), CONTAINER));
     expect(good.status).toBe(302);
-    expect(good.headers.get("location")).toBe("/danantara/krisis");
+    expect(good.headers.get("location")).toBe("/danantara/command");
     expect(isHostSafe(good)).toBe(true);
     // Cookies still set on the success handoff.
     expect(good.cookies.get("atlas_auth")?.value).toBe("1");

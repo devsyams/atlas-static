@@ -22,7 +22,7 @@ import { scopeFromClaims, verifySsoToken } from "@/lib/sso-token";
  * never a dead end.
  *
  * Redirect host-safety: both redirects emit a **relative** `Location` (e.g.
- * `/login`, `/danantara/krisis`). Behind the ingress, `req.url`/`req.nextUrl`
+ * `/login`, `/danantara/command`). Behind the ingress, `req.url`/`req.nextUrl`
  * reflect the in-container bind (`0.0.0.0:3000`), so building an absolute URL from
  * them leaks that unreachable address into `Location` and strands the browser even
  * after a successful handoff. A relative `Location` is resolved by the browser

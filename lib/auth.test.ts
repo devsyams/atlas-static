@@ -13,6 +13,14 @@ describe("Danantara demo login", () => {
   it("is reachable for a danantara-scoped user (crisis gate is under /danantara)", () => {
     expect(scopeAllowsPath("danantara", "/danantara/krisis")).toBe(true);
   });
+
+  it("routes the danantara scope home to the command center — the SSO handoff landing", () => {
+    // homeForScope is the /api/v1/sso success target (and the middleware bounce
+    // target). OpenGate product request: land on the one-page Command Center.
+    // NB: the direct demo login above still lands on the /krisis fear gate via its
+    // own DEMO_USERS.home — a deliberately separate flow, left unchanged.
+    expect(homeForScope("danantara")).toBe("/danantara/command");
+  });
 });
 
 describe("scopeAllowsPath", () => {
