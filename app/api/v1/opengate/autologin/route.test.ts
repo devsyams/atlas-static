@@ -116,8 +116,25 @@ describe("GET /api/v1/opengate/autologin (P8)", () => {
     for (const cookie of [null, "atlas_auth=0", "other=1"]) {
       const res = await GET(req(cookie));
       expect(res.status).toBe(307);
-      expect(new URL(res.headers.get("location") ?? "").pathname).toBe("/login");
+      // Relative Location — host-safe behind the ingress (v3.3 bugfix).
+      expect(res.headers.get("location")).toBe("/login");
     }
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("emits a host-safe relative /login redirect when req.url host is the in-container bind (v3.3 bugfix)", async () => {
+    const fetchMock = vi.fn(async () => okUpstream());
+    vi.stubGlobal("fetch", fetchMock);
+    // Prod ingress: req.url host is 0.0.0.0:3000, not the public host. Building the
+    // redirect from req.url leaked that bind (https://0.0.0.0:3000/login); it must
+    // now be a relative path the browser resolves against the public URL.
+    const res = await GET(
+      new Request("http://0.0.0.0:3000/api/v1/opengate/autologin", { headers: {} }),
+    );
+    expect(res.status).toBe(307);
+    const location = res.headers.get("location") ?? "";
+    expect(location).toBe("/login");
+    expect(location).not.toContain("://");
     expect(fetchMock).not.toHaveBeenCalled();
   });
 });
