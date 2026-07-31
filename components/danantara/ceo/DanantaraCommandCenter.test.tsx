@@ -80,11 +80,13 @@ const ROSTER: ThreatDriver[] = [
   },
 ];
 
-/** Route the fetch mock across all four Danantara endpoints. */
-function stubFetch({ boardStatus = 200 } = {}) {
+/** Route the fetch mock across the Danantara endpoints (incl. the now-unused board). */
+function stubFetch({ boardStatus = 200, rosterStatus = 200 } = {}) {
   const fetchMock = vi.fn(async (url: string) => {
     const u = String(url);
-    if (u.includes("/actor-intelligence")) return new Response(JSON.stringify({ actors: ROSTER }), { status: 200 });
+    if (u.includes("counter-narrative")) return new Response(JSON.stringify({ source: "scripted" }), { status: 200 });
+    if (u.includes("/actor-intelligence"))
+      return new Response(JSON.stringify({ actors: ROSTER }), { status: rosterStatus });
     if (u.includes("/threats")) return new Response(JSON.stringify(THREATS_EMPTY), { status: 200 });
     if (u.includes("bumn-board")) return new Response(JSON.stringify(BOARD), { status: boardStatus });
     return new Response(JSON.stringify(TOPICS), { status: 200 });
@@ -102,6 +104,17 @@ describe("DanantaraCommandCenter (A13 — one-page)", () => {
     await waitFor(() => expect(screen.getByTestId("danantara-command-center")).toBeInTheDocument());
     await waitFor(() => expect(screen.getByTestId("crisis-gate")).toBeInTheDocument());
     await waitFor(() => expect(screen.getByTestId("ceo-wall")).toBeInTheDocument());
+  });
+
+  it("adds the Counter-Narrative War Room as the third section, in order (T11)", async () => {
+    stubFetch();
+    const { container } = render(<DanantaraCommandCenter />);
+    await waitFor(() => expect(screen.getByTestId("counter-war-room")).toBeInTheDocument());
+
+    const order = [...container.querySelectorAll("[data-testid]")]
+      .map((el) => el.getAttribute("data-testid"))
+      .filter((id) => id === "crisis-gate" || id === "ceo-wall" || id === "counter-war-room");
+    expect(order).toEqual(["crisis-gate", "ceo-wall", "counter-war-room"]);
   });
 
   it("shows a single header — the wall's HeaderStrip is suppressed (T3)", async () => {
@@ -125,19 +138,40 @@ describe("DanantaraCommandCenter (A13 — one-page)", () => {
 
     await waitFor(() => {
       const urls = fetchMock.mock.calls.map((c) => String(c[0]));
-      expect(urls.filter((u) => u.includes("/topics") && u.includes("fresh=1"))).toHaveLength(2);
+      // /topics once per block: gate, wall, and (v3.0) the war room.
+      expect(urls.filter((u) => u.includes("/topics") && u.includes("fresh=1"))).toHaveLength(3);
       expect(urls.filter((u) => u.includes("/threats") && u.includes("fresh=1"))).toHaveLength(1);
       expect(urls.filter((u) => u.includes("/actor-intelligence") && u.includes("fresh=1"))).toHaveLength(1);
-      expect(urls.filter((u) => u.includes("bumn-board") && u.includes("fresh=1"))).toHaveLength(1);
-      // Exact total: 5 requests. More would mean onRefresh AND the nonce both fetched.
-      expect(urls).toHaveLength(5);
+      // Exact total: 5 feed requests. More would mean onRefresh AND the nonce both
+      // fetched. (The war room's own POST to /counter-narrative is not a feed read
+      // and is filtered out below.)
+      expect(urls.filter((u) => !u.includes("counter-narrative"))).toHaveLength(5);
     });
   });
 
-  it("keeps the crisis index live when the BUMN board feed fails (T5)", async () => {
-    stubFetch({ boardStatus: 502 });
+  it("keeps the CEO wall mounted when the actor roster feed fails (T5)", async () => {
+    stubFetch({ rosterStatus: 502 });
     render(<DanantaraCommandCenter />);
     await waitFor(() => expect(screen.getByTestId("crisis-score").textContent).toMatch(/\d/));
     expect(screen.getByTestId("ceo-wall")).toBeInTheDocument();
+  });
+
+  it("carries no BUMN sentiment section and never fetches /bumn-board (T9)", async () => {
+    const fetchMock = stubFetch();
+    render(<DanantaraCommandCenter />);
+    await waitFor(() => expect(screen.getByTestId("ceo-issues")).toBeInTheDocument());
+    expect(screen.queryByTestId("ceo-bumn")).not.toBeInTheDocument();
+    expect(screen.queryAllByTestId(/^bumn-tile-/)).toHaveLength(0);
+    expect(fetchMock.mock.calls.map((c) => String(c[0])).filter((u) => u.includes("bumn-board"))).toHaveLength(0);
+  });
+
+  it("still shows the Danantara issue board — negative and positive topics (T9)", async () => {
+    stubFetch();
+    render(<DanantaraCommandCenter />);
+    await waitFor(() => expect(screen.getByTestId("issue-group-negative")).toBeInTheDocument());
+    expect(screen.getByTestId("issue-group-positive")).toBeInTheDocument();
+    // The negative topic also headlines the gate above, so scope to the board.
+    expect(screen.getByTestId("issue-group-negative").textContent).toContain("Investasi Hilirisasi Nikel");
+    expect(screen.getByTestId("issue-group-positive").textContent).toContain("Topik Positif");
   });
 });

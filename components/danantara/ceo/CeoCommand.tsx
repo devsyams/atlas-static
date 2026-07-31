@@ -21,10 +21,17 @@ type Live = "loading" | "live" | "offline";
  */
 export function CeoCommand({
   showHeader = true,
+  showBumn = true,
   refreshNonce,
 }: {
   /** A13 embeds this wall under the Crisis Gate's header — pass `false` to drop ours. */
   showHeader?: boolean;
+  /**
+   * A13 v2.0 wants the Danantara topics only — pass `false` to drop the BUMN
+   * heatboard. The `/bumn-board` feed is then never fetched, and the issue board
+   * takes the full width.
+   */
+  showBumn?: boolean;
   /** Parent-driven refresh: refetch when this value *changes* (never on mount). */
   refreshNonce?: number;
 } = {}) {
@@ -43,41 +50,48 @@ export function CeoCommand({
     };
   }, []);
 
-  const load = useCallback((fresh = false) => {
-    const q = fresh ? "?fresh=1" : "";
-    const topics = fetch(`/api/v1/danantara/topics${q}`)
-      .then((r) => {
-        if (!r.ok) throw new Error(`HTTP ${r.status}`);
-        return r.json();
-      })
-      .then((j: { issues?: CeoIssue[] }) => {
-        if (!mountedRef.current) return;
-        setIssues(Array.isArray(j.issues) ? j.issues : []);
-        setIssuesLive("live");
-      })
-      .catch(() => {
-        if (mountedRef.current) setIssuesLive("offline");
-      });
+  const load = useCallback(
+    (fresh = false) => {
+      const q = fresh ? "?fresh=1" : "";
+      const topics = fetch(`/api/v1/danantara/topics${q}`)
+        .then((r) => {
+          if (!r.ok) throw new Error(`HTTP ${r.status}`);
+          return r.json();
+        })
+        .then((j: { issues?: CeoIssue[] }) => {
+          if (!mountedRef.current) return;
+          setIssues(Array.isArray(j.issues) ? j.issues : []);
+          setIssuesLive("live");
+        })
+        .catch(() => {
+          if (mountedRef.current) setIssuesLive("offline");
+        });
 
-    const board = fetch(`/api/v1/danantara/bumn-board${q}`)
-      .then((r) => {
-        if (!r.ok) throw new Error(`HTTP ${r.status}`);
-        return r.json();
-      })
-      .then((j: { bumn?: BumnSentiment[]; issues?: CeoIssue[] }) => {
-        if (!mountedRef.current) return;
-        setBumn(Array.isArray(j.bumn) ? j.bumn : []);
-        setBumnIssues(Array.isArray(j.issues) ? j.issues : []);
-        setBumnLive("live");
-      })
-      .catch(() => {
-        if (mountedRef.current) setBumnLive("offline");
-      });
+      // Nothing on the page reads the BUMN board when it isn't rendered (A13 v2.0),
+      // so skip the call entirely rather than paying for a discarded response.
+      const board = showBumn
+        ? fetch(`/api/v1/danantara/bumn-board${q}`)
+            .then((r) => {
+              if (!r.ok) throw new Error(`HTTP ${r.status}`);
+              return r.json();
+            })
+            .then((j: { bumn?: BumnSentiment[]; issues?: CeoIssue[] }) => {
+              if (!mountedRef.current) return;
+              setBumn(Array.isArray(j.bumn) ? j.bumn : []);
+              setBumnIssues(Array.isArray(j.issues) ? j.issues : []);
+              setBumnLive("live");
+            })
+            .catch(() => {
+              if (mountedRef.current) setBumnLive("offline");
+            })
+        : Promise.resolve();
 
-    Promise.allSettled([topics, board]).finally(() => {
-      if (mountedRef.current) setRefreshing(false);
-    });
-  }, []);
+      Promise.allSettled([topics, board]).finally(() => {
+        if (mountedRef.current) setRefreshing(false);
+      });
+    },
+    [showBumn],
+  );
 
   useEffect(() => {
     load(false);
@@ -119,19 +133,24 @@ export function CeoCommand({
       {/* Running narration sits broadcast-style at the top, right under the headline numbers. */}
       <AiBriefTicker state={headerState} />
 
-      <div data-testid="ceo-wall" className="grid grid-cols-1 gap-3 xl:min-h-0 xl:flex-1 xl:grid-cols-2">
+      <div
+        data-testid="ceo-wall"
+        className={`grid grid-cols-1 gap-3 xl:min-h-0 xl:flex-1 ${showBumn ? "xl:grid-cols-2" : ""}`}
+      >
         {/* Phone order matches AC7: header → ticker → issues → BUMN. */}
         <div className="min-h-0">
           <IssueBoard issues={issues} loading={issuesLive === "loading"} onSelect={(id) => setDetail({ type: "issue", id })} />
         </div>
-        <div className="min-h-0">
-          <BumnHeatboard
-            rows={rankedBumn}
-            issues={bumnIssues}
-            loading={bumnLive === "loading"}
-            onSelectTopic={(id) => setDetail({ type: "issue", id })}
-          />
-        </div>
+        {showBumn && (
+          <div className="min-h-0">
+            <BumnHeatboard
+              rows={rankedBumn}
+              issues={bumnIssues}
+              loading={bumnLive === "loading"}
+              onSelectTopic={(id) => setDetail({ type: "issue", id })}
+            />
+          </div>
+        )}
       </div>
 
       {detail && (

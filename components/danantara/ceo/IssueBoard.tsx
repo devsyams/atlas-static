@@ -42,9 +42,17 @@ function IssueCard({ issue, rank, onSelect }: { issue: CeoIssue; rank: number; o
           <div className="topic-rank pt-0.5 font-mono text-2xl font-extrabold sm:text-3xl">{String(rank).padStart(2, "0")}</div>
 
           <div className="min-w-0">
-            {/* Title. */}
+            {/* Title — clamped to a fixed two-line box (v46.3). Both are needed: the
+                clamp stops a long title pushing the card taller, the min-height stops
+                a short one letting it collapse. Without them a card is 195px or 220px
+                purely on whether the title wraps, and the Negative/Positive columns
+                stop lining up. Full text stays one click away in the detail modal. */}
             <div className="flex items-start gap-2">
-              <h3 data-testid="issue-title" className="min-w-0 flex-1 text-lg font-semibold leading-snug text-balance text-foreground">
+              <h3
+                data-testid="issue-title"
+                title={issue.title}
+                className="line-clamp-2 min-h-[2.75em] min-w-0 flex-1 text-lg font-semibold leading-snug text-balance text-foreground"
+              >
                 {issue.title}
               </h3>
               {status.label && (
@@ -52,12 +60,15 @@ function IssueCard({ issue, rank, onSelect }: { issue: CeoIssue; rank: number; o
               )}
             </div>
 
-            {/* Penjelasan. */}
-            {issue.aiLine && (
-              <p data-testid="issue-ailine" className="mt-1 line-clamp-2 text-base font-normal leading-snug text-muted-foreground">
-                {issue.aiLine}
-              </p>
-            )}
+            {/* Penjelasan — always rendered, so a topic without one doesn't collapse
+                the card below its neighbours. */}
+            <p
+              data-testid="issue-ailine"
+              title={issue.aiLine}
+              className="mt-1 line-clamp-2 min-h-[2.75em] text-base font-normal leading-snug text-muted-foreground"
+            >
+              {issue.aiLine}
+            </p>
 
             {/* Metrics row — Sentiment · Impressions · Reach (mirrors the BUMN Sentiment Summary).
                 The verdict here is the qualitative tone; the exact %s live once in the legend below. */}
@@ -125,8 +136,12 @@ function IssueSkeletonCard() {
     <li className="panel overflow-hidden p-0">
       <div className="grid grid-cols-[1.75rem_1fr] gap-x-2.5 p-3 pl-4">
         <div className="skeleton h-7 w-7 rounded-md" />
+        {/* Mirrors the real card: a two-line title, a two-line penjelasan, the bar
+            and the legend — so the reveal doesn't jump. */}
         <div className="space-y-2.5">
           <div className="skeleton h-5 w-[85%]" />
+          <div className="skeleton h-5 w-[60%]" />
+          <div className="skeleton h-4 w-[90%]" />
           <div className="skeleton h-4 w-[55%]" />
           <div className="skeleton h-2 w-full rounded-full" />
           <div className="skeleton h-4 w-2/3" />

@@ -857,3 +857,64 @@
   border-color: color-mix(in oklch, var(--tone) 40%, var(--color-border));
   background: radial-gradient(130% 130% at 100% 0%, color-mix(in oklch, var(--tone) 10%, transparent), transparent 58%);
 }
+
+/* ── Simulation Console (A15) ────────────────────────────────────────────────
+   This route runs a deliberate light theme inside an otherwise dark app. The
+   global scrollbars are themed for the dark shell (blue gradient on a dark
+   track) and looked wrong on white paper, so they are re-themed for anything
+   inside the console. Scoped to `.sim-console` — nothing leaks out. */
+.sim-console {
+  scrollbar-color: rgba(0, 0, 0, 0.22) transparent;
+}
+.sim-console *::-webkit-scrollbar {
+  width: 9px;
+  height: 9px;
+}
+.sim-console *::-webkit-scrollbar-track {
+  background: transparent;
+}
+.sim-console *::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.18);
+  border-radius: 8px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+  box-shadow: none;
+}
+.sim-console *::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.32);
+  background-clip: padding-box;
+  border: 2px solid transparent;
+  box-shadow: none;
+}
+
+/* The terminal keeps a light-on-dark scrollbar so it doesn't wash out. */
+.sim-terminal *::-webkit-scrollbar-thumb,
+.sim-terminal::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.22);
+  background-clip: padding-box;
+}
+.sim-terminal *::-webkit-scrollbar-thumb:hover,
+.sim-terminal::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.38);
+  background-clip: padding-box;
+}
+
+/* ── A15: simulation console CTA — matches the reference console's idle pulse ──
+   Their "Try Now" is a solid button with `animation: pulse-border 2s infinite`
+   (an expanding, fading box-shadow) so the entry point keeps drawing the eye even
+   before anyone touches it. Ours is a text row rather than a solid block, so the
+   pulse rides the border-top and nudges the arrow instead of the whole button —
+   same idea, fitted to our own shape. */
+@keyframes sim-cta-pulse {
+  0%, 100% { border-top-color: rgba(0, 0, 0, 0.1); }
+  50% { border-top-color: rgba(232, 98, 42, 0.7); }
+}
+@keyframes sim-cta-arrow {
+  0%, 100% { transform: translateX(0); }
+  50% { transform: translateX(4px); }
+}
+.sim-cta-pulse { animation: sim-cta-pulse 2s ease-in-out infinite; }
+.sim-cta-pulse .sim-cta-arrow { animation: sim-cta-arrow 2s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .sim-cta-pulse, .sim-cta-pulse .sim-cta-arrow { animation: none; }
+}
