@@ -513,3 +513,120 @@ no `idQuery` simply hide the deep link; no cost ledger impact (no LLM call).
 | 3.1 | 2026-06-15 | **MINOR** (presentation, no behaviour change) — rename the topic deep-link button **"View in Nexorus" → "View Nexorus Opengate"** (matches the gear-menu "Nexorus Opengate" wording), after live confirmation the deep link works. Label only; ACs/T6 quote updated. `DetailModal.tsx` |
 | 3.2 | 2026-06-19 | **Bugfix** — the topic deep link worked locally but on **Vercel** landed on the generic OpenGate dashboard, not the topic. Root cause: both OpenGate routes minted with `OPENGATE_API_KEY \|\| DANANTARA_TOPICS_API_KEY`, and a missing/stale `OPENGATE_API_KEY` on the deploy won the `\|\|` and minted against the wrong account. Since the OpenGate autologin key **is** the topics-feed key, both routes (`nexorus/topic`, `opengate/autologin`) now read `DANANTARA_TOPICS_API_KEY` **directly**; `OPENGATE_API_KEY` retired from `.env.example`. No AC change (key still server-side; behaviour identical given correct config). TDD: key-drift regression test per route asserts a stray `OPENGATE_API_KEY` is ignored. **NB:** if a deploy still mislands, verify `OPENGATE_AUTOLOGIN_BASE` next |
 | 3.0 | 2026-06-15 | **MAJOR** — backend ask resolved (OpenGate team). The deep link now mints through **OpenGate's** `autologin_generate` with `redirect` **baked into the generate call** (url-encoded) and 307s straight to the returned `login_url`. **Live-corrected:** OpenGate **hosts the dashboard** and appends the decoded `redirect` after a fixed `dashboard_demo?`, so the param is the **query string only** (`id=monitoring&idquery=…`), **not** a full URL (a URL nested as `…/dashboard_demo?https://…/dashboard_demo?…`); target is OpenGate, garudaperkasa no longer involved. **Topic-precise now** — the v2.0 interim "signed-in dashboard home" landing is gone. Route repointed to `OPENGATE_AUTOLOGIN_BASE` + `OPENGATE_API_KEY`, fallback = OpenGate origin; `NEXORUS_DASHBOARD_AUTOLOGIN_BASE`/`NEXORUS_DASHBOARD_API_KEY`/`NEXORUS_DASHBOARD_BASE` retired. AC7/AC9 amended, T7/T8 reworked; integration doc marked resolved |
+
+---
+
+### P9. OpenGate → Danantara SSO handoff (inbound autologin)
+
+- **Version:** 1.0 · **Stage:** 0-platform · **Sprint:** demo · **Status:** Built
+  · **Spec ref:** cross-team SSO contract locked with the OpenGate (TrawlDeckCorcom) team, 2026-07-31 · **Owner:** platform
+
+#### PM
+**Background (why):** OpenGate is adding a product-demo flow where a user logs in at
+`demo-opengate.atlas.nexorus-alpha.io` and is then redirected to the Danantara app at
+`danantara.atlas.nexorus-alpha.io`. Today Danantara's auth is a self-contained demo gate
+(`middleware.ts` + client-set `atlas_auth`/`atlas_scope` cookies from `app/login/page.tsx`), with
+**no** JWT verification, **no** shared secret, and **no** IdP — so a user arriving from OpenGate is
+bounced to `/login` and must sign in **again**, breaking the "one platform" demo illusion. P8 already
+does the **outbound** direction (Danantara → OpenGate autologin magic link); this is its **inbound
+mirror**: accept a short-lived signed token from OpenGate and establish Danantara's own session
+without a second login. The two apps share subdomains under `*.atlas.nexorus-alpha.io`, so a
+top-level redirect between them is same-site.
+
+**Contract (locked cross-team, 2026-07-31 — build to this exactly):**
+- **Secret:** a **dedicated** shared secret `DANANTARA_SSO_SECRET` (**not** OpenGate's
+  `AUTH_JWT_SECRET`); the same value is sealed into both apps' k8s env.
+- **Token:** HS256 JWT signed with `DANANTARA_SSO_SECRET`. Claims: `iss:'opengate'`,
+  `aud:'danantara'`, `iat`, `exp = iat + 120s`, `sub:<opengate user id>`, `email:<user email>`,
+  `scope:'danantara'`.
+- **Endpoint:** `GET /api/v1/sso?token=<jwt>` — a Node route under `/api` (the middleware matcher
+  skips `/api`, so a logged-out arrival is **not** bounced before the token is consumed).
+- **Scope:** OpenGate always sends `scope:'danantara'`; `atlas_scope` is set from that claim,
+  defaulting to `'danantara'` when absent.
+- **Replay guard:** the 120 s `exp` — **no** single-use/`jti` store.
+
+**Acceptance criteria (Given / When / Then):**
+- **AC1** — *Given* a valid, unexpired HS256 token signed with `DANANTARA_SSO_SECRET` whose
+  `aud === 'danantara'`, *When* `GET /api/v1/sso?token=…` is requested, *Then* the response **302s**
+  to the scope's dashboard home (`homeForScope` → `/danantara/krisis` for `danantara`) and a local
+  session is established.
+- **AC2** — *Given* a token that is missing, malformed, not `HS256`, badly signed, wrong-audience,
+  or **expired**, *When* the endpoint is hit, *Then* it **302s to `/login`** and sets **no** session
+  cookies (fails closed — never a partial session, never a dead end).
+- **AC3** — *Given* `DANANTARA_SSO_SECRET` is unset, *When* any token is presented, *Then* it **302s
+  to `/login`** without trusting the unverifiable input.
+- **AC4** — *Given* a successful handoff, *Then* `atlas_auth=1` and `atlas_scope=<scope claim>` are
+  set as **`httpOnly`, `Path=/`, `SameSite=Lax`** cookies (24 h max-age), matching the middleware
+  gate's cookie names so the user is considered logged in on every page.
+- **AC5** — *Given* the token's `exp` (iat + 120 s), *When* `exp` has passed, *Then* the token is
+  rejected (the short `exp` is the **only** replay guard, per contract; no `jti`).
+- **AC6** — *Given* the `scope` claim (or its absence), *Then* `atlas_scope` is set to the claim
+  value, defaulting to `'danantara'`, and the landing route follows `homeForScope(parseScope(scope))`.
+
+#### Architecture
+**Impact — files add/change:**
+- `add` `lib/sso-token.ts` — pure, dependency-free HS256 verify/sign over **WebCrypto**
+  (`crypto.subtle` HMAC-SHA256, available in the Node route runtime and vitest's node env — no `jose`,
+  no `jsonwebtoken`). `verifySsoToken(token, secret, nowMs)` checks structure → `alg==='HS256'`
+  (blocks `alg:none`/alg-confusion) → signature → `aud==='danantara'` → `exp` not passed, returning
+  typed claims only on full success. `signSsoToken` is a reference/test signer (live signer is
+  OpenGate). `scopeFromClaims` applies the `'danantara'` default.
+- `add` `app/api/v1/sso/route.ts` — GET BFF: reads `?token`, verifies against
+  `process.env.DANANTARA_SSO_SECRET` at `Date.now()`, on success sets the two `httpOnly` cookies and
+  **302s** to `homeForScope(parseScope(scope))`, on any failure **302s** to `/login`. `dynamic =
+  "force-dynamic"` (token in query, never cached).
+- `add` `lib/sso-token.test.ts`, `app/api/v1/sso/route.test.ts` — vitest units (see QA).
+- `change` `.env.example` — document the new server-only secret `DANANTARA_SSO_SECRET`.
+
+**Data-model / API changes:** one new endpoint `GET /api/v1/sso?token=…` (302 redirect; no JSON
+contract). No DB changes. Reuses the existing `atlas_auth`/`atlas_scope` cookie contract.
+
+**Reuse:** `homeForScope` + `parseScope` from `lib/auth.ts` (scope → landing + sanitisation);
+`atlas_auth`/`atlas_scope` cookie convention from `middleware.ts`; the P8 BFF shape (session cookie
+gate, `force-dynamic`, redirect-only, graceful fallback). No new dependency.
+
+**Risks:**
+- **R1 — `httpOnly` vs. existing client-side cookie reads.** The contract mandates `httpOnly`, but
+  today's `app/login/page.tsx` sets these cookies **non-`httpOnly`** because two client-side spots
+  read/clear them via `document.cookie`: (a) `AppShell.tsx:73` reads `atlas_scope` to filter the gear
+  menu, and (b) the sign-out button (`AppShell.tsx:355-356`) clears both cookies. For a user who
+  arrives via **SSO** (httpOnly cookies), (a) makes the gear menu show all dashboard links instead of
+  only Danantara's — **cosmetic only, the server-side middleware scope gate still enforces access
+  correctly** because middleware reads the cookie server-side; and (b) the JS sign-out silently
+  no-ops (can't clear an httpOnly cookie). **Mitigation / follow-up (not in this feature):** add a
+  tiny server logout route that clears the cookies via `Set-Cookie; Max-Age=0` and point the AppShell
+  sign-out at it; optionally have the middleware pass a non-sensitive scope hint for the menu. Flagged
+  to the OpenGate team for parity sign-off.
+- **R2 — alg-confusion / `alg:none`.** Mitigated: `alg` is pinned to `HS256` before signature
+  verification; anything else is rejected.
+- **R3 — replay.** Bounded to the 120 s `exp` window by contract (no `jti`); `force-dynamic` +
+  server-side clock. Acceptable for the demo; documented.
+- **R4 — clock skew** between the OpenGate signer and the Danantara verifier could reject a
+  just-issued token near the 120 s edge. No skew tolerance added (kept strict per contract); noted
+  for the OpenGate team.
+
+#### QA
+| # | Maps to | Test case | Type |
+|---|---|---|---|
+| T1 | AC1/AC6 | valid token (aud `danantara`, unexpired) → `verifySsoToken` returns `{valid:true, claims}` with the right `sub`/`email`/`scope` | unit |
+| T2 | AC5 | token with `exp` in the past → `{valid:false, reason:'expired'}` | unit |
+| T3 | AC2 | wrong secret (signature mismatch) and tampered payload → `{valid:false, reason:'bad-signature'}` | unit |
+| T4 | AC2 | `aud !== 'danantara'` → `{valid:false, reason:'bad-audience'}`; `alg` not `HS256` (incl. `none`) → `bad-alg`; non-3-part token → `malformed` | unit |
+| T5 | AC3 | missing secret → `{valid:false, reason:'no-secret'}`; missing token → `no-token` | unit |
+| T6 | AC6 | `scopeFromClaims` returns the `scope` claim, or `'danantara'` when absent/empty | unit |
+| T7 | AC1/AC4/AC6 | route: valid token → **302** to `/danantara/krisis`; sets `atlas_auth=1` + `atlas_scope=danantara` with `HttpOnly`, `Path=/`, `SameSite=Lax` | integration |
+| T8 | AC2/AC5 | route: expired · bad-signature · wrong-aud · missing-token → **302** to `/login`, **no** `Set-Cookie` session cookies | integration |
+| T9 | AC3 | route: `DANANTARA_SSO_SECRET` unset + otherwise-valid token → **302** to `/login`, no cookies, no trust | integration |
+| T10 | AC6 | route: valid token with **no** `scope` claim → `atlas_scope=danantara`, lands `/danantara/krisis` | integration |
+
+**Governance edge cases:** endpoint lives under `/api` so the middleware matcher never bounces a
+logged-out arrival before token consumption; **`token` is the only accepted input**; the secret +
+all verification are server-side only and never emitted in any header/body; `alg` pinned to `HS256`
+(alg-confusion/`alg:none` rejected); **fails closed** on every error path (→ `/login`), never a
+partial session; cookies are `httpOnly` (not JS-readable) — see Risk R1 for the AppShell/logout
+follow-up; no LLM call → no cost-ledger impact.
+
+#### Revision history
+| Version | Date | Change |
+|---|---|---|
+| 1.0 | 2026-07-31 | Initial plan + build (TDD) — inbound OpenGate→Danantara SSO handoff to the locked cross-team contract: `GET /api/v1/sso?token=<HS256 jwt>` verified with the dedicated `DANANTARA_SSO_SECRET` (WebCrypto, zero-dep), `aud`/`exp` checked, sets `httpOnly` `atlas_auth`/`atlas_scope` and 302s to the scope home; failure → `/login`. AC1–AC6, T1–T10 |

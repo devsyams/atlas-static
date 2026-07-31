@@ -20,6 +20,7 @@
 | **P6** | RBAC, route guards & audit log | 0-platform | S2 | E3 | 1.0 | Planned |
 | **P7** | Observability, hardening, backups & launch | 0-platform | S1,S6 | E8,E9 | 1.0 | Planned |
 | **P8** | Nexorus cross-app link (autologin: home + per-topic deep link) | 0-platform | demo | — | 3.2 | Built |
+| **P9** | OpenGate → Danantara SSO handoff (inbound autologin) | 0-platform | demo | — | 1.0 | Built |
 | **W1** | Source registry & scheduler | 1-watch | S3 | E4 | 1.0 | Planned |
 | **W2** | RSS & news-API connectors | 1-watch | S3 | E4 | 1.0 | Planned |
 | **W3** | Social connectors (X/IG/FB/TikTok) | 1-watch | S3–S4 | E4 | 1.0 | Planned |
@@ -44,7 +45,7 @@
 | **A12** | JasaMarga AI Ops Insight & Predictions (LLM-backed) | 3-act | demo | — | 7.0 | Built |
 | **A13** | Danantara Command Center (one-page) | 3-act | demo | — | 1.0 | Built |
 
-**Totals:** 31 features · 8 platform · 5 watch · 5 understand · 13 act.
+**Totals:** 32 features · 9 platform · 5 watch · 5 understand · 13 act.
 
 ## Sprint → feature map (delivery view)
 
@@ -172,3 +173,4 @@
 | 1.109 | 2026-07-29 | A10 → **v5.3 In progress (client request, TDD)** — **panel 3 always the roster**: `/threats` carries no avatars, so v5.2's threat-driver path drifted the actors column to bare initials whenever a real incident appeared. Decouple panel 3 → new **`/api/v1/danantara/actor-intelligence`** BFF (real profile pictures every time); `/threats` reverts to `{ threat, stats }` (panel-2 headline only). `CrisisGate` third fetch; `driversSource` dropped. AC9 amended + AC11 + T21/T22; **420/420 green**, tsc + lint clean, live-verified (panel 3 always the roster with real avatars; panel-2 `/topics` fallback also seen live once topics recovered) |
 | 1.110 | 2026-07-29 | A10 → **v5.4 Built (presentation only)** — long actor `@handle`s in panel 3 (e.g. `@konveksi_karawang_cikampek`) now **wrap to a new line** instead of truncating: `ThreatActors` handle uses `break-words`/`leading-tight` + `items-start`. No behaviour change |
 | 1.111 | 2026-07-30 | Added **A13 (Danantara Command Center, one-page)** at v1.0 In progress — new `/danantara/command` stacks the A10 Crisis Gate over the A7 CEO wall in one continuously scrolling page (one header, one refresh, no route hop), composed via four opt-in props that default to current behaviour so `/danantara` + `/danantara/krisis` stay byte-identical. A7 → v46.1, A10 → v5.5 (MINOR, props only). From client request ("make it a Single Page Application"); 30→31 features |
+| 1.112 | 2026-07-31 | Added **P9** (OpenGate → Danantara SSO handoff) at v1.0 Built (TDD) — inbound mirror of P8: `GET /api/v1/sso?token=<HS256 jwt>` verified with the dedicated shared secret `DANANTARA_SSO_SECRET` (zero-dep WebCrypto HMAC), `aud==='danantara'` + 120 s `exp` checked, establishes Danantara's own session (`httpOnly` `atlas_auth`/`atlas_scope`, `Path=/`, `SameSite=Lax`) then 302s to the scope home; every failure fails closed to `/login`. Flagged R1: `httpOnly` interacts with the existing client-side `atlas_scope` read + JS logout (`AppShell`), server-side gate unaffected — logout-route follow-up noted. 31→32 features |
