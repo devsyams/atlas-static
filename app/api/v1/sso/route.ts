@@ -21,6 +21,13 @@ import { scopeFromClaims, verifySsoToken } from "@/lib/sso-token";
  * Fails closed: a missing/malformed/wrong-alg/badly-signed/wrong-audience/expired
  * token — or a missing secret — degrades to `/login`, never a partial session and
  * never a dead end.
+ *
+ * Redirect host-safety: both redirects emit a **relative** `Location` (e.g.
+ * `/login`, `/danantara/krisis`). Behind the ingress, `req.url`/`req.nextUrl`
+ * reflect the in-container bind (`0.0.0.0:3000`), so building an absolute URL from
+ * them leaks that unreachable address into `Location` and strands the browser even
+ * after a successful handoff. A relative `Location` is resolved by the browser
+ * against the public URL it requested — no host to leak, nothing to spoof.
  */
 
 // 24 h, matching the cookies the login page sets so an SSO session behaves like a
@@ -30,17 +37,22 @@ const SESSION_MAX_AGE = 60 * 60 * 24;
 
 export const dynamic = "force-dynamic";
 
+/** 302 with a relative `Location` — host-safe behind the ingress (see above).
+ *  Not `NextResponse.redirect`, which requires an absolute URL. */
+function redirectTo(path: string): NextResponse {
+  return new NextResponse(null, { status: 302, headers: { Location: path } });
+}
+
 export async function GET(req: Request) {
   const token = new URL(req.url).searchParams.get("token");
   const result = await verifySsoToken(token, process.env.ATLAS_SSO_SECRET, Date.now());
 
   if (!result.valid) {
-    return NextResponse.redirect(new URL("/login", req.url), 302);
+    return redirectTo("/login");
   }
 
   const scope = scopeFromClaims(result.claims);
-  const home = homeForScope(parseScope(scope));
-  const res = NextResponse.redirect(new URL(home, req.url), 302);
+  const res = redirectTo(homeForScope(parseScope(scope)));
 
   const attrs = { httpOnly: true, path: "/", sameSite: "lax" as const, maxAge: SESSION_MAX_AGE };
   res.cookies.set("atlas_auth", "1", attrs);

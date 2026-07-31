@@ -518,7 +518,7 @@ no `idQuery` simply hide the deep link; no cost ledger impact (no LLM call).
 
 ### P9. OpenGate → Danantara SSO handoff (inbound autologin)
 
-- **Version:** 1.0 · **Stage:** 0-platform · **Sprint:** demo · **Status:** Built
+- **Version:** 1.1 · **Stage:** 0-platform · **Sprint:** demo · **Status:** Built
   · **Spec ref:** cross-team SSO contract locked with the OpenGate (TrawlDeckCorcom) team, 2026-07-31 · **Owner:** platform
 
 #### PM
@@ -562,6 +562,11 @@ top-level redirect between them is same-site.
   rejected (the short `exp` is the **only** replay guard, per contract; no `jti`).
 - **AC6** — *Given* the `scope` claim (or its absence), *Then* `atlas_scope` is set to the claim
   value, defaulting to `'danantara'`, and the landing route follows `homeForScope(parseScope(scope))`.
+- **AC7** *(v1.1 bugfix)* — *Given* the app runs behind the ingress (where `req.url`/`req.nextUrl`
+  reflect the in-container bind `0.0.0.0:3000`, not the public host), *When* either redirect is
+  emitted (success **or** fail-closed), *Then* the `Location` is a **relative** path (`/login`,
+  `/danantara/krisis`) — never an absolute URL carrying the bind host — so the browser resolves it
+  against the public URL it requested and never lands on an unreachable `https://0.0.0.0:3000/…`.
 
 #### Architecture
 **Impact — files add/change:**
@@ -618,6 +623,7 @@ gate, `force-dynamic`, redirect-only, graceful fallback). No new dependency.
 | T8 | AC2/AC5 | route: expired · bad-signature · wrong-aud · missing-token → **302** to `/login`, **no** `Set-Cookie` session cookies | integration |
 | T9 | AC3 | route: `ATLAS_SSO_SECRET` unset + otherwise-valid token → **302** to `/login`, no cookies, no trust | integration |
 | T10 | AC6 | route: valid token with **no** `scope` claim → `atlas_scope=danantara`, lands `/danantara/krisis` | integration |
+| T11 | AC7 | route: request arriving with the in-container-bind host (`http://0.0.0.0:3000/…`) → both the success (`/danantara/krisis`) and fail-closed (`/login`) `Location` are **relative** (start `/`, no `://`), never `http://0.0.0.0:3000/…` | integration |
 
 **Governance edge cases:** endpoint lives under `/api` so the middleware matcher never bounces a
 logged-out arrival before token consumption; **`token` is the only accepted input**; the secret +
@@ -630,3 +636,4 @@ follow-up; no LLM call → no cost-ledger impact.
 | Version | Date | Change |
 |---|---|---|
 | 1.0 | 2026-07-31 | Initial plan + build (TDD) — inbound OpenGate→Danantara SSO handoff to the locked cross-team contract: `GET /api/v1/sso?token=<HS256 jwt>` verified with the dedicated `ATLAS_SSO_SECRET` (WebCrypto, zero-dep), `aud`/`exp` checked, sets `httpOnly` `atlas_auth`/`atlas_scope` and 302s to the scope home; failure → `/login`. AC1–AC6, T1–T10 |
+| 1.1 | 2026-07-31 | **Bugfix (TDD)** — redirect `Location` leaked the in-container bind host. Behind the ingress `req.url` reflects `0.0.0.0:3000`, so `NextResponse.redirect(new URL(path, req.url))` emitted `https://0.0.0.0:3000/login` (and would have sent a **successful** handoff to `https://0.0.0.0:3000/danantara/krisis` → unreachable). Both redirects now emit a **relative** `Location` via a small `redirectTo(path)` helper (`new NextResponse(null, {status:302, headers:{Location:path}})`); the browser resolves it against the public URL — host-safe, unspoofable, no forwarded-header trust needed. Reported by the OpenGate agent during pre-demo verification. AC7 + T11 added; +1 test, live-verified via curl (both paths relative). No contract/behaviour change beyond the emitted host |

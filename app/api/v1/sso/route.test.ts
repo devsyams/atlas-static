@@ -20,15 +20,27 @@ function claims(overrides: Partial<SsoClaims> = {}): SsoClaims {
   };
 }
 
-const req = (token: string | null) =>
+const req = (token: string | null, base = "http://localhost") =>
   new Request(
     token === null
-      ? "http://localhost/api/v1/sso"
-      : `http://localhost/api/v1/sso?token=${encodeURIComponent(token)}`,
+      ? `${base}/api/v1/sso`
+      : `${base}/api/v1/sso?token=${encodeURIComponent(token)}`,
   );
 
-/** Location pathname of a redirect response. */
-const loc = (res: Response) => new URL(res.headers.get("location") ?? "").pathname;
+/** Location pathname (resolves a relative Location against a placeholder base). */
+const loc = (res: Response) =>
+  new URL(res.headers.get("location") ?? "", "http://placeholder.invalid").pathname;
+
+/**
+ * A redirect Location is host-safe when it is a relative path — no scheme/host —
+ * so the browser resolves it against the public URL it requested rather than the
+ * in-container bind address (0.0.0.0:3000) that `req.url` reflects behind the
+ * ingress.
+ */
+const isHostSafe = (res: Response) => {
+  const l = res.headers.get("location") ?? "";
+  return l.startsWith("/") && !l.includes("://");
+};
 
 describe("GET /api/v1/sso (P9)", () => {
   beforeEach(() => {
@@ -44,6 +56,7 @@ describe("GET /api/v1/sso (P9)", () => {
 
     expect(res.status).toBe(302);
     expect(loc(res)).toBe("/danantara/krisis");
+    expect(isHostSafe(res)).toBe(true);
 
     const auth = res.cookies.get("atlas_auth");
     const scope = res.cookies.get("atlas_scope");
@@ -84,9 +97,30 @@ describe("GET /api/v1/sso (P9)", () => {
 
     expect(res.status).toBe(302);
     expect(loc(res)).toBe("/login");
+    expect(isHostSafe(res)).toBe(true);
     expect(res.cookies.get("atlas_auth")).toBeUndefined();
     expect(res.cookies.get("atlas_scope")).toBeUndefined();
     expect(res.headers.getSetCookie()).toHaveLength(0);
+  });
+
+  it("emits host-safe relative redirects even when req.url host is the in-container bind (T11/AC7 — v1.1 bugfix)", async () => {
+    // Reproduces the prod ingress condition: req.url host is 0.0.0.0:3000, not the
+    // public host. Building the redirect from req.url leaked that bind address
+    // (Location: https://0.0.0.0:3000/…), sending the browser somewhere unreachable
+    // even though auth succeeded. Both redirects must now be relative paths.
+    const CONTAINER = "http://0.0.0.0:3000";
+
+    const good = await GET(req(await signSsoToken(claims(), SECRET), CONTAINER));
+    expect(good.status).toBe(302);
+    expect(good.headers.get("location")).toBe("/danantara/krisis");
+    expect(isHostSafe(good)).toBe(true);
+    // Cookies still set on the success handoff.
+    expect(good.cookies.get("atlas_auth")?.value).toBe("1");
+
+    const bad = await GET(req(null, CONTAINER));
+    expect(bad.status).toBe(302);
+    expect(bad.headers.get("location")).toBe("/login");
+    expect(isHostSafe(bad)).toBe(true);
   });
 
   it("302s to /login when no token param is present (T8/AC2)", async () => {
