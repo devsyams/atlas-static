@@ -534,9 +534,9 @@ without a second login. The two apps share subdomains under `*.atlas.nexorus-alp
 top-level redirect between them is same-site.
 
 **Contract (locked cross-team, 2026-07-31 — build to this exactly):**
-- **Secret:** a **dedicated** shared secret `DANANTARA_SSO_SECRET` (**not** OpenGate's
+- **Secret:** a **dedicated** shared secret `ATLAS_SSO_SECRET` (**not** OpenGate's
   `AUTH_JWT_SECRET`); the same value is sealed into both apps' k8s env.
-- **Token:** HS256 JWT signed with `DANANTARA_SSO_SECRET`. Claims: `iss:'opengate'`,
+- **Token:** HS256 JWT signed with `ATLAS_SSO_SECRET`. Claims: `iss:'opengate'`,
   `aud:'danantara'`, `iat`, `exp = iat + 120s`, `sub:<opengate user id>`, `email:<user email>`,
   `scope:'danantara'`.
 - **Endpoint:** `GET /api/v1/sso?token=<jwt>` — a Node route under `/api` (the middleware matcher
@@ -546,14 +546,14 @@ top-level redirect between them is same-site.
 - **Replay guard:** the 120 s `exp` — **no** single-use/`jti` store.
 
 **Acceptance criteria (Given / When / Then):**
-- **AC1** — *Given* a valid, unexpired HS256 token signed with `DANANTARA_SSO_SECRET` whose
+- **AC1** — *Given* a valid, unexpired HS256 token signed with `ATLAS_SSO_SECRET` whose
   `aud === 'danantara'`, *When* `GET /api/v1/sso?token=…` is requested, *Then* the response **302s**
   to the scope's dashboard home (`homeForScope` → `/danantara/krisis` for `danantara`) and a local
   session is established.
 - **AC2** — *Given* a token that is missing, malformed, not `HS256`, badly signed, wrong-audience,
   or **expired**, *When* the endpoint is hit, *Then* it **302s to `/login`** and sets **no** session
   cookies (fails closed — never a partial session, never a dead end).
-- **AC3** — *Given* `DANANTARA_SSO_SECRET` is unset, *When* any token is presented, *Then* it **302s
+- **AC3** — *Given* `ATLAS_SSO_SECRET` is unset, *When* any token is presented, *Then* it **302s
   to `/login`** without trusting the unverifiable input.
 - **AC4** — *Given* a successful handoff, *Then* `atlas_auth=1` and `atlas_scope=<scope claim>` are
   set as **`httpOnly`, `Path=/`, `SameSite=Lax`** cookies (24 h max-age), matching the middleware
@@ -572,11 +572,11 @@ top-level redirect between them is same-site.
   typed claims only on full success. `signSsoToken` is a reference/test signer (live signer is
   OpenGate). `scopeFromClaims` applies the `'danantara'` default.
 - `add` `app/api/v1/sso/route.ts` — GET BFF: reads `?token`, verifies against
-  `process.env.DANANTARA_SSO_SECRET` at `Date.now()`, on success sets the two `httpOnly` cookies and
+  `process.env.ATLAS_SSO_SECRET` at `Date.now()`, on success sets the two `httpOnly` cookies and
   **302s** to `homeForScope(parseScope(scope))`, on any failure **302s** to `/login`. `dynamic =
   "force-dynamic"` (token in query, never cached).
 - `add` `lib/sso-token.test.ts`, `app/api/v1/sso/route.test.ts` — vitest units (see QA).
-- `change` `.env.example` — document the new server-only secret `DANANTARA_SSO_SECRET`.
+- `change` `.env.example` — document the new server-only secret `ATLAS_SSO_SECRET`.
 
 **Data-model / API changes:** one new endpoint `GET /api/v1/sso?token=…` (302 redirect; no JSON
 contract). No DB changes. Reuses the existing `atlas_auth`/`atlas_scope` cookie contract.
@@ -616,7 +616,7 @@ gate, `force-dynamic`, redirect-only, graceful fallback). No new dependency.
 | T6 | AC6 | `scopeFromClaims` returns the `scope` claim, or `'danantara'` when absent/empty | unit |
 | T7 | AC1/AC4/AC6 | route: valid token → **302** to `/danantara/krisis`; sets `atlas_auth=1` + `atlas_scope=danantara` with `HttpOnly`, `Path=/`, `SameSite=Lax` | integration |
 | T8 | AC2/AC5 | route: expired · bad-signature · wrong-aud · missing-token → **302** to `/login`, **no** `Set-Cookie` session cookies | integration |
-| T9 | AC3 | route: `DANANTARA_SSO_SECRET` unset + otherwise-valid token → **302** to `/login`, no cookies, no trust | integration |
+| T9 | AC3 | route: `ATLAS_SSO_SECRET` unset + otherwise-valid token → **302** to `/login`, no cookies, no trust | integration |
 | T10 | AC6 | route: valid token with **no** `scope` claim → `atlas_scope=danantara`, lands `/danantara/krisis` | integration |
 
 **Governance edge cases:** endpoint lives under `/api` so the middleware matcher never bounces a
@@ -629,4 +629,4 @@ follow-up; no LLM call → no cost-ledger impact.
 #### Revision history
 | Version | Date | Change |
 |---|---|---|
-| 1.0 | 2026-07-31 | Initial plan + build (TDD) — inbound OpenGate→Danantara SSO handoff to the locked cross-team contract: `GET /api/v1/sso?token=<HS256 jwt>` verified with the dedicated `DANANTARA_SSO_SECRET` (WebCrypto, zero-dep), `aud`/`exp` checked, sets `httpOnly` `atlas_auth`/`atlas_scope` and 302s to the scope home; failure → `/login`. AC1–AC6, T1–T10 |
+| 1.0 | 2026-07-31 | Initial plan + build (TDD) — inbound OpenGate→Danantara SSO handoff to the locked cross-team contract: `GET /api/v1/sso?token=<HS256 jwt>` verified with the dedicated `ATLAS_SSO_SECRET` (WebCrypto, zero-dep), `aud`/`exp` checked, sets `httpOnly` `atlas_auth`/`atlas_scope` and 302s to the scope home; failure → `/login`. AC1–AC6, T1–T10 |

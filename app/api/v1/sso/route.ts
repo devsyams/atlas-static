@@ -7,7 +7,7 @@ import { scopeFromClaims, verifySsoToken } from "@/lib/sso-token";
  * P9 — OpenGate → Danantara SSO handoff (inbound autologin; the mirror of P8's
  * outbound link).
  *
- * OpenGate signs a short-lived HS256 JWT (shared secret `DANANTARA_SSO_SECRET`)
+ * OpenGate signs a short-lived HS256 JWT (shared secret `ATLAS_SSO_SECRET`)
  * and redirects the just-logged-in user to `GET /api/v1/sso?token=<jwt>`. We
  * verify it server-side and establish Danantara's own session — the same
  * `atlas_auth` / `atlas_scope` cookies the middleware gate reads — so the user is
@@ -32,7 +32,7 @@ export const dynamic = "force-dynamic";
 
 export async function GET(req: Request) {
   const token = new URL(req.url).searchParams.get("token");
-  const result = await verifySsoToken(token, process.env.DANANTARA_SSO_SECRET, Date.now());
+  const result = await verifySsoToken(token, process.env.ATLAS_SSO_SECRET, Date.now());
 
   if (!result.valid) {
     return NextResponse.redirect(new URL("/login", req.url), 302);

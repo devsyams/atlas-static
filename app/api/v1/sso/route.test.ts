@@ -32,10 +32,10 @@ const loc = (res: Response) => new URL(res.headers.get("location") ?? "").pathna
 
 describe("GET /api/v1/sso (P9)", () => {
   beforeEach(() => {
-    process.env.DANANTARA_SSO_SECRET = SECRET;
+    process.env.ATLAS_SSO_SECRET = SECRET;
   });
   afterEach(() => {
-    delete process.env.DANANTARA_SSO_SECRET;
+    delete process.env.ATLAS_SSO_SECRET;
   });
 
   it("establishes a session and 302s to the scope home on a valid token (T7/AC1/AC4/AC6)", async () => {
@@ -96,8 +96,8 @@ describe("GET /api/v1/sso (P9)", () => {
     expect(res.headers.getSetCookie()).toHaveLength(0);
   });
 
-  it("fails closed to /login when DANANTARA_SSO_SECRET is unset (T9/AC3)", async () => {
-    delete process.env.DANANTARA_SSO_SECRET;
+  it("fails closed to /login when ATLAS_SSO_SECRET is unset (T9/AC3)", async () => {
+    delete process.env.ATLAS_SSO_SECRET;
     // Token is otherwise valid, but with no secret configured we cannot verify it.
     const token = await signSsoToken(claims(), SECRET);
     const res = await GET(req(token));

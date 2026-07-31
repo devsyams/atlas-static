@@ -11,7 +11,7 @@
  * in the Edge runtime too if the endpoint ever moves.
  *
  * Contract (locked with the OpenGate/TrawlDeckCorcom team, 2026-07-31):
- *   alg    HS256, signed with DANANTARA_SSO_SECRET (a DEDICATED shared secret,
+ *   alg    HS256, signed with ATLAS_SSO_SECRET (a DEDICATED shared secret,
  *          NOT OpenGate's AUTH_JWT_SECRET; same value sealed into both k8s envs)
  *   iss    'opengate'
  *   aud    'danantara'          (verified)
