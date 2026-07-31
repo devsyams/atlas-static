@@ -19,8 +19,8 @@
 | **P5** | Authentication — email/password + sessions | 0-platform | S2 | E3 | 1.0 | Planned |
 | **P6** | RBAC, route guards & audit log | 0-platform | S2 | E3 | 1.0 | Planned |
 | **P7** | Observability, hardening, backups & launch | 0-platform | S1,S6 | E8,E9 | 1.0 | Planned |
-| **P8** | Nexorus cross-app link (autologin: home + per-topic deep link) | 0-platform | demo | — | 3.2 | Built |
-| **P9** | OpenGate → Danantara SSO handoff (inbound autologin) | 0-platform | demo | — | 1.0 | Built |
+| **P8** | Nexorus cross-app link (autologin: home + per-topic deep link) | 0-platform | demo | — | 3.3 | Built |
+| **P9** | OpenGate → Danantara SSO handoff (inbound autologin) | 0-platform | demo | — | 1.1 | Built |
 | **W1** | Source registry & scheduler | 1-watch | S3 | E4 | 1.0 | Planned |
 | **W2** | RSS & news-API connectors | 1-watch | S3 | E4 | 1.0 | Planned |
 | **W3** | Social connectors (X/IG/FB/TikTok) | 1-watch | S3–S4 | E4 | 1.0 | Planned |
@@ -174,3 +174,5 @@
 | 1.110 | 2026-07-29 | A10 → **v5.4 Built (presentation only)** — long actor `@handle`s in panel 3 (e.g. `@konveksi_karawang_cikampek`) now **wrap to a new line** instead of truncating: `ThreatActors` handle uses `break-words`/`leading-tight` + `items-start`. No behaviour change |
 | 1.111 | 2026-07-30 | Added **A13 (Danantara Command Center, one-page)** at v1.0 In progress — new `/danantara/command` stacks the A10 Crisis Gate over the A7 CEO wall in one continuously scrolling page (one header, one refresh, no route hop), composed via four opt-in props that default to current behaviour so `/danantara` + `/danantara/krisis` stay byte-identical. A7 → v46.1, A10 → v5.5 (MINOR, props only). From client request ("make it a Single Page Application"); 30→31 features |
 | 1.112 | 2026-07-31 | Added **P9** (OpenGate → Danantara SSO handoff) at v1.0 Built (TDD) — inbound mirror of P8: `GET /api/v1/sso?token=<HS256 jwt>` verified with the dedicated shared secret `ATLAS_SSO_SECRET` (zero-dep WebCrypto HMAC), `aud==='danantara'` + 120 s `exp` checked, establishes Danantara's own session (`httpOnly` `atlas_auth`/`atlas_scope`, `Path=/`, `SameSite=Lax`) then 302s to the scope home; every failure fails closed to `/login`. Flagged R1: `httpOnly` interacts with the existing client-side `atlas_scope` read + JS logout (`AppShell`), server-side gate unaffected — logout-route follow-up noted. 31→32 features |
+| 1.113 | 2026-07-31 | P9 → **v1.1 Bugfix (TDD)** — `/api/v1/sso` redirect `Location` leaked the in-container bind host (`https://0.0.0.0:3000/login`) because it was built from `req.url` behind the ingress; a successful handoff would likewise have stranded the browser at `https://0.0.0.0:3000/danantara/krisis`. Both redirects now emit a **relative** `Location` (host-safe, unspoofable). Reported by the OpenGate agent pre-demo. AC7 + T11; +1 test, live-verified via curl |
+| 1.114 | 2026-07-31 | P8 → **v3.3 Bugfix (TDD)** — same host-leak class in **both** P8 routes' no-session `/login` fallback (`opengate/autologin`, `nexorus/topic`): `new URL("/login", req.url)` emitted `https://0.0.0.0:3000/login` behind the ingress. Both now use the shared `relativeRedirect` helper (`lib/http.ts`, extracted this change; P9 v1.1 refactored onto it too — one helper, three routes). External OpenGate/fallback redirects stay absolute. +2 regression tests; no AC change |

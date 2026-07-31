@@ -125,8 +125,24 @@ describe("GET /api/v1/nexorus/topic (P8 v3.0 — OpenGate redirect deep link)", 
     for (const cookie of [null, "atlas_auth=0", "other=1"]) {
       const res = await GET(req("?idquery=68ca1a83408aa", cookie));
       expect(res.status).toBe(307);
-      expect(new URL(res.headers.get("location") ?? "").pathname).toBe("/login");
+      // Relative Location — host-safe behind the ingress (v3.3 bugfix).
+      expect(res.headers.get("location")).toBe("/login");
     }
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("emits a host-safe relative /login redirect when req.url host is the in-container bind (v3.3 bugfix)", async () => {
+    const fetchMock = vi.fn(async () => okUpstream());
+    vi.stubGlobal("fetch", fetchMock);
+    // Prod ingress: req.url host is 0.0.0.0:3000, not the public host. The
+    // no-session redirect must be relative, never https://0.0.0.0:3000/login.
+    const res = await GET(
+      new Request("http://0.0.0.0:3000/api/v1/nexorus/topic?idquery=68ca1a83408aa", { headers: {} }),
+    );
+    expect(res.status).toBe(307);
+    const location = res.headers.get("location") ?? "";
+    expect(location).toBe("/login");
+    expect(location).not.toContain("://");
     expect(fetchMock).not.toHaveBeenCalled();
   });
 });

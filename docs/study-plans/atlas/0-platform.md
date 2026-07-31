@@ -307,7 +307,7 @@ breach is invisible until it hurts. This is the gate between "feature-complete" 
 
 ### P8. Nexorus cross-app link (autologin: home + per-topic deep link)
 
-- **Version:** 3.2 · **Stage:** 0-platform · **Sprint:** demo · **Status:** Built
+- **Version:** 3.3 · **Stage:** 0-platform · **Sprint:** demo · **Status:** Built
   · **Spec ref:** `docs/superpowers/specs/2026-06-14-nexorus-topic-deeplink-design.md`
   (client request, 2026-06-11; topic deep link 2026-06-14; OpenGate `redirect` resolution 2026-06-15) · **Owner:** platform
 
@@ -513,12 +513,13 @@ no `idQuery` simply hide the deep link; no cost ledger impact (no LLM call).
 | 3.1 | 2026-06-15 | **MINOR** (presentation, no behaviour change) — rename the topic deep-link button **"View in Nexorus" → "View Nexorus Opengate"** (matches the gear-menu "Nexorus Opengate" wording), after live confirmation the deep link works. Label only; ACs/T6 quote updated. `DetailModal.tsx` |
 | 3.2 | 2026-06-19 | **Bugfix** — the topic deep link worked locally but on **Vercel** landed on the generic OpenGate dashboard, not the topic. Root cause: both OpenGate routes minted with `OPENGATE_API_KEY \|\| DANANTARA_TOPICS_API_KEY`, and a missing/stale `OPENGATE_API_KEY` on the deploy won the `\|\|` and minted against the wrong account. Since the OpenGate autologin key **is** the topics-feed key, both routes (`nexorus/topic`, `opengate/autologin`) now read `DANANTARA_TOPICS_API_KEY` **directly**; `OPENGATE_API_KEY` retired from `.env.example`. No AC change (key still server-side; behaviour identical given correct config). TDD: key-drift regression test per route asserts a stray `OPENGATE_API_KEY` is ignored. **NB:** if a deploy still mislands, verify `OPENGATE_AUTOLOGIN_BASE` next |
 | 3.0 | 2026-06-15 | **MAJOR** — backend ask resolved (OpenGate team). The deep link now mints through **OpenGate's** `autologin_generate` with `redirect` **baked into the generate call** (url-encoded) and 307s straight to the returned `login_url`. **Live-corrected:** OpenGate **hosts the dashboard** and appends the decoded `redirect` after a fixed `dashboard_demo?`, so the param is the **query string only** (`id=monitoring&idquery=…`), **not** a full URL (a URL nested as `…/dashboard_demo?https://…/dashboard_demo?…`); target is OpenGate, garudaperkasa no longer involved. **Topic-precise now** — the v2.0 interim "signed-in dashboard home" landing is gone. Route repointed to `OPENGATE_AUTOLOGIN_BASE` + `OPENGATE_API_KEY`, fallback = OpenGate origin; `NEXORUS_DASHBOARD_AUTOLOGIN_BASE`/`NEXORUS_DASHBOARD_API_KEY`/`NEXORUS_DASHBOARD_BASE` retired. AC7/AC9 amended, T7/T8 reworked; integration doc marked resolved |
+| 3.3 | 2026-07-31 | **Bugfix (TDD)** — the no-session `/login` fallback in **both** P8 routes (`opengate/autologin`, `nexorus/topic`) leaked the in-container bind host: built with `new URL("/login", req.url)`, behind the ingress it emitted `https://0.0.0.0:3000/login`. Now a **relative** `Location` via the shared `relativeRedirect` helper (`lib/http.ts`) — the same fix as P9 v1.1, which was refactored onto the same helper (one definition, three routes). External redirects (OpenGate `login_url`, fallback origin) stay absolute — correct. No AC change; **+2 regression tests** (container-bind host → relative `/login`, no `://`). Same class of bug the OpenGate agent reported on `/api/v1/sso` |
 
 ---
 
 ### P9. OpenGate → Danantara SSO handoff (inbound autologin)
 
-- **Version:** 1.0 · **Stage:** 0-platform · **Sprint:** demo · **Status:** Built
+- **Version:** 1.1 · **Stage:** 0-platform · **Sprint:** demo · **Status:** Built
   · **Spec ref:** cross-team SSO contract locked with the OpenGate (TrawlDeckCorcom) team, 2026-07-31 · **Owner:** platform
 
 #### PM
@@ -562,6 +563,11 @@ top-level redirect between them is same-site.
   rejected (the short `exp` is the **only** replay guard, per contract; no `jti`).
 - **AC6** — *Given* the `scope` claim (or its absence), *Then* `atlas_scope` is set to the claim
   value, defaulting to `'danantara'`, and the landing route follows `homeForScope(parseScope(scope))`.
+- **AC7** *(v1.1 bugfix)* — *Given* the app runs behind the ingress (where `req.url`/`req.nextUrl`
+  reflect the in-container bind `0.0.0.0:3000`, not the public host), *When* either redirect is
+  emitted (success **or** fail-closed), *Then* the `Location` is a **relative** path (`/login`,
+  `/danantara/krisis`) — never an absolute URL carrying the bind host — so the browser resolves it
+  against the public URL it requested and never lands on an unreachable `https://0.0.0.0:3000/…`.
 
 #### Architecture
 **Impact — files add/change:**
@@ -618,6 +624,7 @@ gate, `force-dynamic`, redirect-only, graceful fallback). No new dependency.
 | T8 | AC2/AC5 | route: expired · bad-signature · wrong-aud · missing-token → **302** to `/login`, **no** `Set-Cookie` session cookies | integration |
 | T9 | AC3 | route: `ATLAS_SSO_SECRET` unset + otherwise-valid token → **302** to `/login`, no cookies, no trust | integration |
 | T10 | AC6 | route: valid token with **no** `scope` claim → `atlas_scope=danantara`, lands `/danantara/krisis` | integration |
+| T11 | AC7 | route: request arriving with the in-container-bind host (`http://0.0.0.0:3000/…`) → both the success (`/danantara/krisis`) and fail-closed (`/login`) `Location` are **relative** (start `/`, no `://`), never `http://0.0.0.0:3000/…` | integration |
 
 **Governance edge cases:** endpoint lives under `/api` so the middleware matcher never bounces a
 logged-out arrival before token consumption; **`token` is the only accepted input**; the secret +
@@ -630,3 +637,4 @@ follow-up; no LLM call → no cost-ledger impact.
 | Version | Date | Change |
 |---|---|---|
 | 1.0 | 2026-07-31 | Initial plan + build (TDD) — inbound OpenGate→Danantara SSO handoff to the locked cross-team contract: `GET /api/v1/sso?token=<HS256 jwt>` verified with the dedicated `ATLAS_SSO_SECRET` (WebCrypto, zero-dep), `aud`/`exp` checked, sets `httpOnly` `atlas_auth`/`atlas_scope` and 302s to the scope home; failure → `/login`. AC1–AC6, T1–T10 |
+| 1.1 | 2026-07-31 | **Bugfix (TDD)** — redirect `Location` leaked the in-container bind host. Behind the ingress `req.url` reflects `0.0.0.0:3000`, so `NextResponse.redirect(new URL(path, req.url))` emitted `https://0.0.0.0:3000/login` (and would have sent a **successful** handoff to `https://0.0.0.0:3000/danantara/krisis` → unreachable). Both redirects now emit a **relative** `Location` via the shared `relativeRedirect` helper (`lib/http.ts`); the browser resolves it against the public URL — host-safe, unspoofable, no forwarded-header trust needed. Reported by the OpenGate agent during pre-demo verification. AC7 + T11 added; +1 test, live-verified via curl (both paths relative). No contract/behaviour change beyond the emitted host |
