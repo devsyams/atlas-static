@@ -1085,6 +1085,7 @@ That is a demo-integrity problem, not a cosmetic one. The lead audience for thes
 - **AC6** — *Given* the new route, *Then* it is reachable from the `AppShell` gear menu ("Danantara Command Center", **Dashboards** group) and the entry survives both the `minimalChrome` and the danantara-scope nav filters — never URL-only.
 - **AC7** *(v2.0)* — *Given* the page, *When* rendered, *Then* the **BUMN sentiment section is absent** (no `ceo-bumn` heatboard, no `bumn-tile-*`): the wall carries only the **Danantara Issues** board — negative topics and positive topics — which spans the full width. `/bumn-board` is never requested from this route. `/danantara` (A7) keeps its heatboard unchanged.
 - **AC8** *(v3.0)* — *Given* the page, *When* rendered, *Then* a **third section** — the A14 Counter-Narrative War Room (`counter-war-room`) — stacks below the issue board in the same `gap-6` scroll rhythm, sharing the one header's Refresh via `refreshNonce`. The page reads *how bad* (gate) → *what is said* (issues) → *what we post* (war room). The war room owns its own fetches, so it degrades independently of the other two (AC5).
+- **AC9** *(v3.1)* — *Given* the page is reached through `opengate.atlas.nexorus-alpha.io`, *When* the header renders, *Then* a **Media Intelligence** shortcut appears immediately to the left of **View briefing** and clicking it redirects to `https://opengate.atlas.nexorus-alpha.io`; the shortcut is absent on other hosts.
 
 #### Architecture
 **Impact — files add/change:**
@@ -1094,6 +1095,7 @@ That is a demo-integrity problem, not a cosmetic one. The lead audience for thes
 - `change` `components/danantara/ceo/CeoCommand.tsx` (**A7 v46.1**) — opt-in `showHeader` (`false` omits `HeaderStrip`), `refreshNonce` (as above). **v2.0 (A7 v46.2):** third opt-in prop `showBumn` (default `true`); `false` drops `BumnHeatboard`, **skips the `/bumn-board` fetch**, and makes the issue board full-width (`xl:grid-cols-2` → single column).
 - `change` `components/layout/AppShell.tsx` — one `NAV` entry (`/danantara/command`, `LayoutDashboard`, Dashboards group). `minimalChrome` already matches `pathname.startsWith("/danantara/")` — no layout change needed.
 - **v3.0:** `change` `components/danantara/ceo/DanantaraCommandCenter.tsx` — one added sibling, `<CounterNarrativeWarRoom refreshNonce={refreshNonce} />` (A14). The container stays thin: the war room owns its own `/topics` fetch rather than receiving issues, so neither `CeoCommand` nor the container needs a data provider. A13's already-accepted "`/topics` fetched per block, served from the 6 h cache" trade extends from two blocks to three.
+- **v3.1:** `change` `lib/host.ts` (new) and `app/danantara/command/page.tsx` — request host detection from forwarded headers (`x-forwarded-host` fallback `host`), normalize it, and pass a serializable `mediaIntelligenceHref` prop into `DanantaraCommandCenter`; `CrisisGate` renders the extra shortcut when present.
 
 **Data-model / API changes:** **none.** No new BFF route, no DB, no LLM, no new secret.
 
@@ -1115,6 +1117,7 @@ That is a demo-integrity problem, not a cosmetic one. The lead audience for thes
 | T6 | AC3 | `CrisisGate embedded` drops `lg:h-[calc(100dvh-7.75rem)]` and carries `min-h-[calc(100dvh-9rem)]` | component |
 | T7 | AC2 | **regression:** `<CrisisGate />` with no props keeps `lg:h-[calc(100dvh-7.75rem)]`; `<CeoCommand />` with no props still renders `ceo-header` (the signed-off routes are untouched) | component |
 | T8 | AC6 | the gear-menu link points at `/danantara/command` and survives the `minimalChrome` + danantara-scope filters | component |
+| T12 | AC9 | when the request host is `opengate.atlas.nexorus-alpha.io`, the page passes `https://opengate.atlas.nexorus-alpha.io` to `DanantaraCommandCenter`, and `CrisisGate` renders **Media Intelligence** immediately left of **View briefing** | component |
 
 **Governance edge cases:** public demo route like A7/A8/A10/A11 (no `requireRole`) — no new secret, no new endpoint, no LLM/cost, so the API-first / secrets / model-agnostic guardrails are satisfied by adding nothing. Graceful degradation per-block (AC5). The existing 420 tests must stay green **unedited**; note the known load-flaky `CrisisGate` roster test.
 

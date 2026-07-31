@@ -77,14 +77,18 @@ export function CrisisGate({
   embedded = false,
   refreshNonce,
   onRefresh,
+  mediaIntelligenceHref,
 }: {
   /** Sit inside a scrolling page (A13) instead of locking to one screen. */
   embedded?: boolean;
   /** Parent-driven refresh: refetch when this value *changes* (never on mount). */
   refreshNonce?: number;
-  /** When provided, the header Refresh delegates to the parent instead of fetching. */
+  /** When provided, the header Refresh delegates to the parent instead of fetching itself. */
   onRefresh?: () => void;
+  /** Optional OpenGate-only shortcut shown before "View briefing". */
+  mediaIntelligenceHref?: string;
 } = {}) {
+
   const [issues, setIssues] = useState<CeoIssue[]>([]);
   const [summary, setSummary] = useState<TopicsSummary | null>(null);
   const [threat, setThreat] = useState<DetectedThreat | null>(null);
@@ -263,6 +267,15 @@ export function CrisisGate({
             })}
           </div>
 
+          {mediaIntelligenceHref && (
+            <a
+              href={mediaIntelligenceHref}
+              className="group inline-flex items-center gap-2 rounded-full border border-border bg-card/50 px-4 py-2 text-sm font-medium text-foreground transition-colors hover:border-primary/50 hover:text-primary"
+            >
+              Media Intelligence
+              <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+            </a>
+          )}
           <Link
             href="/danantara/brief"
             data-testid="crisis-detail-link"

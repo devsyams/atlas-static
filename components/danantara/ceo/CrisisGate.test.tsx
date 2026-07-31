@@ -144,6 +144,22 @@ describe("CrisisGate (A10 — fear-first landing)", () => {
     expect(link).toHaveAttribute("href", "/danantara/brief");
   });
 
+  it("keeps the Media Intelligence shortcut hidden by default and shows it when the href prop is provided", async () => {
+    stubFetch();
+    render(<CrisisGate />);
+    expect(screen.queryByRole("link", { name: /media intelligence/i })).not.toBeInTheDocument();
+
+    render(<CrisisGate mediaIntelligenceHref="https://opengate.atlas.nexorus-alpha.io" />);
+    expect(screen.getByRole("link", { name: /media intelligence/i })).toHaveAttribute(
+      "href",
+      "https://opengate.atlas.nexorus-alpha.io",
+    );
+    expect(screen.getByRole("link", { name: /media intelligence/i }).nextElementSibling).toHaveAttribute(
+      "href",
+      "/danantara/brief",
+    );
+  });
+
   it("degrades to an offline state when the topics feed fails, without crashing (AC5)", async () => {
     stubFetch({ topicsStatus: 502 });
     render(<CrisisGate />);
