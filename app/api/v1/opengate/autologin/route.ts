@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 
+import { relativeRedirect } from "@/lib/http";
+
 /**
  * P8 — Nexorus OpenGate cross-app link. Mints a fresh OpenGate autologin magic
  * link server-side and 307-redirects the browser to it, so the gear-menu item
@@ -22,7 +24,7 @@ export async function GET(req: Request) {
   const cookies = req.headers.get("cookie") ?? "";
   const authed = /(?:^|;\s*)atlas_auth=1(?:;|$)/.test(cookies);
   if (!authed) {
-    return NextResponse.redirect(new URL("/login", req.url));
+    return relativeRedirect("/login");
   }
 
   // Shared key with the topics feed — read it straight from DANANTARA_TOPICS_API_KEY

@@ -1,6 +1,5 @@
-import { NextResponse } from "next/server";
-
 import { homeForScope, parseScope } from "@/lib/auth";
+import { relativeRedirect } from "@/lib/http";
 import { scopeFromClaims, verifySsoToken } from "@/lib/sso-token";
 
 /**
@@ -37,22 +36,16 @@ const SESSION_MAX_AGE = 60 * 60 * 24;
 
 export const dynamic = "force-dynamic";
 
-/** 302 with a relative `Location` — host-safe behind the ingress (see above).
- *  Not `NextResponse.redirect`, which requires an absolute URL. */
-function redirectTo(path: string): NextResponse {
-  return new NextResponse(null, { status: 302, headers: { Location: path } });
-}
-
 export async function GET(req: Request) {
   const token = new URL(req.url).searchParams.get("token");
   const result = await verifySsoToken(token, process.env.ATLAS_SSO_SECRET, Date.now());
 
   if (!result.valid) {
-    return redirectTo("/login");
+    return relativeRedirect("/login", 302);
   }
 
   const scope = scopeFromClaims(result.claims);
-  const res = redirectTo(homeForScope(parseScope(scope)));
+  const res = relativeRedirect(homeForScope(parseScope(scope)), 302);
 
   const attrs = { httpOnly: true, path: "/", sameSite: "lax" as const, maxAge: SESSION_MAX_AGE };
   res.cookies.set("atlas_auth", "1", attrs);

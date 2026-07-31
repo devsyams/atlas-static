@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 
+import { relativeRedirect } from "@/lib/http";
+
 /**
  * P8 v3.0 — Nexorus dashboard topic deep link. Mints a fresh **OpenGate**
  * autologin magic link server-side and 307-redirects the browser to it. The
@@ -46,7 +48,7 @@ export async function GET(req: Request) {
   const cookies = req.headers.get("cookie") ?? "";
   const authed = /(?:^|;\s*)atlas_auth=1(?:;|$)/.test(cookies);
   if (!authed) {
-    return NextResponse.redirect(new URL("/login", req.url));
+    return relativeRedirect("/login");
   }
 
   const genBase = process.env.OPENGATE_AUTOLOGIN_BASE || DEFAULT_AUTOLOGIN_BASE;
