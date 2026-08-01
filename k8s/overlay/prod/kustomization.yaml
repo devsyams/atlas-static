@@ -5,7 +5,7 @@ resources:
 images:
 - name: registry.digitalocean.com/nexorus-registry/danantara
   newName: registry.digitalocean.com/nexorus-registry/danantara
-  newTag: sha-94d35e9
+  newTag: sha-23fa52c
 patches:
 - patch: |
     - op: replace
