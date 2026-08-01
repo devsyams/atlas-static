@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import { signSsoToken, type SsoClaims } from "../../../../lib/sso-token";
-import { OPENGATE_SSO_COOKIE } from "../../../../lib/opengate-session";
+import { OPENGATE_SESSION_COOKIE, signOpengateSessionCookie } from "../../../../lib/opengate-session";
 import { GET } from "./route";
 
 const SECRET = "dedicated-danantara-sso-secret-value";
@@ -52,7 +52,17 @@ describe("GET /api/v1/sso (P9)", () => {
   });
 
   it("establishes a session and 302s to the scope home on a valid token (T7/AC1/AC4/AC6)", async () => {
-    const token = await signSsoToken(claims(), SECRET);
+    const baseClaims = claims();
+    const token = await signSsoToken(baseClaims, SECRET);
+    const sessionClaims = {
+      iss: "opengate" as const,
+      aud: "danantara" as const,
+      iat: baseClaims.iat,
+      sub: baseClaims.sub,
+      email: baseClaims.email,
+      scope: "danantara" as const,
+    };
+    const sessionCookie = await signOpengateSessionCookie(sessionClaims, SECRET);
     const res = await GET(req(token));
 
     expect(res.status).toBe(302);
@@ -61,10 +71,10 @@ describe("GET /api/v1/sso (P9)", () => {
 
     const auth = res.cookies.get("atlas_auth");
     const scope = res.cookies.get("atlas_scope");
-    const sso = res.cookies.get(OPENGATE_SSO_COOKIE);
+    const sso = res.cookies.get(OPENGATE_SESSION_COOKIE);
     expect(auth?.value).toBe("1");
     expect(scope?.value).toBe("danantara");
-    expect(sso?.value).toBe(token);
+    expect(sso?.value).toBe(sessionCookie);
 
     // Cookie attributes locked with the OpenGate team.
     for (const c of [auth, scope, sso]) {
@@ -81,19 +91,29 @@ describe("GET /api/v1/sso (P9)", () => {
           /atlas_auth=1;/.test(h) && /HttpOnly/i.test(h) && /SameSite=Lax/i.test(h) && /Path=\//.test(h),
       ),
     ).toBe(true);
-    expect(raw.some((h) => new RegExp(`${OPENGATE_SSO_COOKIE}=`).test(h) && /HttpOnly/i.test(h))).toBe(true);
+    expect(raw.some((h) => new RegExp(`${OPENGATE_SESSION_COOKIE}=`).test(h) && /HttpOnly/i.test(h))).toBe(true);
   });
 
   it("defaults atlas_scope to 'danantara' when the token omits scope (T10/AC6)", async () => {
     const noScope = { ...claims() } as Record<string, unknown>;
     delete noScope.scope;
+    const baseClaims = claims();
     const token = await signSsoToken(noScope as unknown as SsoClaims, SECRET);
+    const sessionClaims = {
+      iss: "opengate" as const,
+      aud: "danantara" as const,
+      iat: baseClaims.iat,
+      sub: baseClaims.sub,
+      email: baseClaims.email,
+      scope: "danantara" as const,
+    };
+    const sessionCookie = await signOpengateSessionCookie(sessionClaims, SECRET);
     const res = await GET(req(token));
 
     expect(res.status).toBe(302);
     expect(loc(res)).toBe("/danantara/command");
     expect(res.cookies.get("atlas_scope")?.value).toBe("danantara");
-    expect(res.cookies.get(OPENGATE_SSO_COOKIE)?.value).toBe(token);
+    expect(res.cookies.get(OPENGATE_SESSION_COOKIE)?.value).toBe(sessionCookie);
   });
 
   it.each([
@@ -110,7 +130,7 @@ describe("GET /api/v1/sso (P9)", () => {
     expect(isHostSafe(res)).toBe(true);
     expect(res.cookies.get("atlas_auth")).toBeUndefined();
     expect(res.cookies.get("atlas_scope")).toBeUndefined();
-    expect(res.cookies.get(OPENGATE_SSO_COOKIE)).toBeUndefined();
+    expect(res.cookies.get(OPENGATE_SESSION_COOKIE)).toBeUndefined();
     expect(res.headers.getSetCookie()).toHaveLength(0);
   });
 
@@ -127,7 +147,7 @@ describe("GET /api/v1/sso (P9)", () => {
     expect(isHostSafe(good)).toBe(true);
     // Cookies still set on the success handoff.
     expect(good.cookies.get("atlas_auth")?.value).toBe("1");
-    expect(good.cookies.get(OPENGATE_SSO_COOKIE)?.value).toBeDefined();
+    expect(good.cookies.get(OPENGATE_SESSION_COOKIE)?.value).toBeDefined();
 
     const bad = await GET(req(null, CONTAINER));
     expect(bad.status).toBe(302);
@@ -151,7 +171,7 @@ describe("GET /api/v1/sso (P9)", () => {
     expect(res.status).toBe(302);
     expect(loc(res)).toBe("/login");
     expect(res.cookies.get("atlas_auth")).toBeUndefined();
-    expect(res.cookies.get(OPENGATE_SSO_COOKIE)).toBeUndefined();
+    expect(res.cookies.get(OPENGATE_SESSION_COOKIE)).toBeUndefined();
     expect(res.headers.getSetCookie()).toHaveLength(0);
   });
 });

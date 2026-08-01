@@ -3,7 +3,8 @@ import { cookies } from "next/headers";
 import { render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { signSsoToken, type SsoClaims } from "../../../lib/sso-token";
+import { type SsoClaims } from "../../../lib/sso-token";
+import { OPENGATE_SESSION_COOKIE, signOpengateSessionCookie } from "../../../lib/opengate-session";
 
 const SECRET = "dedicated-danantara-sso-secret-value";
 
@@ -46,9 +47,17 @@ describe("/danantara/command (A13 — T1)", () => {
   });
 
   it("renders the Command Center inside AppShell and passes the OpenGate href for a signed SSO cookie", async () => {
-    const token = await signSsoToken(claims(), SECRET);
+    const sessionClaims = {
+      iss: "opengate" as const,
+      aud: "danantara" as const,
+      iat: claims().iat,
+      sub: claims().sub,
+      email: claims().email,
+      scope: "danantara" as const,
+    };
+    const sessionCookie = await signOpengateSessionCookie(sessionClaims, SECRET);
     vi.mocked(cookies).mockReturnValueOnce({
-      get: (name: string) => (name === "atlas_sso_token" ? { value: token } : undefined),
+      get: (name: string) => (name === OPENGATE_SESSION_COOKIE ? { value: sessionCookie } : undefined),
     } as never);
 
     render(await Page());
