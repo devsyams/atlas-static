@@ -2,7 +2,8 @@
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { setAiEnabled } from "@/lib/ai-settings";
-import { counterNarrativePlan, topNegativeByReach } from "@/lib/danantara/ceo/counter-narrative";
+import { boardThreatResponsePlan } from "@/lib/danantara/ceo/board-threat-simulator";
+import { topNegativeByReach } from "@/lib/danantara/ceo/counter-narrative";
 import type { CeoIssue } from "@/lib/danantara/ceo/types";
 import { CounterNarrativeWarRoom } from "./CounterNarrativeWarRoom";
 
@@ -27,15 +28,20 @@ function mkIssue(over: Partial<CeoIssue> & Pick<CeoIssue, "id" | "title">): CeoI
 }
 
 const ISSUES: CeoIssue[] = [
-  mkIssue({ id: "t0", title: "Investasi Hilirisasi Nikel", reach: 50_000_000, negMentions: 850 }),
-  mkIssue({ id: "t1", title: "Divestasi Aset BUMN", reach: 30_000_000, negMentions: 800 }),
-  mkIssue({ id: "t2", title: "Dana Pensiun Karyawan", reach: 20_000_000, negMentions: 750 }),
-  mkIssue({ id: "t3", title: "Topik Kecil", reach: 2_000_000 }),
+  mkIssue({ id: "t0", title: "Investasi Hilirisasi Nikel", reach: 50_000_000, negMentions: 18_000, posMentions: 1_200 }),
+  mkIssue({ id: "t1", title: "Divestasi Aset BUMN", reach: 30_000_000, negMentions: 16_000, posMentions: 1_100 }),
+  mkIssue({ id: "t2", title: "Dana Pensiun Karyawan", reach: 20_000_000, negMentions: 15_000, posMentions: 900 }),
+  mkIssue({ id: "t3", title: "Topik Kecil", reach: 2_000_000, negMentions: 9_000, posMentions: 500 }),
   mkIssue({ id: "p0", title: "Topik Positif", reach: 90_000_000, posMentions: 800, negMentions: 50 }),
 ];
 
 const CHANNELS = ["kol", "clipper", "grassroots"] as const;
 const PICKED = ["t0", "t1", "t2"];
+const SUMMARY = {
+  total_impressions: 1_234_567,
+  total_reach: 123_456_789,
+  percentage: { positive: 18, negative: 67, neutral: 15 },
+};
 
 const LLM_PAYLOAD = {
   source: "llm",
@@ -65,7 +71,7 @@ function stubFetch({
       if (aiHangs) return new Promise<Response>(() => {});
       return new Response(JSON.stringify(ai), { status: 200 });
     }
-    return new Response(JSON.stringify({ issues: ISSUES }), { status: topicsStatus });
+    return new Response(JSON.stringify({ issues: ISSUES, summary: SUMMARY }), { status: topicsStatus });
   });
   vi.stubGlobal("fetch", fetchMock);
   return fetchMock;
@@ -134,39 +140,34 @@ describe("CounterNarrativeWarRoom (A14)", () => {
     const fetchMock = stubFetch();
     render(<CounterNarrativeWarRoom />);
     await settle();
-    await waitFor(() => expect(screen.getByTestId("posts-t0")).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByTestId("board-simulator")).toBeInTheDocument());
 
-    const before = screen.getByTestId("posts-t0").textContent;
-    // Read the bar geometry, never the counting-up headline — the rAF value is
-    // mid-animation under fake timers and asserting it is the documented flake.
-    const sovBefore = screen.getByTestId("sov-counter").style.width;
+    const before = screen.getByTestId("board-total-actions").textContent;
     const calls = fetchMock.mock.calls.length;
 
     await act(async () => {
       fireEvent.click(screen.getByTestId("war-tier-enterprise"));
     });
 
-    expect(screen.getByTestId("posts-t0").textContent).not.toBe(before);
-    expect(Number.parseFloat(screen.getByTestId("sov-counter").style.width)).toBeGreaterThan(
-      Number.parseFloat(sovBefore),
-    );
+    expect(screen.getByTestId("board-total-actions").textContent).not.toBe(before);
     expect(fetchMock.mock.calls.length).toBe(calls); // client-side only
   });
 
-  it("sizes the share-of-voice bar to the plan (T27)", async () => {
+  it("renders the board-level Threat Index simulator instead of the SOV bar (T27)", async () => {
     stubFetch();
     render(<CounterNarrativeWarRoom />);
     await settle();
-    await waitFor(() => expect(screen.getByTestId("sov-bar")).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByTestId("board-simulator")).toBeInTheDocument());
 
-    const hostile = Number.parseFloat(screen.getByTestId("sov-hostile").style.width);
-    const counter = Number.parseFloat(screen.getByTestId("sov-counter").style.width);
-    expect(hostile + counter).toBe(100);
-
-    const plans = topNegativeByReach(ISSUES, 3).map((t) => counterNarrativePlan(t, "professional"));
-    const expected = plans.reduce((a, p) => a + p.projectedReach, 0);
-    const hostileTotal = plans.reduce((a, p) => a + p.hostileReach, 0);
-    expect(counter).toBe(Math.round((expected / (hostileTotal + expected)) * 100));
+    const plan = boardThreatResponsePlan(ISSUES, SUMMARY, "professional");
+    expect(screen.queryByTestId("sov-bar")).not.toBeInTheDocument();
+    expect(screen.getByTestId("board-threat-index").textContent).toContain(String(plan.threatIndex));
+    expect(screen.getByTestId("board-post-response").textContent).toContain(String(plan.postResponseThreatIndex));
+    expect(screen.getByTestId("board-kol").textContent).toContain(String(plan.channelSplit.kol));
+    expect(screen.getByTestId("board-clipper").textContent).toContain(String(plan.channelSplit.clipper));
+    expect(screen.getByTestId("board-grassroots").textContent).toContain(String(plan.channelSplit.grassroots));
+    expect(screen.getByTestId("board-total-actions").textContent).toContain(String(plan.totalActions));
+    expect(screen.getByTestId("board-simulator")).toBeInTheDocument();
   });
 
   it("copies body + hashtags to the clipboard from every draft (T28)", async () => {

@@ -6,12 +6,17 @@ import { isAiEnabled, useAiEnabled } from "@/lib/ai-settings";
 import { topNegativeByReach } from "@/lib/danantara/ceo/counter-narrative";
 import { fallbackCounterNarrative, type CounterNarrativeAi } from "@/lib/danantara/ceo/counter-narrative-ai";
 import type { CeoIssue } from "@/lib/danantara/ceo/types";
+import type { TopicsSummary } from "@/lib/danantara/ceo/topics-source";
 
 export type FeedState = "loading" | "live" | "offline";
 
 export interface CounterNarrativeState {
   /** The 3 topics the war room is countering (top negative by negative reach). */
   topics: CeoIssue[];
+  /** The live feed issues, used by the board-level simulator. */
+  issues: CeoIssue[];
+  /** The full topics summary needed for the board-level simulator. */
+  summary: TopicsSummary | null;
   /** Always renderable: the LLM answer when it lands, the deterministic fallback until then. */
   data: CounterNarrativeAi;
   source: "llm" | "scripted";
@@ -37,6 +42,7 @@ const TOPIC_COUNT = 3;
  */
 export function useCounterNarrative(refreshNonce?: number): CounterNarrativeState {
   const [issues, setIssues] = useState<CeoIssue[]>([]);
+  const [summary, setSummary] = useState<TopicsSummary | null>(null);
   const [feed, setFeed] = useState<FeedState>("loading");
   const [ai, setAi] = useState<{ data: CounterNarrativeAi; for: string } | null>(null);
   const [pending, setPending] = useState(false);
@@ -55,9 +61,10 @@ export function useCounterNarrative(refreshNonce?: number): CounterNarrativeStat
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
         return r.json();
       })
-      .then((j: { issues?: CeoIssue[] }) => {
+      .then((j: { issues?: CeoIssue[]; summary?: TopicsSummary }) => {
         if (!mountedRef.current) return;
         setIssues(Array.isArray(j.issues) ? j.issues : []);
+        setSummary(j.summary ?? null);
         setFeed("live");
       })
       .catch(() => {
@@ -141,6 +148,8 @@ export function useCounterNarrative(refreshNonce?: number): CounterNarrativeStat
 
   return {
     topics,
+    issues,
+    summary,
     data: live ? live.data : fallback,
     source: live ? "llm" : "scripted",
     feed,

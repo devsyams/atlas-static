@@ -3,9 +3,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Swords } from "lucide-react";
 import { TIER_LABEL, TIER_MULTIPLIER } from "@/lib/danantara/ceo/counter-noise";
-import { aggregateWarRoom, counterNarrativePlan, type ResponseTier } from "@/lib/danantara/ceo/counter-narrative";
+import { counterNarrativePlan, type ResponseTier } from "@/lib/danantara/ceo/counter-narrative";
 import { CounterTopicCard } from "./CounterTopicCard";
-import { ShareOfVoiceBar } from "./ShareOfVoiceBar";
+import { ThreatIndexResponseSimulator } from "./ThreatIndexResponseSimulator";
 import { useCounterNarrative } from "./useCounterNarrative";
 
 const TIERS: ResponseTier[] = ["basic", "professional", "enterprise"];
@@ -78,7 +78,7 @@ function useInView<T extends HTMLElement>() {
  */
 export function CounterNarrativeWarRoom({ refreshNonce }: { refreshNonce?: number } = {}) {
   const [tier, setTier] = useState<ResponseTier>("professional");
-  const { topics, data, source, feed, pending } = useCounterNarrative(refreshNonce);
+  const { topics, issues, summary, data, source, feed, pending } = useCounterNarrative(refreshNonce);
   const { ref, inView } = useInView<HTMLElement>();
 
   // The terminal runs once the section is seen and there is something to narrate.
@@ -110,7 +110,6 @@ export function CounterNarrativeWarRoom({ refreshNonce }: { refreshNonce?: numbe
   if (revealed && !reveal) setReveal(true); // adjust-during-render, not in an effect
 
   const plans = useMemo(() => topics.map((t) => counterNarrativePlan(t, tier)), [topics, tier]);
-  const totals = useMemo(() => aggregateWarRoom(plans), [plans]);
 
   return (
     <section ref={ref} data-testid="counter-war-room" className={`panel relative flex flex-col overflow-hidden ${reveal ? "" : "cn-analyzing"}`}>
@@ -158,7 +157,7 @@ export function CounterNarrativeWarRoom({ refreshNonce }: { refreshNonce?: numbe
           <BootTerminal lineIdx={lineIdx} pending={pending} />
         ) : (
           <>
-            <ShareOfVoiceBar totals={totals} tier={tier} animate={reveal} />
+            <ThreatIndexResponseSimulator issues={issues} summary={summary} tier={tier} />
 
             <ol data-testid="war-room-topics" className="grid grid-cols-1 items-stretch gap-3 xl:grid-cols-3">
               {data.topics.map((t, i) => (
