@@ -214,6 +214,30 @@ export const MOCK_THREATS: MockThreats = { threat: mappedThreats.threats[0] ?? n
 
 /* ------------------------------- actors -------------------------------- */
 
+/**
+ * A generated placeholder avatar — a coloured rounded tile with the handle's initials,
+ * as an inline SVG data-URI. Deliberately **not** a real photo: a fabricated demo
+ * account must never wear a real person's face (the same identity-safety rule the sim
+ * features carry). It survives `mapActorRoster` (which keeps only `data:image` URIs)
+ * and renders in `ThreatActors`' `<img>` Avatar instead of the bare-initials fallback.
+ */
+function placeholderAvatar(handle: string, color: string): string {
+  const initials =
+    handle
+      .split("_")
+      .slice(0, 2)
+      .map((p) => p[0] ?? "")
+      .join("")
+      .toUpperCase() || "?";
+  const svg =
+    `<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96">` +
+    `<rect width="96" height="96" rx="20" fill="${color}"/>` +
+    `<text x="48" y="61" font-family="Segoe UI, Arial, sans-serif" font-size="38" font-weight="700" ` +
+    `fill="#ffffff" text-anchor="middle">${initials}</text>` +
+    `</svg>`;
+  return `data:image/svg+xml,${encodeURIComponent(svg)}`;
+}
+
 const RAW_ROSTER: ActorRosterApiResponse = {
   success: true,
   status_code: 200,
@@ -229,6 +253,7 @@ const RAW_ROSTER: ActorRosterApiResponse = {
       risk_level: "medium",
       account_classification: "Complainer",
       content_themes: "Orang tua siswa; keluhan keracunan berbasis pengalaman langsung.",
+      profile_picture: placeholderAvatar("warga_peduli_gizi", "#2563eb"),
     },
     {
       username: "kanal_investigasi",
@@ -240,6 +265,7 @@ const RAW_ROSTER: ActorRosterApiResponse = {
       risk_level: "medium",
       account_classification: "Investigative Journalist",
       content_themes: "Menelusuri rantai pasok SPPG; mendorong framing akuntabilitas.",
+      profile_picture: placeholderAvatar("kanal_investigasi", "#0891b2"),
     },
     {
       username: "emak2_bersuara",
@@ -251,6 +277,7 @@ const RAW_ROSTER: ActorRosterApiResponse = {
       risk_level: "low",
       account_classification: "Negative Critic",
       content_themes: "Komunitas orang tua; nada khawatir soal keamanan pangan anak.",
+      profile_picture: placeholderAvatar("emak2_bersuara", "#7c3aed"),
     },
     {
       username: "suara_rakyat_id",
@@ -262,6 +289,7 @@ const RAW_ROSTER: ActorRosterApiResponse = {
       risk_level: "high",
       account_classification: "Propaganda/Provocator",
       influence_analysis: "Amplifikasi terkoordinasi; membingkai insiden sebagai kegagalan total program.",
+      profile_picture: placeholderAvatar("suara_rakyat_id", "#e11d48"),
     },
     {
       username: "buzzer_oposisi_01",
@@ -273,6 +301,7 @@ const RAW_ROSTER: ActorRosterApiResponse = {
       risk_level: "high",
       account_classification: "Buzzer",
       influence_analysis: "Klaster buzzer; mengaitkan keracunan dengan dugaan penyimpangan anggaran.",
+      profile_picture: placeholderAvatar("buzzer_oposisi_01", "#d97706"),
     },
   ],
 };

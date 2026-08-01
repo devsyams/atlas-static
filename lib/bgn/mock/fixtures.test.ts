@@ -44,4 +44,14 @@ describe("BGN mock fixtures", () => {
     expect(MOCK_THREATS.stats.total_threats).toBeGreaterThanOrEqual(1);
     expect(MOCK_THREATS.threat?.severity ?? 0).toBeGreaterThan(0);
   });
+
+  it("gives every roster actor a placeholder avatar image, so the Aktor Penggerak column never shows bare initials", () => {
+    // Generated SVG placeholders (not real photos): the mapper only keeps a
+    // profile_picture that is a data:image URI, and the Avatar renders it as <img>.
+    expect(MOCK_ACTORS.actors.length).toBeGreaterThan(0);
+    for (const a of MOCK_ACTORS.actors) {
+      expect(a.avatarUrl, `missing avatar for @${a.handle}`).toBeTruthy();
+      expect(a.avatarUrl?.startsWith("data:image")).toBe(true);
+    }
+  });
 });
