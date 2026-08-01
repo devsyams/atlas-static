@@ -49,7 +49,7 @@ const LLM_PAYLOAD = {
     topicId: id,
     title: ISSUES[i].title,
     attackLine: `LLM serangan ${id}`,
-    counterAngle: `LLM tandingan ${id}`,
+    counterAngle: `LLM tandingan ${id}. Kalimat kedua untuk ${id} menambahkan konteks lebih luas.`,
     drafts: CHANNELS.map((c) => ({
       channel: c,
       platform: "X / Instagram",
@@ -92,16 +92,12 @@ async function settle(ms = 4_000) {
   }
 }
 
-const writeText = vi.fn<(text: string) => Promise<void>>(async () => {});
-
 describe("CounterNarrativeWarRoom (A14)", () => {
   beforeEach(() => {
     // `shouldAdvanceTime` keeps the real clock moving so testing-library's `waitFor`
     // still polls, while `advanceTimersByTime` drives the terminal's own timeouts.
     vi.useFakeTimers({ shouldAdvanceTime: true });
     setAiEnabled(true);
-    writeText.mockClear();
-    Object.defineProperty(navigator, "clipboard", { value: { writeText }, configurable: true });
   });
 
   afterEach(() => {
@@ -119,9 +115,9 @@ describe("CounterNarrativeWarRoom (A14)", () => {
     expect(screen.getAllByTestId(/^counter-topic-/)).toHaveLength(3);
     expect(screen.getByTestId("war-room-source").textContent).toContain("Simulated");
 
-    const drafts = screen.getAllByTestId(/^draft-(kol|clipper|grassroots)$/);
-    expect(drafts).toHaveLength(9);
-    for (const d of drafts) expect(d.textContent?.trim()).not.toBe("");
+    const counts = screen.getAllByTestId(/^channel-posts-/);
+    expect(counts).toHaveLength(9);
+    for (const count of counts) expect(count.textContent?.trim()).not.toBe("");
   });
 
   it("shows the model's own copy and badge when the AI is live (T25)", async () => {
@@ -131,9 +127,9 @@ describe("CounterNarrativeWarRoom (A14)", () => {
 
     await waitFor(() => expect(screen.getByTestId("war-room-source").textContent).toContain("Nexorus AI"));
     expect(screen.getByTestId("attack-t0").textContent).toBe("LLM serangan t0");
-    expect(screen.getByTestId("angle-t0").textContent).toBe("LLM tandingan t0");
-    expect(screen.getByText("LLM draft kol untuk t0")).toBeInTheDocument();
-    expect(screen.getByText("LLM draft grassroots untuk t2")).toBeInTheDocument();
+    expect(screen.getByTestId("angle-t0").textContent).toContain("Kalimat kedua");
+    expect(screen.getAllByTestId(/^channel-posts-/)).toHaveLength(9);
+    expect(screen.getByTestId("posts-t2").textContent).not.toBe("");
   });
 
   it("shows all three tiers at once with no tier toggle, computed client-side (T26)", async () => {
@@ -217,26 +213,21 @@ describe("CounterNarrativeWarRoom (A14)", () => {
     expect(actions("enterprise")).toBe(basic * 5);
   });
 
-  it("copies body + hashtags to the clipboard from every draft (T28)", async () => {
+  it("keeps the dispatch brief focused on the narrative and counts (T28)", async () => {
     stubFetch({ ai: LLM_PAYLOAD });
     render(<CounterNarrativeWarRoom />);
     await settle();
-    await waitFor(() => expect(screen.getAllByTestId(/^copy-/)).toHaveLength(9));
+    await waitFor(() => expect(screen.getAllByTestId(/^dispatch-/)).toHaveLength(3));
 
-    for (const btn of screen.getAllByTestId(/^copy-/)) {
-      await act(async () => {
-        fireEvent.click(btn);
-      });
-    }
-    expect(writeText).toHaveBeenCalledTimes(9);
+    const href = screen.getByTestId("dispatch-t0").getAttribute("href") || "";
+    const text = decodeURIComponent(href.split("text=")[1] || "");
 
-    const written = writeText.mock.calls.map((c) => String(c[0]));
-    expect(written[0]).toBe("LLM draft kol untuk t0\n\n#Danantara #t0");
-    for (const text of written) {
-      const [body, tags] = text.split("\n\n");
-      expect(body.trim()).not.toBe("");
-      expect(tags.split(" ").every((t) => t.startsWith("#"))).toBe(true);
-    }
+    expect(text).toContain("Counter narrative:");
+    expect(text).toContain("LLM tandingan t0");
+    expect(text).toContain("KOL:");
+    expect(text).toContain("Clipper:");
+    expect(text).toContain("Grassroots:");
+    expect(text).not.toContain("LLM draft");
   });
 
   it("holds the terminal while the model is working, then reveals (T29)", async () => {

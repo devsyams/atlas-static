@@ -65,7 +65,7 @@ describe("buildWarRoomBrief (A14 — counter-narrative handoff, T35)", () => {
     "professional",
   );
 
-  it("carries the topic, the reading, the plan and every draft body", () => {
+  it("carries the topic, the reading, the plan and the counts-only handoff", () => {
     const brief = buildWarRoomBrief(cn, plan);
 
     expect(brief).toContain(cn.title);
@@ -75,9 +75,10 @@ describe("buildWarRoomBrief (A14 — counter-narrative handoff, T35)", () => {
     expect(brief).toContain("Professional");
     expect(brief).toContain(`${plan.shareOfVoicePct}%`);
     expect(brief).toContain(plan.totalPosts.toLocaleString("en-US"));
-    for (const d of cn.drafts) expect(brief).toContain(d.body);
-    // The channel split rides along so the room knows how the total is spent.
+    for (const d of cn.drafts) expect(brief).not.toContain(d.body);
+    // The channel split still rides along so the room knows how the total is spent.
     for (const c of plan.channels) expect(brief).toContain(c.posts.toLocaleString("en-US"));
+    expect(brief).toContain("The PR/media team will craft the final channel copy.");
   });
 
   it("stays inside the practical wa.me?text= length ceiling", () => {

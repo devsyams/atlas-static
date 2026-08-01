@@ -31,8 +31,8 @@ const BOOT_LINES = [
   "locking top 3 negative topics by negative reach",
   "computing hostile reach · share of voice",
   "drafting counter-narrative angles",
-  "generating KOL / clipper / grassroots drafts (id-ID)",
-  "validating drafts · no fabricated figures",
+  "allocating KOL / clipper / grassroots volume (id-ID)",
+  "validating counts · no fabricated figures",
 ];
 
 /** True once `ref` scrolls into view (true where IntersectionObserver is absent — jsdom/SSR). */
@@ -68,10 +68,9 @@ function useInView<T extends HTMLElement>() {
  * answering the question the other two don't: **"so what do we post?"**
  *
  * For the top 3 negative topics by *negative reach*: the attack as its authors frame
- * it, our counter angle, and three ready-to-post Indonesian drafts (disclosed KOL,
- * owned-channel clipper, employee/community advocate) — plus the reach math for how
- * many posts it takes to win the share of voice, all recomputed client-side when the
- * tier changes.
+ * it, our counter narrative, and the channel-level post volume needed to push back
+ * across KOL, clipper, and grassroots — all recomputed client-side when the tier
+ * changes.
  *
  * The Nexorus terminal here is an **honest** loading state, unlike A9's fixed script:
  * it narrates the work actually in flight and holds its last line while the model is
@@ -151,9 +150,8 @@ export function CounterNarrativeWarRoom({ refreshNonce }: { refreshNonce?: numbe
             </ol>
 
             <p className="text-base leading-snug text-muted-foreground/80">
-              Drafts are talking points for <strong className="font-semibold">disclosed</strong> paid partners, the
-              client&apos;s own channels, and employee/community advocates — not for undisclosed or automated posting.
-              Hostile reach is an estimate (total reach × negative impression share).
+              The PR/media team owns the post copy. This section only shows the counter narrative and the required post
+              volume per channel. Hostile reach is an estimate (total reach × negative impression share).
             </p>
           </>
         )}
