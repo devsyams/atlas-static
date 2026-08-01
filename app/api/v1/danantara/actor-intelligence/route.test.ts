@@ -25,6 +25,7 @@ const writeMock = (name: string, data: unknown) => {
 
 describe("GET /api/v1/danantara/actor-intelligence (T21 / AC11)", () => {
   beforeEach(() => {
+    process.env.DANANTARA_ACTORS_API_BASE = "https://api.example.io/actor-intelligence";
     process.env.DANANTARA_TOPICS_API_KEY = KEY;
     process.env.DANANTARA_TOPIC_CODE = "danantara_main";
     mockDir = mkdtempSync(join(tmpdir(), "atlas-actor-mock-"));
@@ -68,6 +69,15 @@ describe("GET /api/v1/danantara/actor-intelligence (T21 / AC11)", () => {
     delete process.env.DANANTARA_TOPICS_API_KEY;
     const res = await GET(req());
     expect(res.status).toBe(503);
+  });
+
+  it("returns 503 when no upstream base is configured (A10 v9.0 — GARUDA default retired)", async () => {
+    delete process.env.DANANTARA_ACTORS_API_BASE;
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+    const res = await GET(req());
+    expect(res.status).toBe(503);
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it("returns 502 when the upstream fails", async () => {

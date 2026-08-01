@@ -69,9 +69,15 @@ function DriverCard({ d }: { d: ThreatDriver }) {
           <span className={cn("h-2 w-2 rounded-full", rm.dot)} />
           {rm.label}
         </span>
-        <span className="inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-muted/30 px-2.5 py-1 text-muted-foreground">
-          <ShieldAlert className="h-4 w-4" /> Kredibilitas {d.credibility}/10
-        </span>
+        {/* credibility 0 + empty classification = the upstream's actor-intel
+            enrichment hasn't run for this account (TrawlDeck flag off) — hide the
+            chip rather than show "0/10" as if it were a real score. A scored 0
+            (classification present) still renders. */}
+        {(d.credibility > 0 || d.accountType !== "") && (
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-muted/30 px-2.5 py-1 text-muted-foreground">
+            <ShieldAlert className="h-4 w-4" /> Kredibilitas {d.credibility}/10
+          </span>
+        )}
       </div>
 
       <div className="mt-2.5 flex items-center gap-1.5 text-sm text-muted-foreground">
