@@ -284,14 +284,15 @@ describe("CrisisGate (A10 — fear-first landing)", () => {
     expect(screen.getByTestId("crisis-detail-link")).toHaveAttribute("href", "/danantara/brief");
   });
 
-  it("rebrands the gate name + logo and hides the Danantara briefing link when a brand is set (A10 v5.6)", async () => {
+  it("rebrands the gate name + logo and still shows the briefing link when a brand is set (A10 v9.2)", async () => {
     stubFetch();
     render(<CrisisGate brand="BGN" brandLogo="/bgn.png" />);
     await waitFor(() => expect(screen.getByTestId("crisis-gate")).toBeInTheDocument());
     expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("BGN");
     expect(screen.getByAltText("BGN").getAttribute("src")).toContain("bgn.png");
-    // "View briefing" points at a Danantara page — hidden on the rebranded gate.
-    expect(screen.queryByTestId("crisis-detail-link")).not.toBeInTheDocument();
+    // v9.2 (client request): the "View briefing" link is restored on the rebranded gate;
+    // it still points at the (Danantara-branded) /danantara/brief, whose data is already BGN.
+    expect(screen.getByTestId("crisis-detail-link")).toHaveAttribute("href", "/danantara/brief");
   });
 
   it("appends mock=1 to all three feed fetches when mock is set (A10 v5.6)", async () => {
