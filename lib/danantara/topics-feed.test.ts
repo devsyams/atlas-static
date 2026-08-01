@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { TopicsApiResponse } from "./ceo/topics-source";
-import { fetchTopicsForCode } from "./topics-feed";
+import { FeedNotConfiguredError, fetchTopicsForCode } from "./topics-feed";
 
 /** Two-topic payload. */
 const SAMPLE: TopicsApiResponse = {
@@ -48,6 +48,17 @@ describe("fetchTopicsForCode — stale/transient empty does not stick (A8 v4.1)"
     vi.restoreAllMocks();
     delete process.env.DANANTARA_TOPICS_API_BASE;
     delete process.env.DANANTARA_TOPICS_API_KEY;
+  });
+
+  it("throws FeedNotConfiguredError when no base is configured, even with a key — T23 (A7 v48.0)", async () => {
+    // TrawlDeck cutover: the GARUDA default base is retired; without an explicit
+    // base the feed must report not-configured, never fetch a hardcoded host.
+    delete process.env.DANANTARA_TOPICS_API_BASE;
+    const fetchMock = seqFetch([SAMPLE]);
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(fetchTopicsForCode("1")).rejects.toBeInstanceOf(FeedNotConfiguredError);
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it("self-heals a cached/transient empty: confirms against the live upstream and uses live data", async () => {
@@ -111,6 +122,35 @@ describe("fetchTopicsForCode — stale/transient empty does not stick (A8 v4.1)"
     expect(fetchMock).toHaveBeenCalledTimes(4); // (default + 28d) cached, then (default + 28d) live
     const inits = fetchMock.mock.calls.map((c) => c[1]);
     expect(inits).toContainEqual({ cache: "no-store" }); // it did try the live upstream
+  });
+
+  it("days opt → one explicit-window fetch (start = today − (days−1)), no widening — T24 (A7 v49.0)", async () => {
+    const fetchMock = seqFetch([SAMPLE]);
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await fetchTopicsForCode("1", { days: 30 });
+
+    expect(result.issues).toHaveLength(2);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const params = new URL(String(fetchMock.mock.calls[0][0])).searchParams;
+    const start = Date.parse(params.get("startdate") ?? "");
+    const end = Date.parse(params.get("enddate") ?? "");
+    expect((end - start) / 86_400_000).toBe(29); // 30 days inclusive: today − 29 … today
+  });
+
+  it("days + empty window stays empty — the chosen window is never widened, only live-confirmed — T24", async () => {
+    const fetchMock = seqFetch([HOLLOW]);
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await fetchTopicsForCode("1", { days: 7 });
+
+    expect(result.issues).toHaveLength(0);
+    expect(fetchMock).toHaveBeenCalledTimes(2); // cacheable + one live confirm — NO 28d widen
+    const [firstUrl, secondUrl] = fetchMock.mock.calls.map((c) => String(c[0]));
+    expect(secondUrl).toBe(firstUrl); // the confirm re-requests the SAME window
+    const inits = fetchMock.mock.calls.map((c) => c[1]);
+    expect(inits[0]).toEqual({ next: { revalidate: 21600 } });
+    expect(inits[1]).toEqual({ cache: "no-store" });
   });
 
   it("on ?fresh=1 the path is already live, so it does not add a redundant confirm", async () => {

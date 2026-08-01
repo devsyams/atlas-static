@@ -165,6 +165,29 @@ describe("DanantaraCommandCenter (A13 — one-page)", () => {
     expect(fetchMock.mock.calls.map((c) => String(c[0])).filter((u) => u.includes("bumn-board"))).toHaveLength(0);
   });
 
+  // A13 v5.0 — page-wide date window; default 7 hari since v6.0.
+  it("threads the window: all three /topics reads mount with days=7; a preset switch re-windows all three (T19)", async () => {
+    const fetchMock = stubFetch();
+    render(<DanantaraCommandCenter />);
+    await waitFor(() => expect(screen.getByTestId("counter-war-room")).toBeInTheDocument());
+
+    await waitFor(() => {
+      const mountTopics = fetchMock.mock.calls.map((c) => String(c[0])).filter((u) => u.includes("/topics"));
+      expect(mountTopics).toHaveLength(3); // gate · wall · war room
+      for (const u of mountTopics) expect(u).toContain("days=7");
+    });
+
+    fetchMock.mockClear();
+    fireEvent.click(screen.getByRole("button", { name: "30 hari" }));
+
+    await waitFor(() => {
+      const urls = fetchMock.mock.calls.map((c) => String(c[0])).filter((u) => !u.includes("counter-narrative"));
+      expect(urls.filter((u) => u.includes("/topics") && u.includes("days=30"))).toHaveLength(3);
+      // Not date-range based — must not refetch on a preset switch.
+      expect(urls.filter((u) => u.includes("/threats") || u.includes("/actor-intelligence"))).toHaveLength(0);
+    });
+  });
+
   it("still shows the Danantara issue board — negative and positive topics (T9)", async () => {
     stubFetch();
     render(<DanantaraCommandCenter />);

@@ -35,6 +35,11 @@ export function DanantaraCommandCenter({
   // Bumped by the gate's header Refresh; both blocks refetch on the change. The gate
   // delegates rather than fetching directly, so each feed is pulled exactly once.
   const [refreshNonce, setRefreshNonce] = useState(0);
+  // v5.0: the one header's date-range picker sets the topics window for every
+  // topics-driven block — the gate fetches with it itself and reports changes
+  // here; the wall + war room follow via `windowDays`. Default 7 hari (v6.0,
+  // client request; must match the gate's DEFAULT_DAYS).
+  const [windowDays, setWindowDays] = useState(7);
 
   return (
     <div data-testid="danantara-command-center" className="flex flex-col gap-6">
@@ -42,13 +47,21 @@ export function DanantaraCommandCenter({
         embedded
         refreshNonce={refreshNonce}
         onRefresh={() => setRefreshNonce((n) => n + 1)}
+        onRangeChange={setWindowDays}
         mediaIntelligenceHref={mediaIntelligenceHref}
         brand={brand}
         brandLogo={brandLogo}
         mock={mock}
       />
-      <CeoCommand showHeader={false} showBumn={false} refreshNonce={refreshNonce} brand={brand} mock={mock} />
-      <CounterNarrativeWarRoom refreshNonce={refreshNonce} brand={brand} mock={mock} />
+      <CeoCommand
+        showHeader={false}
+        showBumn={false}
+        refreshNonce={refreshNonce}
+        brand={brand}
+        mock={mock}
+        windowDays={windowDays}
+      />
+      <CounterNarrativeWarRoom refreshNonce={refreshNonce} brand={brand} mock={mock} windowDays={windowDays} />
     </div>
   );
 }

@@ -53,7 +53,7 @@ function claims(overrides: Partial<SsoClaims> = {}): SsoClaims {
   };
 }
 
-describe("/bgn/command (A13 v4.0 — T13)", () => {
+describe("/bgn/command (A13 v5.0 — T13/T20)", () => {
   beforeEach(() => {
     process.env.ATLAS_SSO_SECRET = SECRET;
   });
@@ -63,7 +63,7 @@ describe("/bgn/command (A13 v4.0 — T13)", () => {
     vi.clearAllMocks();
   });
 
-  it("renders the Command Center inside AppShell — rebranded BGN + mocked — with the OpenGate href for a signed SSO cookie", async () => {
+  it("renders the Command Center inside AppShell — rebranded BGN, live feed (no mock) — with the OpenGate href for a signed SSO cookie", async () => {
     const sessionClaims = {
       typ: "opengate-session" as const,
       iss: "opengate" as const,
@@ -85,10 +85,11 @@ describe("/bgn/command (A13 v4.0 — T13)", () => {
     expect(cc).toHaveAttribute("data-href", "https://opengate.atlas.nexorus-alpha.io");
     expect(cc).toHaveAttribute("data-brand", "BGN");
     expect(cc).toHaveAttribute("data-logo", "/bgn.png");
-    expect(cc).toHaveAttribute("data-mock", "1");
+    // v5.0 (T20): the TrawlDeck facade is live — the page must NOT opt into the mock.
+    expect(cc).toHaveAttribute("data-mock", "0");
   });
 
-  it("hides the shortcut when the signed SSO cookie is absent — still rebranded + mocked", async () => {
+  it("hides the shortcut when the signed SSO cookie is absent — still rebranded, still live", async () => {
     vi.mocked(cookies).mockReturnValueOnce({
       get: () => undefined,
     } as never);
@@ -97,6 +98,6 @@ describe("/bgn/command (A13 v4.0 — T13)", () => {
     const cc = screen.getByTestId("danantara-command-center");
     expect(cc).toHaveAttribute("data-href", "");
     expect(cc).toHaveAttribute("data-brand", "BGN");
-    expect(cc).toHaveAttribute("data-mock", "1");
+    expect(cc).toHaveAttribute("data-mock", "0");
   });
 });

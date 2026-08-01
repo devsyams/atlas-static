@@ -8,12 +8,12 @@
 
 import { mapThreatsResponse, type MappedThreats, type ThreatsApiResponse } from "./ceo/threats-source";
 
-const DEFAULT_BASE = "https://api.garudaperkasa.io/api-nexorus/threats";
 const REVALIDATE_S = 21_600; // 6 h — matches the topics feed (the upstream refreshes ~daily)
 
 export type ThreatsResult = MappedThreats & { meta: ThreatsApiResponse["meta"] };
 
-/** Thrown when the feed has no API key configured (callers map this to 503). */
+/** Thrown when the feed has no base URL or API key configured (callers map this to 503).
+ * A10 v6.0: no hardcoded default base — the GARUDA host is dead (TrawlDeck cutover). */
 export class ThreatsNotConfiguredError extends Error {}
 
 /** One fetch + map. `fresh` bypasses the data cache. */
@@ -42,9 +42,9 @@ async function fetchOnce(base: string, code: string, apiKey: string, fresh: bool
  * self-heals on the next load instead of sticking. A genuinely calm feed stays empty.
  */
 export async function fetchThreatsForCode(code: string, opts: { fresh?: boolean } = {}): Promise<ThreatsResult> {
-  const base = process.env.DANANTARA_THREATS_API_BASE || DEFAULT_BASE;
+  const base = process.env.DANANTARA_THREATS_API_BASE;
   const apiKey = process.env.DANANTARA_TOPICS_API_KEY;
-  if (!apiKey) throw new ThreatsNotConfiguredError("Threats feed not configured.");
+  if (!base || !apiKey) throw new ThreatsNotConfiguredError("Threats feed not configured.");
 
   const fresh = opts.fresh ?? false;
   const result = await fetchOnce(base, code, apiKey, fresh);

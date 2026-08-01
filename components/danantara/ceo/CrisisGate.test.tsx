@@ -210,6 +210,39 @@ describe("CrisisGate (A10 — fear-first landing)", () => {
     expect(cls).not.toContain("28rem");
   });
 
+  // A10 v7.0 — the range picker is functional; default 7 hari since v8.0.
+  it("mounts with '7 hari' selected and fetches /topics with days=7 (AC7 v8.0, T24)", async () => {
+    stubFetch();
+    const fetchMock = globalThis.fetch as unknown as ReturnType<typeof vi.fn>;
+    render(<CrisisGate />);
+    await waitFor(() => expect(screen.getByTestId("crisis-gate")).toBeInTheDocument());
+
+    expect(screen.getByRole("button", { name: "7 hari" })).toHaveAttribute("aria-pressed", "true");
+    const topicUrls = fetchMock.mock.calls.map((c) => String(c[0])).filter((u) => u.includes("/topics"));
+    expect(topicUrls).toHaveLength(1);
+    expect(topicUrls[0]).toContain("days=7");
+  });
+
+  it("switching the preset refetches only /topics with the new days and fires onRangeChange (AC7 v7.0, T24)", async () => {
+    stubFetch();
+    const fetchMock = globalThis.fetch as unknown as ReturnType<typeof vi.fn>;
+    const onRangeChange = vi.fn();
+    render(<CrisisGate onRangeChange={onRangeChange} />);
+    await waitFor(() => expect(screen.getByTestId("crisis-gate")).toBeInTheDocument());
+
+    fetchMock.mockClear();
+    fireEvent.click(screen.getByRole("button", { name: "30 hari" }));
+
+    await waitFor(() => {
+      const urls = fetchMock.mock.calls.map((c) => String(c[0]));
+      expect(urls.filter((u) => u.includes("/topics") && u.includes("days=30"))).toHaveLength(1);
+      // The threats + actor feeds are not date-range based — a preset switch must not refetch them.
+      expect(urls.filter((u) => u.includes("/threats") || u.includes("/actor-intelligence"))).toHaveLength(0);
+    });
+    expect(onRangeChange).toHaveBeenCalledWith(30);
+    expect(screen.getByRole("button", { name: "30 hari" })).toHaveAttribute("aria-pressed", "true");
+  });
+
   it("refetches all three feeds when refreshNonce changes, and not on mount (T4 support)", async () => {
     stubFetch();
     const fetchMock = globalThis.fetch as unknown as ReturnType<typeof vi.fn>;

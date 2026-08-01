@@ -89,14 +89,17 @@ export function CounterNarrativeWarRoom({
   refreshNonce,
   brand = "Danantara",
   mock = false,
+  windowDays,
 }: {
   refreshNonce?: number;
   /** Client brand for the cosmetic terminal command line (A14 v4.1; default Danantara). */
   brand?: string;
   /** Append ?mock=1 to the topics fetch — the scoped BGN demo mock (A14 v4.1). */
   mock?: boolean;
+  /** The page's selected topics window in days (A7 v49.0 `?days=`); absent = default window. */
+  windowDays?: number;
 } = {}) {
-  const { topics, issues, summary, data, source, feed, pending } = useCounterNarrative(refreshNonce, mock);
+  const { topics, issues, summary, data, source, feed, pending } = useCounterNarrative(refreshNonce, { mock, windowDays });
   const { ref, inView } = useInView<HTMLElement>();
   const bootLines = useMemo(() => warRoomBootLines(brand), [brand]);
 

@@ -102,6 +102,29 @@ describe("GET /api/v1/danantara/topics (T20 / AC19)", () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
+  it("passes an allowlisted ?days= through as one explicit window (T24, v49.0)", async () => {
+    const fetchMock = vi.fn(async (_url: string) => new Response(JSON.stringify(SAMPLE), { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const res = await GET(reqWith("days=30"));
+    expect(res.status).toBe(200);
+    expect(fetchMock).toHaveBeenCalledTimes(1); // explicit window: no widening retry
+    const url = String(fetchMock.mock.calls[0][0]);
+    expect(url).toContain("startdate=");
+    expect(url).toContain("enddate=");
+  });
+
+  it("ignores an out-of-allowlist ?days= — the date-less default window applies (T24, v49.0)", async () => {
+    const fetchMock = vi.fn(async (_url: string) => new Response(JSON.stringify(SAMPLE), { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const res = await GET(reqWith("days=13"));
+    expect(res.status).toBe(200);
+    const url = String(fetchMock.mock.calls[0][0]);
+    expect(url).not.toContain("startdate");
+    expect(url).not.toContain("enddate");
+  });
+
   it("caches the upstream for 6h by default, and bypasses the cache on ?fresh=1 (v46.0, was 1h)", async () => {
     const fetchMock = vi.fn(async (_url: string, _init?: RequestInit) => new Response(JSON.stringify(SAMPLE), { status: 200 }));
     vi.stubGlobal("fetch", fetchMock);

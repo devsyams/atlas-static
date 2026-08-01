@@ -75,6 +75,29 @@ function stubFetch({ topicsStatus = 200, boardStatus = 200 } = {}) {
 describe("CeoCommand — live wall (v37.0)", () => {
   afterEach(() => vi.restoreAllMocks());
 
+  // A7 v49.0 — opt-in windowDays follows the page's date filter (A13).
+  it("windowDays appends days= to the /topics fetch and refetches on change; absent → no days param (T24)", async () => {
+    stubFetch();
+    const fetchMock = globalThis.fetch as unknown as ReturnType<typeof vi.fn>;
+    const { rerender } = render(<CeoCommand showBumn={false} windowDays={30} />);
+    await waitFor(() => expect(screen.getByText("Danantara Topic A")).toBeInTheDocument());
+    expect(fetchMock.mock.calls.map((c) => String(c[0])).filter((u) => u.includes("days=30"))).toHaveLength(1);
+
+    fetchMock.mockClear();
+    rerender(<CeoCommand showBumn={false} windowDays={7} />);
+    await waitFor(() =>
+      expect(fetchMock.mock.calls.map((c) => String(c[0])).filter((u) => u.includes("days=7"))).toHaveLength(1),
+    );
+
+    // Regression: the no-prop render (e.g. /danantara) sends no days param at all.
+    vi.restoreAllMocks();
+    stubFetch();
+    const cleanMock = globalThis.fetch as unknown as ReturnType<typeof vi.fn>;
+    render(<CeoCommand />);
+    await waitFor(() => expect(cleanMock).toHaveBeenCalled());
+    expect(cleanMock.mock.calls.map((c) => String(c[0])).filter((u) => u.includes("days="))).toHaveLength(0);
+  });
+
   it("renders all four zones from the live feeds (AC1)", async () => {
     stubFetch();
     render(<CeoCommand />);

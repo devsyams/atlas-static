@@ -26,6 +26,7 @@ export function CeoCommand({
   refreshNonce,
   brand = "Danantara",
   mock = false,
+  windowDays,
 }: {
   /** A13 embeds this wall under the Crisis Gate's header — pass `false` to drop ours. */
   showHeader?: boolean;
@@ -41,6 +42,11 @@ export function CeoCommand({
   brand?: string;
   /** Append ?mock=1 to the topics fetch — the scoped BGN demo mock (A7 v47.1). */
   mock?: boolean;
+  /**
+   * A13 v5.0: the page's selected topics window in days (A7 v49.0 `?days=`).
+   * Absent (e.g. /danantara) → the feed's date-less default window, unchanged.
+   */
+  windowDays?: number;
 } = {}) {
   const [issues, setIssues] = useState<CeoIssue[]>([]); // Danantara-wide topics
   const [bumn, setBumn] = useState<BumnSentiment[]>([]); // BUMN board rows
@@ -59,7 +65,9 @@ export function CeoCommand({
 
   const load = useCallback(
     (fresh = false) => {
-      const topics = fetch(`/api/v1/danantara/topics${feedQuery({ fresh, mock })}`)
+      // The days window applies to the topics feed only (the board aggregates
+      // per-BUMN default windows).
+      const topics = fetch(`/api/v1/danantara/topics${feedQuery({ fresh, mock, days: windowDays })}`)
         .then((r) => {
           if (!r.ok) throw new Error(`HTTP ${r.status}`);
           return r.json();
@@ -96,7 +104,7 @@ export function CeoCommand({
         if (mountedRef.current) setRefreshing(false);
       });
     },
-    [showBumn, mock],
+    [showBumn, mock, windowDays],
   );
 
   useEffect(() => {

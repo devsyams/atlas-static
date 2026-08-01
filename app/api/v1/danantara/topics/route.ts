@@ -15,9 +15,14 @@ import { fetchTopicsForCode, FeedNotConfiguredError } from "@/lib/danantara/topi
  * Intentionally public (no requireRole): standalone sales-lead demo.
  */
 
+/** The only day-windows the UI offers (A7 v49.0) — anything else is ignored. */
+const DAYS_ALLOWED = new Set([1, 7, 30]);
+
 export async function GET(req: Request) {
   const params = new URL(req.url).searchParams;
   const fresh = params.get("fresh") === "1";
+  const daysParam = Number(params.get("days"));
+  const days = DAYS_ALLOWED.has(daysParam) ? daysParam : undefined;
 
   // Scoped BGN demo mock (A13 v4.0): only /bgn/command sends ?mock=1, so every other
   // caller falls through to the live path untouched. Production-safe by design —
@@ -45,7 +50,7 @@ export async function GET(req: Request) {
       : process.env.DANANTARA_TOPIC_CODE || DANANTARA_MAIN_CODE;
 
   try {
-    const result = await fetchTopicsForCode(code, { fresh });
+    const result = await fetchTopicsForCode(code, { fresh, days });
     return NextResponse.json(result);
   } catch (e) {
     if (e instanceof FeedNotConfiguredError) {

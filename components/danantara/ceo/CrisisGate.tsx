@@ -30,16 +30,19 @@ const DEFAULT_BRAND = "Danantara";
 const DEFAULT_LOGO = "/danantara.png";
 
 /**
- * Date-range presets for the dashboard window. Selection is UI-only for now (the
- * data wiring follows): the default is "Hari ini" so the board reads the issue as it
- * stands **now**, not a trailing 7-day average.
+ * Date-range presets for the dashboard window (A10 v7.0 — functional): each preset
+ * maps to the topics BFF's allowlisted `?days=` (1 = today only). Default **7 hari**
+ * (v8.0, client request; was 30). The threats + actor feeds are not date-range
+ * based, so the picker drives the `/topics` fetch only.
  */
 const DATE_RANGES = [
-  { key: "today", label: "Hari ini" },
-  { key: "7d", label: "7 hari" },
-  { key: "30d", label: "30 hari" },
+  { key: "today", label: "Hari ini", days: 1 },
+  { key: "7d", label: "7 hari", days: 7 },
+  { key: "30d", label: "30 hari", days: 30 },
 ] as const;
 type RangeKey = (typeof DATE_RANGES)[number]["key"];
+const DEFAULT_RANGE: RangeKey = "7d";
+const DEFAULT_DAYS = 7;
 
 const reducedMotion = () =>
   typeof window !== "undefined" && !!window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
@@ -79,6 +82,7 @@ export function CrisisGate({
   embedded = false,
   refreshNonce,
   onRefresh,
+  onRangeChange,
   mediaIntelligenceHref,
   brand = DEFAULT_BRAND,
   brandLogo = DEFAULT_LOGO,
@@ -90,6 +94,8 @@ export function CrisisGate({
   refreshNonce?: number;
   /** When provided, the header Refresh delegates to the parent instead of fetching itself. */
   onRefresh?: () => void;
+  /** A13 (v7.0): notified with the new `days` when the date-range preset changes. */
+  onRangeChange?: (days: number) => void;
   /** Optional OpenGate-only shortcut shown before "View briefing". */
   mediaIntelligenceHref?: string;
   /** Client brand shown as the gate title; non-default hides the Danantara briefing link (A10 v5.6). */
@@ -106,10 +112,13 @@ export function CrisisGate({
   const [threatLoading, setThreatLoading] = useState(true);
   const [drivers, setDrivers] = useState<ThreatDriver[]>([]);
   const [rosterLoading, setRosterLoading] = useState(true);
-  const [range, setRange] = useState<RangeKey>("today");
+  const [range, setRange] = useState<RangeKey>(DEFAULT_RANGE);
   const [live, setLive] = useState<Live>("loading");
   const [refreshing, setRefreshing] = useState(false);
   const mountedRef = useRef(true);
+  // The selected window in days — read by every topics fetch (incl. Refresh/nonce
+  // paths) without re-creating the callbacks on a preset switch.
+  const daysRef = useRef<number>(DEFAULT_DAYS);
 
   useEffect(() => {
     mountedRef.current = true;
@@ -119,7 +128,7 @@ export function CrisisGate({
   }, []);
 
   const loadTopics = useCallback((fresh = false) => {
-    fetch(`/api/v1/danantara/topics${feedQuery({ fresh, mock })}`)
+    fetch(`/api/v1/danantara/topics${feedQuery({ fresh, mock, days: daysRef.current })}`)
       .then((r) => {
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
         return r.json();
@@ -255,8 +264,8 @@ export function CrisisGate({
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          {/* Date-range window — default "Hari ini" (issue as it stands now). UI-only
-              for now; data wiring follows. */}
+          {/* Date-range window — default "30 hari"; drives the /topics `days=` window
+              (v7.0). The threats/actor feeds are not date-range based. */}
           <div
             className="inline-flex items-center gap-0.5 rounded-full border border-border bg-card/50 p-0.5"
             role="group"
@@ -269,7 +278,13 @@ export function CrisisGate({
                 <button
                   key={r.key}
                   type="button"
-                  onClick={() => setRange(r.key)}
+                  onClick={() => {
+                    if (range === r.key) return;
+                    setRange(r.key);
+                    daysRef.current = r.days;
+                    onRangeChange?.(r.days);
+                    loadTopics(false); // re-window the topics feed only
+                  }}
                   aria-pressed={active}
                   className={`rounded-full px-3 py-1.5 text-sm font-medium transition-colors ${
                     active
