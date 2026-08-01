@@ -23,9 +23,6 @@ import type { CeoIssue } from "./types";
 export type DraftChannel = "kol" | "clipper" | "grassroots";
 export const DRAFT_CHANNELS: readonly DraftChannel[] = ["kol", "clipper", "grassroots"];
 
-/** Content vocabulary → the reach model's channel key. */
-export const DRAFT_TO_CHANNEL = { kol: "kol", clipper: "clipper", grassroots: "homeless" } as const;
-
 /** Per-channel body cap. Mirrored in the prompt AND enforced by the parser. */
 export const DRAFT_MAX: Record<DraftChannel, number> = { kol: 280, clipper: 150, grassroots: 200 };
 
@@ -73,7 +70,7 @@ export const COUNTER_NARRATIVE_SYSTEM = [
   "- Bila menyebut angka, salin PERSIS dari ringkasan (jangkauan, impresi, persentase negatif).",
   "- `attack_line`: SATU kalimat berisi inti framing pihak yang menyerang, dari sudut pandang",
   "  mereka, disimpulkan dari judul + penjelasan + headline topik. Bukan opini Anda.",
-  "- `counter_angle`: SATU kalimat sudut balasan yang jujur. Jangan membantah fakta; ubah",
+  "- `counter_angle`: 2-3 kalimat sudut balasan yang jujur. Jangan membantah fakta; ubah",
   "  kerangkanya lewat bukti, konteks, progres, atau manfaat langsung bagi publik.",
   "- Buat TEPAT 3 draft per topik: `kol`, `clipper`, `grassroots`. Nada dan diksi harus BERBEDA;",
   "  jangan menyalin satu draft ke draft lain.",
@@ -102,7 +99,7 @@ export const COUNTER_NARRATIVE_SCHEMA: Record<string, unknown> = {
         properties: {
           topic_id: { type: "string", description: "Persis seperti pada ringkasan." },
           attack_line: { type: "string", description: "Satu kalimat framing pihak penyerang." },
-          counter_angle: { type: "string", description: "Satu kalimat sudut balasan faktual." },
+          counter_angle: { type: "string", description: "2-3 kalimat sudut balasan faktual yang ringkas." },
           drafts: {
             type: "array",
             description: "Tepat 3 draft: kol, clipper, grassroots.",
@@ -170,8 +167,8 @@ export function buildCounterNarrativeGrounding(topics: CeoIssue[]): string {
 /**
  * All-or-nothing validation. One bad draft rejects the whole payload, so the section
  * can never render a mix of model output and template output. Bodies over the hard
- * ceiling are **rejected, never truncated** — a half sentence in a copy-paste box
- * ships to a real audience.
+ * ceiling are **rejected, never truncated** — a half sentence in a copy box would
+ * read as broken copy on the board.
  */
 export function parseCounterNarrative(raw: unknown, topics: CeoIssue[]): CounterNarrativeAi | null {
   if (!raw || typeof raw !== "object") return null;
@@ -264,7 +261,7 @@ export function fallbackCounterNarrative(topics: CeoIssue[]): CounterNarrativeAi
         // The title is the card's own heading directly above this line — splicing it
         // in here too produced broken Indonesian once real (long) titles arrived.
         counterAngle:
-          "Jangan bantah isunya — perluas konteksnya: tunjukkan data resmi, progres nyata, dan manfaat langsungnya bagi publik.",
+          "Jangan sekadar membantah isunya. Perluas konteksnya dengan data resmi, progres yang sudah berjalan, dan manfaat langsung bagi publik agar pembaca melihat gambaran yang utuh.",
         drafts: [
           {
             channel: "kol",

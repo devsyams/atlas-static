@@ -44,7 +44,7 @@
 | **A11** | Danantara Executive Briefing | 3-act | demo | — | 2.2 | Built |
 | **A12** | JasaMarga AI Ops Insight & Predictions (LLM-backed) | 3-act | demo | — | 7.0 | Built |
 | **A13** | Danantara Command Center (one-page) | 3-act | demo | — | 3.2 | Built |
-| **A14** | Counter-Narrative War Room (AI counter-content) | 3-act | demo | — | 1.1 | In progress |
+| **A14** | Counter-Narrative War Room (AI counter-content) | 3-act | demo | — | 2.0 | In progress |
 | **A15** | Crisis Simulation Room (world builder) | 3-act | demo | — | 2.0 | Built |
 
 **Totals:** 34 features · 9 platform · 5 watch · 5 understand · 15 act.

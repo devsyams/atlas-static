@@ -100,7 +100,7 @@ describe("counter-narrative-ai — grounding + prompt (A14 AC4)", () => {
     const s = COUNTER_NARRATIVE_SYSTEM;
     expect(s).toMatch(/HANYA/); // only grounded facts
     expect(s).toMatch(/[Jj]angan mengarang/); // no fabricated statistics
-    expect(s).toMatch(/TEPAT 3 draft/); // exactly 3 drafts
+    expect(s).toMatch(/2-3 kalimat/); // counter narrative should read like a short paragraph
     expect(s).toMatch(/280/); // kol length cap
     expect(s).toMatch(/150/); // clipper length cap
     expect(s).toMatch(/200/); // grassroots length cap

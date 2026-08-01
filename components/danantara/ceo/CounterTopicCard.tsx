@@ -3,19 +3,17 @@
 import { type CSSProperties } from "react";
 import { Eye, MessageCircle, ShieldAlert, Sparkles } from "lucide-react";
 import { fmtCount } from "@/lib/danantara/ceo/format";
-import { DRAFT_TO_CHANNEL, type CounterNarrativeTopic } from "@/lib/danantara/ceo/counter-narrative-ai";
+import { type CounterNarrativeTopic } from "@/lib/danantara/ceo/counter-narrative-ai";
 import type { CounterNarrativePlan } from "@/lib/danantara/ceo/counter-narrative";
 import { buildWarRoomBrief, whatsappResponseLink } from "@/lib/danantara/ceo/response-dispatch";
 import { TONE } from "./SentimentBreakdown";
-import { DraftCard } from "./DraftCard";
 
 /** War-room WhatsApp number for dispatch — set via env, demo fallback (mirrors A9). */
 const WA_NUMBER = process.env.NEXT_PUBLIC_RESPONSE_WHATSAPP || "6287701701717";
 
 /**
  * One topic's counter-narrative (A14): the attack as they frame it, our answer, the
- * volume it takes, and the three drafts that deliver it. Uses the board's negative
- * tone throughout — this card only ever describes a hostile topic.
+ * volume it takes on each channel, and the post allocation that delivers it.
  */
 export function CounterTopicCard({
   rank,
@@ -26,9 +24,6 @@ export function CounterTopicCard({
   topic: CounterNarrativeTopic;
   plan: CounterNarrativePlan;
 }) {
-  const postsFor = (channel: keyof typeof DRAFT_TO_CHANNEL) =>
-    plan.channels.find((c) => c.channel === DRAFT_TO_CHANNEL[channel])?.posts ?? 0;
-
   return (
     <li
       data-testid={`counter-topic-${topic.topicId}`}
@@ -62,7 +57,7 @@ export function CounterTopicCard({
           {/* Our answer. */}
           <div>
             <div className="flex items-center gap-1.5 text-base font-bold uppercase tracking-[0.14em] text-primary">
-              <Sparkles className="h-4 w-4 shrink-0" /> Counter angle
+              <Sparkles className="h-4 w-4 shrink-0" /> Counter narrative
             </div>
             <p data-testid={`angle-${topic.topicId}`} className="mt-1 text-base leading-snug text-foreground">
               {topic.counterAngle}
@@ -90,10 +85,19 @@ export function CounterTopicCard({
           </div>
 
           {/* The content itself. */}
-          <div className="flex flex-col gap-2">
-            {topic.drafts.map((d) => (
-              <DraftCard key={d.channel} draft={d} posts={postsFor(d.channel)} />
+          <div className="grid gap-2 rounded-lg border border-border/50 bg-background/40 p-2.5">
+            {plan.channels.map((c) => (
+              <div key={c.channel} className="flex items-center justify-between gap-3 text-base">
+                <span className="text-muted-foreground">{c.channel === "kol" ? "KOL posts" : c.channel === "clipper" ? "Clipper captions" : "Grassroots actions"}</span>
+                <span data-testid={`channel-posts-${topic.topicId}-${c.channel}`} className="font-mono text-2xl font-extrabold tabular-nums text-foreground">
+                  {c.posts.toLocaleString("en-US")}
+                </span>
+              </div>
             ))}
+            <p className="pt-1 text-base leading-snug text-muted-foreground">
+              The PR/media team owns the actual post copy. This panel shows the required volume per channel and the
+              counter narrative that should guide it.
+            </p>
           </div>
 
           <a
