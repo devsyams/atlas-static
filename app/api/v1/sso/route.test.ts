@@ -58,7 +58,7 @@ describe("GET /api/v1/sso (P9)", () => {
       iss: "opengate" as const,
       aud: "danantara" as const,
       iat: baseClaims.iat,
-      exp: baseClaims.iat + 86400,
+      exp: baseClaims.exp,
       sub: baseClaims.sub,
       email: baseClaims.email,
       scope: "danantara" as const,
@@ -96,15 +96,15 @@ describe("GET /api/v1/sso (P9)", () => {
   });
 
   it("defaults atlas_scope to 'danantara' when the token omits scope (T10/AC6)", async () => {
-    const noScope = { ...claims() } as Record<string, unknown>;
-    delete noScope.scope;
     const baseClaims = claims();
+    const noScope = { ...baseClaims } as Record<string, unknown>;
+    delete noScope.scope;
     const token = await signSsoToken(noScope as unknown as SsoClaims, SECRET);
     const sessionClaims = {
       iss: "opengate" as const,
       aud: "danantara" as const,
       iat: baseClaims.iat,
-      exp: baseClaims.iat + 86400,
+      exp: baseClaims.exp,
       sub: baseClaims.sub,
       email: baseClaims.email,
       scope: "danantara" as const,
