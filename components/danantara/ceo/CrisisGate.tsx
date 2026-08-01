@@ -98,7 +98,7 @@ export function CrisisGate({
   onRangeChange?: (days: number) => void;
   /** Optional OpenGate-only shortcut shown before "View briefing". */
   mediaIntelligenceHref?: string;
-  /** Client brand shown as the gate title; non-default hides the Danantara briefing link (A10 v5.6). */
+  /** Client brand shown as the gate title (A10 v5.6; since v9.2 the briefing link shows on every brand). */
   brand?: string;
   /** Logo asset for the brand. */
   brandLogo?: string;
@@ -307,18 +307,17 @@ export function CrisisGate({
               <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
             </a>
           )}
-          {/* The briefing lives on a Danantara page (/danantara/brief); hide it when the
-              gate is rebranded (e.g. BGN) so the page never links off-brand (A10 v5.6). */}
-          {brand === DEFAULT_BRAND && (
-            <Link
-              href="/danantara/brief"
-              data-testid="crisis-detail-link"
-              className="group inline-flex items-center gap-2 rounded-full border border-border bg-card/50 px-4 py-2 text-sm font-medium text-foreground transition-colors hover:border-primary/50 hover:text-primary"
-            >
-              View briefing
-              <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-            </Link>
-          )}
+          {/* The briefing lives on a Danantara page (/danantara/brief); shown on every
+              brand — incl. the rebranded BGN gate — since its data is the same shared feed
+              (A10 v9.2, client request; the v5.6 hide-when-branded gate was dropped). */}
+          <Link
+            href="/danantara/brief"
+            data-testid="crisis-detail-link"
+            className="group inline-flex items-center gap-2 rounded-full border border-border bg-card/50 px-4 py-2 text-sm font-medium text-foreground transition-colors hover:border-primary/50 hover:text-primary"
+          >
+            View briefing
+            <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+          </Link>
           <button
             type="button"
             onClick={() => {
