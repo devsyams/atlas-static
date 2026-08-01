@@ -64,7 +64,6 @@ export function ThreatIndexResponseSimulator({
           <Row label="Clipper captions" value={plan.channelSplit.clipper} testId="board-clipper" />
           <Row label="Grassroots actions" value={plan.channelSplit.grassroots} testId="board-grassroots" />
           <Row label="Projected reach" value={plan.projectedReach.toLocaleString("en-US")} testId="board-reach" />
-          <Row label="Response multiplier" value={plan.multiplier.toFixed(1)} testId="board-multiplier" />
         </div>
       </div>
 
