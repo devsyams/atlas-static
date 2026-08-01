@@ -42,19 +42,19 @@ export function ThreatIndexResponseSimulator({
           <Metric
             data-testid="board-post-response"
             icon={<TrendingUp className="h-4 w-4" />}
-            label="Modeled after response"
+            label="Projected threat after response"
             value={plan.postResponseThreatIndex.toLocaleString("en-US")}
           />
           <Metric
             data-testid="board-total-actions"
             icon={<Target className="h-4 w-4" />}
-            label="Total actions"
+            label="Recommended response volume"
             value={plan.totalActions.toLocaleString("en-US")}
           />
           <Metric
             data-testid="board-volume-anchor"
             icon={<Users className="h-4 w-4" />}
-            label="Volume anchor"
+            label="Negative volume baseline"
             value={plan.volumeAnchor.toLocaleString("en-US")}
           />
         </div>
@@ -70,8 +70,8 @@ export function ThreatIndexResponseSimulator({
 
       {revealed && (
         <p className="mt-3 text-base leading-snug text-muted-foreground">
-          Threat Index now {plan.threatIndex} → modeled after response {plan.postResponseThreatIndex} with {plan.totalActions} total
-          actions across the board.
+          Threat Index now {plan.threatIndex} → projected threat after response {plan.postResponseThreatIndex} with {plan.totalActions}
+          recommended actions across the board.
         </p>
       )}
     </section>
