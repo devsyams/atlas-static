@@ -1,3 +1,6 @@
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ActorRosterApiResponse } from "@/lib/danantara/ceo/actor-roster-source";
 import { GET } from "./route";
@@ -14,16 +17,26 @@ const ROSTER: ActorRosterApiResponse = {
 const KEY = "SUPER-SECRET-KEY";
 const req = (fresh = false) => new Request(`http://localhost/api/v1/danantara/actor-intelligence${fresh ? "?fresh=1" : ""}`);
 
+let mockDir = "";
+const writeMock = (name: string, data: unknown) => {
+  writeFileSync(join(mockDir, name), JSON.stringify(data));
+};
+
 describe("GET /api/v1/danantara/actor-intelligence (T21 / AC11)", () => {
   beforeEach(() => {
     process.env.DANANTARA_TOPICS_API_KEY = KEY;
     process.env.DANANTARA_TOPIC_CODE = "danantara_main";
+    mockDir = mkdtempSync(join(tmpdir(), "atlas-actor-mock-"));
+    process.env.DANANTARA_LOCAL_MOCK_DIR = mockDir;
   });
   afterEach(() => {
     vi.restoreAllMocks();
     delete process.env.DANANTARA_TOPICS_API_KEY;
     delete process.env.DANANTARA_TOPIC_CODE;
     delete process.env.DANANTARA_ACTORS_API_BASE;
+    delete process.env.DANANTARA_LOCAL_MOCK_DIR;
+    if (mockDir) rmSync(mockDir, { recursive: true, force: true });
+    mockDir = "";
   });
 
   it("returns the mapped roster on a successful upstream fetch (with avatars)", async () => {
@@ -33,6 +46,21 @@ describe("GET /api/v1/danantara/actor-intelligence (T21 / AC11)", () => {
     const body = await res.json();
     expect(body.actors.map((a: { handle: string }) => a.handle)).toContain("neg_influencer");
     expect(body.actors[0].avatarUrl).toBe("data:image/jpg;base64,AAAA");
+  });
+
+  it("returns the local dev mock file when DANANTARA_LOCAL_MOCK_DIR is set", async () => {
+    writeMock("actor-intelligence.json", {
+      actors: [{ handle: "local_mock_actor", platform: "twitter", riskLevel: "high" }],
+    });
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+
+    const res = await GET(req());
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.actors).toHaveLength(1);
+    expect(body.actors[0].handle).toBe("local_mock_actor");
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it("returns 503 when no api key is configured", async () => {

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { DANANTARA_MAIN_CODE, isAllowedTopicCode } from "@/lib/bumn/registry";
+import { readDevMockJson } from "@/lib/danantara/dev-mocks";
 import { ActorRosterNotConfiguredError, fetchActorRosterForCode } from "@/lib/danantara/actor-roster-feed";
 
 /**
@@ -17,6 +18,17 @@ import { ActorRosterNotConfiguredError, fetchActorRosterForCode } from "@/lib/da
 export async function GET(req: Request) {
   const params = new URL(req.url).searchParams;
   const fresh = params.get("fresh") === "1";
+
+  const mockJson = readDevMockJson("actor-intelligence.json") ?? process.env.DANANTARA_ACTOR_INTELLIGENCE_MOCK_JSON;
+  if (process.env.NODE_ENV !== "production" && mockJson) {
+    try {
+      const parsed = JSON.parse(mockJson) as unknown;
+      const actors = Array.isArray(parsed) ? parsed : Array.isArray((parsed as { actors?: unknown }).actors) ? (parsed as { actors: unknown[] }).actors : [];
+      return NextResponse.json({ actors });
+    } catch {
+      return NextResponse.json({ error: "Invalid actor roster mock JSON." }, { status: 500 });
+    }
+  }
 
   const requested = params.get("code");
   const code =
