@@ -50,6 +50,9 @@ yarn-error.log*
 /apps/
 /.turbo/
 
+# local Danantara dev mocks (do not commit)
+.local-dev-mocks/
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

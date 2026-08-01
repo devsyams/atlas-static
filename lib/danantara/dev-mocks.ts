@@ -9,6 +9,10 @@ function mockDir() {
 
 export function readDevMockJson(filename: string): string | null {
   if (process.env.NODE_ENV === "production") return null;
-  const file = join(mockDir(), filename);
-  return existsSync(file) ? readFileSync(file, "utf8") : null;
+  try {
+    const file = join(mockDir(), filename);
+    return existsSync(file) ? readFileSync(file, "utf8") : null;
+  } catch {
+    return null;
+  }
 }

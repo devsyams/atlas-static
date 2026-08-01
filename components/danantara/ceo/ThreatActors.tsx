@@ -80,6 +80,8 @@ function DriverCard({ d }: { d: ThreatDriver }) {
         <span>pengikut</span>
       </div>
 
+      {d.note && <p className="mt-2.5 text-sm leading-relaxed text-muted-foreground">{d.note}</p>}
+
       {d.bot && (
         <div className="mt-2.5 inline-flex items-center gap-1.5 rounded-full border border-warning/40 bg-warning/10 px-2.5 py-1 text-sm font-semibold text-warning">
           <Bot className="h-4 w-4" /> Provokator / bot
