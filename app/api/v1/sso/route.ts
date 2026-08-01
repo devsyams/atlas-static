@@ -55,7 +55,7 @@ export async function GET(req: Request) {
 
   const secure = process.env.NODE_ENV === "production";
   const now = Math.floor(Date.now() / 1000);
-  const sessionMaxAge = result.claims.exp - now;
+  const sessionMaxAge = SESSION_MAX_AGE;
   const attrs = { httpOnly: true, path: "/", sameSite: "lax" as const, maxAge: SESSION_MAX_AGE, secure };
   const sessionAttrs = { httpOnly: true, path: "/", sameSite: "lax" as const, maxAge: sessionMaxAge, secure };
   const opengateSession = await signOpengateSessionCookie(
@@ -64,7 +64,7 @@ export async function GET(req: Request) {
       iss: "opengate",
       aud: "danantara",
       iat: result.claims.iat,
-      exp: result.claims.exp,
+      exp: result.claims.iat + SESSION_MAX_AGE,
       sub: result.claims.sub,
       email: result.claims.email,
       scope: "danantara",

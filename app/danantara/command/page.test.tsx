@@ -52,7 +52,7 @@ describe("/danantara/command (A13 — T1)", () => {
       iss: "opengate" as const,
       aud: "danantara" as const,
       iat: claims().iat,
-      exp: claims().exp,
+      exp: claims().iat + 86400,
       sub: claims().sub,
       email: claims().email,
       scope: "danantara" as const,
