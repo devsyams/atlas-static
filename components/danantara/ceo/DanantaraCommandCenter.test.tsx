@@ -174,4 +174,32 @@ describe("DanantaraCommandCenter (A13 — one-page)", () => {
     expect(screen.getByTestId("issue-group-negative").textContent).toContain("Investasi Hilirisasi Nikel");
     expect(screen.getByTestId("issue-group-positive").textContent).toContain("Topik Positif");
   });
+
+  // A13 v4.0 — the BGN page threads brand + mock into every pane.
+  it("threads brand + mock into every pane when set (T15/T18)", async () => {
+    const fetchMock = stubFetch();
+    render(<DanantaraCommandCenter brand="BGN" brandLogo="/bgn.png" mock />);
+    await waitFor(() => expect(screen.getByTestId("ceo-issues")).toBeInTheDocument());
+    // Brand reached the gate title + the issue board.
+    expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("BGN");
+    expect(screen.getByTestId("ceo-issues").textContent).toContain("BGN Issues");
+    // Mock reached every feed read (topics ×3, threats, actor-intelligence) — but not
+    // the war room's /counter-narrative POST, which drafts over the mocked topics.
+    await waitFor(() => {
+      const feeds = fetchMock.mock.calls
+        .map((c) => String(c[0]))
+        .filter((u) => u.includes("/api/v1/danantara/") && !u.includes("counter-narrative"));
+      expect(feeds.length).toBeGreaterThanOrEqual(5);
+      expect(feeds.every((u) => u.includes("mock=1"))).toBe(true);
+    });
+  });
+
+  it("defaults to Danantara branding and sends no mock=1 (regression)", async () => {
+    const fetchMock = stubFetch();
+    render(<DanantaraCommandCenter />);
+    await waitFor(() => expect(screen.getByTestId("ceo-issues")).toBeInTheDocument());
+    expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("Danantara");
+    expect(screen.getByTestId("ceo-issues").textContent).toContain("Danantara Issues");
+    expect(fetchMock.mock.calls.map((c) => String(c[0])).some((u) => u.includes("mock=1"))).toBe(false);
+  });
 });

@@ -178,4 +178,12 @@ describe("IssueBoard grouped by sentiment (T12 / AC12 v9.0)", () => {
     expect(neg.textContent).toContain("(0)");
     expect(neg.textContent).toContain("No ");
   });
+
+  it("titles the board '{brand} Issues' — Danantara by default, overridable to BGN (A7 v47.1)", () => {
+    const { rerender } = render(<IssueBoard issues={issues} />);
+    expect(screen.getByTestId("ceo-issues").textContent).toContain("Danantara Issues");
+    rerender(<IssueBoard issues={issues} brand="BGN" />);
+    expect(screen.getByTestId("ceo-issues").textContent).toContain("BGN Issues");
+    expect(screen.getByTestId("ceo-issues").textContent).not.toContain("Danantara Issues");
+  });
 });

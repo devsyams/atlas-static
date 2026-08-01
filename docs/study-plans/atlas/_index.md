@@ -20,7 +20,7 @@
 | **P6** | RBAC, route guards & audit log | 0-platform | S2 | E3 | 1.0 | Planned |
 | **P7** | Observability, hardening, backups & launch | 0-platform | S1,S6 | E8,E9 | 1.0 | Planned |
 | **P8** | Nexorus cross-app link (autologin: home + per-topic deep link) | 0-platform | demo | — | 3.3 | Built |
-| **P9** | OpenGate → Danantara SSO handoff (inbound autologin) | 0-platform | demo | — | 1.2 | Built |
+| **P9** | OpenGate → Danantara SSO handoff (inbound autologin) | 0-platform | demo | — | 1.3 | Built |
 | **W1** | Source registry & scheduler | 1-watch | S3 | E4 | 1.0 | Planned |
 | **W2** | RSS & news-API connectors | 1-watch | S3 | E4 | 1.0 | Planned |
 | **W3** | Social connectors (X/IG/FB/TikTok) | 1-watch | S3–S4 | E4 | 1.0 | Planned |
@@ -37,14 +37,14 @@
 | **A4** | AI assistant — copilot chat | 3-act | S5 | E7 | 1.0 | Planned |
 | **A5** | AI assistant — briefing, forecast & per-widget ask | 3-act | S5 | E7 | 1.0 | Planned |
 | **A6** | Real-time ticker, alerts & War Room | 3-act | S5–S6 | E8 | 1.0 | Planned |
-| **A7** | Danantara CEO Command Wall (zero-click demo) | 3-act | demo | — | 47.0 | Built |
+| **A7** | Danantara CEO Command Wall (zero-click demo) | 3-act | demo | — | 47.1 | Built |
 | **A8** | Per-BUMN CEO sentiment dashboards | 3-act | demo | — | 8.0 | Built |
 | **A9** | Communication Response Calculator | 3-act | demo | — | 3.1 | Built |
-| **A10** | Danantara Crisis Gate (fear-first executive landing) | 3-act | demo | — | 5.4 | Built |
+| **A10** | Danantara Crisis Gate (fear-first executive landing) | 3-act | demo | — | 5.6 | Built |
 | **A11** | Danantara Executive Briefing | 3-act | demo | — | 2.2 | Built |
 | **A12** | JasaMarga AI Ops Insight & Predictions (LLM-backed) | 3-act | demo | — | 7.0 | Built |
-| **A13** | Danantara Command Center (one-page) | 3-act | demo | — | 3.2 | Built |
-| **A14** | Counter-Narrative War Room (AI counter-content) | 3-act | demo | — | 4.0 | In progress |
+| **A13** | BGN Command Center (one-page) | 3-act | demo | — | 4.0 | Built |
+| **A14** | Counter-Narrative War Room (AI counter-content) | 3-act | demo | — | 4.1 | Built |
 | **A15** | Crisis Simulation Room (world builder) | 3-act | demo | — | 2.0 | Built |
 
 **Totals:** 34 features · 9 platform · 5 watch · 5 understand · 15 act.
@@ -188,4 +188,6 @@
 | 1.1 | 2026-08-01 | **Board-level redesign (study-plan bump)** — keep the 3 topic cards, but replace the share-of-voice bar with a **Threat Index Response Simulator**. The overall `crisisIndex` now maps to a response posture; all negative topics supply the board-level volume anchor; tier selection remains; and the panel adds a modeled post-response Threat Index alongside the KOL / clipper / grassroots split. Spec ref: `docs/superpowers/specs/2026-08-01-board-level-threat-index-response-simulator.md`.
 | 1.122 | 2026-08-01 | A14 → **v2.0 (MAJOR, client)** — the Threat Index Response Simulator becomes an **always-on 3-tier comparison** (Enterprise · Professional · Basic, colour-coded), each card showing its `×N NOISE` multiplier, a strategy tagline, its **counter-actions** and the **Clipper / Homeless / KOL** split (`responseCalculator(volumeAnchor, tier)`); Professional badged `DEFAULT`. A compact **Threat Index headline** (now → post-response) sits above. The header **tier toggle is removed** (`war-tier-*`); the counter-topic cards fix to **Professional**. Also fixes `responseCalculator`'s split to **largest-remainder** so the three channel counts sum exactly to counter-actions (naive-rounding ±1 drift, now visible with all tiers shown; tightens A9 too). AC3/AC9 amended, AC14 added; T26/T27 amended, T36/T37 added. From client request ("lay out each tier in 3 columns") |
 | 1.123 | 2026-08-01 | A14 → **v3.0 (MAJOR, client)** — move the `now → post-response` **Threat Index projection into each tier card** (computed per tier), and drop the shared headline. `postResponseThreatIndex` is tier-specific — a heavier deployment cuts the threat further (28 → Enterprise 0 / Professional 10 / Basic 22), so a single headline understated Enterprise and overstated Basic. AC9 amended, AC15 added; T27 amended, T38 added. From client request ("the after-response should be different based on the tier") |
+| 1.124 | 2026-08-01 | **A13 → v4.0 (MAJOR)** — rename `/danantara/command` → **`/bgn/command`** and rebrand to **Badan Gizi Nasional (BGN)**; the old route is **removed** (404). Because the garudaperkasa upstream is dead, this page's data is **mocked, scoped to `/bgn/command` only** via a `?mock=1` flag the page threads into its panes → a production-safe branch on the three feed routes (`/topics`, `/threats`, `/actor-intelligence`) serving typed BGN fixtures (`lib/bgn/mock`), cross-consistent across the panes; the War Room drafts **AI over the mocked topics**. Rebrand + mock are opt-in `brand`/`mock` props (default unchanged → `/danantara*` byte-identical): **A7 → v47.1**, **A10 → v5.6**, **A14 → v4.1**. **P9 → v1.3** lands the SSO + middleware handoff on `/bgn/command`. `AppShell` `minimalChrome` + danantara-scope nav extended to `/bgn`. Internal `/api/v1/danantara/*` namespace + `danantara` scope key **unchanged**; the sole BGN-named new artifact is `lib/bgn/mock/`. Reversible by dropping the `mock` prop when the new data source lands. Spec `2026-08-01-bgn-command-rename-and-mock-design.md` |
+| 1.125 | 2026-08-01 | **A13 v4.0 + A7 v47.1 / A10 v5.6 / A14 v4.1 / P9 v1.3 → Built (TDD, live-verified).** 615/615 tests green (76 files), `tsc` clean, lint unchanged from baseline. Live-verified in-browser: `/bgn/command` renders BGN branding + cross-consistent MBG mock (crisis 62/Siaga, threat = top negative topic, 3-tier war room), the danantara-scope middleware reaches `/bgn` without looping, and `/danantara` is unchanged (no BGN/mock leak). Branch `feat/bgn-command-rename` |
 

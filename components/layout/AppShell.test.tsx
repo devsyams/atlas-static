@@ -91,7 +91,7 @@ describe("AppShell gear menu — Danantara Crisis Gate link (A10)", () => {
   });
 });
 
-describe("AppShell gear menu — Danantara Command Center link (A13)", () => {
+describe("AppShell gear menu — BGN Command Center link (A13 v4.0)", () => {
   beforeEach(() => {
     vi.stubGlobal(
       "fetch",
@@ -103,32 +103,43 @@ describe("AppShell gear menu — Danantara Command Center link (A13)", () => {
     document.cookie = "atlas_scope=; path=/; max-age=0";
   });
 
-  it("links to /danantara/command from the gear menu (T8)", () => {
+  it("links to /bgn/command from the gear menu, labelled BGN Command Center (T14)", () => {
     pathname = "/";
     render(<AppShell>content</AppShell>);
     openGearMenu();
 
-    // "Danantara" disambiguates from the Operations-group "Command Center" item.
-    const link = screen.getByRole("link", { name: /danantara command center/i });
-    expect(link).toHaveAttribute("href", "/danantara/command");
+    // "BGN" disambiguates from the Operations-group "Command Center" item.
+    const link = screen.getByRole("link", { name: /bgn command center/i });
+    expect(link).toHaveAttribute("href", "/bgn/command");
   });
 
-  it("keeps the link on the minimal-chrome danantara pages for danantara-scoped users (T8)", () => {
-    // The page runs minimal chrome (Dashboards group only) and a danantara-scoped
-    // user is limited to /danantara* — the link must survive both filters.
-    pathname = "/danantara/command";
+  it("keeps the link on the minimal-chrome /bgn/command page for danantara-scoped users (T14)", () => {
+    // /bgn/command runs minimal chrome (Dashboards group only) and a danantara-scoped
+    // user is limited to /danantara* + /bgn* — the link must survive both filters.
+    pathname = "/bgn/command";
     document.cookie = "atlas_scope=danantara; path=/";
     render(<AppShell>content</AppShell>);
     openGearMenu();
 
-    const link = screen.getByRole("link", { name: /danantara command center/i });
-    expect(link).toHaveAttribute("href", "/danantara/command");
+    const link = screen.getByRole("link", { name: /bgn command center/i });
+    expect(link).toHaveAttribute("href", "/bgn/command");
+  });
+
+  it("applies minimal executive chrome on /bgn/command (Dashboards group only) (T14)", () => {
+    // minimalChrome must match /bgn like it does /danantara/* — the System group
+    // (e.g. System Settings) is stripped from the menu on this page.
+    pathname = "/bgn/command";
+    render(<AppShell>content</AppShell>);
+    openGearMenu();
+
+    expect(screen.queryByText("System Settings")).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /bgn command center/i })).toBeInTheDocument();
   });
 
   it("links to /danantara/simulation from the gear menu, through both filters (A15 T17)", () => {
-    // Same two gates as T8: minimal chrome keeps only the Dashboards group, and a
-    // danantara-scoped user is limited to /danantara* — the entry must survive both.
-    pathname = "/danantara/command";
+    // Same two gates as T14: minimal chrome keeps only the Dashboards group, and a
+    // danantara-scoped user is limited to /danantara* + /bgn* — the entry must survive both.
+    pathname = "/bgn/command";
     document.cookie = "atlas_scope=danantara; path=/";
     render(<AppShell>content</AppShell>);
     openGearMenu();

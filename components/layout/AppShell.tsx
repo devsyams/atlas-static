@@ -45,7 +45,7 @@ const NAV: NavItem[] = [
   { to: "/danantara-v2", label: "Danantara CEO Command (v1)", icon: Landmark, group: "Dashboards" },
   { to: "/danantara", label: "Danantara CEO Command (v2)", icon: Landmark, group: "Dashboards" },
   { to: "/danantara/krisis", label: "Danantara Crisis Gate", icon: Siren, group: "Dashboards" },
-  { to: "/danantara/command", label: "Danantara Command Center", icon: LayoutDashboard, group: "Dashboards" },
+  { to: "/bgn/command", label: "BGN Command Center", icon: LayoutDashboard, group: "Dashboards" },
   { to: "/danantara/simulation", label: "Crisis Simulation Room", icon: Users, group: "Dashboards" },
   { to: "/bumn", label: "BUMN Dashboards (v1)", icon: Building2, group: "Dashboards" },
   { to: "/bumn-v2", label: "BUMN Dashboards (v2)", icon: Building2, group: "Dashboards" },
@@ -77,13 +77,22 @@ export function AppShell({ children }: { children: ReactNode }) {
   }, []);
 
   // Danantara-scoped demo users only ever see their own dashboard.
-  const nav = scope === "danantara" ? NAV.filter((n) => n.to.startsWith("/danantara")) : NAV;
+  // /bgn/* is the renamed BGN Command Center (A13 v4.0) — a danantara-scoped page,
+  // so it must survive the scope filter alongside /danantara*.
+  const nav =
+    scope === "danantara"
+      ? NAV.filter((n) => n.to.startsWith("/danantara") || n.to.startsWith("/bgn"))
+      : NAV;
   const homeHref = scope === "danantara" ? "/danantara" : "/";
 
   // Executive dashboards (Danantara CEO v2 + each per-BUMN board) run a stripped
   // chrome for their 40–60 y/o CEO audience: only the Dashboards menu group, no
   // "Tanya Nexorus AI" search bar, and no notifications bell.
-  const minimalChrome = pathname === "/danantara" || pathname.startsWith("/danantara/") || pathname.startsWith("/bumn");
+  const minimalChrome =
+    pathname === "/danantara" ||
+    pathname.startsWith("/danantara/") ||
+    pathname.startsWith("/bgn") ||
+    pathname.startsWith("/bumn");
   const menuNav = minimalChrome ? nav.filter((n) => n.group === "Dashboards") : nav;
   const groups = Array.from(new Set(menuNav.map((n) => n.group)));
 

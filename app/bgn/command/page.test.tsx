@@ -18,8 +18,24 @@ vi.mock("../../../components/layout/AppShell", () => ({
   AppShell: ({ children }: { children: ReactNode }) => <div data-testid="app-shell">{children}</div>,
 }));
 vi.mock("../../../components/danantara/ceo/DanantaraCommandCenter", () => ({
-  DanantaraCommandCenter: ({ mediaIntelligenceHref }: { mediaIntelligenceHref?: string }) => (
-    <div data-testid="danantara-command-center" data-href={mediaIntelligenceHref ?? ""} />
+  DanantaraCommandCenter: ({
+    mediaIntelligenceHref,
+    brand,
+    brandLogo,
+    mock,
+  }: {
+    mediaIntelligenceHref?: string;
+    brand?: string;
+    brandLogo?: string;
+    mock?: boolean;
+  }) => (
+    <div
+      data-testid="danantara-command-center"
+      data-href={mediaIntelligenceHref ?? ""}
+      data-brand={brand ?? ""}
+      data-logo={brandLogo ?? ""}
+      data-mock={mock ? "1" : "0"}
+    />
   ),
 }));
 
@@ -37,7 +53,7 @@ function claims(overrides: Partial<SsoClaims> = {}): SsoClaims {
   };
 }
 
-describe("/danantara/command (A13 — T1)", () => {
+describe("/bgn/command (A13 v4.0 — T13)", () => {
   beforeEach(() => {
     process.env.ATLAS_SSO_SECRET = SECRET;
   });
@@ -47,7 +63,7 @@ describe("/danantara/command (A13 — T1)", () => {
     vi.clearAllMocks();
   });
 
-  it("renders the Command Center inside AppShell and passes the OpenGate href for a signed SSO cookie", async () => {
+  it("renders the Command Center inside AppShell — rebranded BGN + mocked — with the OpenGate href for a signed SSO cookie", async () => {
     const sessionClaims = {
       typ: "opengate-session" as const,
       iss: "opengate" as const,
@@ -64,19 +80,23 @@ describe("/danantara/command (A13 — T1)", () => {
     } as never);
 
     render(await Page());
+    const cc = screen.getByTestId("danantara-command-center");
     expect(screen.getByTestId("app-shell")).toBeInTheDocument();
-    expect(screen.getByTestId("danantara-command-center")).toHaveAttribute(
-      "data-href",
-      "https://opengate.atlas.nexorus-alpha.io",
-    );
+    expect(cc).toHaveAttribute("data-href", "https://opengate.atlas.nexorus-alpha.io");
+    expect(cc).toHaveAttribute("data-brand", "BGN");
+    expect(cc).toHaveAttribute("data-logo", "/bgn.png");
+    expect(cc).toHaveAttribute("data-mock", "1");
   });
 
-  it("hides the shortcut when the signed SSO cookie is absent", async () => {
+  it("hides the shortcut when the signed SSO cookie is absent — still rebranded + mocked", async () => {
     vi.mocked(cookies).mockReturnValueOnce({
       get: () => undefined,
     } as never);
 
     render(await Page());
-    expect(screen.getByTestId("danantara-command-center")).toHaveAttribute("data-href", "");
+    const cc = screen.getByTestId("danantara-command-center");
+    expect(cc).toHaveAttribute("data-href", "");
+    expect(cc).toHaveAttribute("data-brand", "BGN");
+    expect(cc).toHaveAttribute("data-mock", "1");
   });
 });

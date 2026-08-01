@@ -26,14 +26,21 @@ const MIN_SHOW_MS = 2_400;
  */
 const MAX_WAIT_MS = 30_000;
 
-const BOOT_LINES = [
-  "nexorus-ai counter --topic danantara --mode war-room",
-  "locking top 3 negative topics by negative reach",
-  "computing hostile reach · share of voice",
-  "drafting counter-narrative angles",
-  "allocating KOL / clipper / grassroots volume (id-ID)",
-  "validating counts · no fabricated figures",
-];
+/**
+ * The honest terminal's boot lines. The first is a cosmetic CLI command branded per
+ * client (A14 v4.1) — `--topic danantara` by default, `--topic bgn` on /bgn/command.
+ * Exported so the brand interpolation can be unit-tested without the terminal's timers.
+ */
+export function warRoomBootLines(brand: string): string[] {
+  return [
+    `nexorus-ai counter --topic ${brand.toLowerCase()} --mode war-room`,
+    "locking top 3 negative topics by negative reach",
+    "computing hostile reach · share of voice",
+    "drafting counter-narrative angles",
+    "allocating KOL / clipper / grassroots volume (id-ID)",
+    "validating counts · no fabricated figures",
+  ];
+}
 
 /** True once `ref` scrolls into view (true where IntersectionObserver is absent — jsdom/SSR). */
 function useInView<T extends HTMLElement>() {
@@ -64,7 +71,7 @@ function useInView<T extends HTMLElement>() {
 }
 
 /**
- * Counter-Narrative War Room (A14 v1.0) — the third section of `/danantara/command`,
+ * Counter-Narrative War Room (A14 v1.0) — the third section of `/bgn/command`,
  * answering the question the other two don't: **"so what do we post?"**
  *
  * For the top 3 negative topics by *negative reach*: the attack as its authors frame
@@ -78,9 +85,20 @@ function useInView<T extends HTMLElement>() {
  * A `MAX_WAIT_MS` ceiling reveals the deterministic fallback regardless, and a late
  * answer upgrades in place.
  */
-export function CounterNarrativeWarRoom({ refreshNonce }: { refreshNonce?: number } = {}) {
-  const { topics, issues, summary, data, source, feed, pending } = useCounterNarrative(refreshNonce);
+export function CounterNarrativeWarRoom({
+  refreshNonce,
+  brand = "Danantara",
+  mock = false,
+}: {
+  refreshNonce?: number;
+  /** Client brand for the cosmetic terminal command line (A14 v4.1; default Danantara). */
+  brand?: string;
+  /** Append ?mock=1 to the topics fetch — the scoped BGN demo mock (A14 v4.1). */
+  mock?: boolean;
+} = {}) {
+  const { topics, issues, summary, data, source, feed, pending } = useCounterNarrative(refreshNonce, mock);
   const { ref, inView } = useInView<HTMLElement>();
+  const bootLines = useMemo(() => warRoomBootLines(brand), [brand]);
 
   // The terminal runs once the section is seen and there is something to narrate.
   const armed = inView && feed !== "loading" && topics.length > 0;
@@ -92,7 +110,7 @@ export function CounterNarrativeWarRoom({ refreshNonce }: { refreshNonce?: numbe
   useEffect(() => {
     if (!armed || started.current) return;
     started.current = true;
-    const timers = BOOT_LINES.map((_, i) => setTimeout(() => setLineIdx(i + 1), i * LINE_MS));
+    const timers = bootLines.map((_, i) => setTimeout(() => setLineIdx(i + 1), i * LINE_MS));
     const floor = setTimeout(() => setElapsed(true), MIN_SHOW_MS);
     const ceiling = setTimeout(() => setExpired(true), MAX_WAIT_MS);
     return () => {
@@ -100,7 +118,7 @@ export function CounterNarrativeWarRoom({ refreshNonce }: { refreshNonce?: numbe
       clearTimeout(floor);
       clearTimeout(ceiling);
     };
-  }, [armed]);
+  }, [armed, bootLines]);
 
   // Reveal when the answer has landed (past the floor) or we've waited long enough.
   // Latched with a ref rather than state-in-an-effect: a later refresh flips
@@ -138,7 +156,7 @@ export function CounterNarrativeWarRoom({ refreshNonce }: { refreshNonce?: numbe
             No negative topics in the current window — nothing to counter.
           </p>
         ) : !reveal ? (
-          <BootTerminal lineIdx={lineIdx} pending={pending} />
+          <BootTerminal lineIdx={lineIdx} pending={pending} lines={bootLines} />
         ) : (
           <>
             <ThreatIndexResponseSimulator issues={issues} summary={summary} />
@@ -161,8 +179,8 @@ export function CounterNarrativeWarRoom({ refreshNonce }: { refreshNonce?: numbe
 }
 
 /** The honest terminal: narrates the work in flight, holds its last line while pending. */
-function BootTerminal({ lineIdx, pending }: { lineIdx: number; pending: boolean }) {
-  const shown = Math.max(1, Math.min(lineIdx, BOOT_LINES.length));
+function BootTerminal({ lineIdx, pending, lines }: { lineIdx: number; pending: boolean; lines: string[] }) {
+  const shown = Math.max(1, Math.min(lineIdx, lines.length));
   return (
     <div data-testid="war-room-analyzing" className="overflow-hidden rounded-lg border border-primary/30 bg-background/80 font-mono">
       <div className="flex items-center gap-1.5 border-b border-border/50 bg-card/50 px-3 py-1.5">
@@ -173,7 +191,7 @@ function BootTerminal({ lineIdx, pending }: { lineIdx: number; pending: boolean 
         {pending && <span className="cn-blip ml-auto h-2 w-2 rounded-full bg-primary" aria-hidden />}
       </div>
       <div className="min-h-[9rem] space-y-1 px-3 py-2.5 text-base leading-relaxed">
-        {BOOT_LINES.slice(0, shown).map((line, i) => {
+        {lines.slice(0, shown).map((line, i) => {
           const active = i === shown - 1;
           const isCmd = i === 0;
           return (
