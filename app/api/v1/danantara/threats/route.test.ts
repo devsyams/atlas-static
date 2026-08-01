@@ -1,3 +1,6 @@
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ThreatsApiResponse } from "@/lib/danantara/ceo/threats-source";
 import { GET } from "./route";
@@ -40,16 +43,26 @@ const EMPTY: ThreatsApiResponse = {
 const KEY = "SUPER-SECRET-KEY";
 const req = (fresh = false) => new Request(`http://localhost/api/v1/danantara/threats${fresh ? "?fresh=1" : ""}`);
 
+let mockDir = "";
+const writeMock = (name: string, data: unknown) => {
+  writeFileSync(join(mockDir, name), JSON.stringify(data));
+};
+
 describe("GET /api/v1/danantara/threats (T13 / AC8)", () => {
   beforeEach(() => {
     process.env.DANANTARA_TOPICS_API_KEY = KEY;
     process.env.DANANTARA_TOPIC_CODE = "danantara_main";
+    mockDir = mkdtempSync(join(tmpdir(), "atlas-threats-mock-"));
+    process.env.DANANTARA_LOCAL_MOCK_DIR = mockDir;
   });
   afterEach(() => {
     vi.restoreAllMocks();
     delete process.env.DANANTARA_TOPICS_API_KEY;
     delete process.env.DANANTARA_TOPIC_CODE;
     delete process.env.DANANTARA_THREATS_API_BASE;
+    delete process.env.DANANTARA_LOCAL_MOCK_DIR;
+    if (mockDir) rmSync(mockDir, { recursive: true, force: true });
+    mockDir = "";
   });
 
   it("returns the #1 detected threat + stats on a successful upstream fetch", async () => {
@@ -59,6 +72,21 @@ describe("GET /api/v1/danantara/threats (T13 / AC8)", () => {
     const body = await res.json();
     expect(body.threat.title).toBe("Tuduhan Manipulasi Keuangan");
     expect(body.stats.total_threats).toBe(1);
+  });
+
+  it("returns the local dev mock file when DANANTARA_LOCAL_MOCK_DIR is set", async () => {
+    writeMock("threats.json", {
+      threat: { ...SAMPLE.data.threats[0], title: "Local mock threat" },
+      stats: SAMPLE.data.stats,
+    });
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+
+    const res = await GET(req());
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.threat.title).toBe("Local mock threat");
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it("returns a null threat when the feed detects none (calm period)", async () => {
