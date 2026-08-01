@@ -60,6 +60,7 @@ export async function GET(req: Request) {
   const sessionAttrs = { httpOnly: true, path: "/", sameSite: "lax" as const, maxAge: sessionMaxAge, secure };
   const opengateSession = await signOpengateSessionCookie(
     {
+      typ: "opengate-session",
       iss: "opengate",
       aud: "danantara",
       iat: result.claims.iat,

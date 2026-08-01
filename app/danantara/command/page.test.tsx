@@ -1,8 +1,10 @@
 // @vitest-environment jsdom
 import { cookies } from "next/headers";
 import { render, screen } from "@testing-library/react";
+import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import Page from "./page";
 import { type SsoClaims } from "../../../lib/sso-token";
 import { OPENGATE_SESSION_COOKIE, signOpengateSessionCookie } from "../../../lib/opengate-session";
 
@@ -12,15 +14,13 @@ vi.mock("next/headers", () => ({
   cookies: vi.fn(),
 }));
 vi.mock("../../../components/layout/AppShell", () => ({
-  AppShell: ({ children }: { children: React.ReactNode }) => <div data-testid="app-shell">{children}</div>,
+  AppShell: ({ children }: { children: ReactNode }) => <div data-testid="app-shell">{children}</div>,
 }));
 vi.mock("../../../components/danantara/ceo/DanantaraCommandCenter", () => ({
   DanantaraCommandCenter: ({ mediaIntelligenceHref }: { mediaIntelligenceHref?: string }) => (
     <div data-testid="danantara-command-center" data-href={mediaIntelligenceHref ?? ""} />
   ),
 }));
-
-import Page from "./page";
 
 function claims(overrides: Partial<SsoClaims> = {}): SsoClaims {
   const iat = Math.floor(Date.now() / 1000);
@@ -48,6 +48,7 @@ describe("/danantara/command (A13 — T1)", () => {
 
   it("renders the Command Center inside AppShell and passes the OpenGate href for a signed SSO cookie", async () => {
     const sessionClaims = {
+      typ: "opengate-session" as const,
       iss: "opengate" as const,
       aud: "danantara" as const,
       iat: claims().iat,

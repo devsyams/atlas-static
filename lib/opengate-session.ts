@@ -8,6 +8,7 @@ type CookieSource = {
 };
 
 type OpengateSessionClaims = {
+  typ: "opengate-session";
   iss: "opengate";
   aud: "danantara";
   iat: number;
@@ -64,11 +65,16 @@ async function verifyOpengateSessionCookie(
     return false;
   }
 
-  if (claims.iss !== "opengate" || claims.aud !== "danantara" || claims.scope !== "danantara") return false;
+  if (
+    claims.typ !== "opengate-session" ||
+    claims.iss !== "opengate" ||
+    claims.aud !== "danantara" ||
+    claims.scope !== "danantara"
+  ) return false;
 
   try {
     const now = Math.floor(Date.now() / 1000);
-    if (claims.exp < now) return false;
+    if (!Number.isFinite(claims.exp) || claims.exp < now) return false;
     const key = await hmacKey(secret);
     return crypto.subtle.verify("HMAC", key, b64urlToBytes(parts[1]), enc.encode(parts[0]));
   } catch {

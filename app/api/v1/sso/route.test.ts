@@ -1,8 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-
+import { GET } from "./route";
 import { signSsoToken, type SsoClaims } from "../../../../lib/sso-token";
 import { OPENGATE_SESSION_COOKIE, signOpengateSessionCookie } from "../../../../lib/opengate-session";
-import { GET } from "./route";
 
 const SECRET = "dedicated-danantara-sso-secret-value";
 
@@ -55,6 +54,7 @@ describe("GET /api/v1/sso (P9)", () => {
     const baseClaims = claims();
     const token = await signSsoToken(baseClaims, SECRET);
     const sessionClaims = {
+      typ: "opengate-session" as const,
       iss: "opengate" as const,
       aud: "danantara" as const,
       iat: baseClaims.iat,
@@ -101,6 +101,7 @@ describe("GET /api/v1/sso (P9)", () => {
     delete noScope.scope;
     const token = await signSsoToken(noScope as unknown as SsoClaims, SECRET);
     const sessionClaims = {
+      typ: "opengate-session" as const,
       iss: "opengate" as const,
       aud: "danantara" as const,
       iat: baseClaims.iat,
