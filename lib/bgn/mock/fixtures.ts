@@ -215,28 +215,22 @@ export const MOCK_THREATS: MockThreats = { threat: mappedThreats.threats[0] ?? n
 /* ------------------------------- actors -------------------------------- */
 
 /**
- * A generated placeholder avatar — a coloured rounded tile with the handle's initials,
- * as an inline SVG data-URI. Deliberately **not** a real photo: a fabricated demo
- * account must never wear a real person's face (the same identity-safety rule the sim
- * features carry). It survives `mapActorRoster` (which keeps only `data:image` URIs)
- * and renders in `ThreatActors`' `<img>` Avatar instead of the bare-initials fallback.
+ * Realistic **placeholder-person** photos (randomuser.me) keyed by handle — synthetic,
+ * anonymous faces, **not** real identifiable individuals: the accounts are fabricated
+ * and two are bots, so a real person must never be shown as one (the same identity-
+ * safety rule the sim features carry). The roster mapper only keeps a `data:image`
+ * `profile_picture`, so these http URLs are attached to the mapped `avatarUrl` below
+ * instead. `ThreatActors`' Avatar renders them as `<img>` and falls back to an initials
+ * tile on load error — so if the deployed pod can't reach the CDN (egress is selective)
+ * the column degrades gracefully rather than breaking.
  */
-function placeholderAvatar(handle: string, color: string): string {
-  const initials =
-    handle
-      .split("_")
-      .slice(0, 2)
-      .map((p) => p[0] ?? "")
-      .join("")
-      .toUpperCase() || "?";
-  const svg =
-    `<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96">` +
-    `<rect width="96" height="96" rx="20" fill="${color}"/>` +
-    `<text x="48" y="61" font-family="Segoe UI, Arial, sans-serif" font-size="38" font-weight="700" ` +
-    `fill="#ffffff" text-anchor="middle">${initials}</text>` +
-    `</svg>`;
-  return `data:image/svg+xml,${encodeURIComponent(svg)}`;
-}
+const AVATAR_URLS: Record<string, string> = {
+  warga_peduli_gizi: "https://randomuser.me/api/portraits/women/68.jpg",
+  kanal_investigasi: "https://randomuser.me/api/portraits/men/32.jpg",
+  emak2_bersuara: "https://randomuser.me/api/portraits/women/44.jpg",
+  suara_rakyat_id: "https://randomuser.me/api/portraits/men/75.jpg",
+  buzzer_oposisi_01: "https://randomuser.me/api/portraits/men/12.jpg",
+};
 
 const RAW_ROSTER: ActorRosterApiResponse = {
   success: true,
@@ -253,7 +247,6 @@ const RAW_ROSTER: ActorRosterApiResponse = {
       risk_level: "medium",
       account_classification: "Complainer",
       content_themes: "Orang tua siswa; keluhan keracunan berbasis pengalaman langsung.",
-      profile_picture: placeholderAvatar("warga_peduli_gizi", "#2563eb"),
     },
     {
       username: "kanal_investigasi",
@@ -265,7 +258,6 @@ const RAW_ROSTER: ActorRosterApiResponse = {
       risk_level: "medium",
       account_classification: "Investigative Journalist",
       content_themes: "Menelusuri rantai pasok SPPG; mendorong framing akuntabilitas.",
-      profile_picture: placeholderAvatar("kanal_investigasi", "#0891b2"),
     },
     {
       username: "emak2_bersuara",
@@ -277,7 +269,6 @@ const RAW_ROSTER: ActorRosterApiResponse = {
       risk_level: "low",
       account_classification: "Negative Critic",
       content_themes: "Komunitas orang tua; nada khawatir soal keamanan pangan anak.",
-      profile_picture: placeholderAvatar("emak2_bersuara", "#7c3aed"),
     },
     {
       username: "suara_rakyat_id",
@@ -289,7 +280,6 @@ const RAW_ROSTER: ActorRosterApiResponse = {
       risk_level: "high",
       account_classification: "Propaganda/Provocator",
       influence_analysis: "Amplifikasi terkoordinasi; membingkai insiden sebagai kegagalan total program.",
-      profile_picture: placeholderAvatar("suara_rakyat_id", "#e11d48"),
     },
     {
       username: "buzzer_oposisi_01",
@@ -301,9 +291,12 @@ const RAW_ROSTER: ActorRosterApiResponse = {
       risk_level: "high",
       account_classification: "Buzzer",
       influence_analysis: "Klaster buzzer; mengaitkan keracunan dengan dugaan penyimpangan anggaran.",
-      profile_picture: placeholderAvatar("buzzer_oposisi_01", "#d97706"),
     },
   ],
 };
 
-export const MOCK_ACTORS: MockActors = { actors: mapActorRoster(RAW_ROSTER) };
+// Attach the realistic photo per handle onto the mapped roster (the mapper drops
+// non-`data:image` profile_picture values, so the URL can't ride through it).
+export const MOCK_ACTORS: MockActors = {
+  actors: mapActorRoster(RAW_ROSTER).map((a) => ({ ...a, avatarUrl: AVATAR_URLS[a.handle] ?? a.avatarUrl })),
+};
