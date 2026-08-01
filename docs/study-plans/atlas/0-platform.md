@@ -519,7 +519,7 @@ no `idQuery` simply hide the deep link; no cost ledger impact (no LLM call).
 
 ### P9. OpenGate → Danantara SSO handoff (inbound autologin)
 
-- **Version:** 1.3 · **Stage:** 0-platform · **Sprint:** demo · **Status:** In progress
+- **Version:** 1.3 · **Stage:** 0-platform · **Sprint:** demo · **Status:** Built
   · **Spec ref:** `docs/superpowers/specs/2026-08-01-bgn-command-rename-and-mock-design.md` (v1.3); cross-team SSO contract locked with the OpenGate (TrawlDeckCorcom) team, 2026-07-31 · **Owner:** platform
 
 #### PM
