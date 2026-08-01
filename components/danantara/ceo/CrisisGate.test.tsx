@@ -197,6 +197,19 @@ describe("CrisisGate (A10 — fear-first landing)", () => {
     expect(cls).toContain("overflow-hidden");
   });
 
+  it("embedded fills the first screen on desktop so the meter isn't squeezed (T6b)", async () => {
+    stubFetch();
+    render(<CrisisGate embedded />);
+    await waitFor(() => expect(screen.getByTestId("crisis-gate")).toBeInTheDocument());
+    const cls = screen.getByTestId("crisis-gate").className;
+    // The desktop min-height must keep filling the first screen. The old `lg:min-h-[28rem]`
+    // (carried over from the standalone class, where it was only a floor beneath the
+    // now-removed lg:h lock) collapsed the section to 28rem on desktop, squeezing the
+    // vh-sized gauge. It must not cap the height back down.
+    expect(cls).not.toContain("lg:min-h-[28rem]");
+    expect(cls).not.toContain("28rem");
+  });
+
   it("refetches all three feeds when refreshNonce changes, and not on mount (T4 support)", async () => {
     stubFetch();
     const fetchMock = globalThis.fetch as unknown as ReturnType<typeof vi.fn>;
