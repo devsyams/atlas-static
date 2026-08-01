@@ -1,6 +1,7 @@
-import { homeForScope, parseScope } from "@/lib/auth";
-import { relativeRedirect } from "@/lib/http";
-import { scopeFromClaims, verifySsoToken } from "@/lib/sso-token";
+import { homeForScope, parseScope } from "../../../../lib/auth";
+import { relativeRedirect } from "../../../../lib/http";
+import { OPENGATE_SSO_COOKIE } from "../../../../lib/opengate-session";
+import { scopeFromClaims, verifySsoToken } from "../../../../lib/sso-token";
 
 /**
  * P9 — OpenGate → Danantara SSO handoff (inbound autologin; the mirror of P8's
@@ -47,9 +48,11 @@ export async function GET(req: Request) {
   const scope = scopeFromClaims(result.claims);
   const res = relativeRedirect(homeForScope(parseScope(scope)), 302);
 
-  const attrs = { httpOnly: true, path: "/", sameSite: "lax" as const, maxAge: SESSION_MAX_AGE };
+  const secure = new URL(req.url).protocol === "https:";
+  const attrs = { httpOnly: true, path: "/", sameSite: "lax" as const, maxAge: SESSION_MAX_AGE, secure };
   res.cookies.set("atlas_auth", "1", attrs);
   res.cookies.set("atlas_scope", scope, attrs);
+  res.cookies.set(OPENGATE_SSO_COOKIE, token!, attrs);
 
   return res;
 }
