@@ -1,6 +1,6 @@
 import { homeForScope, parseScope } from "../../../../lib/auth";
 import { relativeRedirect } from "../../../../lib/http";
-import { OPENGATE_SSO_COOKIE } from "../../../../lib/opengate-session";
+import { OPENGATE_SESSION_COOKIE, signOpengateSessionCookie } from "../../../../lib/opengate-session";
 import { scopeFromClaims, verifySsoToken } from "../../../../lib/sso-token";
 
 /**
@@ -45,14 +45,33 @@ export async function GET(req: Request) {
     return relativeRedirect("/login", 302);
   }
 
+  const secret = process.env.ATLAS_SSO_SECRET;
+  if (!secret) {
+    return relativeRedirect("/login", 302);
+  }
+
   const scope = scopeFromClaims(result.claims);
   const res = relativeRedirect(homeForScope(parseScope(scope)), 302);
 
-  const secure = new URL(req.url).protocol === "https:";
+  const secure = process.env.NODE_ENV === "production";
   const attrs = { httpOnly: true, path: "/", sameSite: "lax" as const, maxAge: SESSION_MAX_AGE, secure };
+  const sessionAttrs = { httpOnly: true, path: "/", sameSite: "lax" as const, maxAge: SESSION_MAX_AGE, secure };
+  const opengateSession = await signOpengateSessionCookie(
+    {
+      typ: "opengate-session",
+      iss: "opengate",
+      aud: "danantara",
+      iat: result.claims.iat,
+      exp: result.claims.iat + SESSION_MAX_AGE,
+      sub: result.claims.sub,
+      email: result.claims.email,
+      scope: "danantara",
+    },
+    secret,
+  );
   res.cookies.set("atlas_auth", "1", attrs);
   res.cookies.set("atlas_scope", scope, attrs);
-  res.cookies.set(OPENGATE_SSO_COOKIE, token!, attrs);
+  res.cookies.set(OPENGATE_SESSION_COOKIE, opengateSession, sessionAttrs);
 
   return res;
 }
