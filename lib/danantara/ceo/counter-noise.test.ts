@@ -28,6 +28,17 @@ describe("responseCalculator (A9 v2.0 — boss's counter-action model)", () => {
     expect(p.clipper + p.homeless + p.kol).toBe(p.counterActions);
   });
 
+  it("keeps the split summing exactly to counter-actions across every baseline (largest remainder)", () => {
+    // Naive per-channel rounding drifts ±1 (e.g. 603 → 302+121+181 = 604); the three
+    // tiles now sit under one visible total, so they must add up.
+    for (let baseline = 0; baseline <= 400; baseline++) {
+      for (const tier of ["basic", "professional", "enterprise"] as const) {
+        const p = responseCalculator(baseline, tier);
+        expect(p.clipper + p.homeless + p.kol).toBe(p.counterActions);
+      }
+    }
+  });
+
   it("scales the response up with a larger baseline", () => {
     const small = responseCalculator(500, "professional");
     const big = responseCalculator(5000, "professional");
