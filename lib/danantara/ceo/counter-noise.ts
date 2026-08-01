@@ -42,22 +42,46 @@ export interface CounterNoisePlan {
   kol: number;
 }
 
+/** Channel order — fixes the largest-remainder tie-break and the on-screen row order. */
+const CHANNEL_ORDER = ["clipper", "homeless", "kol"] as const;
+
+/**
+ * Split `total` across the channels by `CHANNEL_SHARE` with **largest remainder**, so the
+ * three counts sum **exactly** to `total` — naive per-channel rounding lets the tiles
+ * disagree with the headline total by ±1, and a boardroom adds them up (mirrors the
+ * war-room `splitPosts` invariant).
+ */
+function splitCounterActions(total: number): { clipper: number; homeless: number; kol: number } {
+  const safe = Math.max(0, Math.round(total));
+  const exact = CHANNEL_ORDER.map((c) => ({ c, v: safe * CHANNEL_SHARE[c] }));
+  const out = { clipper: 0, homeless: 0, kol: 0 };
+  for (const { c, v } of exact) out[c] = Math.floor(v);
+  let left = safe - CHANNEL_ORDER.reduce((sum, c) => sum + out[c], 0);
+  const byRemainder = [...exact].sort(
+    (a, b) => b.v - Math.floor(b.v) - (a.v - Math.floor(a.v)) || CHANNEL_ORDER.indexOf(a.c) - CHANNEL_ORDER.indexOf(b.c),
+  );
+  for (let i = 0; left > 0; i++, left--) out[byRemainder[i % byRemainder.length].c] += 1;
+  return out;
+}
+
 /**
  * Boss's response calculator: `counter_actions = negative_baseline × multiplier`,
- * split clipper 50% / homeless 20% / kol 30%. Baseline = negative **post** count.
+ * split clipper 50% / homeless 20% / kol 30% (largest-remainder, so the three channels
+ * sum exactly to `counter_actions`). Baseline = negative **post** count.
  */
 export function responseCalculator(negativeBaseline: number, tier: ResponseTier = "professional"): CounterNoisePlan {
   const noiseMultiplier = TIER_MULTIPLIER[tier];
   const baseline = Math.max(0, Math.round(negativeBaseline));
   const counterActions = baseline * noiseMultiplier;
+  const split = splitCounterActions(counterActions);
   return {
     tier,
     noiseMultiplier,
     negativeBaseline: baseline,
     counterActions,
-    clipper: Math.round(counterActions * CHANNEL_SHARE.clipper),
-    homeless: Math.round(counterActions * CHANNEL_SHARE.homeless),
-    kol: Math.round(counterActions * CHANNEL_SHARE.kol),
+    clipper: split.clipper,
+    homeless: split.homeless,
+    kol: split.kol,
   };
 }
 
