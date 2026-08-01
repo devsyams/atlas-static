@@ -3,7 +3,7 @@ import { act, fireEvent, render, screen, waitFor } from "@testing-library/react"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { setAiEnabled } from "@/lib/ai-settings";
 import { boardThreatResponsePlan } from "@/lib/danantara/ceo/board-threat-simulator";
-import { topNegativeByReach } from "@/lib/danantara/ceo/counter-narrative";
+import { responseCalculator } from "@/lib/danantara/ceo/counter-noise";
 import type { CeoIssue } from "@/lib/danantara/ceo/types";
 import { CounterNarrativeWarRoom } from "./CounterNarrativeWarRoom";
 
@@ -132,38 +132,85 @@ describe("CounterNarrativeWarRoom (A14)", () => {
     expect(screen.getByTestId("posts-t2").textContent).not.toBe("");
   });
 
-  it("recomputes the plan on a tier change with no new fetch (T26)", async () => {
-    const fetchMock = stubFetch();
-    render(<CounterNarrativeWarRoom />);
-    await settle();
-    await waitFor(() => expect(screen.getByTestId("board-simulator")).toBeInTheDocument());
-
-    const before = screen.getByTestId("board-total-actions").textContent;
-    const calls = fetchMock.mock.calls.length;
-
-    await act(async () => {
-      fireEvent.click(screen.getByTestId("war-tier-enterprise"));
-    });
-
-    expect(screen.getByTestId("board-total-actions").textContent).not.toBe(before);
-    expect(fetchMock.mock.calls.length).toBe(calls); // client-side only
-  });
-
-  it("renders the board-level Threat Index simulator instead of the SOV bar (T27)", async () => {
+  it("shows all three tiers at once with no tier toggle, computed client-side (T26)", async () => {
     stubFetch();
     render(<CounterNarrativeWarRoom />);
     await settle();
     await waitFor(() => expect(screen.getByTestId("board-simulator")).toBeInTheDocument());
 
-    const plan = boardThreatResponsePlan(ISSUES, SUMMARY, "professional");
+    // v2.0: the tier is no longer an interactive control — the toggle is gone.
+    expect(screen.queryByTestId("war-tier-basic")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("war-tier-professional")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("war-tier-enterprise")).not.toBeInTheDocument();
+
+    // All three tiers render simultaneously as comparison cards.
+    expect(screen.getByTestId("tier-card-enterprise")).toBeInTheDocument();
+    expect(screen.getByTestId("tier-card-professional")).toBeInTheDocument();
+    expect(screen.getByTestId("tier-card-basic")).toBeInTheDocument();
+
+    // The counter-topic cards stay (fixed to Professional volume).
+    expect(screen.getAllByTestId(/^counter-topic-/)).toHaveLength(3);
+  });
+
+  it("renders the three-tier comparison, each card with its own projection (T27)", async () => {
+    stubFetch();
+    render(<CounterNarrativeWarRoom />);
+    await settle();
+    await waitFor(() => expect(screen.getByTestId("board-simulator")).toBeInTheDocument());
+
+    const anchor = boardThreatResponsePlan(ISSUES, SUMMARY, "professional").volumeAnchor;
+
+    // The old single-tier metric grid, the SOV bar, and the shared headline are all gone.
     expect(screen.queryByTestId("sov-bar")).not.toBeInTheDocument();
-    expect(screen.getByTestId("board-threat-index").textContent).toContain(String(plan.threatIndex));
-    expect(screen.getByTestId("board-post-response").textContent).toContain(String(plan.postResponseThreatIndex));
-    expect(screen.getByTestId("board-kol").textContent).toContain(String(plan.channelSplit.kol));
-    expect(screen.getByTestId("board-clipper").textContent).toContain(String(plan.channelSplit.clipper));
-    expect(screen.getByTestId("board-grassroots").textContent).toContain(String(plan.channelSplit.grassroots));
-    expect(screen.getByTestId("board-total-actions").textContent).toContain(String(plan.totalActions));
-    expect(screen.getByTestId("board-simulator")).toBeInTheDocument();
+    expect(screen.queryByTestId("board-total-actions")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("board-post-response")).not.toBeInTheDocument();
+
+    // Each tier card carries its own counter-actions, channel split, and now → post projection.
+    for (const tier of ["basic", "professional", "enterprise"] as const) {
+      const ca = responseCalculator(anchor, tier);
+      const plan = boardThreatResponsePlan(ISSUES, SUMMARY, tier);
+      const card = screen.getByTestId(`tier-card-${tier}`);
+      expect(screen.getByTestId(`tier-actions-${tier}`).textContent).toContain(ca.counterActions.toLocaleString("en-US"));
+      expect(screen.getByTestId(`tier-${tier}-clipper`).textContent).toContain(ca.clipper.toLocaleString("en-US"));
+      expect(screen.getByTestId(`tier-${tier}-homeless`).textContent).toContain(ca.homeless.toLocaleString("en-US"));
+      expect(screen.getByTestId(`tier-${tier}-kol`).textContent).toContain(ca.kol.toLocaleString("en-US"));
+      // The current index (shared) and this tier's own projected post-response.
+      expect(card.textContent).toContain(String(plan.threatIndex));
+      expect(screen.getByTestId(`tier-post-${tier}`).textContent).toContain(String(plan.postResponseThreatIndex));
+    }
+
+    // Professional is badged DEFAULT; every card shows its ×N NOISE pill.
+    expect(screen.getByTestId("tier-card-professional").textContent).toContain("DEFAULT");
+    expect(screen.getByTestId("tier-card-enterprise").textContent).toContain("5× NOISE");
+    expect(screen.getByTestId("tier-card-professional").textContent).toContain("3× NOISE");
+    expect(screen.getByTestId("tier-card-basic").textContent).toContain("1× NOISE");
+  });
+
+  it("projects a tier-specific post-response threat index, monotonic by intensity (T38)", async () => {
+    stubFetch();
+    render(<CounterNarrativeWarRoom />);
+    await settle();
+    await waitFor(() => expect(screen.getByTestId("board-simulator")).toBeInTheDocument());
+
+    const post = (tier: string) =>
+      Number(screen.getByTestId(`tier-post-${tier}`).textContent!.replace(/[^\d]/g, ""));
+    // A heavier tier deploys more counter-actions, so it cuts the threat at least as far.
+    expect(post("enterprise")).toBeLessThanOrEqual(post("professional"));
+    expect(post("professional")).toBeLessThanOrEqual(post("basic"));
+  });
+
+  it("scales counter-actions 1× / 3× / 5× across Basic / Professional / Enterprise (T37)", async () => {
+    stubFetch();
+    render(<CounterNarrativeWarRoom />);
+    await settle();
+    await waitFor(() => expect(screen.getByTestId("board-simulator")).toBeInTheDocument());
+
+    const actions = (tier: string) =>
+      Number(screen.getByTestId(`tier-actions-${tier}`).textContent!.replace(/[^\d]/g, ""));
+    const basic = actions("basic");
+    expect(basic).toBeGreaterThan(0);
+    expect(actions("professional")).toBe(basic * 3);
+    expect(actions("enterprise")).toBe(basic * 5);
   });
 
   it("keeps the dispatch brief focused on the narrative and counts (T28)", async () => {
