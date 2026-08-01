@@ -133,55 +133,63 @@ export function ThreatActors({
   const shown = humans.length + bots.length;
 
   return (
-    <div className="panel flex h-full flex-col overflow-hidden p-5">
-      <div className="flex items-baseline justify-between gap-3">
-        <h2 className="flex items-center gap-2.5 text-[clamp(1.45rem,2.9vh,2.35rem)] font-bold text-foreground">
-          <UserRound className="h-[1.1em] w-[1.1em] text-muted-foreground" />
-          Aktor Penggerak
-        </h2>
-        {!loading && shown > 0 && (
-          <span className="shrink-0 rounded-full border border-border/60 bg-muted/20 px-2.5 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-            {shown} akun
-          </span>
+    // On lg the three columns share one auto-sized grid row, so a tall column stretches
+    // the whole row and drags the vertically-centred Crisis meter down with it. The inner
+    // wrapper goes `absolute inset-0` at lg, so this panel contributes **zero** height to
+    // the row (its height comes purely from the sibling columns via align-items: stretch)
+    // and the roster scrolls inside instead. Below lg the columns stack, so it stays in
+    // normal flow and grows with its content (the page scrolls, A13).
+    <div className="panel relative flex h-full min-h-0 flex-col overflow-hidden">
+      <div className="flex min-h-0 flex-1 flex-col p-5 lg:absolute lg:inset-0">
+        <div className="flex items-baseline justify-between gap-3">
+          <h2 className="flex items-center gap-2.5 text-[clamp(1.45rem,2.9vh,2.35rem)] font-bold text-foreground">
+            <UserRound className="h-[1.1em] w-[1.1em] text-muted-foreground" />
+            Aktor Penggerak
+          </h2>
+          {!loading && shown > 0 && (
+            <span className="shrink-0 rounded-full border border-border/60 bg-muted/20 px-2.5 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+              {shown} akun
+            </span>
+          )}
+        </div>
+        <p className="mt-1 text-[11px] uppercase tracking-[0.24em] text-muted-foreground/70">{caption}</p>
+
+        {loading ? (
+          <p className="mt-4 text-sm text-muted-foreground">Memuat aktor…</p>
+        ) : drivers.length === 0 ? (
+          <p className="mt-4 text-sm text-muted-foreground">Belum ada aktor penggerak teridentifikasi.</p>
+        ) : (
+          <div className="mt-4 min-h-0 flex-1 overflow-auto scrollbar-thin pr-1">
+            <div className="overflow-hidden rounded-3xl border border-border/60 bg-background/20 shadow-sm">
+              <section className="border-b border-border/60 px-4 py-4 md:px-5">
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <SectionLabel icon={UserRound} label="Human Actor" count={humans.length} tone="muted" />
+                </div>
+                <div className="space-y-3.5">
+                  {humans.length === 0 ? (
+                    <EmptyState>—</EmptyState>
+                  ) : (
+                    humans.map((d) => <DriverCard key={d.handle} d={d} />)
+                  )}
+                </div>
+              </section>
+
+              <section className="px-4 py-4 md:px-5">
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <SectionLabel icon={Bot} label="Bot Actor" count={bots.length} tone="warning" />
+                </div>
+                <div className="space-y-3.5">
+                  {bots.length === 0 ? (
+                    <EmptyState>Tidak ada akun terindikasi.</EmptyState>
+                  ) : (
+                    bots.map((d) => <DriverCard key={d.handle} d={d} />)
+                  )}
+                </div>
+              </section>
+            </div>
+          </div>
         )}
       </div>
-      <p className="mt-1 text-[11px] uppercase tracking-[0.24em] text-muted-foreground/70">{caption}</p>
-
-      {loading ? (
-        <p className="mt-4 text-sm text-muted-foreground">Memuat aktor…</p>
-      ) : drivers.length === 0 ? (
-        <p className="mt-4 text-sm text-muted-foreground">Belum ada aktor penggerak teridentifikasi.</p>
-      ) : (
-        <div className="mt-4 flex-1 overflow-auto scrollbar-thin pr-1">
-          <div className="overflow-hidden rounded-3xl border border-border/60 bg-background/20 shadow-sm">
-            <section className="border-b border-border/60 px-4 py-4 md:px-5">
-              <div className="mb-3 flex items-center justify-between gap-3">
-                <SectionLabel icon={UserRound} label="Human Actor" count={humans.length} tone="muted" />
-              </div>
-              <div className="space-y-3.5">
-                {humans.length === 0 ? (
-                  <EmptyState>—</EmptyState>
-                ) : (
-                  humans.map((d) => <DriverCard key={d.handle} d={d} />)
-                )}
-              </div>
-            </section>
-
-            <section className="px-4 py-4 md:px-5">
-              <div className="mb-3 flex items-center justify-between gap-3">
-                <SectionLabel icon={Bot} label="Bot Actor" count={bots.length} tone="warning" />
-              </div>
-              <div className="space-y-3.5">
-                {bots.length === 0 ? (
-                  <EmptyState>Tidak ada akun terindikasi.</EmptyState>
-                ) : (
-                  bots.map((d) => <DriverCard key={d.handle} d={d} />)
-                )}
-              </div>
-            </section>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
