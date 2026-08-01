@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { DANANTARA_MAIN_CODE, isAllowedTopicCode } from "@/lib/bumn/registry";
+import { readDevMockJson } from "@/lib/danantara/dev-mocks";
 import { fetchThreatsForCode, ThreatsNotConfiguredError } from "@/lib/danantara/threats-feed";
 
 /**
@@ -19,6 +20,15 @@ import { fetchThreatsForCode, ThreatsNotConfiguredError } from "@/lib/danantara/
 export async function GET(req: Request) {
   const params = new URL(req.url).searchParams;
   const fresh = params.get("fresh") === "1";
+
+  const mockJson = readDevMockJson("threats.json") ?? process.env.DANANTARA_THREATS_MOCK_JSON;
+  if (process.env.NODE_ENV !== "production" && mockJson) {
+    try {
+      return NextResponse.json(JSON.parse(mockJson) as unknown);
+    } catch {
+      return NextResponse.json({ error: "Invalid threats mock JSON." }, { status: 500 });
+    }
+  }
 
   const requested = params.get("code");
   const code =

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { DANANTARA_MAIN_CODE, isAllowedTopicCode } from "@/lib/bumn/registry";
+import { readDevMockJson } from "@/lib/danantara/dev-mocks";
 import { fetchTopicsForCode, FeedNotConfiguredError } from "@/lib/danantara/topics-feed";
 
 /**
@@ -16,6 +17,15 @@ import { fetchTopicsForCode, FeedNotConfiguredError } from "@/lib/danantara/topi
 export async function GET(req: Request) {
   const params = new URL(req.url).searchParams;
   const fresh = params.get("fresh") === "1";
+
+  const mockJson = readDevMockJson("topics.json") ?? process.env.DANANTARA_TOPICS_MOCK_JSON;
+  if (process.env.NODE_ENV !== "production" && mockJson) {
+    try {
+      return NextResponse.json(JSON.parse(mockJson) as unknown);
+    } catch {
+      return NextResponse.json({ error: "Invalid topics mock JSON." }, { status: 500 });
+    }
+  }
 
   // Only an allowlisted code is ever proxied; anything else falls back to the
   // Danantara-wide code (or the env override). Never proxy an arbitrary topic.

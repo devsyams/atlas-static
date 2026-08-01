@@ -131,30 +131,32 @@ export function ThreatActors({
   const shown = humans.length + bots.length;
 
   return (
-    <div className="panel flex h-full flex-col overflow-hidden p-4">
-      <div className="flex items-baseline justify-between gap-2">
-        <h2 className="flex items-center gap-2.5 text-[clamp(1.5rem,3vh,2.5rem)] font-bold text-foreground">
+    <div className="panel flex h-full flex-col overflow-hidden p-5">
+      <div className="flex items-baseline justify-between gap-3">
+        <h2 className="flex items-center gap-2.5 text-[clamp(1.45rem,2.9vh,2.35rem)] font-bold text-foreground">
           <UserRound className="h-[1.1em] w-[1.1em] text-muted-foreground" />
           Aktor Penggerak
         </h2>
         {!loading && shown > 0 && (
-          <span className="shrink-0 text-sm font-medium text-muted-foreground">{shown} akun</span>
+          <span className="shrink-0 rounded-full border border-border/60 bg-muted/20 px-2.5 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+            {shown} akun
+          </span>
         )}
       </div>
-      <p className="mt-0.5 truncate text-sm text-muted-foreground">{caption}</p>
+      <p className="mt-1 text-[11px] uppercase tracking-[0.24em] text-muted-foreground/70">{caption}</p>
 
       {loading ? (
-        <p className="mt-3 text-sm text-muted-foreground">Memuat aktor…</p>
+        <p className="mt-4 text-sm text-muted-foreground">Memuat aktor…</p>
       ) : drivers.length === 0 ? (
-        <p className="mt-3 text-sm text-muted-foreground">Belum ada aktor penggerak teridentifikasi.</p>
+        <p className="mt-4 text-sm text-muted-foreground">Belum ada aktor penggerak teridentifikasi.</p>
       ) : (
-        <div className="mt-3 flex-1 overflow-auto scrollbar-thin pr-1">
-          <div className="rounded-3xl border border-border/60 bg-background/20">
-            <section className="border-b border-border/60 p-3.5 md:p-4">
-              <div className="mb-2.5 flex items-center justify-between gap-3">
+        <div className="mt-4 flex-1 overflow-auto scrollbar-thin pr-1">
+          <div className="overflow-hidden rounded-3xl border border-border/60 bg-background/20 shadow-sm">
+            <section className="border-b border-border/60 px-4 py-4 md:px-5">
+              <div className="mb-3 flex items-center justify-between gap-3">
                 <SectionLabel icon={UserRound} label="Human Actor" count={humans.length} tone="muted" />
               </div>
-              <div className="space-y-3">
+              <div className="space-y-3.5">
                 {humans.length === 0 ? (
                   <EmptyState>—</EmptyState>
                 ) : (
@@ -163,11 +165,11 @@ export function ThreatActors({
               </div>
             </section>
 
-            <section className="p-3.5 md:p-4">
-              <div className="mb-2.5 flex items-center justify-between gap-3">
+            <section className="px-4 py-4 md:px-5">
+              <div className="mb-3 flex items-center justify-between gap-3">
                 <SectionLabel icon={Bot} label="Bot Actor" count={bots.length} tone="warning" />
               </div>
-              <div className="space-y-3">
+              <div className="space-y-3.5">
                 {bots.length === 0 ? (
                   <EmptyState>Tidak ada akun terindikasi.</EmptyState>
                 ) : (
