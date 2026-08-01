@@ -86,7 +86,7 @@ not:
 That means the calculator needs two parts:
 
 1. **Threat Index → multiplier**
-2. **Volume anchor → post/action counts**
+2. **Negative volume baseline → response counts**
 
 ## Recommended model
 
@@ -152,7 +152,7 @@ So final intensity is something like:
 total intensity = threatMultiplier × tierMultiplier
 ```
 
-## Volume anchor
+## Negative volume baseline
 
 Use **all negative topics**.
 
@@ -170,7 +170,7 @@ This should be a modeled outcome, not a claim of certainty.
 The panel can show something like:
 
 - **Threat Index now:** 67
-- **Modeled after response:** 54
+- **Projected threat after response:** 54
 
 or
 
