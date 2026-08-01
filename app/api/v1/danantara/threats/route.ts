@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { MOCK_THREATS } from "@/lib/bgn/mock/fixtures";
 import { DANANTARA_MAIN_CODE, isAllowedTopicCode } from "@/lib/bumn/registry";
 import { readDevMockJson } from "@/lib/danantara/dev-mocks";
 import { fetchThreatsForCode, ThreatsNotConfiguredError } from "@/lib/danantara/threats-feed";
@@ -20,6 +21,12 @@ import { fetchThreatsForCode, ThreatsNotConfiguredError } from "@/lib/danantara/
 export async function GET(req: Request) {
   const params = new URL(req.url).searchParams;
   const fresh = params.get("fresh") === "1";
+
+  // Scoped BGN demo mock (A13 v4.0): only /bgn/command sends ?mock=1. Production-safe;
+  // returns bundled demo data before the (dead) upstream call.
+  if (params.get("mock") === "1") {
+    return NextResponse.json(MOCK_THREATS);
+  }
 
   const mockJson = readDevMockJson("threats.json") ?? process.env.DANANTARA_THREATS_MOCK_JSON;
   if (process.env.NODE_ENV !== "production" && mockJson) {

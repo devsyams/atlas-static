@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { isAiEnabled, useAiEnabled } from "@/lib/ai-settings";
+import { feedQuery } from "@/lib/danantara/feed-query";
 import { topNegativeByReach } from "@/lib/danantara/ceo/counter-narrative";
 import { fallbackCounterNarrative, type CounterNarrativeAi } from "@/lib/danantara/ceo/counter-narrative-ai";
 import type { CeoIssue } from "@/lib/danantara/ceo/types";
@@ -40,7 +41,7 @@ const TOPIC_COUNT = 3;
  * no key, kill switch off, model down, refusal, bad payload — simply leaves the
  * fallback standing with an honest `scripted` badge.
  */
-export function useCounterNarrative(refreshNonce?: number): CounterNarrativeState {
+export function useCounterNarrative(refreshNonce?: number, mock = false): CounterNarrativeState {
   const [issues, setIssues] = useState<CeoIssue[]>([]);
   const [summary, setSummary] = useState<TopicsSummary | null>(null);
   const [feed, setFeed] = useState<FeedState>("loading");
@@ -56,7 +57,7 @@ export function useCounterNarrative(refreshNonce?: number): CounterNarrativeStat
   }, []);
 
   const loadTopics = useCallback((fresh = false) => {
-    fetch(`/api/v1/danantara/topics${fresh ? "?fresh=1" : ""}`)
+    fetch(`/api/v1/danantara/topics${feedQuery({ fresh, mock })}`)
       .then((r) => {
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
         return r.json();
@@ -70,7 +71,7 @@ export function useCounterNarrative(refreshNonce?: number): CounterNarrativeStat
       .catch(() => {
         if (mountedRef.current) setFeed("offline");
       });
-  }, []);
+  }, [mock]);
 
   useEffect(() => {
     loadTopics(false);

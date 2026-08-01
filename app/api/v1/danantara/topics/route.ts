@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { MOCK_TOPICS } from "@/lib/bgn/mock/fixtures";
 import { DANANTARA_MAIN_CODE, isAllowedTopicCode } from "@/lib/bumn/registry";
 import { readDevMockJson } from "@/lib/danantara/dev-mocks";
 import { fetchTopicsForCode, FeedNotConfiguredError } from "@/lib/danantara/topics-feed";
@@ -17,6 +18,14 @@ import { fetchTopicsForCode, FeedNotConfiguredError } from "@/lib/danantara/topi
 export async function GET(req: Request) {
   const params = new URL(req.url).searchParams;
   const fresh = params.get("fresh") === "1";
+
+  // Scoped BGN demo mock (A13 v4.0): only /bgn/command sends ?mock=1, so every other
+  // caller falls through to the live path untouched. Production-safe by design —
+  // it returns bundled demo data, never a secret or an upstream call — unlike the
+  // NODE_ENV-gated dev-mock seam below.
+  if (params.get("mock") === "1") {
+    return NextResponse.json(MOCK_TOPICS);
+  }
 
   const mockJson = readDevMockJson("topics.json") ?? process.env.DANANTARA_TOPICS_MOCK_JSON;
   if (process.env.NODE_ENV !== "production" && mockJson) {

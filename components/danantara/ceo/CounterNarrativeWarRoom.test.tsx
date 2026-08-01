@@ -5,7 +5,7 @@ import { setAiEnabled } from "@/lib/ai-settings";
 import { boardThreatResponsePlan } from "@/lib/danantara/ceo/board-threat-simulator";
 import { responseCalculator } from "@/lib/danantara/ceo/counter-noise";
 import type { CeoIssue } from "@/lib/danantara/ceo/types";
-import { CounterNarrativeWarRoom } from "./CounterNarrativeWarRoom";
+import { CounterNarrativeWarRoom, warRoomBootLines } from "./CounterNarrativeWarRoom";
 
 function mkIssue(over: Partial<CeoIssue> & Pick<CeoIssue, "id" | "title">): CeoIssue {
   return {
@@ -118,6 +118,21 @@ describe("CounterNarrativeWarRoom (A14)", () => {
     const counts = screen.getAllByTestId(/^channel-posts-/);
     expect(counts).toHaveLength(9);
     for (const count of counts) expect(count.textContent?.trim()).not.toBe("");
+  });
+
+  // A14 v4.1 — BGN rebrand (cosmetic brand line + opt-in mock).
+  it("brands the war-room boot command per client (A14 v4.1)", () => {
+    expect(warRoomBootLines("Danantara")[0]).toContain("--topic danantara");
+    expect(warRoomBootLines("BGN")[0]).toContain("--topic bgn");
+  });
+
+  it("appends mock=1 to the topics fetch when mock is set (A14 v4.1)", async () => {
+    const fetchMock = stubFetch();
+    render(<CounterNarrativeWarRoom mock />);
+    await settle();
+    const topics = fetchMock.mock.calls.map((c) => String(c[0])).filter((u) => u.includes("/topics"));
+    expect(topics.length).toBeGreaterThan(0);
+    expect(topics.every((u) => u.includes("mock=1"))).toBe(true);
   });
 
   it("shows the model's own copy and badge when the AI is live (T25)", async () => {

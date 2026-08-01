@@ -18,7 +18,20 @@ import { CrisisGate } from "./CrisisGate";
  * All three blocks keep their own fetches and their own live/offline state, so one
  * feed failing degrades only its own block.
  */
-export function DanantaraCommandCenter({ mediaIntelligenceHref }: { mediaIntelligenceHref?: string } = {}) {
+export function DanantaraCommandCenter({
+  mediaIntelligenceHref,
+  brand = "Danantara",
+  brandLogo = "/danantara.png",
+  mock = false,
+}: {
+  mediaIntelligenceHref?: string;
+  /** Client brand shown across the three panes (A13 v4.0; default Danantara, "BGN" on /bgn/command). */
+  brand?: string;
+  /** Brand logo asset for the gate (A13 v4.0). */
+  brandLogo?: string;
+  /** Serve every pane from the scoped BGN demo fixtures via `?mock=1` (A13 v4.0). */
+  mock?: boolean;
+} = {}) {
   // Bumped by the gate's header Refresh; both blocks refetch on the change. The gate
   // delegates rather than fetching directly, so each feed is pulled exactly once.
   const [refreshNonce, setRefreshNonce] = useState(0);
@@ -30,9 +43,12 @@ export function DanantaraCommandCenter({ mediaIntelligenceHref }: { mediaIntelli
         refreshNonce={refreshNonce}
         onRefresh={() => setRefreshNonce((n) => n + 1)}
         mediaIntelligenceHref={mediaIntelligenceHref}
+        brand={brand}
+        brandLogo={brandLogo}
+        mock={mock}
       />
-      <CeoCommand showHeader={false} showBumn={false} refreshNonce={refreshNonce} />
-      <CounterNarrativeWarRoom refreshNonce={refreshNonce} />
+      <CeoCommand showHeader={false} showBumn={false} refreshNonce={refreshNonce} brand={brand} mock={mock} />
+      <CounterNarrativeWarRoom refreshNonce={refreshNonce} brand={brand} mock={mock} />
     </div>
   );
 }

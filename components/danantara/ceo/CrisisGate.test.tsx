@@ -240,4 +240,43 @@ describe("CrisisGate (A10 — fear-first landing)", () => {
     // The container owns the refetch (via the nonce) — the button must not also fetch.
     expect(fetchMock.mock.calls.filter((c) => String(c[0]).includes("fresh=1"))).toHaveLength(0);
   });
+
+  // A10 v5.6 — BGN rebrand (opt-in brand/brandLogo/mock props).
+  it("keeps the Danantara brand, logo and briefing link by default (regression)", async () => {
+    stubFetch();
+    render(<CrisisGate />);
+    await waitFor(() => expect(screen.getByTestId("crisis-gate")).toBeInTheDocument());
+    expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("Danantara");
+    expect(screen.getByAltText("Danantara").getAttribute("src")).toContain("danantara.png");
+    expect(screen.getByTestId("crisis-detail-link")).toHaveAttribute("href", "/danantara/brief");
+  });
+
+  it("rebrands the gate name + logo and hides the Danantara briefing link when a brand is set (A10 v5.6)", async () => {
+    stubFetch();
+    render(<CrisisGate brand="BGN" brandLogo="/bgn.png" />);
+    await waitFor(() => expect(screen.getByTestId("crisis-gate")).toBeInTheDocument());
+    expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("BGN");
+    expect(screen.getByAltText("BGN").getAttribute("src")).toContain("bgn.png");
+    // "View briefing" points at a Danantara page — hidden on the rebranded gate.
+    expect(screen.queryByTestId("crisis-detail-link")).not.toBeInTheDocument();
+  });
+
+  it("appends mock=1 to all three feed fetches when mock is set (A10 v5.6)", async () => {
+    stubFetch();
+    render(<CrisisGate mock />);
+    const fetchMock = globalThis.fetch as unknown as ReturnType<typeof vi.fn>;
+    await waitFor(() => {
+      const feeds = fetchMock.mock.calls.map((c) => String(c[0])).filter((u) => u.includes("/api/v1/danantara/"));
+      expect(feeds).toHaveLength(3);
+      expect(feeds.every((u) => u.includes("mock=1"))).toBe(true);
+    });
+  });
+
+  it("omits mock=1 by default (regression)", async () => {
+    stubFetch();
+    render(<CrisisGate />);
+    const fetchMock = globalThis.fetch as unknown as ReturnType<typeof vi.fn>;
+    await waitFor(() => expect(fetchMock.mock.calls.length).toBeGreaterThanOrEqual(3));
+    expect(fetchMock.mock.calls.map((c) => String(c[0])).some((u) => u.includes("mock=1"))).toBe(false);
+  });
 });

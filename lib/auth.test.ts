@@ -14,12 +14,12 @@ describe("Danantara demo login", () => {
     expect(scopeAllowsPath("danantara", "/danantara/krisis")).toBe(true);
   });
 
-  it("routes the danantara scope home to the command center — the SSO handoff landing", () => {
+  it("routes the danantara scope home to the BGN command center — the SSO handoff landing", () => {
     // homeForScope is the /api/v1/sso success target (and the middleware bounce
-    // target). OpenGate product request: land on the one-page Command Center.
+    // target). A13 v4.0 renamed the one-page Command Center to /bgn/command.
     // NB: the direct demo login above still lands on the /krisis fear gate via its
     // own DEMO_USERS.home — a deliberately separate flow, left unchanged.
-    expect(homeForScope("danantara")).toBe("/danantara/command");
+    expect(homeForScope("danantara")).toBe("/bgn/command");
   });
 });
 
@@ -34,6 +34,13 @@ describe("scopeAllowsPath", () => {
     expect(scopeAllowsPath("danantara", "/danantara")).toBe(true);
     expect(scopeAllowsPath("danantara", "/danantara/anything")).toBe(true);
     expect(scopeAllowsPath("danantara", "/danantara-v2")).toBe(true);
+  });
+
+  it("allows danantara-scoped users into /bgn/command — the renamed home they land on", () => {
+    // homeForScope("danantara") is /bgn/command; if the scope gate didn't allow it
+    // the middleware would bounce to the same path and redirect-loop.
+    expect(scopeAllowsPath("danantara", "/bgn/command")).toBe(true);
+    expect(scopeAllowsPath("danantara", "/bgn")).toBe(true);
   });
 
   it("blocks danantara-scoped users from other dashboards", () => {

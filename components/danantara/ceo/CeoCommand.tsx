@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { rankBumn } from "@/lib/danantara/ceo/engine";
+import { feedQuery } from "@/lib/danantara/feed-query";
 import type { BumnSentiment, CeoIssue, CeoState } from "@/lib/danantara/ceo/types";
 import { AiBriefTicker } from "./AiBriefTicker";
 import { BumnHeatboard } from "./BumnHeatboard";
@@ -23,6 +24,8 @@ export function CeoCommand({
   showHeader = true,
   showBumn = true,
   refreshNonce,
+  brand = "Danantara",
+  mock = false,
 }: {
   /** A13 embeds this wall under the Crisis Gate's header — pass `false` to drop ours. */
   showHeader?: boolean;
@@ -34,6 +37,10 @@ export function CeoCommand({
   showBumn?: boolean;
   /** Parent-driven refresh: refetch when this value *changes* (never on mount). */
   refreshNonce?: number;
+  /** Issue-board title prefix — "{brand} Issues" (A7 v47.1; default Danantara). */
+  brand?: string;
+  /** Append ?mock=1 to the topics fetch — the scoped BGN demo mock (A7 v47.1). */
+  mock?: boolean;
 } = {}) {
   const [issues, setIssues] = useState<CeoIssue[]>([]); // Danantara-wide topics
   const [bumn, setBumn] = useState<BumnSentiment[]>([]); // BUMN board rows
@@ -52,8 +59,7 @@ export function CeoCommand({
 
   const load = useCallback(
     (fresh = false) => {
-      const q = fresh ? "?fresh=1" : "";
-      const topics = fetch(`/api/v1/danantara/topics${q}`)
+      const topics = fetch(`/api/v1/danantara/topics${feedQuery({ fresh, mock })}`)
         .then((r) => {
           if (!r.ok) throw new Error(`HTTP ${r.status}`);
           return r.json();
@@ -70,7 +76,7 @@ export function CeoCommand({
       // Nothing on the page reads the BUMN board when it isn't rendered (A13 v2.0),
       // so skip the call entirely rather than paying for a discarded response.
       const board = showBumn
-        ? fetch(`/api/v1/danantara/bumn-board${q}`)
+        ? fetch(`/api/v1/danantara/bumn-board${feedQuery({ fresh })}`)
             .then((r) => {
               if (!r.ok) throw new Error(`HTTP ${r.status}`);
               return r.json();
@@ -90,7 +96,7 @@ export function CeoCommand({
         if (mountedRef.current) setRefreshing(false);
       });
     },
-    [showBumn],
+    [showBumn, mock],
   );
 
   useEffect(() => {
@@ -139,7 +145,7 @@ export function CeoCommand({
       >
         {/* Phone order matches AC7: header → ticker → issues → BUMN. */}
         <div className="min-h-0">
-          <IssueBoard issues={issues} loading={issuesLive === "loading"} onSelect={(id) => setDetail({ type: "issue", id })} />
+          <IssueBoard issues={issues} brand={brand} loading={issuesLive === "loading"} onSelect={(id) => setDetail({ type: "issue", id })} />
         </div>
         {showBumn && (
           <div className="min-h-0">

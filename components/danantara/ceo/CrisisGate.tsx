@@ -8,6 +8,7 @@ import type { CeoIssue } from "@/lib/danantara/ceo/types";
 import type { TopicsSummary } from "@/lib/danantara/ceo/topics-source";
 import type { DetectedThreat, ThreatDriver } from "@/lib/danantara/ceo/threats-source";
 import { biggestThreat, crisisIndex, CRISIS_LEVEL_LABEL, type CrisisLevel } from "@/lib/danantara/ceo/crisis";
+import { feedQuery } from "@/lib/danantara/feed-query";
 import { groupIssuesBySentiment } from "@/lib/danantara/ceo/engine";
 import { withAlpha } from "@/lib/danantara/ui";
 import { CrisisGauge } from "./CrisisGauge";
@@ -24,8 +25,9 @@ const FEAR: Record<CrisisLevel, { glow: number; breathe: boolean }> = {
   Severe: { glow: 0.46, breathe: true },
 };
 
-/** The client this board belongs to — shown as the brand line at the top. */
-const CLIENT_BRAND = "Danantara";
+/** Default client brand + logo — overridable via props for the BGN rebrand (A10 v5.6). */
+const DEFAULT_BRAND = "Danantara";
+const DEFAULT_LOGO = "/danantara.png";
 
 /**
  * Date-range presets for the dashboard window. Selection is UI-only for now (the
@@ -78,6 +80,9 @@ export function CrisisGate({
   refreshNonce,
   onRefresh,
   mediaIntelligenceHref,
+  brand = DEFAULT_BRAND,
+  brandLogo = DEFAULT_LOGO,
+  mock = false,
 }: {
   /** Sit inside a scrolling page (A13) instead of locking to one screen. */
   embedded?: boolean;
@@ -87,6 +92,12 @@ export function CrisisGate({
   onRefresh?: () => void;
   /** Optional OpenGate-only shortcut shown before "View briefing". */
   mediaIntelligenceHref?: string;
+  /** Client brand shown as the gate title; non-default hides the Danantara briefing link (A10 v5.6). */
+  brand?: string;
+  /** Logo asset for the brand. */
+  brandLogo?: string;
+  /** Append ?mock=1 to the feed fetches — the scoped BGN demo mock (A10 v5.6). */
+  mock?: boolean;
 } = {}) {
 
   const [issues, setIssues] = useState<CeoIssue[]>([]);
@@ -108,7 +119,7 @@ export function CrisisGate({
   }, []);
 
   const loadTopics = useCallback((fresh = false) => {
-    fetch(`/api/v1/danantara/topics${fresh ? "?fresh=1" : ""}`)
+    fetch(`/api/v1/danantara/topics${feedQuery({ fresh, mock })}`)
       .then((r) => {
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
         return r.json();
@@ -125,13 +136,13 @@ export function CrisisGate({
       .finally(() => {
         if (mountedRef.current) setRefreshing(false);
       });
-  }, []);
+  }, [mock]);
 
   // The #1 detected threat (OpenGate `/threats`) powers the middle column's headline.
   // Independent of the topics feed; the middle column falls back to the /topics biggest
   // threat client-side when there's no incident.
   const loadThreats = useCallback((fresh = false) => {
-    fetch(`/api/v1/danantara/threats${fresh ? "?fresh=1" : ""}`)
+    fetch(`/api/v1/danantara/threats${feedQuery({ fresh, mock })}`)
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))))
       .then((j: { threat?: DetectedThreat | null }) => {
         if (mountedRef.current) setThreat(j.threat ?? null);
@@ -142,13 +153,13 @@ export function CrisisGate({
       .finally(() => {
         if (mountedRef.current) setThreatLoading(false);
       });
-  }, []);
+  }, [mock]);
 
   // The right "Aktor Penggerak" column always reads the /actor-intelligence roster
   // (v5.3) — it carries real profile pictures, so the actors stay consistent whether or
   // not a threat is live. Degrades to an empty list if the roster ever fails.
   const loadRoster = useCallback((fresh = false) => {
-    fetch(`/api/v1/danantara/actor-intelligence${fresh ? "?fresh=1" : ""}`)
+    fetch(`/api/v1/danantara/actor-intelligence${feedQuery({ fresh, mock })}`)
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))))
       .then((j: { actors?: ThreatDriver[] }) => {
         if (mountedRef.current) setDrivers(Array.isArray(j.actors) ? j.actors : []);
@@ -159,7 +170,7 @@ export function CrisisGate({
       .finally(() => {
         if (mountedRef.current) setRosterLoading(false);
       });
-  }, []);
+  }, [mock]);
 
   useEffect(() => {
     loadTopics(false);
@@ -221,15 +232,15 @@ export function CrisisGate({
           window, and the two actions. */}
       <header className="flex shrink-0 flex-wrap items-center justify-between gap-x-4 gap-y-3">
         <div className="flex items-center gap-3.5">
-          {/* Danantara brand logo — white backdrop so the black "D" mark reads on the
-              dark board (mirrors HeaderStrip). Scales with viewport for TV legibility. */}
+          {/* Brand logo — white backdrop so a dark mark reads on the dark board
+              (mirrors HeaderStrip). Scales with viewport for TV legibility. */}
           <span className="flex h-[clamp(2.75rem,6vh,4.25rem)] w-[clamp(2.75rem,6vh,4.25rem)] shrink-0 items-center justify-center overflow-hidden rounded-xl bg-white/95 p-1.5 shadow-sm">
-            <Image src="/danantara.png" alt="Danantara" width={68} height={68} priority className="h-full w-full object-contain" />
+            <Image src={brandLogo} alt={brand} width={68} height={68} priority className="h-full w-full object-contain" />
           </span>
           <div>
             <div className="flex items-center gap-2.5">
               <h1 className="text-[clamp(1.7rem,3.8vh,3rem)] font-extrabold leading-none tracking-tight text-foreground">
-                {CLIENT_BRAND}
+                {brand}
               </h1>
               {/* Live pulse — sits beside the brand name. */}
               <span className="relative flex h-2.5 w-2.5">
@@ -281,14 +292,18 @@ export function CrisisGate({
               <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
             </a>
           )}
-          <Link
-            href="/danantara/brief"
-            data-testid="crisis-detail-link"
-            className="group inline-flex items-center gap-2 rounded-full border border-border bg-card/50 px-4 py-2 text-sm font-medium text-foreground transition-colors hover:border-primary/50 hover:text-primary"
-          >
-            View briefing
-            <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-          </Link>
+          {/* The briefing lives on a Danantara page (/danantara/brief); hide it when the
+              gate is rebranded (e.g. BGN) so the page never links off-brand (A10 v5.6). */}
+          {brand === DEFAULT_BRAND && (
+            <Link
+              href="/danantara/brief"
+              data-testid="crisis-detail-link"
+              className="group inline-flex items-center gap-2 rounded-full border border-border bg-card/50 px-4 py-2 text-sm font-medium text-foreground transition-colors hover:border-primary/50 hover:text-primary"
+            >
+              View briefing
+              <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+            </Link>
+          )}
           <button
             type="button"
             onClick={() => {

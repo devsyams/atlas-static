@@ -202,6 +202,32 @@ describe("CeoCommand — live wall (v37.0)", () => {
     expect(screen.getByTestId("ceo-bumn")).toBeInTheDocument();
   });
 
+  // A7 v47.1 — BGN rebrand (opt-in brand/mock props).
+  it("appends mock=1 to the topics fetch when mock is set (A7 v47.1)", async () => {
+    stubFetch();
+    render(<CeoCommand showBumn={false} mock />);
+    const fetchMock = globalThis.fetch as unknown as ReturnType<typeof vi.fn>;
+    await waitFor(() => {
+      const topics = fetchMock.mock.calls.map((c) => String(c[0])).filter((u) => u.includes("/topics"));
+      expect(topics.length).toBeGreaterThan(0);
+      expect(topics.every((u) => u.includes("mock=1"))).toBe(true);
+    });
+  });
+
+  it("passes brand through to the issue board title (A7 v47.1)", async () => {
+    stubFetch();
+    render(<CeoCommand showBumn={false} brand="BGN" />);
+    await waitFor(() => expect(screen.getByTestId("ceo-issues").textContent).toContain("BGN Issues"));
+  });
+
+  it("omits mock=1 by default (regression)", async () => {
+    stubFetch();
+    render(<CeoCommand showBumn={false} />);
+    const fetchMock = globalThis.fetch as unknown as ReturnType<typeof vi.fn>;
+    await waitFor(() => expect(screen.getByTestId("ceo-issues")).toBeInTheDocument());
+    expect(fetchMock.mock.calls.map((c) => String(c[0])).some((u) => u.includes("mock=1"))).toBe(false);
+  });
+
   it("refetches both feeds when refreshNonce changes, and not on mount (T4 support)", async () => {
     stubFetch();
     const fetchMock = globalThis.fetch as unknown as ReturnType<typeof vi.fn>;
