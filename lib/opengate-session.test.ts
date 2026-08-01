@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { hasOpengateSession, OPENGATE_SESSION_COOKIE, signOpengateSessionCookie } from "./opengate-session";
 
 const SECRET = "dedicated-danantara-sso-secret-value";
+const SESSION_MAX_AGE = 60 * 60 * 24;
 
 function cookieStore(token?: string) {
   return {
@@ -28,7 +29,7 @@ describe("hasOpengateSession", () => {
       iss: "opengate" as const,
       aud: "danantara" as const,
       iat,
-      exp: iat + 86400,
+      exp: iat + SESSION_MAX_AGE,
       sub: "og-user-42",
       email: "ceo@danantara.id",
       scope: "danantara" as const,
@@ -46,7 +47,7 @@ describe("hasOpengateSession", () => {
         iss: "someone-else" as unknown as "opengate",
         aud: "danantara" as const,
         iat,
-        exp: iat + 86400,
+        exp: iat + SESSION_MAX_AGE,
         sub: "og-user-42",
         email: "ceo@danantara.id",
         scope: "danantara" as const,

@@ -9,6 +9,7 @@ import { type SsoClaims } from "../../../lib/sso-token";
 import { OPENGATE_SESSION_COOKIE, signOpengateSessionCookie } from "../../../lib/opengate-session";
 
 const SECRET = "dedicated-danantara-sso-secret-value";
+const SESSION_MAX_AGE = 60 * 60 * 24;
 
 vi.mock("next/headers", () => ({
   cookies: vi.fn(),
@@ -52,7 +53,7 @@ describe("/danantara/command (A13 — T1)", () => {
       iss: "opengate" as const,
       aud: "danantara" as const,
       iat: claims().iat,
-      exp: claims().iat + 86400,
+      exp: claims().iat + SESSION_MAX_AGE,
       sub: claims().sub,
       email: claims().email,
       scope: "danantara" as const,

@@ -54,10 +54,8 @@ export async function GET(req: Request) {
   const res = relativeRedirect(homeForScope(parseScope(scope)), 302);
 
   const secure = process.env.NODE_ENV === "production";
-  const now = Math.floor(Date.now() / 1000);
-  const sessionMaxAge = SESSION_MAX_AGE;
   const attrs = { httpOnly: true, path: "/", sameSite: "lax" as const, maxAge: SESSION_MAX_AGE, secure };
-  const sessionAttrs = { httpOnly: true, path: "/", sameSite: "lax" as const, maxAge: sessionMaxAge, secure };
+  const sessionAttrs = { httpOnly: true, path: "/", sameSite: "lax" as const, maxAge: SESSION_MAX_AGE, secure };
   const opengateSession = await signOpengateSessionCookie(
     {
       typ: "opengate-session",

@@ -1,9 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+
 import { GET } from "./route";
 import { signSsoToken, type SsoClaims } from "../../../../lib/sso-token";
 import { OPENGATE_SESSION_COOKIE, signOpengateSessionCookie } from "../../../../lib/opengate-session";
 
 const SECRET = "dedicated-danantara-sso-secret-value";
+const SESSION_MAX_AGE = 60 * 60 * 24;
 
 /** Fresh claims relative to the real clock (the route verifies at Date.now()). */
 function claims(overrides: Partial<SsoClaims> = {}): SsoClaims {
@@ -58,7 +60,7 @@ describe("GET /api/v1/sso (P9)", () => {
       iss: "opengate" as const,
       aud: "danantara" as const,
       iat: baseClaims.iat,
-      exp: baseClaims.iat + 86400,
+      exp: baseClaims.iat + SESSION_MAX_AGE,
       sub: baseClaims.sub,
       email: baseClaims.email,
       scope: "danantara" as const,
@@ -105,7 +107,7 @@ describe("GET /api/v1/sso (P9)", () => {
       iss: "opengate" as const,
       aud: "danantara" as const,
       iat: baseClaims.iat,
-      exp: baseClaims.iat + 86400,
+      exp: baseClaims.iat + SESSION_MAX_AGE,
       sub: baseClaims.sub,
       email: baseClaims.email,
       scope: "danantara" as const,
@@ -173,7 +175,9 @@ describe("GET /api/v1/sso (P9)", () => {
 
     expect(res.status).toBe(302);
     expect(loc(res)).toBe("/login");
+    expect(isHostSafe(res)).toBe(true);
     expect(res.cookies.get("atlas_auth")).toBeUndefined();
+    expect(res.cookies.get("atlas_scope")).toBeUndefined();
     expect(res.cookies.get(OPENGATE_SESSION_COOKIE)).toBeUndefined();
     expect(res.headers.getSetCookie()).toHaveLength(0);
   });
