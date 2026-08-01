@@ -1071,7 +1071,7 @@ That is a demo-integrity problem, not a cosmetic one. The lead audience for thes
 
 ### A13. Danantara Command Center (one-page)
 
-- **Version:** 3.0 · **Stage:** 3-act · **Sprint:** demo · **Status:** Built · **Spec ref:** `docs/superpowers/specs/2026-07-30-danantara-command-center-design.md` · **Owner:** Dev A
+- **Version:** 3.2 · **Stage:** 3-act · **Sprint:** demo · **Status:** Built · **Spec ref:** `docs/superpowers/specs/2026-07-30-danantara-command-center-design.md` · **Owner:** Dev A
 
 #### PM
 **Background (why):** The Danantara story is split across two routes — `/danantara/krisis` (A10, the fear-first Crisis Gate: index gauge · biggest threat · driving actors) and `/danantara` (A7, the analyst wall: AI brief ticker · issue board · BUMN heatboard). Seeing the whole picture means a page navigation, which on a boardroom display or in a live demo breaks the read: the screen blanks, the feeds refetch, and the presenter loses the room. A13 adds a **single-page** route, `/danantara/command`, that stacks both blocks in one continuously scrolling view under one header and one refresh button. **Both existing routes stay exactly as they are** — A7 and A10 are signed off and demoed, so the central constraint is that neither changes observable behaviour.
@@ -1085,7 +1085,7 @@ That is a demo-integrity problem, not a cosmetic one. The lead audience for thes
 - **AC6** — *Given* the new route, *Then* it is reachable from the `AppShell` gear menu ("Danantara Command Center", **Dashboards** group) and the entry survives both the `minimalChrome` and the danantara-scope nav filters — never URL-only.
 - **AC7** *(v2.0)* — *Given* the page, *When* rendered, *Then* the **BUMN sentiment section is absent** (no `ceo-bumn` heatboard, no `bumn-tile-*`): the wall carries only the **Danantara Issues** board — negative topics and positive topics — which spans the full width. `/bumn-board` is never requested from this route. `/danantara` (A7) keeps its heatboard unchanged.
 - **AC8** *(v3.0)* — *Given* the page, *When* rendered, *Then* a **third section** — the A14 Counter-Narrative War Room (`counter-war-room`) — stacks below the issue board in the same `gap-6` scroll rhythm, sharing the one header's Refresh via `refreshNonce`. The page reads *how bad* (gate) → *what is said* (issues) → *what we post* (war room). The war room owns its own fetches, so it degrades independently of the other two (AC5).
-- **AC9** *(v3.1)* — *Given* the page receives a **valid signed OpenGate SSO cookie** set during the OpenGate handoff, *When* the header renders, *Then* a **Media Intelligence** shortcut appears immediately to the left of **View briefing** and clicking it redirects to `https://opengate.atlas.nexorus-alpha.io`; the shortcut is absent without that cookie.
+- **AC9** *(v3.2)* — *Given* the page receives a **valid signed OpenGate SSO cookie** set during the OpenGate handoff, *When* the header renders, *Then* a **Media Intelligence** shortcut appears immediately to the left of **View briefing** and clicking it redirects to `https://opengate.atlas.nexorus-alpha.io`; the shortcut is absent without that cookie.
 
 #### Architecture
 **Impact — files add/change:**
@@ -1095,7 +1095,7 @@ That is a demo-integrity problem, not a cosmetic one. The lead audience for thes
 - `change` `components/danantara/ceo/CeoCommand.tsx` (**A7 v46.1**) — opt-in `showHeader` (`false` omits `HeaderStrip`), `refreshNonce` (as above). **v2.0 (A7 v46.2):** third opt-in prop `showBumn` (default `true`); `false` drops `BumnHeatboard`, **skips the `/bumn-board` fetch**, and makes the issue board full-width (`xl:grid-cols-2` → single column).
 - `change` `components/layout/AppShell.tsx` — one `NAV` entry (`/danantara/command`, `LayoutDashboard`, Dashboards group). `minimalChrome` already matches `pathname.startsWith("/danantara/")` — no layout change needed.
 - **v3.0:** `change` `components/danantara/ceo/DanantaraCommandCenter.tsx` — one added sibling, `<CounterNarrativeWarRoom refreshNonce={refreshNonce} />` (A14). The container stays thin: the war room owns its own `/topics` fetch rather than receiving issues, so neither `CeoCommand` nor the container needs a data provider. A13's already-accepted "`/topics` fetched per block, served from the 6 h cache" trade extends from two blocks to three.
-- **v3.1:** `change` `lib/opengate-session.ts` (new), `app/api/v1/sso/route.ts`, and `app/danantara/command/page.tsx` — the OpenGate handoff now mints a signed HttpOnly `atlas_sso_token` cookie alongside the existing Danantara session cookies, and `/danantara/command` reads that cookie server-side to decide whether to expose the OpenGate-only **Media Intelligence** shortcut; `CrisisGate` still only receives a plain href prop.
+- **v3.2:** `change` `lib/opengate-session.ts` (new), `app/api/v1/sso/route.ts`, and `app/danantara/command/page.tsx` — the OpenGate handoff now mints a signed HttpOnly `atlas_opengate_session` cookie alongside the existing Danantara session cookies, and `/danantara/command` reads that cookie server-side to decide whether to expose the OpenGate-only **Media Intelligence** shortcut; the marker is session-lifetime and refresh-safe.
 
 **Data-model / API changes:** **none.** No new BFF route, no DB, no LLM, no new secret.
 

@@ -11,6 +11,7 @@ type OpengateSessionClaims = {
   iss: "opengate";
   aud: "danantara";
   iat: number;
+  exp: number;
   sub: string;
   email: string;
   scope: "danantara";
@@ -66,6 +67,8 @@ async function verifyOpengateSessionCookie(
   if (claims.iss !== "opengate" || claims.aud !== "danantara" || claims.scope !== "danantara") return false;
 
   try {
+    const now = Math.floor(Date.now() / 1000);
+    if (claims.exp < now) return false;
     const key = await hmacKey(secret);
     return crypto.subtle.verify("HMAC", key, b64urlToBytes(parts[1]), enc.encode(parts[0]));
   } catch {

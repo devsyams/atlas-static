@@ -45,22 +45,28 @@ export async function GET(req: Request) {
     return relativeRedirect("/login", 302);
   }
 
+  const secret = process.env.ATLAS_SSO_SECRET;
+  if (!secret) {
+    return relativeRedirect("/login", 302);
+  }
+
   const scope = scopeFromClaims(result.claims);
   const res = relativeRedirect(homeForScope(parseScope(scope)), 302);
 
   const secure = new URL(req.url).protocol === "https:";
   const attrs = { httpOnly: true, path: "/", sameSite: "lax" as const, maxAge: SESSION_MAX_AGE, secure };
-  const sessionAttrs = { httpOnly: true, path: "/", sameSite: "lax" as const, secure };
+  const sessionAttrs = { httpOnly: true, path: "/", sameSite: "lax" as const, maxAge: SESSION_MAX_AGE, secure };
   const opengateSession = await signOpengateSessionCookie(
     {
       iss: "opengate",
       aud: "danantara",
-      iat: Math.floor(Date.now() / 1000),
+      iat: result.claims.iat,
+      exp: result.claims.iat + SESSION_MAX_AGE,
       sub: result.claims.sub,
       email: result.claims.email,
       scope: "danantara",
     },
-    process.env.ATLAS_SSO_SECRET,
+    secret,
   );
   res.cookies.set("atlas_auth", "1", attrs);
   res.cookies.set("atlas_scope", scope, attrs);
