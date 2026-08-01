@@ -91,7 +91,7 @@ That means the calculator needs two parts:
 ## Recommended model
 
 ```text
-Threat Index -> response multiplier
+Threat Index -> response posture
 All negative topics -> volume anchor
 tier -> additional intensity control
 volume anchor × multiplier × tier -> total actions
@@ -190,7 +190,7 @@ This gives the simulator a more useful boardroom outcome than SOV.
 A new board-level calculator panel, likely with:
 
 - Threat Index header
-- response multiplier / posture
+- response posture
 - total actions
 - KOL / clipper / grassroots breakdown
 - projected reach
