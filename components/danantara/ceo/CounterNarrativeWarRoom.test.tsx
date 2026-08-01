@@ -156,31 +156,31 @@ describe("CounterNarrativeWarRoom (A14)", () => {
     expect(screen.getAllByTestId(/^counter-topic-/)).toHaveLength(3);
   });
 
-  it("renders the three-tier comparison with a Threat Index headline (T27)", async () => {
+  it("renders the three-tier comparison, each card with its own projection (T27)", async () => {
     stubFetch();
     render(<CounterNarrativeWarRoom />);
     await settle();
     await waitFor(() => expect(screen.getByTestId("board-simulator")).toBeInTheDocument());
 
-    const plan = boardThreatResponsePlan(ISSUES, SUMMARY, "professional");
-    const anchor = plan.volumeAnchor;
+    const anchor = boardThreatResponsePlan(ISSUES, SUMMARY, "professional").volumeAnchor;
 
-    // The old single-tier metric grid and the SOV bar are gone.
+    // The old single-tier metric grid, the SOV bar, and the shared headline are all gone.
     expect(screen.queryByTestId("sov-bar")).not.toBeInTheDocument();
     expect(screen.queryByTestId("board-total-actions")).not.toBeInTheDocument();
-    expect(screen.queryByTestId("board-grassroots")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("board-post-response")).not.toBeInTheDocument();
 
-    // Threat Index headline: now → modeled post-response (at Professional, the default).
-    expect(screen.getByTestId("board-threat-index").textContent).toContain(String(plan.threatIndex));
-    expect(screen.getByTestId("board-post-response").textContent).toContain(String(plan.postResponseThreatIndex));
-
-    // Each tier card carries its own counter-actions + Clipper / Homeless / KOL split.
+    // Each tier card carries its own counter-actions, channel split, and now → post projection.
     for (const tier of ["basic", "professional", "enterprise"] as const) {
       const ca = responseCalculator(anchor, tier);
+      const plan = boardThreatResponsePlan(ISSUES, SUMMARY, tier);
+      const card = screen.getByTestId(`tier-card-${tier}`);
       expect(screen.getByTestId(`tier-actions-${tier}`).textContent).toContain(ca.counterActions.toLocaleString("en-US"));
       expect(screen.getByTestId(`tier-${tier}-clipper`).textContent).toContain(ca.clipper.toLocaleString("en-US"));
       expect(screen.getByTestId(`tier-${tier}-homeless`).textContent).toContain(ca.homeless.toLocaleString("en-US"));
       expect(screen.getByTestId(`tier-${tier}-kol`).textContent).toContain(ca.kol.toLocaleString("en-US"));
+      // The current index (shared) and this tier's own projected post-response.
+      expect(card.textContent).toContain(String(plan.threatIndex));
+      expect(screen.getByTestId(`tier-post-${tier}`).textContent).toContain(String(plan.postResponseThreatIndex));
     }
 
     // Professional is badged DEFAULT; every card shows its ×N NOISE pill.
@@ -188,6 +188,19 @@ describe("CounterNarrativeWarRoom (A14)", () => {
     expect(screen.getByTestId("tier-card-enterprise").textContent).toContain("5× NOISE");
     expect(screen.getByTestId("tier-card-professional").textContent).toContain("3× NOISE");
     expect(screen.getByTestId("tier-card-basic").textContent).toContain("1× NOISE");
+  });
+
+  it("projects a tier-specific post-response threat index, monotonic by intensity (T38)", async () => {
+    stubFetch();
+    render(<CounterNarrativeWarRoom />);
+    await settle();
+    await waitFor(() => expect(screen.getByTestId("board-simulator")).toBeInTheDocument());
+
+    const post = (tier: string) =>
+      Number(screen.getByTestId(`tier-post-${tier}`).textContent!.replace(/[^\d]/g, ""));
+    // A heavier tier deploys more counter-actions, so it cuts the threat at least as far.
+    expect(post("enterprise")).toBeLessThanOrEqual(post("professional"));
+    expect(post("professional")).toBeLessThanOrEqual(post("basic"));
   });
 
   it("scales counter-actions 1× / 3× / 5× across Basic / Professional / Enterprise (T37)", async () => {

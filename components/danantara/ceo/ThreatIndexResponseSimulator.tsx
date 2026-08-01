@@ -16,7 +16,7 @@ import type { TopicsSummary } from "@/lib/danantara/ceo/topics-source";
 /** Left→right, strongest first — the executive reads the ceiling before the floor. */
 const TIER_ORDER: ResponseTier[] = ["enterprise", "professional", "basic"];
 
-/** The default tier — the Threat Index headline and the topic-card volume both use it. */
+/** The default tier — the counter-topic cards below the simulator use it. */
 const DEFAULT_TIER: ResponseTier = "professional";
 
 /**
@@ -45,13 +45,13 @@ const TIER_UI: Record<ResponseTier, { card: string; name: string; value: string;
 };
 
 /**
- * Threat Index Response Simulator (A14 v2.0) — a **side-by-side comparison** of all three
- * response tiers, no longer a one-tier-at-a-time view behind a toggle. A compact Threat
- * Index headline (now → modeled post-response, at the default tier) sits above three
- * colour-coded cards: each scales the **same** negative-post volume anchor by its own noise
- * multiplier (`responseCalculator`) and shows the counter-actions plus the Clipper / Homeless
- * / KOL split. All pure and client-side; the executive compares Basic/Professional/Enterprise
- * at a glance instead of clicking through them.
+ * Threat Index Response Simulator (A14 v3.0) — a **side-by-side comparison** of all three
+ * response tiers. Each colour-coded card scales the same negative-post volume anchor by its
+ * own noise multiplier (`responseCalculator`) into counter-actions + a Clipper / Homeless /
+ * KOL split, and carries **its own** Threat Index projection (`now → modeled post-response`
+ * at *that* tier): a heavier deployment cuts the threat further, so Enterprise projects a
+ * lower post-response index than Basic. All pure and client-side; the executive compares
+ * Basic/Professional/Enterprise — and their outcomes — at a glance.
  */
 export function ThreatIndexResponseSimulator({
   issues,
@@ -60,42 +60,28 @@ export function ThreatIndexResponseSimulator({
   issues: CeoIssue[];
   summary: TopicsSummary | null | undefined;
 }) {
-  // The default tier drives the headline; `volumeAnchor` is the board's negative-post
-  // baseline, which every card then multiplies by its own tier factor.
-  const plan = useMemo(() => boardThreatResponsePlan(issues, summary, DEFAULT_TIER), [issues, summary]);
-  const anchor = plan.volumeAnchor;
+  // One plan per tier: `volumeAnchor`/`threatIndex` are shared across tiers, but
+  // `postResponseThreatIndex` is tier-specific (a bigger response reduces the threat more).
+  const cards = useMemo(
+    () =>
+      TIER_ORDER.map((tier) => {
+        const plan = boardThreatResponsePlan(issues, summary, tier);
+        return { tier, plan, actions: responseCalculator(plan.volumeAnchor, tier) };
+      }),
+    [issues, summary],
+  );
 
   return (
     <section data-testid="board-simulator" className="rounded-xl border border-border/60 bg-card/40 p-3">
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-border/40 pb-2.5">
-        <div className="flex items-center gap-1.5 text-base font-bold uppercase tracking-[0.18em] text-primary">
-          <Gauge className="h-4 w-4" /> Threat Index Response Simulator
-        </div>
-        {/* Threat Index headline: now → modeled post-response, at the default tier. */}
-        <div className="ml-auto flex items-center gap-2 text-base text-muted-foreground">
-          <span className="uppercase tracking-[0.16em]">Threat Index</span>
-          <span
-            data-testid="board-threat-index"
-            className="font-mono text-2xl font-extrabold tabular-nums text-foreground"
-          >
-            {plan.threatIndex}
-          </span>
-          <span aria-hidden>→</span>
-          <span
-            data-testid="board-post-response"
-            className="font-mono text-2xl font-extrabold tabular-nums text-success"
-          >
-            {plan.postResponseThreatIndex}
-          </span>
-          <span className="uppercase tracking-[0.16em]">after response</span>
-        </div>
+      <div className="flex items-center gap-1.5 border-b border-border/40 pb-2.5 text-base font-bold uppercase tracking-[0.18em] text-primary">
+        <Gauge className="h-4 w-4" /> Threat Index Response Simulator
       </div>
 
       <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-3">
-        {TIER_ORDER.map((tier) => {
+        {cards.map(({ tier, plan, actions }) => {
           const ui = TIER_UI[tier];
-          const ca = responseCalculator(anchor, tier);
           const isDefault = tier === DEFAULT_TIER;
+          const reduced = plan.postResponseThreatIndex < plan.threatIndex;
           return (
             <div
               key={tier}
@@ -125,15 +111,31 @@ export function ThreatIndexResponseSimulator({
                   data-testid={`tier-actions-${tier}`}
                   className={`font-mono text-4xl font-extrabold leading-none tabular-nums ${ui.value}`}
                 >
-                  {ca.counterActions.toLocaleString("en-US")}
+                  {actions.counterActions.toLocaleString("en-US")}
                 </div>
                 <div className="mt-1 text-base tracking-[0.02em] text-muted-foreground">counter-actions</div>
               </div>
 
+              {/* This tier's own Threat Index outcome: now → modeled post-response. */}
+              <div className="mt-3 flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5 text-base">
+                <span className="uppercase tracking-[0.14em] text-muted-foreground">Threat Index</span>
+                <span className="font-mono font-bold tabular-nums text-foreground">{plan.threatIndex}</span>
+                <span aria-hidden className="text-muted-foreground">
+                  →
+                </span>
+                <span
+                  data-testid={`tier-post-${tier}`}
+                  className={`font-mono text-lg font-extrabold tabular-nums ${reduced ? "text-success" : "text-foreground"}`}
+                >
+                  {plan.postResponseThreatIndex}
+                </span>
+                <span className="uppercase tracking-[0.14em] text-muted-foreground">after response</span>
+              </div>
+
               <div className="mt-4 flex flex-col gap-2 border-t border-border/40 pt-3">
-                <ChannelRow label="Clipper content" value={ca.clipper} testId={`tier-${tier}-clipper`} />
-                <ChannelRow label="Homeless post" value={ca.homeless} testId={`tier-${tier}-homeless`} />
-                <ChannelRow label="KOL post" value={ca.kol} testId={`tier-${tier}-kol`} />
+                <ChannelRow label="Clipper content" value={actions.clipper} testId={`tier-${tier}-clipper`} />
+                <ChannelRow label="Homeless post" value={actions.homeless} testId={`tier-${tier}-homeless`} />
+                <ChannelRow label="KOL post" value={actions.kol} testId={`tier-${tier}-kol`} />
               </div>
             </div>
           );
