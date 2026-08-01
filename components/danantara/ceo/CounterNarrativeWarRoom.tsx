@@ -54,18 +54,18 @@ function useInView<T extends HTMLElement>() {
       (entries) => {
         if (entries.some((e) => e.isIntersecting)) {
           setInView(true);
-          obs.disconnect();
+          obs.disconnect(); // A14 v5.0 — boot once; a scroll-away-and-back does not replay it.
         }
       },
       { threshold: 0, rootMargin: "0px 0px -8% 0px" },
     );
     obs.observe(el);
-    // AppShell's <main> is the scroller, not the window — keep A9's safety net.
-    const fallback = setTimeout(() => setInView(true), 2500);
-    return () => {
-      obs.disconnect();
-      clearTimeout(fallback);
-    };
+    // A14 v5.0 — the observer is the *sole* trigger. There used to be a 2.5 s timer fallback
+    // here, but it armed the boot on page load regardless of scroll position, so a viewer
+    // scrolling down always arrived after the animation had already finished. IntersectionObserver
+    // uses the viewport as its root and fires correctly even though AppShell's <main> is the
+    // actual scroller, so no timer is needed; the SSR/jsdom case is covered by the initial state.
+    return () => obs.disconnect();
   }, []);
   return { ref, inView };
 }
@@ -163,6 +163,16 @@ export function CounterNarrativeWarRoom({
         ) : (
           <>
             <ThreatIndexResponseSimulator issues={issues} summary={summary} />
+
+            {/* A14 v5.0 — a labeled boundary so the simulator and the topic columns read as
+                distinct sections rather than one continuous stack of bordered cards. */}
+            <div data-testid="war-room-divider" role="presentation" className="flex items-center gap-3">
+              <span aria-hidden className="h-px flex-1 bg-border/60" />
+              <span className="shrink-0 text-base font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                Recommended Counter-Posts — Top 3 Negative Topics
+              </span>
+              <span aria-hidden className="h-px flex-1 bg-border/60" />
+            </div>
 
             <ol data-testid="war-room-topics" className="grid grid-cols-1 items-stretch gap-3 xl:grid-cols-3">
               {data.topics.map((t, i) => (
