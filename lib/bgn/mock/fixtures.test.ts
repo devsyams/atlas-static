@@ -45,14 +45,27 @@ describe("BGN mock fixtures", () => {
     expect(MOCK_THREATS.threat?.severity ?? 0).toBeGreaterThan(0);
   });
 
-  it("gives every roster actor a realistic photo avatar, so the Aktor Penggerak column shows faces not initials", () => {
-    // Synthetic/anonymous placeholder-person photos (not real identifiable people —
-    // the accounts are fabricated, two are bots). The Avatar <img> gracefully falls
-    // back to an initials tile if the host is unreachable (prod egress is selective).
-    expect(MOCK_ACTORS.actors.length).toBeGreaterThan(0);
-    for (const a of MOCK_ACTORS.actors) {
+  it("gives the human actors realistic photo avatars but never puts a real face on a bot account", () => {
+    // randomuser.me serves photos of real people, so a real face must never appear under
+    // the "Provokator / bot" badge — the bot/provocator accounts fall back to the initials
+    // tile instead. Human actors keep photos (ordinary-citizen placeholders, no label harm).
+    const humans = MOCK_ACTORS.actors.filter((a) => !a.bot);
+    const bots = MOCK_ACTORS.actors.filter((a) => a.bot);
+    expect(humans.length).toBeGreaterThan(0);
+    expect(bots.length).toBeGreaterThan(0);
+    for (const a of humans) {
       expect(a.avatarUrl, `missing avatar for @${a.handle}`).toBeTruthy();
       expect(a.avatarUrl).toMatch(/^https:\/\/.+\.(jpg|jpeg|png|webp)$/i);
     }
+    for (const a of bots) {
+      expect(a.avatarUrl, `bot @${a.handle} must not wear a real-person photo`).toBeFalsy();
+    }
+  });
+
+  it("exposes no OpenGate deep-link id on the mock topics (no dead off-brand 'View Nexorus Opengate' button)", () => {
+    // A meta.idquery would copy onto every issue.idQuery and make DetailModal render a
+    // Danantara/OpenGate deep-link that is both off-brand for BGN and dead (expired key).
+    expect(MOCK_TOPICS.meta.idquery).toBeUndefined();
+    for (const i of MOCK_TOPICS.issues) expect(i.idQuery).toBeUndefined();
   });
 });

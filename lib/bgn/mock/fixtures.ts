@@ -42,7 +42,9 @@ export type MockActors = { actors: ThreatDriver[] };
 const RAW_TOPICS: TopicsApiResponse = {
   success: true,
   status_code: 200,
-  meta: { topic: "danantara_main", idquery: "mbg-monitoring-01", startdate: "2026-07-25", enddate: "2026-08-01" },
+  // No `idquery`: it would copy onto every issue.idQuery and make DetailModal render a
+  // Danantara/OpenGate deep-link that is off-brand for BGN and dead (the key is expired).
+  meta: { topic: "danantara_main", startdate: "2026-07-25", enddate: "2026-08-01" },
   data: {
     topics: [
       {
@@ -215,21 +217,20 @@ export const MOCK_THREATS: MockThreats = { threat: mappedThreats.threats[0] ?? n
 /* ------------------------------- actors -------------------------------- */
 
 /**
- * Realistic **placeholder-person** photos (randomuser.me) keyed by handle — synthetic,
- * anonymous faces, **not** real identifiable individuals: the accounts are fabricated
- * and two are bots, so a real person must never be shown as one (the same identity-
- * safety rule the sim features carry). The roster mapper only keeps a `data:image`
- * `profile_picture`, so these http URLs are attached to the mapped `avatarUrl` below
- * instead. `ThreatActors`' Avatar renders them as `<img>` and falls back to an initials
- * tile on load error — so if the deployed pod can't reach the CDN (egress is selective)
- * the column degrades gracefully rather than breaking.
+ * Realistic placeholder-person photos (randomuser.me) for the **human** actors only.
+ * randomuser serves photos of real (if non-famous) people, so these read as ordinary-
+ * citizen stock portraits — fine for the parent/journalist personas — but the
+ * **bot / provocator** accounts get **no photo** (they fall back to `ThreatActors`'
+ * initials tile), because a real face must never be shown under a "bot" label. The
+ * roster mapper only keeps a `data:image` `profile_picture`, so these http URLs are
+ * attached to the mapped `avatarUrl` below instead; the Avatar `<img>` also degrades to
+ * the initials tile on load error, so a blocked CDN (egress is selective) never breaks
+ * the column.
  */
 const AVATAR_URLS: Record<string, string> = {
   warga_peduli_gizi: "https://randomuser.me/api/portraits/women/68.jpg",
   kanal_investigasi: "https://randomuser.me/api/portraits/men/32.jpg",
   emak2_bersuara: "https://randomuser.me/api/portraits/women/44.jpg",
-  suara_rakyat_id: "https://randomuser.me/api/portraits/men/75.jpg",
-  buzzer_oposisi_01: "https://randomuser.me/api/portraits/men/12.jpg",
 };
 
 const RAW_ROSTER: ActorRosterApiResponse = {
