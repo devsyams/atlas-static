@@ -196,7 +196,12 @@ export function CrisisGate({
       data-testid="crisis-gate"
       className={
         embedded
-          ? "relative flex min-h-[calc(100dvh-9rem)] flex-col gap-4 overflow-hidden lg:min-h-[28rem]"
+          ? // Fill the first screen at every breakpoint (A13: the gate owns screen one,
+            // the page scrolls to the next section below it). No lg cap — the standalone's
+            // `lg:min-h-[28rem]` was only a floor beneath its lg:h lock, which embedded
+            // drops; carrying it over collapsed the section to 28rem on desktop and
+            // squeezed the vh-sized gauge.
+            "relative flex min-h-[calc(100dvh-9rem)] flex-col gap-4 overflow-hidden"
           : "relative flex min-h-[calc(100dvh-7.75rem)] flex-col gap-4 overflow-hidden lg:h-[calc(100dvh-7.75rem)] lg:min-h-[28rem]"
       }
     >
