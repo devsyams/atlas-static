@@ -2,13 +2,16 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Swords } from "lucide-react";
-import { TIER_LABEL, TIER_MULTIPLIER } from "@/lib/danantara/ceo/counter-noise";
-import { counterNarrativePlan, type ResponseTier } from "@/lib/danantara/ceo/counter-narrative";
+import { counterNarrativePlan } from "@/lib/danantara/ceo/counter-narrative";
 import { CounterTopicCard } from "./CounterTopicCard";
 import { ThreatIndexResponseSimulator } from "./ThreatIndexResponseSimulator";
 import { useCounterNarrative } from "./useCounterNarrative";
 
-const TIERS: ResponseTier[] = ["basic", "professional", "enterprise"];
+/**
+ * The topic-card volume is fixed to the default tier (v2.0): the tier is no longer a
+ * control — all three tiers render side by side in the simulator's comparison cards.
+ */
+const TOPIC_TIER = "professional" as const;
 
 /** Terminal pacing. The last line is *held* while the model is still working. */
 const LINE_MS = 420;
@@ -77,7 +80,6 @@ function useInView<T extends HTMLElement>() {
  * answer upgrades in place.
  */
 export function CounterNarrativeWarRoom({ refreshNonce }: { refreshNonce?: number } = {}) {
-  const [tier, setTier] = useState<ResponseTier>("professional");
   const { topics, issues, summary, data, source, feed, pending } = useCounterNarrative(refreshNonce);
   const { ref, inView } = useInView<HTMLElement>();
 
@@ -109,7 +111,7 @@ export function CounterNarrativeWarRoom({ refreshNonce }: { refreshNonce?: numbe
   const [reveal, setReveal] = useState(false);
   if (revealed && !reveal) setReveal(true); // adjust-during-render, not in an effect
 
-  const plans = useMemo(() => topics.map((t) => counterNarrativePlan(t, tier)), [topics, tier]);
+  const plans = useMemo(() => topics.map((t) => counterNarrativePlan(t, TOPIC_TIER)), [topics]);
 
   return (
     <section ref={ref} data-testid="counter-war-room" className={`panel relative flex flex-col overflow-hidden ${reveal ? "" : "cn-analyzing"}`}>
@@ -119,27 +121,10 @@ export function CounterNarrativeWarRoom({ refreshNonce }: { refreshNonce?: numbe
 
         <span
           data-testid="war-room-source"
-          className={`text-base uppercase tracking-widest ${source === "llm" ? "text-primary" : "text-muted-foreground"}`}
+          className={`ml-auto text-base uppercase tracking-widest ${source === "llm" ? "text-primary" : "text-muted-foreground"}`}
         >
           {source === "llm" ? "● Nexorus AI · LLM" : "Simulated"}
         </span>
-
-        <div className="ml-auto flex rounded-lg border border-border/60 bg-background/40 p-0.5">
-          {TIERS.map((t) => (
-            <button
-              key={t}
-              type="button"
-              data-testid={`war-tier-${t}`}
-              onClick={() => setTier(t)}
-              title={`${TIER_LABEL[t]} — ×${TIER_MULTIPLIER[t]} share-of-voice target`}
-              className={`rounded-md px-2.5 py-1 text-base font-semibold transition-colors ${
-                tier === t ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              {TIER_LABEL[t]}
-            </button>
-          ))}
-        </div>
       </div>
 
       <div className="flex flex-col gap-3 p-3">
@@ -157,7 +142,7 @@ export function CounterNarrativeWarRoom({ refreshNonce }: { refreshNonce?: numbe
           <BootTerminal lineIdx={lineIdx} pending={pending} />
         ) : (
           <>
-            <ThreatIndexResponseSimulator issues={issues} summary={summary} tier={tier} />
+            <ThreatIndexResponseSimulator issues={issues} summary={summary} />
 
             <ol data-testid="war-room-topics" className="grid grid-cols-1 items-stretch gap-3 xl:grid-cols-3">
               {data.topics.map((t, i) => (

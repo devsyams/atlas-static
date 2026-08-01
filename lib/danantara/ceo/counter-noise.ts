@@ -18,6 +18,13 @@ export type ResponseTier = "basic" | "professional" | "enterprise";
 export const TIER_MULTIPLIER: Record<ResponseTier, number> = { basic: 1, professional: 3, enterprise: 5 };
 export const TIER_LABEL: Record<ResponseTier, string> = { basic: "Basic", professional: "Professional", enterprise: "Enterprise" };
 
+/** One-line strategy tagline per tier — the headline read on each comparison card (A14 v2.0). */
+export const TIER_STRATEGY: Record<ResponseTier, string> = {
+  enterprise: "Total narrative takeover — overwhelm and erase the opposition",
+  professional: "Aggressive suppression — flood every channel with counter-narrative",
+  basic: "Defensive hold — match and neutralize negative volume 1-for-1",
+};
+
 /** Channel split of the total counter-actions (boss's model). */
 export const CHANNEL_SHARE = { clipper: 0.5, homeless: 0.2, kol: 0.3 } as const;
 
