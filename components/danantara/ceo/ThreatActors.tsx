@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Bot, ShieldAlert, ShieldCheck, UserRound, Users } from "lucide-react";
+import { Bot, ShieldAlert, UserRound, Users } from "lucide-react";
 import type { ThreatDriver } from "@/lib/danantara/ceo/threats-source";
 import { cn } from "@/lib/utils";
 
@@ -50,7 +50,7 @@ function Avatar({ handle, avatarUrl }: { handle: string; avatarUrl?: string }) {
   );
 }
 
-/** One compact driver card — used in both the Manusia and Provokator/Bot columns. */
+/** One compact driver card — used in both the Human and Bot bands. */
 function DriverCard({ d }: { d: ThreatDriver }) {
   const rm = RISK_META[d.riskLevel] ?? RISK_META.low;
   return (
@@ -80,8 +80,6 @@ function DriverCard({ d }: { d: ThreatDriver }) {
         <span>pengikut</span>
       </div>
 
-      {d.note && <p className="mt-2 line-clamp-2 text-xs leading-snug text-muted-foreground/80">{d.note}</p>}
-
       {d.bot && (
         <div className="mt-2.5 inline-flex items-center gap-1.5 rounded-full border border-warning/40 bg-warning/10 px-2.5 py-1 text-sm font-semibold text-warning">
           <Bot className="h-4 w-4" /> Provokator / bot
@@ -91,28 +89,31 @@ function DriverCard({ d }: { d: ThreatDriver }) {
   );
 }
 
-/** A labelled column header — "Manusia (N)" / "Provokator/Bot (N)". */
-function ColumnHeader({ icon: Icon, label, count, tone }: { icon: typeof Bot; label: string; count: number; tone: "muted" | "warning" }) {
+function SectionLabel({ icon: Icon, label, count, tone }: { icon: typeof UserRound; label: string; count: number; tone: "muted" | "warning" }) {
   return (
     <div
       className={cn(
-        "mb-2.5 flex items-center gap-2 text-sm font-bold uppercase tracking-wide",
+        "flex items-center gap-2 text-sm font-bold uppercase tracking-wide",
         tone === "warning" ? "text-warning" : "text-muted-foreground",
       )}
     >
       <Icon className="h-4 w-4 shrink-0" />
-      {label}
+      <span>{label}</span>
       <span className="opacity-70">({count})</span>
     </div>
   );
+}
+
+function EmptyState({ children }: { children: string }) {
+  return <p className="text-sm text-muted-foreground/70">{children}</p>;
 }
 
 /**
  * Right column of the Crisis Gate (A10 v5.0, v5.2) — the accounts to watch. When a
  * threat is detected, these are its **real drivers** (from `/threats`); in calm periods
  * they fall back to the always-populated **`/actor-intelligence` roster** (A10 v5.2), so
- * the column never goes blank. Either way the roster is split **left = genuine
- * human/org accounts, right = coordinated provocateur/bot accounts** (by classification).
+ * the column never goes blank. Either way the roster is split **top = human/org accounts,
+ * bottom = coordinated provocateur/bot accounts** (by classification).
  * The `caption` says which read it is.
  */
 export function ThreatActors({
@@ -148,30 +149,32 @@ export function ThreatActors({
         <p className="mt-3 text-sm text-muted-foreground">Belum ada aktor penggerak teridentifikasi.</p>
       ) : (
         <div className="mt-3 flex-1 overflow-auto scrollbar-thin pr-1">
-          <div className="grid grid-cols-2 gap-3">
-            {/* Left — genuine human / organisation accounts. */}
-            <div>
-              <ColumnHeader icon={ShieldCheck} label="Manusia" count={humans.length} tone="muted" />
+          <div className="rounded-3xl border border-border/60 bg-background/20">
+            <section className="border-b border-border/60 p-3.5 md:p-4">
+              <div className="mb-2.5 flex items-center justify-between gap-3">
+                <SectionLabel icon={UserRound} label="Human Actor" count={humans.length} tone="muted" />
+              </div>
               <div className="space-y-3">
                 {humans.length === 0 ? (
-                  <p className="text-sm text-muted-foreground/70">—</p>
+                  <EmptyState>—</EmptyState>
                 ) : (
                   humans.map((d) => <DriverCard key={d.handle} d={d} />)
                 )}
               </div>
-            </div>
+            </section>
 
-            {/* Right — coordinated provocateur / bot accounts. */}
-            <div>
-              <ColumnHeader icon={Bot} label="Provokator/Bot" count={bots.length} tone="warning" />
+            <section className="p-3.5 md:p-4">
+              <div className="mb-2.5 flex items-center justify-between gap-3">
+                <SectionLabel icon={Bot} label="Bot Actor" count={bots.length} tone="warning" />
+              </div>
               <div className="space-y-3">
                 {bots.length === 0 ? (
-                  <p className="text-sm text-muted-foreground/70">Tidak ada akun terindikasi.</p>
+                  <EmptyState>Tidak ada akun terindikasi.</EmptyState>
                 ) : (
                   bots.map((d) => <DriverCard key={d.handle} d={d} />)
                 )}
               </div>
-            </div>
+            </section>
           </div>
         </div>
       )}
