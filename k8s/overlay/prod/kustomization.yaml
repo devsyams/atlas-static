@@ -10,7 +10,7 @@ patches:
 - patch: |
     - op: replace
       path: /spec/rules/0/host
-      value: danantara.atlas.nexorus-alpha.io
+      value: atlas.nexorus-alpha.io
   target:
     kind: Ingress
     name: danantara
