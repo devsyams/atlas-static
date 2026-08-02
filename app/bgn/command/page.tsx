@@ -21,7 +21,12 @@ export default async function Page() {
 
   return (
     <AppShell>
-      <DanantaraCommandCenter mediaIntelligenceHref={mediaIntelligenceHref} brand="BGN" brandLogo="/bgn.png" />
+      <DanantaraCommandCenter
+        mediaIntelligenceHref={mediaIntelligenceHref}
+        brand="BGN"
+        brandLogo="/bgn.png"
+        briefingHref="/bgn/briefing"
+      />
     </AppShell>
   );
 }

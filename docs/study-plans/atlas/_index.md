@@ -40,10 +40,10 @@
 | **A7** | Danantara CEO Command Wall (zero-click demo) | 3-act | demo | — | 49.0 | Built |
 | **A8** | Per-BUMN CEO sentiment dashboards | 3-act | demo | — | 8.0 | Built |
 | **A9** | Communication Response Calculator | 3-act | demo | — | 3.1 | Built |
-| **A10** | Danantara Crisis Gate (fear-first executive landing) | 3-act | demo | — | 9.2 | Built |
-| **A11** | Danantara Executive Briefing | 3-act | demo | — | 2.3 | Built |
+| **A10** | Danantara Crisis Gate (fear-first executive landing) | 3-act | demo | — | 9.3 | Built |
+| **A11** | Danantara Executive Briefing | 3-act | demo | — | 3.0 | Built |
 | **A12** | JasaMarga AI Ops Insight & Predictions (LLM-backed) | 3-act | demo | — | 7.0 | Built |
-| **A13** | BGN Command Center (one-page) | 3-act | demo | — | 6.1 | Built |
+| **A13** | BGN Command Center (one-page) | 3-act | demo | — | 6.2 | Built |
 | **A14** | Counter-Narrative War Room (AI counter-content) | 3-act | demo | — | 5.0 | Built |
 | **A15** | Crisis Simulation Room (world builder) | 3-act | demo | — | 2.0 | Built |
 
@@ -198,4 +198,5 @@
 | 1.131 | 2026-08-02 | A10 → **v9.1 (MINOR, presentation)** — hide the driver card's "Kredibilitas n/10" chip for **unanalyzed** actors (credibility 0 AND empty classification — the engine's paid enrichment flag is off, so a fake-looking "0/10" read as a real score); a genuinely-scored 0 still renders. Auto-repopulates when the engine enables `TRAWLDECK_ACTOR_INTEL_ENABLED` |
 | 1.132 | 2026-08-02 | A10 → **v9.2** + A13 → **v6.1 (MINOR, client request)** — **restore the "View briefing" link on `/bgn/command`**. The v4.0 rebrand hid it (the `brand`-gate in `CrisisGate`) because its target `/danantara/brief` carries Danantara chrome; the client wants it back and accepts the off-brand chrome since the briefing's data is already BGN (shared TrawlDeck feed). Fix is one-sided: drop the `brand === "Danantara"` gate so the link renders on every brand — `/bgn/command`'s own code is untouched. A10 AC4 + A13 AC12 amended; the `CrisisGate` test asserting the hidden link is flipped to assert it shows |
 | 1.133 | 2026-08-02 | A11 → **v2.3 (MINOR, presentation, client request)** — **BGN rebrand of the `/danantara/brief` visible chrome**: `/danantara.png` → `/bgn.png`, "Danantara · Media Briefing" → "BGN · Media Briefing", the verdict + offline copy "Danantara" → "BGN". Follows 1.132 (the briefing's primary entry point is now `/bgn/command`). Data already BGN (shared TrawlDeck); internal names/routes/tests unchanged. Shared-page effect: the legacy `/danantara/krisis` gate now also reaches the BGN briefing (accepted — those routes are legacy) |
+| 1.134 | 2026-08-02 | A11 → **v3.0 (MAJOR)** + A10 → **v9.3** + A13 → **v6.2 (MINOR, client request)** — **the briefing gets a BGN home at `/bgn/briefing`**: client doesn't want `/bgn/command`'s "View briefing" hopping to `/danantara/brief`. New `app/bgn/briefing/page.tsx` renders the same (already BGN-chromed) `DanantaraBrief` with a new opt-in `backHref` → **`/bgn/command`**; the gate's link target becomes an opt-in `briefingHref` (A10) threaded from `/bgn/command` via `DanantaraCommandCenter` (A13). All defaults unchanged — `/danantara/brief` + `/danantara/krisis` stay byte-identical |
 

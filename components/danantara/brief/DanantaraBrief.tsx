@@ -31,7 +31,12 @@ const TONE_COPY = {
  * busy CEO: a one-line verdict + KPIs, the biggest win and the main concern, the
  * share of voice, then every topic. English chrome; topic titles stay Indonesian.
  */
-export function DanantaraBrief() {
+export function DanantaraBrief({
+  backHref = "/danantara/krisis",
+}: {
+  /** Back-arrow target (v3.0) — /bgn/briefing passes /bgn/command; default is the legacy gate. */
+  backHref?: string;
+} = {}) {
   const [issues, setIssues] = useState<CeoIssue[]>([]);
   const [summary, setSummary] = useState<TopicsSummary | null>(null);
   const [intent, setIntent] = useState<TopicIntent[]>([]);
@@ -101,7 +106,7 @@ export function DanantaraBrief() {
       {/* Header */}
       <header className="flex items-center gap-3 border-b border-border/60 pb-4">
         <Link
-          href="/danantara/krisis"
+          href={backHref}
           data-testid="brief-back-link"
           aria-label="Back to crisis gate"
           title="Back to crisis gate"

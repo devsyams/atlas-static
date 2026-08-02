@@ -22,6 +22,7 @@ export function DanantaraCommandCenter({
   mediaIntelligenceHref,
   brand = "Danantara",
   brandLogo = "/danantara.png",
+  briefingHref,
   mock = false,
 }: {
   mediaIntelligenceHref?: string;
@@ -29,6 +30,8 @@ export function DanantaraCommandCenter({
   brand?: string;
   /** Brand logo asset for the gate (A13 v4.0). */
   brandLogo?: string;
+  /** Gate "View briefing" target (A13 v6.2; /bgn/command passes /bgn/briefing). */
+  briefingHref?: string;
   /** Serve every pane from the scoped BGN demo fixtures via `?mock=1` (A13 v4.0). */
   mock?: boolean;
 } = {}) {
@@ -51,6 +54,7 @@ export function DanantaraCommandCenter({
         mediaIntelligenceHref={mediaIntelligenceHref}
         brand={brand}
         brandLogo={brandLogo}
+        briefingHref={briefingHref}
         mock={mock}
       />
       <CeoCommand

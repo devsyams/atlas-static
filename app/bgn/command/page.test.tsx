@@ -22,11 +22,13 @@ vi.mock("../../../components/danantara/ceo/DanantaraCommandCenter", () => ({
     mediaIntelligenceHref,
     brand,
     brandLogo,
+    briefingHref,
     mock,
   }: {
     mediaIntelligenceHref?: string;
     brand?: string;
     brandLogo?: string;
+    briefingHref?: string;
     mock?: boolean;
   }) => (
     <div
@@ -34,6 +36,7 @@ vi.mock("../../../components/danantara/ceo/DanantaraCommandCenter", () => ({
       data-href={mediaIntelligenceHref ?? ""}
       data-brand={brand ?? ""}
       data-logo={brandLogo ?? ""}
+      data-briefing={briefingHref ?? ""}
       data-mock={mock ? "1" : "0"}
     />
   ),
@@ -85,6 +88,8 @@ describe("/bgn/command (A13 v5.0 — T13/T20)", () => {
     expect(cc).toHaveAttribute("data-href", "https://opengate.atlas.nexorus-alpha.io");
     expect(cc).toHaveAttribute("data-brand", "BGN");
     expect(cc).toHaveAttribute("data-logo", "/bgn.png");
+    // A13 v6.2: "View briefing" targets the BGN route, not /danantara/brief.
+    expect(cc).toHaveAttribute("data-briefing", "/bgn/briefing");
     // v5.0 (T20): the TrawlDeck facade is live — the page must NOT opt into the mock.
     expect(cc).toHaveAttribute("data-mock", "0");
   });

@@ -28,6 +28,7 @@ const FEAR: Record<CrisisLevel, { glow: number; breathe: boolean }> = {
 /** Default client brand + logo — overridable via props for the BGN rebrand (A10 v5.6). */
 const DEFAULT_BRAND = "Danantara";
 const DEFAULT_LOGO = "/danantara.png";
+const DEFAULT_BRIEFING_HREF = "/danantara/brief";
 
 /**
  * Date-range presets for the dashboard window (A10 v7.0 — functional): each preset
@@ -86,6 +87,7 @@ export function CrisisGate({
   mediaIntelligenceHref,
   brand = DEFAULT_BRAND,
   brandLogo = DEFAULT_LOGO,
+  briefingHref = DEFAULT_BRIEFING_HREF,
   mock = false,
 }: {
   /** Sit inside a scrolling page (A13) instead of locking to one screen. */
@@ -102,6 +104,8 @@ export function CrisisGate({
   brand?: string;
   /** Logo asset for the brand. */
   brandLogo?: string;
+  /** "View briefing" target (A10 v9.3) — /bgn/command points it at /bgn/briefing. */
+  briefingHref?: string;
   /** Append ?mock=1 to the feed fetches — the scoped BGN demo mock (A10 v5.6). */
   mock?: boolean;
 } = {}) {
@@ -307,11 +311,11 @@ export function CrisisGate({
               <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
             </a>
           )}
-          {/* The briefing lives on a Danantara page (/danantara/brief); shown on every
-              brand — incl. the rebranded BGN gate — since its data is the same shared feed
-              (A10 v9.2, client request; the v5.6 hide-when-branded gate was dropped). */}
+          {/* Shown on every brand since its data is the same shared feed (A10 v9.2);
+              the target follows briefingHref (v9.3) — /bgn/briefing on the BGN page,
+              /danantara/brief by default. */}
           <Link
-            href="/danantara/brief"
+            href={briefingHref}
             data-testid="crisis-detail-link"
             className="group inline-flex items-center gap-2 rounded-full border border-border bg-card/50 px-4 py-2 text-sm font-medium text-foreground transition-colors hover:border-primary/50 hover:text-primary"
           >
