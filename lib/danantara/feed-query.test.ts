@@ -22,7 +22,7 @@ describe("feedQuery", () => {
     expect(feedQuery({ fresh: true, mock: true })).toBe("?fresh=1&mock=1");
   });
 
-  it("emits bgn=1 for the BGN-product signal (A13 v6.3)", () => {
+  it("emits bgn=1 for the BGN-product signal (A13 v6.4)", () => {
     expect(feedQuery({ bgn: true })).toBe("?bgn=1");
   });
 

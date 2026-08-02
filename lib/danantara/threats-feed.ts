@@ -30,7 +30,7 @@ async function fetchOnce(base: string, code: string, apiKey: string, fresh: bool
 
 /**
  * Fetch + map the detected threats for a topic code. `fresh` bypasses the data cache.
- * Resolves the per-product base+key via `feed-config` (A10 v10.0): the Danantara product
+ * Resolves the per-product base+key via `feed-config` (A10 v11.0): the Danantara product
  * by default, or the BGN product on `product: "bgn"`. The Danantara product keeps the
  * `DANANTARA_TOPICS_API_KEY` name (shared with the OpenGate autologin routes). Throws
  * `ThreatsNotConfiguredError` if the resolved base/key is unset, or a generic error on
@@ -48,7 +48,7 @@ export async function fetchThreatsForCode(
   code: string,
   opts: { fresh?: boolean; product?: FeedProduct } = {},
 ): Promise<ThreatsResult> {
-  // Per-product base+key (A10 v10.0): Danantara by default, BGN on `?bgn=1`.
+  // Per-product base+key (A10 v11.0): Danantara by default, BGN on `?bgn=1`.
   const endpoint = resolveFeedEndpoint(opts.product ?? "danantara", "threats");
   if (!endpoint) throw new ThreatsNotConfiguredError("Threats feed not configured.");
   const { base, apiKey } = endpoint;

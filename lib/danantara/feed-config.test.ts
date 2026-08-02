@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { feedProductFromParams, resolveFeedEndpoint, resolveTopicCode } from "./feed-config";
 
 /**
- * Per-product feed config (A7 v50.0 / A10 v10.0). `/danantara` (+ BUMN board) reads the
+ * Per-product feed config (A7 v50.0 / A10 v11.0). `/danantara` (+ BUMN board) reads the
  * Danantara product; `/bgn/command` sends `?bgn=1` and reads the BGN product. Each product
  * has its own base URL + key + topic code; the endpoint suffix (`/topics` `/threats`
  * `/actor-intelligence`) is appended in code, since both upstreams share it.

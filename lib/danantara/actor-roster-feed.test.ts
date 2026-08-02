@@ -42,7 +42,7 @@ describe("fetchActorRosterForCode (A10 v5.2)", () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it("reads the BGN product's own base + key when product:'bgn' — A10 v10.0", async () => {
+  it("reads the BGN product's own base + key when product:'bgn' — A10 v11.0", async () => {
     process.env.BGN_INTELLIGENCE_BASE_URL = "https://trawldeck.example.io/atlas/v1";
     process.env.BGN_INTELLIGENCE_API_KEY = "tdk_bgn";
     let calledUrl = "";

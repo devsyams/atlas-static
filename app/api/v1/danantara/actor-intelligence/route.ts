@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 
+import capturedRoster from "@/lib/bgn/mock/actor-intelligence.json";
 import { MOCK_ACTORS } from "@/lib/bgn/mock/fixtures";
+import { mapCapturedRoster } from "@/lib/danantara/ceo/actor-intel";
 import { readDevMockJson } from "@/lib/danantara/dev-mocks";
 import { feedProductFromParams, resolveTopicCode } from "@/lib/danantara/feed-config";
 import { ActorRosterNotConfiguredError, fetchActorRosterForCode } from "@/lib/danantara/actor-roster-feed";
@@ -28,6 +30,13 @@ export async function GET(req: Request) {
     return NextResponse.json(MOCK_ACTORS);
   }
 
+  // Captured static roster (A10 v10.0 / AC12): only /bgn/command sends ?static=1 while
+  // TrawlDeck's actor enrichment is off. Production-safe; each actor carries its full
+  // `intel` analysis for the card's detail popup.
+  if (params.get("static") === "1") {
+    return NextResponse.json({ actors: mapCapturedRoster(capturedRoster) });
+  }
+
   const mockJson = readDevMockJson("actor-intelligence.json") ?? process.env.DANANTARA_ACTOR_INTELLIGENCE_MOCK_JSON;
   if (process.env.NODE_ENV !== "production" && mockJson) {
     try {
@@ -39,7 +48,7 @@ export async function GET(req: Request) {
     }
   }
 
-  // Per-product resolution (A10 v10.0): `?bgn=1` → BGN product, else Danantara.
+  // Per-product resolution (A10 v11.0): `?bgn=1` → BGN product, else Danantara.
   const product = feedProductFromParams(params);
   const code = resolveTopicCode(params, product);
 

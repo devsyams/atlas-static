@@ -5,12 +5,12 @@ resources:
 images:
 - name: registry.digitalocean.com/nexorus-registry/danantara
   newName: registry.digitalocean.com/nexorus-registry/danantara
-  newTag: sha-afde012
+  newTag: sha-376deaa
 patches:
 - patch: |
     - op: replace
       path: /spec/rules/0/host
-      value: danantara.atlas.nexorus-alpha.io
+      value: atlas.nexorus-alpha.io
   target:
     kind: Ingress
     name: danantara

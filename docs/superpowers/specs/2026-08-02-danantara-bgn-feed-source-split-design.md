@@ -182,8 +182,8 @@ No env flag couples deploys.
 | Feature | From | To | Kind | Why |
 |---|---|---|---|---|
 | **A7** CEO Command | 49.0 | **50.0** | MAJOR | Per-product feed config: `topics-feed` reads `DANANTARA_INTELLIGENCE_BASE_URL` (retires `DANANTARA_TOPICS_API_BASE`); `?bgn=1` selects the product on `/topics`; opt-in `bgn` prop on `CeoCommand`. **`/danantara` restored** to the `danantara_main` topic (observable behaviour change). AC19/AC20 amended. Same class as the v48.0 cutover. |
-| **A10** Crisis Gate | 9.3 | **10.0** | MAJOR | `threats-feed` + `actor-roster-feed` read the per-product base (retire `DANANTARA_THREATS_API_BASE` / `DANANTARA_ACTORS_API_BASE`); `?bgn=1` on `/threats` + `/actor-intelligence`; opt-in `bgn` prop on `CrisisGate`. `/danantara/krisis` unchanged (Danantara product). AC8/AC9 amended. |
-| **A13** Command Center | 6.2 | **6.3** | MINOR | `DanantaraCommandCenter` threads an opt-in `bgn` prop; `/bgn/command` opts into the BGN product (`BGN_INTELLIGENCE_*` + `BGN_TOPIC_CODE`). Observable output unchanged (still BGN). AC14 amended. |
+| **A10** Crisis Gate | 9.3 | **11.0** | MAJOR | `threats-feed` + `actor-roster-feed` read the per-product base (retire `DANANTARA_THREATS_API_BASE` / `DANANTARA_ACTORS_API_BASE`); `?bgn=1` on `/threats` + `/actor-intelligence`; opt-in `bgn` prop on `CrisisGate`. `/danantara/krisis` unchanged (Danantara product). AC8/AC9 amended. |
+| **A13** Command Center | 6.2 | **6.4** | MINOR | `DanantaraCommandCenter` threads an opt-in `bgn` prop; `/bgn/command` opts into the BGN product (`BGN_INTELLIGENCE_*` + `BGN_TOPIC_CODE`). Observable output unchanged (still BGN). AC14 amended. |
 
 Build proceeds with TDD (QA cases as failing tests first) only after the study-plan
 sections + `_index.md` are updated and signed off.

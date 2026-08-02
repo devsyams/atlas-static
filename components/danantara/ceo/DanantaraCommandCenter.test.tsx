@@ -217,8 +217,8 @@ describe("DanantaraCommandCenter (A13 — one-page)", () => {
     });
   });
 
-  // A13 v6.3 — the BGN page routes every pane at the BGN product via ?bgn=1.
-  it("threads bgn=1 into every feed pane when bgn is set (A13 v6.3)", async () => {
+  // A13 v6.4 — the BGN page routes every pane at the BGN product via ?bgn=1.
+  it("threads bgn=1 into every feed pane when bgn is set (A13 v6.4)", async () => {
     const fetchMock = stubFetch();
     render(<DanantaraCommandCenter brand="BGN" bgn />);
     await waitFor(() => expect(screen.getByTestId("ceo-issues")).toBeInTheDocument());
@@ -240,6 +240,20 @@ describe("DanantaraCommandCenter (A13 — one-page)", () => {
     await waitFor(() =>
       expect(screen.getByTestId("crisis-detail-link")).toHaveAttribute("href", "/bgn/briefing"),
     );
+  });
+
+  // A13 v6.3 — the BGN page opts panel 3 onto the captured static roster.
+  it("threads staticActors to the gate — only the actor-intelligence fetch carries static=1 (T21)", async () => {
+    const fetchMock = stubFetch();
+    render(<DanantaraCommandCenter brand="BGN" brandLogo="/bgn.png" staticActors />);
+    await waitFor(() => expect(screen.getByTestId("ceo-issues")).toBeInTheDocument());
+    await waitFor(() => {
+      const feeds = fetchMock.mock.calls
+        .map((c) => String(c[0]))
+        .filter((u) => u.includes("/api/v1/danantara/") && !u.includes("counter-narrative"));
+      expect(feeds.some((u) => u.includes("/actor-intelligence") && u.includes("static=1"))).toBe(true);
+      expect(feeds.filter((u) => u.includes("static=1"))).toEqual(feeds.filter((u) => u.includes("/actor-intelligence")));
+    });
   });
 
   it("defaults to Danantara branding and sends no mock=1 (regression)", async () => {

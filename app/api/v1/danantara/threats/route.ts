@@ -39,7 +39,7 @@ export async function GET(req: Request) {
     }
   }
 
-  // Per-product resolution (A10 v10.0): `?bgn=1` → BGN product, else Danantara.
+  // Per-product resolution (A10 v11.0): `?bgn=1` → BGN product, else Danantara.
   const product = feedProductFromParams(params);
   const code = resolveTopicCode(params, product);
 

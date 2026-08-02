@@ -25,6 +25,7 @@ export function DanantaraCommandCenter({
   briefingHref,
   mock = false,
   bgn = false,
+  staticActors = false,
 }: {
   mediaIntelligenceHref?: string;
   /** Client brand shown across the three panes (A13 v4.0; default Danantara, "BGN" on /bgn/command). */
@@ -35,8 +36,10 @@ export function DanantaraCommandCenter({
   briefingHref?: string;
   /** Serve every pane from the scoped BGN demo fixtures via `?mock=1` (A13 v4.0). */
   mock?: boolean;
-  /** Route every pane at the BGN product via `?bgn=1` (A13 v6.3; /bgn/command opts in). */
+  /** Route every pane at the BGN product via `?bgn=1` (A13 v6.4; /bgn/command opts in). */
   bgn?: boolean;
+  /** Serve the gate's actor column from the captured OpenGate roster via `?static=1` (A13 v6.3 / A10 v10.0). */
+  staticActors?: boolean;
 } = {}) {
   // Bumped by the gate's header Refresh; both blocks refetch on the change. The gate
   // delegates rather than fetching directly, so each feed is pulled exactly once.
@@ -60,6 +63,7 @@ export function DanantaraCommandCenter({
         briefingHref={briefingHref}
         mock={mock}
         bgn={bgn}
+        staticActors={staticActors}
       />
       <CeoCommand
         showHeader={false}

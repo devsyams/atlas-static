@@ -97,7 +97,7 @@ export function CounterNarrativeWarRoom({
   brand?: string;
   /** Append ?mock=1 to the topics fetch — the scoped BGN demo mock (A14 v4.1). */
   mock?: boolean;
-  /** Append ?bgn=1 to the topics fetch — the BGN-product signal (A13 v6.3; only /bgn/command). */
+  /** Append ?bgn=1 to the topics fetch — the BGN-product signal (A13 v6.4; only /bgn/command). */
   bgn?: boolean;
   /** The page's selected topics window in days (A7 v49.0 `?days=`); absent = default window. */
   windowDays?: number;

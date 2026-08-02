@@ -103,7 +103,7 @@ describe("GET /api/v1/danantara/threats (T13 / AC8)", () => {
     expect(body.stats.total_threats).toBe(0);
   });
 
-  it("routes ?bgn=1 to the BGN product upstream, not the Danantara one (A10 v10.0)", async () => {
+  it("routes ?bgn=1 to the BGN product upstream, not the Danantara one (A10 v11.0)", async () => {
     process.env.BGN_INTELLIGENCE_BASE_URL = "https://trawldeck.example.io/atlas/v1";
     process.env.BGN_INTELLIGENCE_API_KEY = "tdk_bgn";
     process.env.BGN_TOPIC_CODE = "1";

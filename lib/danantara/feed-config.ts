@@ -1,5 +1,5 @@
 /**
- * Per-product intelligence-feed config (A7 v50.0 / A10 v10.0).
+ * Per-product intelligence-feed config (A7 v50.0 / A10 v11.0).
  *
  * `/danantara` and `/bgn/command` are two products sharing the same three feed BFFs
  * (`/topics`, `/threats`, `/actor-intelligence`). Each product points at its **own**

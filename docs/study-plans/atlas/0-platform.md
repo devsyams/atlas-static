@@ -519,19 +519,19 @@ no `idQuery` simply hide the deep link; no cost ledger impact (no LLM call).
 
 ### P9. OpenGate → Danantara SSO handoff (inbound autologin)
 
-- **Version:** 1.3 · **Stage:** 0-platform · **Sprint:** demo · **Status:** Built
+- **Version:** 1.4 · **Stage:** 0-platform · **Sprint:** demo · **Status:** Built
   · **Spec ref:** `docs/superpowers/specs/2026-08-01-bgn-command-rename-and-mock-design.md` (v1.3); cross-team SSO contract locked with the OpenGate (TrawlDeckCorcom) team, 2026-07-31 · **Owner:** platform
 
 #### PM
 **Background (why):** OpenGate is adding a product-demo flow where a user logs in at
 `demo-opengate.atlas.nexorus-alpha.io` and is then redirected to the Danantara app at
-`danantara.atlas.nexorus-alpha.io`. Today Danantara's auth is a self-contained demo gate
+`atlas.nexorus-alpha.io`. Today Danantara's auth is a self-contained demo gate
 (`middleware.ts` + client-set `atlas_auth`/`atlas_scope` cookies from `app/login/page.tsx`), with
 **no** JWT verification, **no** shared secret, and **no** IdP — so a user arriving from OpenGate is
 bounced to `/login` and must sign in **again**, breaking the "one platform" demo illusion. P8 already
 does the **outbound** direction (Danantara → OpenGate autologin magic link); this is its **inbound
 mirror**: accept a short-lived signed token from OpenGate and establish Danantara's own session
-without a second login. The two apps share subdomains under `*.atlas.nexorus-alpha.io`, so a
+without a second login. The two apps share the same site under `nexorus-alpha.io`, so a
 top-level redirect between them is same-site.
 
 **Contract (locked cross-team, 2026-07-31 — build to this exactly):**
@@ -640,3 +640,4 @@ follow-up; no LLM call → no cost-ledger impact.
 | 1.1 | 2026-07-31 | **Bugfix (TDD)** — redirect `Location` leaked the in-container bind host. Behind the ingress `req.url` reflects `0.0.0.0:3000`, so `NextResponse.redirect(new URL(path, req.url))` emitted `https://0.0.0.0:3000/login` (and would have sent a **successful** handoff to `https://0.0.0.0:3000/danantara/krisis` → unreachable). Both redirects now emit a **relative** `Location` via the shared `relativeRedirect` helper (`lib/http.ts`); the browser resolves it against the public URL — host-safe, unspoofable, no forwarded-header trust needed. Reported by the OpenGate agent during pre-demo verification. AC7 + T11 added; +1 test, live-verified via curl (both paths relative). No contract/behaviour change beyond the emitted host |
 | 1.2 | 2026-07-31 | **Behaviour change (TDD)** — OpenGate product request: land the SSO handoff on the one-page **Command Center** instead of the Crisis Gate. One-line change to the shared `homeForScope("danantara")` mapping (`lib/auth.ts`): `/danantara/krisis` → `/danantara/command`; this is the `/api/v1/sso` success target **and** the middleware bounce target for the danantara scope. AC1/AC7 + T7/T10/T11 landing value updated; +1 `homeForScope` unit test. Token contract unchanged; OpenGate needs no change. **Scoped deliberately:** the direct demo login (`danantara`/danantara2026) still opens the `/danantara/krisis` fear gate via its own `DEMO_USERS.home` — left unchanged (a separate flow; not `homeForScope`). Live-verified via curl (success → `/danantara/command`) |
 | 1.3 | 2026-08-01 | **Behaviour change (A13 v4.0 / BGN)** — the SSO handoff now lands on the renamed **BGN Command Center**: one-line change to the shared `homeForScope("danantara")` mapping (`lib/auth.ts`): `/danantara/command` → `/bgn/command`; this is the `/api/v1/sso` success target **and** the middleware bounce target for the danantara scope. `/danantara/command` is removed with A13 v4.0. AC1/AC7 + T7/T10/T11 landing value updated. Token contract + `danantara` scope key unchanged; OpenGate needs no change. Direct demo login still opens `/danantara/krisis` (its own `DEMO_USERS.home`). Spec `2026-08-01-bgn-command-rename-and-mock-design.md` |
+| 1.4 | 2026-08-02 | **Host rename** — public Danantara hostname changed from `danantara.atlas.nexorus-alpha.io` to `atlas.nexorus-alpha.io` while preserving the same OpenGate→Danantara handoff flow. Updated the ingress host and the P9 background text to reflect that the two apps remain same-site under `nexorus-alpha.io`; the SSO contract, token claims, and redirect mechanics are unchanged. |

@@ -24,12 +24,14 @@ vi.mock("../../../components/danantara/ceo/DanantaraCommandCenter", () => ({
     brandLogo,
     briefingHref,
     mock,
+    staticActors,
   }: {
     mediaIntelligenceHref?: string;
     brand?: string;
     brandLogo?: string;
     briefingHref?: string;
     mock?: boolean;
+    staticActors?: boolean;
   }) => (
     <div
       data-testid="danantara-command-center"
@@ -38,6 +40,7 @@ vi.mock("../../../components/danantara/ceo/DanantaraCommandCenter", () => ({
       data-logo={brandLogo ?? ""}
       data-briefing={briefingHref ?? ""}
       data-mock={mock ? "1" : "0"}
+      data-static-actors={staticActors ? "1" : "0"}
     />
   ),
 }));
@@ -92,6 +95,8 @@ describe("/bgn/command (A13 v5.0 — T13/T20)", () => {
     expect(cc).toHaveAttribute("data-briefing", "/bgn/briefing");
     // v5.0 (T20): the TrawlDeck facade is live — the page must NOT opt into the mock.
     expect(cc).toHaveAttribute("data-mock", "0");
+    // v6.3 (T21): panel 3 opts onto the captured static actor roster (A10 v10.0).
+    expect(cc).toHaveAttribute("data-static-actors", "1");
   });
 
   it("hides the shortcut when the signed SSO cookie is absent — still rebranded, still live", async () => {
