@@ -20,8 +20,10 @@ export async function GET(req: Request) {
   const params = new URL(req.url).searchParams;
   const fresh = params.get("fresh") === "1";
 
-  // Scoped BGN demo mock (A13 v4.0): only /bgn/command sends ?mock=1. Production-safe;
-  // returns the bundled BGN roster before the (dead) upstream call.
+  // Scoped BGN demo mock (A13 v4.0). Intentionally BGN-only — NOT made product-aware like
+  // the /topics branch: the /danantara demo (A7 v50.1) mocks only the panes it renders
+  // (/topics + /bumn-board), and /danantara/krisis (CrisisGate) isn't wired to the demo,
+  // so no Danantara caller sends ?mock=1 here. Production-safe; returns the bundled BGN roster.
   if (params.get("mock") === "1") {
     return NextResponse.json(MOCK_ACTORS);
   }

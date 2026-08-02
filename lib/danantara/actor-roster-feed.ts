@@ -18,9 +18,11 @@ export class ActorRosterNotConfiguredError extends Error {}
 
 /**
  * Fetch + map the actor roster for a topic code → ranked `ThreatDriver[]`. `fresh`
- * bypasses the data cache. Reuses the topics feed's `DANANTARA_TOPICS_API_KEY` (all
- * OpenGate routes share one key). Throws `ActorRosterNotConfiguredError` if no key,
- * or a generic error on upstream failure / malformed payload.
+ * bypasses the data cache. Resolves the per-product base+key via `feed-config` (A10
+ * v10.0): the Danantara product by default, or the BGN product on `product: "bgn"` (the
+ * Danantara product keeps the `DANANTARA_TOPICS_API_KEY` name). Throws
+ * `ActorRosterNotConfiguredError` if the resolved base/key is unset, or a generic error
+ * on upstream failure / malformed payload.
  */
 export async function fetchActorRosterForCode(
   code: string,

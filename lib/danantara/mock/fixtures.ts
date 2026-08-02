@@ -62,14 +62,15 @@ export const MOCK_DANANTARA_TOPICS: MockDanantaraTopics = {
 /**
  * The BUMN sentiment board (`/api/v1/danantara/bumn-board`) demo fixture — the **top 8
  * BUMN** by public profile. Each BUMN's leading negative + positive topic is drawn from
- * REAL mid-2026 discourse (X/social + Indonesian news, researched per BUMN): the titles
- * and AI lines reflect genuine recent events, and the per-topic + overall sentiment
- * splits reflect the real tone. Each row is built through the live `buildBumnRow`, so it
- * matches a real board response; the CEO wall then ranks the rows by negative reach.
+ * REAL, most-recent (late-Jul/early-Aug 2026) discourse (X/social + Indonesian news,
+ * researched per BUMN): the titles and AI lines reflect genuine recent events, and the
+ * per-topic + overall sentiment splits reflect the real tone. Each row is built through
+ * the live `buildBumnRow`, so it matches a real board response; the CEO wall then ranks
+ * the rows by negative reach.
  *
  * `id` is the BUMN slug, so `/public/bumn/{id}.png` supplies the logo. `reach` is set per
- * real-world prominence, so the loudest crises (Pertamina corruption, PLN blackouts)
- * float to the top of the board. To refresh the demo, edit the entries below.
+ * real-world prominence, so the loudest crises (the Pertamina fuel shortage, PLN's
+ * Kalimantan blackouts) float to the top of the board. To refresh the demo, edit below.
  */
 type Sent = { positive: number; negative: number; neutral: number };
 type ResearchTopic = Sent & { title: string; aiLine: string };

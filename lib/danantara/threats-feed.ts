@@ -30,9 +30,11 @@ async function fetchOnce(base: string, code: string, apiKey: string, fresh: bool
 
 /**
  * Fetch + map the detected threats for a topic code. `fresh` bypasses the data cache.
- * Reuses the topics feed's `DANANTARA_TOPICS_API_KEY` (both OpenGate routes share one
- * key). Throws `ThreatsNotConfiguredError` if no key, or a generic error on upstream
- * failure / malformed payload.
+ * Resolves the per-product base+key via `feed-config` (A10 v10.0): the Danantara product
+ * by default, or the BGN product on `product: "bgn"`. The Danantara product keeps the
+ * `DANANTARA_TOPICS_API_KEY` name (shared with the OpenGate autologin routes). Throws
+ * `ThreatsNotConfiguredError` if the resolved base/key is unset, or a generic error on
+ * upstream failure / malformed payload.
  *
  * Stale-empty self-heal (A10 v5.2): the `/threats` upstream intermittently serves a
  * **hollow** window — an empty `threats` list, sometimes with non-zero `stats.*_severity`
