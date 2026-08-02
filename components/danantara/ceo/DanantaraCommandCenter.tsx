@@ -24,6 +24,7 @@ export function DanantaraCommandCenter({
   brandLogo = "/danantara.png",
   briefingHref,
   mock = false,
+  bgn = false,
   staticActors = false,
 }: {
   mediaIntelligenceHref?: string;
@@ -35,6 +36,8 @@ export function DanantaraCommandCenter({
   briefingHref?: string;
   /** Serve every pane from the scoped BGN demo fixtures via `?mock=1` (A13 v4.0). */
   mock?: boolean;
+  /** Route every pane at the BGN product via `?bgn=1` (A13 v6.4; /bgn/command opts in). */
+  bgn?: boolean;
   /** Serve the gate's actor column from the captured OpenGate roster via `?static=1` (A13 v6.3 / A10 v10.0). */
   staticActors?: boolean;
 } = {}) {
@@ -59,6 +62,7 @@ export function DanantaraCommandCenter({
         brandLogo={brandLogo}
         briefingHref={briefingHref}
         mock={mock}
+        bgn={bgn}
         staticActors={staticActors}
       />
       <CeoCommand
@@ -67,9 +71,10 @@ export function DanantaraCommandCenter({
         refreshNonce={refreshNonce}
         brand={brand}
         mock={mock}
+        bgn={bgn}
         windowDays={windowDays}
       />
-      <CounterNarrativeWarRoom refreshNonce={refreshNonce} brand={brand} mock={mock} windowDays={windowDays} />
+      <CounterNarrativeWarRoom refreshNonce={refreshNonce} brand={brand} mock={mock} bgn={bgn} windowDays={windowDays} />
     </div>
   );
 }

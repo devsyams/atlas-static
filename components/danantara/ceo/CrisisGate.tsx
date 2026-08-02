@@ -89,6 +89,7 @@ export function CrisisGate({
   brandLogo = DEFAULT_LOGO,
   briefingHref = DEFAULT_BRIEFING_HREF,
   mock = false,
+  bgn = false,
   staticActors = false,
 }: {
   /** Sit inside a scrolling page (A13) instead of locking to one screen. */
@@ -109,6 +110,8 @@ export function CrisisGate({
   briefingHref?: string;
   /** Append ?mock=1 to the feed fetches — the scoped BGN demo mock (A10 v5.6). */
   mock?: boolean;
+  /** Append ?bgn=1 to the feed fetches — the BGN-product signal (A10 v11.0; only /bgn/command). */
+  bgn?: boolean;
   /** Append ?static=1 to the actor-intelligence fetch only — the captured OpenGate roster (A10 v10.0). */
   staticActors?: boolean;
 } = {}) {
@@ -135,7 +138,7 @@ export function CrisisGate({
   }, []);
 
   const loadTopics = useCallback((fresh = false) => {
-    fetch(`/api/v1/danantara/topics${feedQuery({ fresh, mock, days: daysRef.current })}`)
+    fetch(`/api/v1/danantara/topics${feedQuery({ fresh, mock, days: daysRef.current, bgn })}`)
       .then((r) => {
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
         return r.json();
@@ -152,13 +155,13 @@ export function CrisisGate({
       .finally(() => {
         if (mountedRef.current) setRefreshing(false);
       });
-  }, [mock]);
+  }, [mock, bgn]);
 
   // The #1 detected threat (OpenGate `/threats`) powers the middle column's headline.
   // Independent of the topics feed; the middle column falls back to the /topics biggest
   // threat client-side when there's no incident.
   const loadThreats = useCallback((fresh = false) => {
-    fetch(`/api/v1/danantara/threats${feedQuery({ fresh, mock })}`)
+    fetch(`/api/v1/danantara/threats${feedQuery({ fresh, mock, bgn })}`)
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))))
       .then((j: { threat?: DetectedThreat | null }) => {
         if (mountedRef.current) setThreat(j.threat ?? null);
@@ -169,13 +172,13 @@ export function CrisisGate({
       .finally(() => {
         if (mountedRef.current) setThreatLoading(false);
       });
-  }, [mock]);
+  }, [mock, bgn]);
 
   // The right "Aktor Penggerak" column always reads the /actor-intelligence roster
   // (v5.3) — it carries real profile pictures, so the actors stay consistent whether or
   // not a threat is live. Degrades to an empty list if the roster ever fails.
   const loadRoster = useCallback((fresh = false) => {
-    fetch(`/api/v1/danantara/actor-intelligence${feedQuery({ fresh, mock, static: staticActors })}`)
+    fetch(`/api/v1/danantara/actor-intelligence${feedQuery({ fresh, mock, bgn, static: staticActors })}`)
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))))
       .then((j: { actors?: ThreatDriver[] }) => {
         if (mountedRef.current) setDrivers(Array.isArray(j.actors) ? j.actors : []);
@@ -186,7 +189,7 @@ export function CrisisGate({
       .finally(() => {
         if (mountedRef.current) setRosterLoading(false);
       });
-  }, [mock, staticActors]);
+  }, [mock, bgn, staticActors]);
 
   useEffect(() => {
     loadTopics(false);

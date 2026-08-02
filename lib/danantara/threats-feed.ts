@@ -7,6 +7,7 @@
  */
 
 import { mapThreatsResponse, type MappedThreats, type ThreatsApiResponse } from "./ceo/threats-source";
+import { resolveFeedEndpoint, type FeedProduct } from "./feed-config";
 
 const REVALIDATE_S = 21_600; // 6 h — matches the topics feed (the upstream refreshes ~daily)
 
@@ -29,9 +30,11 @@ async function fetchOnce(base: string, code: string, apiKey: string, fresh: bool
 
 /**
  * Fetch + map the detected threats for a topic code. `fresh` bypasses the data cache.
- * Reuses the topics feed's `DANANTARA_TOPICS_API_KEY` (both OpenGate routes share one
- * key). Throws `ThreatsNotConfiguredError` if no key, or a generic error on upstream
- * failure / malformed payload.
+ * Resolves the per-product base+key via `feed-config` (A10 v11.0): the Danantara product
+ * by default, or the BGN product on `product: "bgn"`. The Danantara product keeps the
+ * `DANANTARA_TOPICS_API_KEY` name (shared with the OpenGate autologin routes). Throws
+ * `ThreatsNotConfiguredError` if the resolved base/key is unset, or a generic error on
+ * upstream failure / malformed payload.
  *
  * Stale-empty self-heal (A10 v5.2): the `/threats` upstream intermittently serves a
  * **hollow** window — an empty `threats` list, sometimes with non-zero `stats.*_severity`
@@ -41,10 +44,14 @@ async function fetchOnce(base: string, code: string, apiKey: string, fresh: bool
  * against the live (no-store) upstream and prefer any live threats — a transient hollow
  * self-heals on the next load instead of sticking. A genuinely calm feed stays empty.
  */
-export async function fetchThreatsForCode(code: string, opts: { fresh?: boolean } = {}): Promise<ThreatsResult> {
-  const base = process.env.DANANTARA_THREATS_API_BASE;
-  const apiKey = process.env.DANANTARA_TOPICS_API_KEY;
-  if (!base || !apiKey) throw new ThreatsNotConfiguredError("Threats feed not configured.");
+export async function fetchThreatsForCode(
+  code: string,
+  opts: { fresh?: boolean; product?: FeedProduct } = {},
+): Promise<ThreatsResult> {
+  // Per-product base+key (A10 v11.0): Danantara by default, BGN on `?bgn=1`.
+  const endpoint = resolveFeedEndpoint(opts.product ?? "danantara", "threats");
+  if (!endpoint) throw new ThreatsNotConfiguredError("Threats feed not configured.");
+  const { base, apiKey } = endpoint;
 
   const fresh = opts.fresh ?? false;
   const result = await fetchOnce(base, code, apiKey, fresh);

@@ -1,0 +1,460 @@
+{
+  "issues": [
+    {
+      "id": "topic-0",
+      "title": "Pelibatan Danantara dalam Rapat KSSK oleh Presiden Prabowo Subianto",
+      "category": "kebijakan",
+      "relatedBumn": [],
+      "mentions": 1868824,
+      "reach": 1262456,
+      "sentiment": -5,
+      "sentimentBreakdown": {
+        "positive": 30,
+        "negative": 35,
+        "neutral": 35
+      },
+      "history": [
+        1868824,
+        1868824,
+        1868824,
+        1868824,
+        1868824,
+        1868824,
+        1868824,
+        1868824
+      ],
+      "headlines": [],
+      "aiLine": "Presiden Prabowo Subianto menginstruksikan Badan Pengelola Investasi (BPI) Danantara untuk dilibatkan dalam rapat Komite Stabilitas Sistem Keuangan (KSSK) sebagai peserta yang memberikan masukan tanpa hak suara. Langkah ini menimbulkan perdebatan tentang potensi konflik kepentingan dan pengaruh dalam keputusan ekonomi, dengan sejumlah ekonom dan publik yang mengkhawatirkan independensi lembaga seperti BI dan OJK.",
+      "velocity": 0,
+      "status": "normal",
+      "rankHistory": [
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2
+      ],
+      "rankDelta": 0,
+      "posMentions": 560647,
+      "negMentions": 654088
+    },
+    {
+      "id": "topic-1",
+      "title": "Konsolidasi dan Transformasi BUMN di Bawah Pengelolaan Danantara",
+      "category": "informasi",
+      "relatedBumn": [],
+      "mentions": 1835794,
+      "reach": 1223862,
+      "sentiment": 45,
+      "sentimentBreakdown": {
+        "positive": 65,
+        "negative": 20,
+        "neutral": 15
+      },
+      "history": [
+        1835794,
+        1835794,
+        1835794,
+        1835794,
+        1835794,
+        1835794,
+        1835794,
+        1835794
+      ],
+      "headlines": [],
+      "aiLine": "Danantara bertanggung jawab atas konsolidasi dan transformasi 1.074 BUMN (dari sebelumnya 1.400) guna meningkatkan efisiensi dan kinerja jangka panjang. Upaya ini termasuk penutupan anak perusahaan bermasalah dan pengurangan 250 BUMN melalui merger dalam 18 bulan pertama. Program ini mendapat dukungan publik dan manajemen BUMN termasuk CEO Danantara, Rosan Roeslani dan COO Dony Oskaria.",
+      "velocity": 0,
+      "status": "normal",
+      "rankHistory": [
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3
+      ],
+      "rankDelta": 0,
+      "posMentions": 1193266,
+      "negMentions": 367159
+    },
+    {
+      "id": "topic-2",
+      "title": "Program Danantara Housing Expo 2026 dan Dukungan Terhadap Program 3 Juta Rumah",
+      "category": "promosi",
+      "relatedBumn": [],
+      "mentions": 755916,
+      "reach": 503944,
+      "sentiment": 65,
+      "sentimentBreakdown": {
+        "positive": 75,
+        "negative": 10,
+        "neutral": 15
+      },
+      "history": [
+        755916,
+        755916,
+        755916,
+        755916,
+        755916,
+        755916,
+        755916,
+        755916
+      ],
+      "headlines": [],
+      "aiLine": "Danantara Indonesia menggelar Danantara Housing Expo 2026 yang akan berlangsung pada 27-30 Agustus 2026 di Nusantara International Convention Exhibition (NICE), PIK, Jakarta, menawarkan lebih dari 200 ribu unit rumah dan apartemen. Expo ini sebagai bagian dari dukungan untuk Program 3 Juta Rumah dengan skema pembayaran dan suku bunga yang kompetitif, membantu penyerapan stok hunian BUMN.",
+      "velocity": 0,
+      "status": "normal",
+      "rankHistory": [
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5
+      ],
+      "rankDelta": 0,
+      "posMentions": 566937,
+      "negMentions": 75592
+    },
+    {
+      "id": "topic-3",
+      "title": "Klarifikasi Terkait Laporan Keuangan Danantara yang Belum Diterbitkan",
+      "category": "keuangan",
+      "relatedBumn": [],
+      "mentions": 769907,
+      "reach": 513271,
+      "sentiment": -20,
+      "sentimentBreakdown": {
+        "positive": 20,
+        "negative": 40,
+        "neutral": 40
+      },
+      "history": [
+        769907,
+        769907,
+        769907,
+        769907,
+        769907,
+        769907,
+        769907,
+        769907
+      ],
+      "headlines": [],
+      "aiLine": "Bos Danantara menjelaskan bahwa penyusunan laporan keuangan gabungan seluruh BUMN membutuhkan waktu karena harus menghilangkan transaksi antar BUMN agar tidak terjadi penghitungan ganda. Proses ini kompleks dan masih dalam tahap pra-audit dengan BPK, menjelaskan keterlambatan publikasi laporan keuangan yang sempat menimbulkan kecurigaan dalam masyarakat.",
+      "velocity": 0,
+      "status": "normal",
+      "rankHistory": [
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4
+      ],
+      "rankDelta": 0,
+      "posMentions": 153981,
+      "negMentions": 307963
+    },
+    {
+      "id": "topic-4",
+      "title": "Kontroversi Pengelolaan Dana dan Dugaan Korupsi terkait Danantara",
+      "category": "kontroversi",
+      "relatedBumn": [],
+      "mentions": 146145,
+      "reach": 97430,
+      "sentiment": -80,
+      "sentimentBreakdown": {
+        "positive": 5,
+        "negative": 85,
+        "neutral": 10
+      },
+      "history": [
+        146145,
+        146145,
+        146145,
+        146145,
+        146145,
+        146145,
+        146145,
+        146145
+      ],
+      "headlines": [],
+      "aiLine": "Berbagai kritik dan tuduhan dilontarkan terkait pengelolaan dana oleh Danantara, termasuk dugaan korupsi dalam program MBG, Kopdes, dan penggunaan dana dari APBN hingga Rp 917 triliun tanpa laporan keuangan yang terpublikasi. Mantan pejabat dan tokoh seperti Mahfud MD juga menyoroti aturan Patriot Bond yang dinilai melemahkan sistem hukum dan memungkinkan pencucian uang.",
+      "velocity": 0,
+      "status": "normal",
+      "rankHistory": [
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7
+      ],
+      "rankDelta": 0,
+      "posMentions": 7307,
+      "negMentions": 124223
+    },
+    {
+      "id": "topic-5",
+      "title": "Danantara dan Kebijakan Ekonomi serta Investasi Strategis Nasional",
+      "category": "kebijakan",
+      "relatedBumn": [],
+      "mentions": 665055,
+      "reach": 383734,
+      "sentiment": 45,
+      "sentimentBreakdown": {
+        "positive": 60,
+        "negative": 15,
+        "neutral": 25
+      },
+      "history": [
+        665055,
+        665055,
+        665055,
+        665055,
+        665055,
+        665055,
+        665055,
+        665055
+      ],
+      "headlines": [],
+      "aiLine": "Danantara terlibat aktif dalam berbagai sektor strategis seperti peningkatan cadangan devisa melalui DHE, pengelolaan proyek-proyek besar termasuk pembangunan infrastruktur seperti LRT dan kereta cepat, serta pengembangan industri perkapalan nasional. Menteri Keuangan Purbaya Yudhi Sadewa menegaskan peran Danantara dalam memberikan masukan investasi tanpa hak suara.",
+      "velocity": 0,
+      "status": "normal",
+      "rankHistory": [
+        6,
+        6,
+        6,
+        6,
+        6,
+        6,
+        6,
+        6
+      ],
+      "rankDelta": 0,
+      "posMentions": 399033,
+      "negMentions": 99758
+    },
+    {
+      "id": "topic-6",
+      "title": "Efek Market Global dan Tantangan Penerbitan Obligasi Danantara di Dollar",
+      "category": "keuangan",
+      "relatedBumn": [],
+      "mentions": 10420337,
+      "reach": 4168135,
+      "sentiment": -40,
+      "sentimentBreakdown": {
+        "positive": 10,
+        "negative": 50,
+        "neutral": 40
+      },
+      "history": [
+        10420337,
+        10420337,
+        10420337,
+        10420337,
+        10420337,
+        10420337,
+        10420337,
+        10420337
+      ],
+      "headlines": [],
+      "aiLine": "Danantara menghadapi tantangan serius dalam penerbitan dollar notes yang direncanakan akibat gejolak pasar obligasi global dan ketidakpastian ekonomi internasional. Berita dari Bloomberg dan CNBC mengungkap keterlambatan harga penawaran obligasi ini dan menunjukkan betapa volatilitas pasar global memengaruhi strategi pembiayaan Danantara.",
+      "velocity": 0,
+      "status": "normal",
+      "rankHistory": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "rankDelta": 0,
+      "posMentions": 1042034,
+      "negMentions": 5210169
+    },
+    {
+      "id": "topic-7",
+      "title": "Peran Danantara dalam Pengembangan Energi dan Pengelolaan Sampah Indonesia",
+      "category": "informasi",
+      "relatedBumn": [],
+      "mentions": 4442,
+      "reach": 2961,
+      "sentiment": 75,
+      "sentimentBreakdown": {
+        "positive": 80,
+        "negative": 5,
+        "neutral": 15
+      },
+      "history": [
+        4442,
+        4442,
+        4442,
+        4442,
+        4442,
+        4442,
+        4442,
+        4442
+      ],
+      "headlines": [],
+      "aiLine": "Danantara berperan dalam pengembangan proyek Pengelolaan Sampah menjadi Energi Listrik (PSEL), termasuk investasi hingga Rp 3 triliun, serta fokus pada pengelolaan sampah kota untuk mengurangi emisi metana. Kegiatan ini mendapat apresiasi sebagai langkah strategis untuk mendukung energi bersih dan memperbaiki lingkungan.",
+      "velocity": 0,
+      "status": "normal",
+      "rankHistory": [
+        10,
+        10,
+        10,
+        10,
+        10,
+        10,
+        10,
+        10
+      ],
+      "rankDelta": 0,
+      "posMentions": 3554,
+      "negMentions": 222
+    },
+    {
+      "id": "topic-8",
+      "title": "Kontroversi Internal dan Kritik Terhadap Kepemimpinan dan Strategi Danantara",
+      "category": "kontroversi",
+      "relatedBumn": [],
+      "mentions": 16030,
+      "reach": 10687,
+      "sentiment": -65,
+      "sentimentBreakdown": {
+        "positive": 10,
+        "negative": 75,
+        "neutral": 15
+      },
+      "history": [
+        16030,
+        16030,
+        16030,
+        16030,
+        16030,
+        16030,
+        16030,
+        16030
+      ],
+      "headlines": [],
+      "aiLine": "Beberapa pengguna mengkritik kepemimpinan Danantara dan pengelolaan BUMN yang dianggap amburadul dan mencampuradukkan politik dan bisnis, termasuk tuduhan nepotisme dan korupsi. Pandangan negatif ini mencerminkan keresahan publik terhadap transparansi dan efektivitas pengelolaan dana negara.",
+      "velocity": 0,
+      "status": "normal",
+      "rankHistory": [
+        9,
+        9,
+        9,
+        9,
+        9,
+        9,
+        9,
+        9
+      ],
+      "rankDelta": 0,
+      "posMentions": 1603,
+      "negMentions": 12023
+    },
+    {
+      "id": "topic-9",
+      "title": "Strategi Pendidikan dan Pengembangan Talenta Internal BUMN di Bawah Danantara",
+      "category": "testimoni",
+      "relatedBumn": [],
+      "mentions": 76279,
+      "reach": 50852,
+      "sentiment": 60,
+      "sentimentBreakdown": {
+        "positive": 70,
+        "negative": 10,
+        "neutral": 20
+      },
+      "history": [
+        76279,
+        76279,
+        76279,
+        76279,
+        76279,
+        76279,
+        76279,
+        76279
+      ],
+      "headlines": [],
+      "aiLine": "Danantara menargetkan seluruh posisi direksi BUMN diisi oleh talenta dari internal perusahaan pada tahun 2028 dan membentuk Danantara Corporate University untuk mengembangkan 300 talenta unggulan. Strategi ini menunjukkan fokus pada pengembangan sumber daya manusia dan keberlanjutan manajemen BUMN.",
+      "velocity": 0,
+      "status": "normal",
+      "rankHistory": [
+        8,
+        8,
+        8,
+        8,
+        8,
+        8,
+        8,
+        8
+      ],
+      "rankDelta": 0,
+      "posMentions": 53395,
+      "negMentions": 7628
+    }
+  ],
+  "summary": {
+    "total_impressions": 4143,
+    "total_reach": 247456337,
+    "percentage": {
+      "positive": 62,
+      "neutral": 26,
+      "negative": 12
+    }
+  },
+  "intent": [
+    {
+      "intent": "Kritik Kebijakan",
+      "deskripsi": "Pengguna yang menyuarakan ketidakpuasan atau kritik terhadap kebijakan Danantara dan pemerintahan.",
+      "impressions": 610715,
+      "share_of_voice": 33
+    },
+    {
+      "intent": "Informasi dan Berita",
+      "deskripsi": "Pengguna yang membagikan informasi tentang kegiatan, program, atau berita terbaru terkait Danantara.",
+      "impressions": 1439090,
+      "share_of_voice": 41
+    },
+    {
+      "intent": "Promosi Acara",
+      "deskripsi": "Pengguna yang mempromosikan acara atau inisiatif yang melibatkan Danantara, seperti housing expo.",
+      "impressions": 41680,
+      "share_of_voice": 11
+    },
+    {
+      "intent": "Analisis Keuangan",
+      "deskripsi": "Pengguna yang membahas analisis dan pandangan terkait kinerja Danantara dan dampaknya pada ekonomi.",
+      "impressions": 53080,
+      "share_of_voice": 10
+    },
+    {
+      "intent": "Dukungan dan Testimoni",
+      "deskripsi": "Pengguna yang memberikan dukungan atau kesaksian positif terhadap program Danantara.",
+      "impressions": 3384,
+      "share_of_voice": 5
+    }
+  ],
+  "meta": {
+    "topic": "danantara-ai-topics",
+    "startdate": "2026-07-27",
+    "enddate": "2026-08-02"
+  }
+}

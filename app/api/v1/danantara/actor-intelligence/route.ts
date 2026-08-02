@@ -3,8 +3,8 @@ import { NextResponse } from "next/server";
 import capturedRoster from "@/lib/bgn/mock/actor-intelligence.json";
 import { MOCK_ACTORS } from "@/lib/bgn/mock/fixtures";
 import { mapCapturedRoster } from "@/lib/danantara/ceo/actor-intel";
-import { DANANTARA_MAIN_CODE, isAllowedTopicCode } from "@/lib/bumn/registry";
 import { readDevMockJson } from "@/lib/danantara/dev-mocks";
+import { feedProductFromParams, resolveTopicCode } from "@/lib/danantara/feed-config";
 import { ActorRosterNotConfiguredError, fetchActorRosterForCode } from "@/lib/danantara/actor-roster-feed";
 
 /**
@@ -22,8 +22,10 @@ export async function GET(req: Request) {
   const params = new URL(req.url).searchParams;
   const fresh = params.get("fresh") === "1";
 
-  // Scoped BGN demo mock (A13 v4.0): only /bgn/command sends ?mock=1. Production-safe;
-  // returns the bundled BGN roster before the (dead) upstream call.
+  // Scoped BGN demo mock (A13 v4.0). Intentionally BGN-only — NOT made product-aware like
+  // the /topics branch: the /danantara demo (A7 v50.1) mocks only the panes it renders
+  // (/topics + /bumn-board), and /danantara/krisis (CrisisGate) isn't wired to the demo,
+  // so no Danantara caller sends ?mock=1 here. Production-safe; returns the bundled BGN roster.
   if (params.get("mock") === "1") {
     return NextResponse.json(MOCK_ACTORS);
   }
@@ -46,14 +48,12 @@ export async function GET(req: Request) {
     }
   }
 
-  const requested = params.get("code");
-  const code =
-    requested && isAllowedTopicCode(requested)
-      ? requested
-      : process.env.DANANTARA_TOPIC_CODE || DANANTARA_MAIN_CODE;
+  // Per-product resolution (A10 v11.0): `?bgn=1` → BGN product, else Danantara.
+  const product = feedProductFromParams(params);
+  const code = resolveTopicCode(params, product);
 
   try {
-    const actors = await fetchActorRosterForCode(code, { fresh });
+    const actors = await fetchActorRosterForCode(code, { fresh, product });
     return NextResponse.json({ actors });
   } catch (e) {
     if (e instanceof ActorRosterNotConfiguredError) {

@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { BUMN_REGISTRY } from "@/lib/bumn/registry";
+import { MOCK_DANANTARA_BUMN } from "@/lib/danantara/mock/fixtures";
 import type { TopicsApiResponse } from "@/lib/danantara/ceo/topics-source";
 import { GET } from "./route";
 
@@ -23,12 +24,12 @@ const req = (fresh = false) => new Request(`http://localhost/api/v1/danantara/bu
 
 describe("GET /api/v1/danantara/bumn-board (T-A20 / AC20)", () => {
   beforeEach(() => {
-    process.env.DANANTARA_TOPICS_API_BASE = "https://api.example.io/topics";
+    process.env.DANANTARA_INTELLIGENCE_BASE_URL = "https://api.example.io";
     process.env.DANANTARA_TOPICS_API_KEY = KEY;
   });
   afterEach(() => {
     vi.restoreAllMocks();
-    delete process.env.DANANTARA_TOPICS_API_BASE;
+    delete process.env.DANANTARA_INTELLIGENCE_BASE_URL;
     delete process.env.DANANTARA_TOPICS_API_KEY;
   });
 
@@ -72,6 +73,17 @@ describe("GET /api/v1/danantara/bumn-board (T-A20 / AC20)", () => {
     const res = await GET(req());
     const body = await res.json();
     expect(JSON.stringify(body)).not.toContain(KEY);
+  });
+
+  it("serves the bundled Danantara BUMN board on ?mock=1 without fanning out (A7 v50.2, prod-safe)", async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+    const res = await GET(new Request("http://localhost/api/v1/danantara/bumn-board?mock=1"));
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.bumn).toHaveLength(MOCK_DANANTARA_BUMN.bumn.length);
+    expect(body.issues.length).toBeGreaterThan(0);
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it("returns 503 when the feed is not configured", async () => {

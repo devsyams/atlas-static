@@ -217,6 +217,22 @@ describe("DanantaraCommandCenter (A13 — one-page)", () => {
     });
   });
 
+  // A13 v6.4 — the BGN page routes every pane at the BGN product via ?bgn=1.
+  it("threads bgn=1 into every feed pane when bgn is set (A13 v6.4)", async () => {
+    const fetchMock = stubFetch();
+    render(<DanantaraCommandCenter brand="BGN" bgn />);
+    await waitFor(() => expect(screen.getByTestId("ceo-issues")).toBeInTheDocument());
+    // bgn reaches every live feed read (topics ×3, threats, actor-intelligence) — but not
+    // the war room's /counter-narrative POST (the product is resolved server-side on the feeds).
+    await waitFor(() => {
+      const feeds = fetchMock.mock.calls
+        .map((c) => String(c[0]))
+        .filter((u) => u.includes("/api/v1/danantara/") && !u.includes("counter-narrative"));
+      expect(feeds.length).toBeGreaterThanOrEqual(5);
+      expect(feeds.every((u) => u.includes("bgn=1"))).toBe(true);
+    });
+  });
+
   // A13 v6.2 — the BGN page repoints the gate's "View briefing" at /bgn/briefing.
   it("threads briefingHref to the gate's View briefing link (A13 v6.2)", async () => {
     stubFetch();
@@ -247,5 +263,6 @@ describe("DanantaraCommandCenter (A13 — one-page)", () => {
     expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("Danantara");
     expect(screen.getByTestId("ceo-issues").textContent).toContain("Danantara Issues");
     expect(fetchMock.mock.calls.map((c) => String(c[0])).some((u) => u.includes("mock=1"))).toBe(false);
+    expect(fetchMock.mock.calls.map((c) => String(c[0])).some((u) => u.includes("bgn=1"))).toBe(false);
   });
 });

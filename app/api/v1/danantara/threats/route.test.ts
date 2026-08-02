@@ -51,7 +51,7 @@ const writeMock = (name: string, data: unknown) => {
 
 describe("GET /api/v1/danantara/threats (T13 / AC8)", () => {
   beforeEach(() => {
-    process.env.DANANTARA_THREATS_API_BASE = "https://api.example.io/threats";
+    process.env.DANANTARA_INTELLIGENCE_BASE_URL = "https://api.example.io";
     process.env.DANANTARA_TOPICS_API_KEY = KEY;
     process.env.DANANTARA_TOPIC_CODE = "danantara_main";
     mockDir = mkdtempSync(join(tmpdir(), "atlas-threats-mock-"));
@@ -61,7 +61,10 @@ describe("GET /api/v1/danantara/threats (T13 / AC8)", () => {
     vi.restoreAllMocks();
     delete process.env.DANANTARA_TOPICS_API_KEY;
     delete process.env.DANANTARA_TOPIC_CODE;
-    delete process.env.DANANTARA_THREATS_API_BASE;
+    delete process.env.DANANTARA_INTELLIGENCE_BASE_URL;
+    delete process.env.BGN_INTELLIGENCE_BASE_URL;
+    delete process.env.BGN_INTELLIGENCE_API_KEY;
+    delete process.env.BGN_TOPIC_CODE;
     delete process.env.DANANTARA_LOCAL_MOCK_DIR;
     if (mockDir) rmSync(mockDir, { recursive: true, force: true });
     mockDir = "";
@@ -100,6 +103,26 @@ describe("GET /api/v1/danantara/threats (T13 / AC8)", () => {
     expect(body.stats.total_threats).toBe(0);
   });
 
+  it("routes ?bgn=1 to the BGN product upstream, not the Danantara one (A10 v11.0)", async () => {
+    process.env.BGN_INTELLIGENCE_BASE_URL = "https://trawldeck.example.io/atlas/v1";
+    process.env.BGN_INTELLIGENCE_API_KEY = "tdk_bgn";
+    process.env.BGN_TOPIC_CODE = "1";
+    let calledUrl = "";
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string) => {
+        calledUrl = String(url);
+        return new Response(JSON.stringify(SAMPLE), { status: 200 });
+      }),
+    );
+
+    const res = await GET(new Request("http://localhost/api/v1/danantara/threats?bgn=1"));
+    expect(res.status).toBe(200);
+    expect(calledUrl).toContain("https://trawldeck.example.io/atlas/v1/threats?");
+    expect(calledUrl).toContain("api_key=tdk_bgn");
+    expect(calledUrl).not.toContain("api.example.io");
+  });
+
   it("returns 503 when no api key is configured", async () => {
     delete process.env.DANANTARA_TOPICS_API_KEY;
     const res = await GET(req());
@@ -107,7 +130,7 @@ describe("GET /api/v1/danantara/threats (T13 / AC8)", () => {
   });
 
   it("returns 503 when no upstream base is configured (A10 v6.0 — GARUDA default retired)", async () => {
-    delete process.env.DANANTARA_THREATS_API_BASE;
+    delete process.env.DANANTARA_INTELLIGENCE_BASE_URL;
     const fetchMock = vi.fn();
     vi.stubGlobal("fetch", fetchMock);
     const res = await GET(req());
