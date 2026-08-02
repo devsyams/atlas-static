@@ -233,6 +233,7 @@ describe("CounterNarrativeWarRoom (A14)", () => {
     render(<CounterNarrativeWarRoom />);
     await settle();
     await waitFor(() => expect(screen.getAllByTestId(/^dispatch-/)).toHaveLength(3));
+    expect(screen.getByTestId("dispatch-t0").textContent).toContain("Send to Team");
 
     const href = screen.getByTestId("dispatch-t0").getAttribute("href") || "";
     const text = decodeURIComponent(href.split("text=")[1] || "");
@@ -243,6 +244,7 @@ describe("CounterNarrativeWarRoom (A14)", () => {
     expect(text).toContain("Clipper:");
     expect(text).toContain("Grassroots:");
     expect(text).not.toContain("LLM draft");
+    expect(text).not.toContain("Danantara CEO Command");
   });
 
   it("holds the terminal while the model is working, then reveals (T29)", async () => {

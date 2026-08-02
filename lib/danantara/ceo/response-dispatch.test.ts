@@ -38,6 +38,7 @@ describe("response-dispatch (A9 v3.0 — WhatsApp handoff)", () => {
     expect(brief).toContain("1,348"); // kol
     expect(brief).toContain("899"); // homeless
     expect(brief).toContain("4,494"); // total
+    expect(brief).not.toContain("Danantara CEO Command");
   });
 
   it("omits the penjelasan line cleanly when there is none", () => {
@@ -79,6 +80,7 @@ describe("buildWarRoomBrief (A14 — counter-narrative handoff, T35)", () => {
     // The channel split still rides along so the room knows how the total is spent.
     for (const c of plan.channels) expect(brief).toContain(c.posts.toLocaleString("en-US"));
     expect(brief).toContain("The PR/media team will craft the final channel copy.");
+    expect(brief).not.toContain("Danantara CEO Command");
   });
 
   it("stays inside the practical wa.me?text= length ceiling", () => {
