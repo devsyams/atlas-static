@@ -75,6 +75,29 @@ function stubFetch({ topicsStatus = 200, boardStatus = 200 } = {}) {
 describe("CeoCommand — live wall (v37.0)", () => {
   afterEach(() => vi.restoreAllMocks());
 
+  // A7 v49.0 — opt-in windowDays follows the page's date filter (A13).
+  it("windowDays appends days= to the /topics fetch and refetches on change; absent → no days param (T24)", async () => {
+    stubFetch();
+    const fetchMock = globalThis.fetch as unknown as ReturnType<typeof vi.fn>;
+    const { rerender } = render(<CeoCommand showBumn={false} windowDays={30} />);
+    await waitFor(() => expect(screen.getByText("Danantara Topic A")).toBeInTheDocument());
+    expect(fetchMock.mock.calls.map((c) => String(c[0])).filter((u) => u.includes("days=30"))).toHaveLength(1);
+
+    fetchMock.mockClear();
+    rerender(<CeoCommand showBumn={false} windowDays={7} />);
+    await waitFor(() =>
+      expect(fetchMock.mock.calls.map((c) => String(c[0])).filter((u) => u.includes("days=7"))).toHaveLength(1),
+    );
+
+    // Regression: the no-prop render (e.g. /danantara) sends no days param at all.
+    vi.restoreAllMocks();
+    stubFetch();
+    const cleanMock = globalThis.fetch as unknown as ReturnType<typeof vi.fn>;
+    render(<CeoCommand />);
+    await waitFor(() => expect(cleanMock).toHaveBeenCalled());
+    expect(cleanMock.mock.calls.map((c) => String(c[0])).filter((u) => u.includes("days="))).toHaveLength(0);
+  });
+
   it("renders all four zones from the live feeds (AC1)", async () => {
     stubFetch();
     render(<CeoCommand />);
@@ -200,6 +223,32 @@ describe("CeoCommand — live wall (v37.0)", () => {
     render(<CeoCommand />);
     await waitFor(() => expect(screen.getAllByTestId(/^bumn-tile-/)).toHaveLength(7));
     expect(screen.getByTestId("ceo-bumn")).toBeInTheDocument();
+  });
+
+  // A7 v47.1 — BGN rebrand (opt-in brand/mock props).
+  it("appends mock=1 to the topics fetch when mock is set (A7 v47.1)", async () => {
+    stubFetch();
+    render(<CeoCommand showBumn={false} mock />);
+    const fetchMock = globalThis.fetch as unknown as ReturnType<typeof vi.fn>;
+    await waitFor(() => {
+      const topics = fetchMock.mock.calls.map((c) => String(c[0])).filter((u) => u.includes("/topics"));
+      expect(topics.length).toBeGreaterThan(0);
+      expect(topics.every((u) => u.includes("mock=1"))).toBe(true);
+    });
+  });
+
+  it("passes brand through to the issue board title (A7 v47.1)", async () => {
+    stubFetch();
+    render(<CeoCommand showBumn={false} brand="BGN" />);
+    await waitFor(() => expect(screen.getByTestId("ceo-issues").textContent).toContain("BGN Issues"));
+  });
+
+  it("omits mock=1 by default (regression)", async () => {
+    stubFetch();
+    render(<CeoCommand showBumn={false} />);
+    const fetchMock = globalThis.fetch as unknown as ReturnType<typeof vi.fn>;
+    await waitFor(() => expect(screen.getByTestId("ceo-issues")).toBeInTheDocument());
+    expect(fetchMock.mock.calls.map((c) => String(c[0])).some((u) => u.includes("mock=1"))).toBe(false);
   });
 
   it("refetches both feeds when refreshNonce changes, and not on mount (T4 support)", async () => {

@@ -16,13 +16,13 @@ import {
   type TopicsApiResponse,
 } from "./ceo/topics-source";
 
-const DEFAULT_BASE = "https://api.garudaperkasa.io/api-nexorus/topics";
 const FALLBACK_DAYS = 28;
 const REVALIDATE_S = 21_600; // 6 hours (A7 v46.0, was 1 h since v36.0) — the upstream refreshes ~daily
 
 export type FeedResult = MappedTopics & { meta: TopicsApiResponse["meta"] };
 
-/** Thrown when the feed has no API key configured (callers map this to 503). */
+/** Thrown when the feed has no base URL or API key configured (callers map this to 503).
+ * A7 v48.0: no hardcoded default base — the GARUDA host is dead (TrawlDeck cutover). */
 export class FeedNotConfiguredError extends Error {}
 
 async function fetchWindow(
@@ -76,13 +76,31 @@ async function fetchWidened(
  */
 export async function fetchTopicsForCode(
   code: string,
-  opts: { fresh?: boolean } = {},
+  opts: { fresh?: boolean; days?: number } = {},
 ): Promise<FeedResult> {
-  const base = process.env.DANANTARA_TOPICS_API_BASE || DEFAULT_BASE;
+  const base = process.env.DANANTARA_TOPICS_API_BASE;
   const apiKey = process.env.DANANTARA_TOPICS_API_KEY;
-  if (!apiKey) throw new FeedNotConfiguredError("Topics feed not configured.");
+  if (!base || !apiKey) throw new FeedNotConfiguredError("Topics feed not configured.");
 
   const fresh = opts.fresh ?? false;
+
+  // A7 v49.0: an explicit `days` window (1 = today only) is the caller's choice —
+  // one request, no widening. The cacheable-empty live confirm still applies, on
+  // the same window.
+  if (opts.days) {
+    const window = rollingWindow(new Date(), opts.days - 1);
+    const result = await fetchWindow(base, code, apiKey, fresh, window);
+    if (!fresh && result.issues.length === 0) {
+      try {
+        const live = await fetchWindow(base, code, apiKey, true, window);
+        if (live.issues.length > 0) return live;
+      } catch {
+        /* keep the cached empty rather than failing the request */
+      }
+    }
+    return result;
+  }
+
   const result = await fetchWidened(base, code, apiKey, fresh);
 
   // Already empty *and* served from cache → re-check the live upstream once, so a

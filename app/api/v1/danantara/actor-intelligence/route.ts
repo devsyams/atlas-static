@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
 
+import capturedRoster from "@/lib/bgn/mock/actor-intelligence.json";
+import { MOCK_ACTORS } from "@/lib/bgn/mock/fixtures";
+import { mapCapturedRoster } from "@/lib/danantara/ceo/actor-intel";
 import { DANANTARA_MAIN_CODE, isAllowedTopicCode } from "@/lib/bumn/registry";
 import { readDevMockJson } from "@/lib/danantara/dev-mocks";
 import { ActorRosterNotConfiguredError, fetchActorRosterForCode } from "@/lib/danantara/actor-roster-feed";
@@ -18,6 +21,19 @@ import { ActorRosterNotConfiguredError, fetchActorRosterForCode } from "@/lib/da
 export async function GET(req: Request) {
   const params = new URL(req.url).searchParams;
   const fresh = params.get("fresh") === "1";
+
+  // Scoped BGN demo mock (A13 v4.0): only /bgn/command sends ?mock=1. Production-safe;
+  // returns the bundled BGN roster before the (dead) upstream call.
+  if (params.get("mock") === "1") {
+    return NextResponse.json(MOCK_ACTORS);
+  }
+
+  // Captured static roster (A10 v10.0 / AC12): only /bgn/command sends ?static=1 while
+  // TrawlDeck's actor enrichment is off. Production-safe; each actor carries its full
+  // `intel` analysis for the card's detail popup.
+  if (params.get("static") === "1") {
+    return NextResponse.json({ actors: mapCapturedRoster(capturedRoster) });
+  }
 
   const mockJson = readDevMockJson("actor-intelligence.json") ?? process.env.DANANTARA_ACTOR_INTELLIGENCE_MOCK_JSON;
   if (process.env.NODE_ENV !== "production" && mockJson) {

@@ -15,6 +15,7 @@ const KEY = "SECRET-KEY";
 
 describe("fetchActorRosterForCode (A10 v5.2)", () => {
   beforeEach(() => {
+    process.env.DANANTARA_ACTORS_API_BASE = "https://api.example.io/actor-intelligence";
     process.env.DANANTARA_TOPICS_API_KEY = KEY;
   });
   afterEach(() => {
@@ -26,6 +27,17 @@ describe("fetchActorRosterForCode (A10 v5.2)", () => {
   it("throws ActorRosterNotConfiguredError when no api key is configured", async () => {
     delete process.env.DANANTARA_TOPICS_API_KEY;
     await expect(fetchActorRosterForCode("danantara_main")).rejects.toBeInstanceOf(ActorRosterNotConfiguredError);
+  });
+
+  it("throws ActorRosterNotConfiguredError when no base is configured, even with a key — T25 (A10 v9.0)", async () => {
+    // TrawlDeck cutover: the GARUDA default base is retired; without an explicit
+    // base the feed must report not-configured, never fetch a hardcoded host.
+    delete process.env.DANANTARA_ACTORS_API_BASE;
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify(SAMPLE), { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(fetchActorRosterForCode("1")).rejects.toBeInstanceOf(ActorRosterNotConfiguredError);
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it("maps a successful upstream; sends topic + reused key; caches 6h by default", async () => {

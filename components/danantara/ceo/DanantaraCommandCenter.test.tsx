@@ -165,6 +165,29 @@ describe("DanantaraCommandCenter (A13 — one-page)", () => {
     expect(fetchMock.mock.calls.map((c) => String(c[0])).filter((u) => u.includes("bumn-board"))).toHaveLength(0);
   });
 
+  // A13 v5.0 — page-wide date window; default 7 hari since v6.0.
+  it("threads the window: all three /topics reads mount with days=7; a preset switch re-windows all three (T19)", async () => {
+    const fetchMock = stubFetch();
+    render(<DanantaraCommandCenter />);
+    await waitFor(() => expect(screen.getByTestId("counter-war-room")).toBeInTheDocument());
+
+    await waitFor(() => {
+      const mountTopics = fetchMock.mock.calls.map((c) => String(c[0])).filter((u) => u.includes("/topics"));
+      expect(mountTopics).toHaveLength(3); // gate · wall · war room
+      for (const u of mountTopics) expect(u).toContain("days=7");
+    });
+
+    fetchMock.mockClear();
+    fireEvent.click(screen.getByRole("button", { name: "30 hari" }));
+
+    await waitFor(() => {
+      const urls = fetchMock.mock.calls.map((c) => String(c[0])).filter((u) => !u.includes("counter-narrative"));
+      expect(urls.filter((u) => u.includes("/topics") && u.includes("days=30"))).toHaveLength(3);
+      // Not date-range based — must not refetch on a preset switch.
+      expect(urls.filter((u) => u.includes("/threats") || u.includes("/actor-intelligence"))).toHaveLength(0);
+    });
+  });
+
   it("still shows the Danantara issue board — negative and positive topics (T9)", async () => {
     stubFetch();
     render(<DanantaraCommandCenter />);
@@ -173,5 +196,56 @@ describe("DanantaraCommandCenter (A13 — one-page)", () => {
     // The negative topic also headlines the gate above, so scope to the board.
     expect(screen.getByTestId("issue-group-negative").textContent).toContain("Investasi Hilirisasi Nikel");
     expect(screen.getByTestId("issue-group-positive").textContent).toContain("Topik Positif");
+  });
+
+  // A13 v4.0 — the BGN page threads brand + mock into every pane.
+  it("threads brand + mock into every pane when set (T15/T18)", async () => {
+    const fetchMock = stubFetch();
+    render(<DanantaraCommandCenter brand="BGN" brandLogo="/bgn.png" mock />);
+    await waitFor(() => expect(screen.getByTestId("ceo-issues")).toBeInTheDocument());
+    // Brand reached the gate title + the issue board.
+    expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("BGN");
+    expect(screen.getByTestId("ceo-issues").textContent).toContain("BGN Issues");
+    // Mock reached every feed read (topics ×3, threats, actor-intelligence) — but not
+    // the war room's /counter-narrative POST, which drafts over the mocked topics.
+    await waitFor(() => {
+      const feeds = fetchMock.mock.calls
+        .map((c) => String(c[0]))
+        .filter((u) => u.includes("/api/v1/danantara/") && !u.includes("counter-narrative"));
+      expect(feeds.length).toBeGreaterThanOrEqual(5);
+      expect(feeds.every((u) => u.includes("mock=1"))).toBe(true);
+    });
+  });
+
+  // A13 v6.2 — the BGN page repoints the gate's "View briefing" at /bgn/briefing.
+  it("threads briefingHref to the gate's View briefing link (A13 v6.2)", async () => {
+    stubFetch();
+    render(<DanantaraCommandCenter brand="BGN" brandLogo="/bgn.png" briefingHref="/bgn/briefing" />);
+    await waitFor(() =>
+      expect(screen.getByTestId("crisis-detail-link")).toHaveAttribute("href", "/bgn/briefing"),
+    );
+  });
+
+  // A13 v6.3 — the BGN page opts panel 3 onto the captured static roster.
+  it("threads staticActors to the gate — only the actor-intelligence fetch carries static=1 (T21)", async () => {
+    const fetchMock = stubFetch();
+    render(<DanantaraCommandCenter brand="BGN" brandLogo="/bgn.png" staticActors />);
+    await waitFor(() => expect(screen.getByTestId("ceo-issues")).toBeInTheDocument());
+    await waitFor(() => {
+      const feeds = fetchMock.mock.calls
+        .map((c) => String(c[0]))
+        .filter((u) => u.includes("/api/v1/danantara/") && !u.includes("counter-narrative"));
+      expect(feeds.some((u) => u.includes("/actor-intelligence") && u.includes("static=1"))).toBe(true);
+      expect(feeds.filter((u) => u.includes("static=1"))).toEqual(feeds.filter((u) => u.includes("/actor-intelligence")));
+    });
+  });
+
+  it("defaults to Danantara branding and sends no mock=1 (regression)", async () => {
+    const fetchMock = stubFetch();
+    render(<DanantaraCommandCenter />);
+    await waitFor(() => expect(screen.getByTestId("ceo-issues")).toBeInTheDocument());
+    expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("Danantara");
+    expect(screen.getByTestId("ceo-issues").textContent).toContain("Danantara Issues");
+    expect(fetchMock.mock.calls.map((c) => String(c[0])).some((u) => u.includes("mock=1"))).toBe(false);
   });
 });

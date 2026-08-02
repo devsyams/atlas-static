@@ -3,6 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { TopicsApiResponse } from "@/lib/danantara/ceo/topics-source";
+import { MOCK_TOPICS } from "@/lib/bgn/mock/fixtures";
 import { GET } from "./route";
 
 const SAMPLE: TopicsApiResponse = {
@@ -101,6 +102,29 @@ describe("GET /api/v1/danantara/topics (T20 / AC19)", () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
+  it("passes an allowlisted ?days= through as one explicit window (T24, v49.0)", async () => {
+    const fetchMock = vi.fn(async (_url: string) => new Response(JSON.stringify(SAMPLE), { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const res = await GET(reqWith("days=30"));
+    expect(res.status).toBe(200);
+    expect(fetchMock).toHaveBeenCalledTimes(1); // explicit window: no widening retry
+    const url = String(fetchMock.mock.calls[0][0]);
+    expect(url).toContain("startdate=");
+    expect(url).toContain("enddate=");
+  });
+
+  it("ignores an out-of-allowlist ?days= — the date-less default window applies (T24, v49.0)", async () => {
+    const fetchMock = vi.fn(async (_url: string) => new Response(JSON.stringify(SAMPLE), { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const res = await GET(reqWith("days=13"));
+    expect(res.status).toBe(200);
+    const url = String(fetchMock.mock.calls[0][0]);
+    expect(url).not.toContain("startdate");
+    expect(url).not.toContain("enddate");
+  });
+
   it("caches the upstream for 6h by default, and bypasses the cache on ?fresh=1 (v46.0, was 1h)", async () => {
     const fetchMock = vi.fn(async (_url: string, _init?: RequestInit) => new Response(JSON.stringify(SAMPLE), { status: 200 }));
     vi.stubGlobal("fetch", fetchMock);
@@ -173,5 +197,23 @@ describe("GET /api/v1/danantara/topics (T20 / AC19)", () => {
     expect(calledUrl).toContain("topic=danantara_pln");
     expect(calledUrl).not.toContain("startdate");
     expect(calledUrl).not.toContain("enddate");
+  });
+
+  it("serves the BGN mock fixture on ?mock=1 without hitting the upstream (A13 v4.0, prod-safe)", async () => {
+    // The ?mock=1 branch is the scoped-mock signal /bgn/command sends. Unlike the
+    // dev-mock seam it must work in production, so assert under NODE_ENV=production.
+    vi.stubEnv("NODE_ENV", "production");
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+    try {
+      const res = await GET(reqWith("mock=1"));
+      expect(res.status).toBe(200);
+      const body = await res.json();
+      expect(body.issues).toHaveLength(MOCK_TOPICS.issues.length);
+      expect(body.issues[0].title).toBe(MOCK_TOPICS.issues[0].title);
+      expect(fetchMock).not.toHaveBeenCalled();
+    } finally {
+      vi.unstubAllEnvs();
+    }
   });
 });

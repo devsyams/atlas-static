@@ -43,6 +43,7 @@ const KEY = "SECRET-KEY";
 
 describe("fetchThreatsForCode (A10 v5.0)", () => {
   beforeEach(() => {
+    process.env.DANANTARA_THREATS_API_BASE = "https://api.example.io/threats";
     process.env.DANANTARA_TOPICS_API_KEY = KEY;
   });
   afterEach(() => {
@@ -54,6 +55,17 @@ describe("fetchThreatsForCode (A10 v5.0)", () => {
   it("throws ThreatsNotConfiguredError when no api key is configured (503 path)", async () => {
     delete process.env.DANANTARA_TOPICS_API_KEY;
     await expect(fetchThreatsForCode("danantara_main")).rejects.toBeInstanceOf(ThreatsNotConfiguredError);
+  });
+
+  it("throws ThreatsNotConfiguredError when no base is configured, even with a key — T23 (A10 v6.0)", async () => {
+    // TrawlDeck cutover: the GARUDA default base is retired; without an explicit
+    // base the feed must report not-configured, never fetch a hardcoded host.
+    delete process.env.DANANTARA_THREATS_API_BASE;
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify(SAMPLE), { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(fetchThreatsForCode("1")).rejects.toBeInstanceOf(ThreatsNotConfiguredError);
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it("maps a successful upstream; sends topic + reused topics key; caches 6h by default", async () => {
@@ -103,11 +115,13 @@ describe("fetchThreatsForCode (A10 v5.0)", () => {
 
 describe("fetchThreatsForCode — stale-empty self-heal (A10 v5.2 — T20)", () => {
   beforeEach(() => {
+    process.env.DANANTARA_THREATS_API_BASE = "https://api.example.io/threats";
     process.env.DANANTARA_TOPICS_API_KEY = KEY;
   });
   afterEach(() => {
     vi.restoreAllMocks();
     delete process.env.DANANTARA_TOPICS_API_KEY;
+    delete process.env.DANANTARA_THREATS_API_BASE;
   });
 
   /** A fetch mock returning the i-th payload in `seq` (the last repeats), recording each call's init. */

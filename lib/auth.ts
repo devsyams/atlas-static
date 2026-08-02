@@ -68,10 +68,11 @@ function bumnSlug(scope: Scope): string | null {
 
 export function homeForScope(scope: Scope): string {
   // The danantara scope's landing (SSO handoff success target in /api/v1/sso, and
-  // the middleware bounce target) is the one-page Command Center. The direct demo
-  // login (`danantara`/danantara2026) still opens the /danantara/krisis fear gate
-  // via its own DEMO_USERS.home — a separate flow.
-  if (scope === "danantara") return "/danantara/command";
+  // the middleware bounce target) is the one-page BGN Command Center (A13 v4.0,
+  // renamed from /danantara/command). The direct demo login (`danantara`/
+  // danantara2026) still opens the /danantara/krisis fear gate via its own
+  // DEMO_USERS.home — a separate flow.
+  if (scope === "danantara") return "/bgn/command";
   const slug = bumnSlug(scope);
   if (slug) return `/bumn/${slug}`;
   return "/";
@@ -80,7 +81,9 @@ export function homeForScope(scope: Scope): string {
 /** Whether a given scope may view a page path. (API/_next/static are gated elsewhere.) */
 export function scopeAllowsPath(scope: Scope, pathname: string): boolean {
   if (scope === "all") return true;
-  if (scope === "danantara") return pathname.startsWith("/danantara");
+  // /bgn/* is the renamed BGN Command Center (A13 v4.0); the danantara scope lands
+  // there via homeForScope, so it must be reachable or the middleware redirect-loops.
+  if (scope === "danantara") return pathname.startsWith("/danantara") || pathname.startsWith("/bgn");
   const slug = bumnSlug(scope);
   if (slug) {
     // A BUMN CEO only ever sees their own dashboard — not the index, not others.

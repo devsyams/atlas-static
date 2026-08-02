@@ -519,8 +519,8 @@ no `idQuery` simply hide the deep link; no cost ledger impact (no LLM call).
 
 ### P9. OpenGate → Danantara SSO handoff (inbound autologin)
 
-- **Version:** 1.3 · **Stage:** 0-platform · **Sprint:** demo · **Status:** Built
-  · **Spec ref:** cross-team SSO contract locked with the OpenGate (TrawlDeckCorcom) team, 2026-07-31 · **Owner:** platform
+- **Version:** 1.4 · **Stage:** 0-platform · **Sprint:** demo · **Status:** Built
+  · **Spec ref:** `docs/superpowers/specs/2026-08-01-bgn-command-rename-and-mock-design.md` (v1.3); cross-team SSO contract locked with the OpenGate (TrawlDeckCorcom) team, 2026-07-31 · **Owner:** platform
 
 #### PM
 **Background (why):** OpenGate is adding a product-demo flow where a user logs in at
@@ -549,7 +549,7 @@ top-level redirect between them is same-site.
 **Acceptance criteria (Given / When / Then):**
 - **AC1** — *Given* a valid, unexpired HS256 token signed with `ATLAS_SSO_SECRET` whose
   `aud === 'danantara'`, *When* `GET /api/v1/sso?token=…` is requested, *Then* the response **302s**
-  to the scope's dashboard home (`homeForScope` → `/danantara/command` for `danantara`) and a local
+  to the scope's dashboard home (`homeForScope` → `/bgn/command` for `danantara`) and a local
   session is established.
 - **AC2** — *Given* a token that is missing, malformed, not `HS256`, badly signed, wrong-audience,
   or **expired**, *When* the endpoint is hit, *Then* it **302s to `/login`** and sets **no** session
@@ -566,7 +566,7 @@ top-level redirect between them is same-site.
 - **AC7** *(v1.1 bugfix)* — *Given* the app runs behind the ingress (where `req.url`/`req.nextUrl`
   reflect the in-container bind `0.0.0.0:3000`, not the public host), *When* either redirect is
   emitted (success **or** fail-closed), *Then* the `Location` is a **relative** path (`/login`,
-  `/danantara/command`) — never an absolute URL carrying the bind host — so the browser resolves it
+  `/bgn/command`) — never an absolute URL carrying the bind host — so the browser resolves it
   against the public URL it requested and never lands on an unreachable `https://0.0.0.0:3000/…`.
 
 #### Architecture
@@ -620,11 +620,11 @@ gate, `force-dynamic`, redirect-only, graceful fallback). No new dependency.
 | T4 | AC2 | `aud !== 'danantara'` → `{valid:false, reason:'bad-audience'}`; `alg` not `HS256` (incl. `none`) → `bad-alg`; non-3-part token → `malformed` | unit |
 | T5 | AC3 | missing secret → `{valid:false, reason:'no-secret'}`; missing token → `no-token` | unit |
 | T6 | AC6 | `scopeFromClaims` returns the `scope` claim, or `'danantara'` when absent/empty | unit |
-| T7 | AC1/AC4/AC6 | route: valid token → **302** to `/danantara/command`; sets `atlas_auth=1` + `atlas_scope=danantara` with `HttpOnly`, `Path=/`, `SameSite=Lax` | integration |
+| T7 | AC1/AC4/AC6 | route: valid token → **302** to `/bgn/command`; sets `atlas_auth=1` + `atlas_scope=danantara` with `HttpOnly`, `Path=/`, `SameSite=Lax` | integration |
 | T8 | AC2/AC5 | route: expired · bad-signature · wrong-aud · missing-token → **302** to `/login`, **no** `Set-Cookie` session cookies | integration |
 | T9 | AC3 | route: `ATLAS_SSO_SECRET` unset + otherwise-valid token → **302** to `/login`, no cookies, no trust | integration |
-| T10 | AC6 | route: valid token with **no** `scope` claim → `atlas_scope=danantara`, lands `/danantara/command` | integration |
-| T11 | AC7 | route: request arriving with the in-container-bind host (`http://0.0.0.0:3000/…`) → both the success (`/danantara/command`) and fail-closed (`/login`) `Location` are **relative** (start `/`, no `://`), never `http://0.0.0.0:3000/…` | integration |
+| T10 | AC6 | route: valid token with **no** `scope` claim → `atlas_scope=danantara`, lands `/bgn/command` | integration |
+| T11 | AC7 | route: request arriving with the in-container-bind host (`http://0.0.0.0:3000/…`) → both the success (`/bgn/command`) and fail-closed (`/login`) `Location` are **relative** (start `/`, no `://`), never `http://0.0.0.0:3000/…` | integration |
 
 **Governance edge cases:** endpoint lives under `/api` so the middleware matcher never bounces a
 logged-out arrival before token consumption; **`token` is the only accepted input**; the secret +
@@ -639,4 +639,5 @@ follow-up; no LLM call → no cost-ledger impact.
 | 1.0 | 2026-07-31 | Initial plan + build (TDD) — inbound OpenGate→Danantara SSO handoff to the locked cross-team contract: `GET /api/v1/sso?token=<HS256 jwt>` verified with the dedicated `ATLAS_SSO_SECRET` (WebCrypto, zero-dep), `aud`/`exp` checked, sets `httpOnly` `atlas_auth`/`atlas_scope` and 302s to the scope home; failure → `/login`. AC1–AC6, T1–T10 |
 | 1.1 | 2026-07-31 | **Bugfix (TDD)** — redirect `Location` leaked the in-container bind host. Behind the ingress `req.url` reflects `0.0.0.0:3000`, so `NextResponse.redirect(new URL(path, req.url))` emitted `https://0.0.0.0:3000/login` (and would have sent a **successful** handoff to `https://0.0.0.0:3000/danantara/krisis` → unreachable). Both redirects now emit a **relative** `Location` via the shared `relativeRedirect` helper (`lib/http.ts`); the browser resolves it against the public URL — host-safe, unspoofable, no forwarded-header trust needed. Reported by the OpenGate agent during pre-demo verification. AC7 + T11 added; +1 test, live-verified via curl (both paths relative). No contract/behaviour change beyond the emitted host |
 | 1.2 | 2026-07-31 | **Behaviour change (TDD)** — OpenGate product request: land the SSO handoff on the one-page **Command Center** instead of the Crisis Gate. One-line change to the shared `homeForScope("danantara")` mapping (`lib/auth.ts`): `/danantara/krisis` → `/danantara/command`; this is the `/api/v1/sso` success target **and** the middleware bounce target for the danantara scope. AC1/AC7 + T7/T10/T11 landing value updated; +1 `homeForScope` unit test. Token contract unchanged; OpenGate needs no change. **Scoped deliberately:** the direct demo login (`danantara`/danantara2026) still opens the `/danantara/krisis` fear gate via its own `DEMO_USERS.home` — left unchanged (a separate flow; not `homeForScope`). Live-verified via curl (success → `/danantara/command`) |
-| 1.3 | 2026-08-02 | **Host rename** — public Danantara hostname changed from `danantara.atlas.nexorus-alpha.io` to `atlas.nexorus-alpha.io` while preserving the same OpenGate→Danantara handoff flow. Updated the ingress host and the P9 background text to reflect that the two apps remain same-site under `nexorus-alpha.io`; the SSO contract, token claims, and redirect mechanics are unchanged. |
+| 1.3 | 2026-08-01 | **Behaviour change (A13 v4.0 / BGN)** — the SSO handoff now lands on the renamed **BGN Command Center**: one-line change to the shared `homeForScope("danantara")` mapping (`lib/auth.ts`): `/danantara/command` → `/bgn/command`; this is the `/api/v1/sso` success target **and** the middleware bounce target for the danantara scope. `/danantara/command` is removed with A13 v4.0. AC1/AC7 + T7/T10/T11 landing value updated. Token contract + `danantara` scope key unchanged; OpenGate needs no change. Direct demo login still opens `/danantara/krisis` (its own `DEMO_USERS.home`). Spec `2026-08-01-bgn-command-rename-and-mock-design.md` |
+| 1.4 | 2026-08-02 | **Host rename** — public Danantara hostname changed from `danantara.atlas.nexorus-alpha.io` to `atlas.nexorus-alpha.io` while preserving the same OpenGate→Danantara handoff flow. Updated the ingress host and the P9 background text to reflect that the two apps remain same-site under `nexorus-alpha.io`; the SSO contract, token claims, and redirect mechanics are unchanged. |

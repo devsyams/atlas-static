@@ -1,11 +1,11 @@
 // @vitest-environment jsdom
-import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { setAiEnabled } from "@/lib/ai-settings";
 import { boardThreatResponsePlan } from "@/lib/danantara/ceo/board-threat-simulator";
 import { responseCalculator } from "@/lib/danantara/ceo/counter-noise";
 import type { CeoIssue } from "@/lib/danantara/ceo/types";
-import { CounterNarrativeWarRoom } from "./CounterNarrativeWarRoom";
+import { CounterNarrativeWarRoom, warRoomBootLines } from "./CounterNarrativeWarRoom";
 
 function mkIssue(over: Partial<CeoIssue> & Pick<CeoIssue, "id" | "title">): CeoIssue {
   return {
@@ -118,6 +118,21 @@ describe("CounterNarrativeWarRoom (A14)", () => {
     const counts = screen.getAllByTestId(/^channel-posts-/);
     expect(counts).toHaveLength(9);
     for (const count of counts) expect(count.textContent?.trim()).not.toBe("");
+  });
+
+  // A14 v4.1 — BGN rebrand (cosmetic brand line + opt-in mock).
+  it("brands the war-room boot command per client (A14 v4.1)", () => {
+    expect(warRoomBootLines("Danantara")[0]).toContain("--topic danantara");
+    expect(warRoomBootLines("BGN")[0]).toContain("--topic bgn");
+  });
+
+  it("appends mock=1 to the topics fetch when mock is set (A14 v4.1)", async () => {
+    const fetchMock = stubFetch();
+    render(<CounterNarrativeWarRoom mock />);
+    await settle();
+    const topics = fetchMock.mock.calls.map((c) => String(c[0])).filter((u) => u.includes("/topics"));
+    expect(topics.length).toBeGreaterThan(0);
+    expect(topics.every((u) => u.includes("mock=1"))).toBe(true);
   });
 
   it("shows the model's own copy and badge when the AI is live (T25)", async () => {
@@ -316,5 +331,83 @@ describe("CounterNarrativeWarRoom (A14)", () => {
     expect(screen.queryByTestId("counter-topic-t3")).not.toBeInTheDocument();
     expect(screen.getByText("01")).toBeInTheDocument();
     expect(screen.getByText("03")).toBeInTheDocument();
+  });
+
+  // A14 v5.0 — a labeled boundary divider between the simulator and the topic columns.
+  it("puts a labeled boundary divider between the simulator and the topic columns (T39)", async () => {
+    stubFetch();
+    render(<CounterNarrativeWarRoom />);
+    await settle();
+    await waitFor(() => expect(screen.getByTestId("war-room-topics")).toBeInTheDocument());
+
+    const sim = screen.getByTestId("board-simulator");
+    const divider = screen.getByTestId("war-room-divider");
+    const topics = screen.getByTestId("war-room-topics");
+
+    // The caption names the columns below it.
+    expect(divider.textContent).toContain("Recommended Counter-Posts");
+
+    // Ordered simulator → divider → topics, so the boundary sits between the two card groups.
+    expect(sim.compareDocumentPosition(divider) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(divider.compareDocumentPosition(topics) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+
+    // AC11 readability floor — nothing in the divider renders below 16px.
+    const offenders = [divider, ...divider.querySelectorAll("*")]
+      .map((el) => el.getAttribute("class") ?? "")
+      .filter((c) => TINY_TEXT.test(c));
+    expect(offenders).toEqual([]);
+  });
+
+  // A14 v5.0 — the boot animation is gated on scroll-into-view, not a page-load timer.
+  it("boots only when the section scrolls into view, and once (T40)", async () => {
+    // A controllable IntersectionObserver, so inView starts false as it does in a real browser
+    // (jsdom has none, which is why every other test starts already in view).
+    const observers: { cb: IntersectionObserverCallback; disconnected: boolean }[] = [];
+    class FakeIO {
+      cb: IntersectionObserverCallback;
+      disconnected = false;
+      constructor(cb: IntersectionObserverCallback) {
+        this.cb = cb;
+        observers.push(this);
+      }
+      observe() {}
+      unobserve() {}
+      disconnect() {
+        this.disconnected = true;
+      }
+      takeRecords() {
+        return [];
+      }
+    }
+    vi.stubGlobal("IntersectionObserver", FakeIO);
+    try {
+      stubFetch({ ai: LLM_PAYLOAD });
+      render(<CounterNarrativeWarRoom />);
+      // Advance well past the old 2.5 s load-time fallback + MIN_SHOW_MS (~4.9 s), so if the
+      // boot were still armed by a timer it would have revealed by now.
+      await settle(8_000);
+
+      // The section has not been scrolled to — it must not have revealed on load.
+      expect(screen.queryByTestId("board-simulator")).not.toBeInTheDocument();
+      expect(screen.queryByTestId("war-room-topics")).not.toBeInTheDocument();
+
+      // Scroll into view → the observer fires → the terminal boots and the content reveals.
+      await act(async () => {
+        observers[0].cb([{ isIntersecting: true } as IntersectionObserverEntry], observers[0] as unknown as IntersectionObserver);
+      });
+      await settle();
+      await waitFor(() => expect(screen.getByTestId("war-room-topics")).toBeInTheDocument());
+      expect(screen.getByTestId("board-simulator")).toBeInTheDocument();
+      expect(observers[0].disconnected).toBe(true); // play-once: disconnected on first intersection
+
+      // A second intersection (scroll away and back) must not tear the section down or re-boot it.
+      await act(async () => {
+        observers[0].cb([{ isIntersecting: true } as IntersectionObserverEntry], observers[0] as unknown as IntersectionObserver);
+      });
+      await settle();
+      expect(screen.getByTestId("war-room-topics")).toBeInTheDocument();
+    } finally {
+      vi.unstubAllGlobals(); // restore jsdom (no IntersectionObserver) for the other tests
+    }
   });
 });

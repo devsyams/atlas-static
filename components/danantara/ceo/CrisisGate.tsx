@@ -8,6 +8,7 @@ import type { CeoIssue } from "@/lib/danantara/ceo/types";
 import type { TopicsSummary } from "@/lib/danantara/ceo/topics-source";
 import type { DetectedThreat, ThreatDriver } from "@/lib/danantara/ceo/threats-source";
 import { biggestThreat, crisisIndex, CRISIS_LEVEL_LABEL, type CrisisLevel } from "@/lib/danantara/ceo/crisis";
+import { feedQuery } from "@/lib/danantara/feed-query";
 import { groupIssuesBySentiment } from "@/lib/danantara/ceo/engine";
 import { withAlpha } from "@/lib/danantara/ui";
 import { CrisisGauge } from "./CrisisGauge";
@@ -24,20 +25,25 @@ const FEAR: Record<CrisisLevel, { glow: number; breathe: boolean }> = {
   Severe: { glow: 0.46, breathe: true },
 };
 
-/** The client this board belongs to — shown as the brand line at the top. */
-const CLIENT_BRAND = "Danantara";
+/** Default client brand + logo — overridable via props for the BGN rebrand (A10 v5.6). */
+const DEFAULT_BRAND = "Danantara";
+const DEFAULT_LOGO = "/danantara.png";
+const DEFAULT_BRIEFING_HREF = "/danantara/brief";
 
 /**
- * Date-range presets for the dashboard window. Selection is UI-only for now (the
- * data wiring follows): the default is "Hari ini" so the board reads the issue as it
- * stands **now**, not a trailing 7-day average.
+ * Date-range presets for the dashboard window (A10 v7.0 — functional): each preset
+ * maps to the topics BFF's allowlisted `?days=` (1 = today only). Default **7 hari**
+ * (v8.0, client request; was 30). The threats + actor feeds are not date-range
+ * based, so the picker drives the `/topics` fetch only.
  */
 const DATE_RANGES = [
-  { key: "today", label: "Hari ini" },
-  { key: "7d", label: "7 hari" },
-  { key: "30d", label: "30 hari" },
+  { key: "today", label: "Hari ini", days: 1 },
+  { key: "7d", label: "7 hari", days: 7 },
+  { key: "30d", label: "30 hari", days: 30 },
 ] as const;
 type RangeKey = (typeof DATE_RANGES)[number]["key"];
+const DEFAULT_RANGE: RangeKey = "7d";
+const DEFAULT_DAYS = 7;
 
 const reducedMotion = () =>
   typeof window !== "undefined" && !!window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
@@ -77,7 +83,13 @@ export function CrisisGate({
   embedded = false,
   refreshNonce,
   onRefresh,
+  onRangeChange,
   mediaIntelligenceHref,
+  brand = DEFAULT_BRAND,
+  brandLogo = DEFAULT_LOGO,
+  briefingHref = DEFAULT_BRIEFING_HREF,
+  mock = false,
+  staticActors = false,
 }: {
   /** Sit inside a scrolling page (A13) instead of locking to one screen. */
   embedded?: boolean;
@@ -85,8 +97,20 @@ export function CrisisGate({
   refreshNonce?: number;
   /** When provided, the header Refresh delegates to the parent instead of fetching itself. */
   onRefresh?: () => void;
+  /** A13 (v7.0): notified with the new `days` when the date-range preset changes. */
+  onRangeChange?: (days: number) => void;
   /** Optional OpenGate-only shortcut shown before "View briefing". */
   mediaIntelligenceHref?: string;
+  /** Client brand shown as the gate title (A10 v5.6; since v9.2 the briefing link shows on every brand). */
+  brand?: string;
+  /** Logo asset for the brand. */
+  brandLogo?: string;
+  /** "View briefing" target (A10 v9.3) — /bgn/command points it at /bgn/briefing. */
+  briefingHref?: string;
+  /** Append ?mock=1 to the feed fetches — the scoped BGN demo mock (A10 v5.6). */
+  mock?: boolean;
+  /** Append ?static=1 to the actor-intelligence fetch only — the captured OpenGate roster (A10 v10.0). */
+  staticActors?: boolean;
 } = {}) {
 
   const [issues, setIssues] = useState<CeoIssue[]>([]);
@@ -95,10 +119,13 @@ export function CrisisGate({
   const [threatLoading, setThreatLoading] = useState(true);
   const [drivers, setDrivers] = useState<ThreatDriver[]>([]);
   const [rosterLoading, setRosterLoading] = useState(true);
-  const [range, setRange] = useState<RangeKey>("today");
+  const [range, setRange] = useState<RangeKey>(DEFAULT_RANGE);
   const [live, setLive] = useState<Live>("loading");
   const [refreshing, setRefreshing] = useState(false);
   const mountedRef = useRef(true);
+  // The selected window in days — read by every topics fetch (incl. Refresh/nonce
+  // paths) without re-creating the callbacks on a preset switch.
+  const daysRef = useRef<number>(DEFAULT_DAYS);
 
   useEffect(() => {
     mountedRef.current = true;
@@ -108,7 +135,7 @@ export function CrisisGate({
   }, []);
 
   const loadTopics = useCallback((fresh = false) => {
-    fetch(`/api/v1/danantara/topics${fresh ? "?fresh=1" : ""}`)
+    fetch(`/api/v1/danantara/topics${feedQuery({ fresh, mock, days: daysRef.current })}`)
       .then((r) => {
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
         return r.json();
@@ -125,13 +152,13 @@ export function CrisisGate({
       .finally(() => {
         if (mountedRef.current) setRefreshing(false);
       });
-  }, []);
+  }, [mock]);
 
   // The #1 detected threat (OpenGate `/threats`) powers the middle column's headline.
   // Independent of the topics feed; the middle column falls back to the /topics biggest
   // threat client-side when there's no incident.
   const loadThreats = useCallback((fresh = false) => {
-    fetch(`/api/v1/danantara/threats${fresh ? "?fresh=1" : ""}`)
+    fetch(`/api/v1/danantara/threats${feedQuery({ fresh, mock })}`)
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))))
       .then((j: { threat?: DetectedThreat | null }) => {
         if (mountedRef.current) setThreat(j.threat ?? null);
@@ -142,13 +169,13 @@ export function CrisisGate({
       .finally(() => {
         if (mountedRef.current) setThreatLoading(false);
       });
-  }, []);
+  }, [mock]);
 
   // The right "Aktor Penggerak" column always reads the /actor-intelligence roster
   // (v5.3) — it carries real profile pictures, so the actors stay consistent whether or
   // not a threat is live. Degrades to an empty list if the roster ever fails.
   const loadRoster = useCallback((fresh = false) => {
-    fetch(`/api/v1/danantara/actor-intelligence${fresh ? "?fresh=1" : ""}`)
+    fetch(`/api/v1/danantara/actor-intelligence${feedQuery({ fresh, mock, static: staticActors })}`)
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))))
       .then((j: { actors?: ThreatDriver[] }) => {
         if (mountedRef.current) setDrivers(Array.isArray(j.actors) ? j.actors : []);
@@ -159,7 +186,7 @@ export function CrisisGate({
       .finally(() => {
         if (mountedRef.current) setRosterLoading(false);
       });
-  }, []);
+  }, [mock, staticActors]);
 
   useEffect(() => {
     loadTopics(false);
@@ -221,15 +248,15 @@ export function CrisisGate({
           window, and the two actions. */}
       <header className="flex shrink-0 flex-wrap items-center justify-between gap-x-4 gap-y-3">
         <div className="flex items-center gap-3.5">
-          {/* Danantara brand logo — white backdrop so the black "D" mark reads on the
-              dark board (mirrors HeaderStrip). Scales with viewport for TV legibility. */}
+          {/* Brand logo — white backdrop so a dark mark reads on the dark board
+              (mirrors HeaderStrip). Scales with viewport for TV legibility. */}
           <span className="flex h-[clamp(2.75rem,6vh,4.25rem)] w-[clamp(2.75rem,6vh,4.25rem)] shrink-0 items-center justify-center overflow-hidden rounded-xl bg-white/95 p-1.5 shadow-sm">
-            <Image src="/danantara.png" alt="Danantara" width={68} height={68} priority className="h-full w-full object-contain" />
+            <Image src={brandLogo} alt={brand} width={68} height={68} priority className="h-full w-full object-contain" />
           </span>
           <div>
             <div className="flex items-center gap-2.5">
               <h1 className="text-[clamp(1.7rem,3.8vh,3rem)] font-extrabold leading-none tracking-tight text-foreground">
-                {CLIENT_BRAND}
+                {brand}
               </h1>
               {/* Live pulse — sits beside the brand name. */}
               <span className="relative flex h-2.5 w-2.5">
@@ -244,8 +271,8 @@ export function CrisisGate({
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          {/* Date-range window — default "Hari ini" (issue as it stands now). UI-only
-              for now; data wiring follows. */}
+          {/* Date-range window — default "30 hari"; drives the /topics `days=` window
+              (v7.0). The threats/actor feeds are not date-range based. */}
           <div
             className="inline-flex items-center gap-0.5 rounded-full border border-border bg-card/50 p-0.5"
             role="group"
@@ -258,7 +285,13 @@ export function CrisisGate({
                 <button
                   key={r.key}
                   type="button"
-                  onClick={() => setRange(r.key)}
+                  onClick={() => {
+                    if (range === r.key) return;
+                    setRange(r.key);
+                    daysRef.current = r.days;
+                    onRangeChange?.(r.days);
+                    loadTopics(false); // re-window the topics feed only
+                  }}
                   aria-pressed={active}
                   className={`rounded-full px-3 py-1.5 text-sm font-medium transition-colors ${
                     active
@@ -281,8 +314,11 @@ export function CrisisGate({
               <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
             </a>
           )}
+          {/* Shown on every brand since its data is the same shared feed (A10 v9.2);
+              the target follows briefingHref (v9.3) — /bgn/briefing on the BGN page,
+              /danantara/brief by default. */}
           <Link
-            href="/danantara/brief"
+            href={briefingHref}
             data-testid="crisis-detail-link"
             className="group inline-flex items-center gap-2 rounded-full border border-border bg-card/50 px-4 py-2 text-sm font-medium text-foreground transition-colors hover:border-primary/50 hover:text-primary"
           >

@@ -9,10 +9,10 @@
 import { mapActorRoster, type ActorRosterApiResponse } from "./ceo/actor-roster-source";
 import type { ThreatDriver } from "./ceo/threats-source";
 
-const DEFAULT_BASE = "https://api.garudaperkasa.io/api-nexorus/actor-intelligence";
 const REVALIDATE_S = 21_600; // 6 h — matches the topics/threats feeds
 
-/** Thrown when the feed has no API key configured (callers map this to 503). */
+/** Thrown when the feed has no base URL or API key configured (callers map this to 503).
+ * A10 v9.0: no hardcoded default base — the GARUDA host is dead (TrawlDeck cutover). */
 export class ActorRosterNotConfiguredError extends Error {}
 
 /**
@@ -22,9 +22,9 @@ export class ActorRosterNotConfiguredError extends Error {}
  * or a generic error on upstream failure / malformed payload.
  */
 export async function fetchActorRosterForCode(code: string, opts: { fresh?: boolean } = {}): Promise<ThreatDriver[]> {
-  const base = process.env.DANANTARA_ACTORS_API_BASE || DEFAULT_BASE;
+  const base = process.env.DANANTARA_ACTORS_API_BASE;
   const apiKey = process.env.DANANTARA_TOPICS_API_KEY;
-  if (!apiKey) throw new ActorRosterNotConfiguredError("Actor roster feed not configured.");
+  if (!base || !apiKey) throw new ActorRosterNotConfiguredError("Actor roster feed not configured.");
 
   const url = `${base}?${new URLSearchParams({ topic: code, api_key: apiKey }).toString()}`;
   const res = await fetch(url, opts.fresh ? { cache: "no-store" } : { next: { revalidate: REVALIDATE_S } });

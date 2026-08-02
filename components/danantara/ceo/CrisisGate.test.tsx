@@ -210,6 +210,39 @@ describe("CrisisGate (A10 — fear-first landing)", () => {
     expect(cls).not.toContain("28rem");
   });
 
+  // A10 v7.0 — the range picker is functional; default 7 hari since v8.0.
+  it("mounts with '7 hari' selected and fetches /topics with days=7 (AC7 v8.0, T24)", async () => {
+    stubFetch();
+    const fetchMock = globalThis.fetch as unknown as ReturnType<typeof vi.fn>;
+    render(<CrisisGate />);
+    await waitFor(() => expect(screen.getByTestId("crisis-gate")).toBeInTheDocument());
+
+    expect(screen.getByRole("button", { name: "7 hari" })).toHaveAttribute("aria-pressed", "true");
+    const topicUrls = fetchMock.mock.calls.map((c) => String(c[0])).filter((u) => u.includes("/topics"));
+    expect(topicUrls).toHaveLength(1);
+    expect(topicUrls[0]).toContain("days=7");
+  });
+
+  it("switching the preset refetches only /topics with the new days and fires onRangeChange (AC7 v7.0, T24)", async () => {
+    stubFetch();
+    const fetchMock = globalThis.fetch as unknown as ReturnType<typeof vi.fn>;
+    const onRangeChange = vi.fn();
+    render(<CrisisGate onRangeChange={onRangeChange} />);
+    await waitFor(() => expect(screen.getByTestId("crisis-gate")).toBeInTheDocument());
+
+    fetchMock.mockClear();
+    fireEvent.click(screen.getByRole("button", { name: "30 hari" }));
+
+    await waitFor(() => {
+      const urls = fetchMock.mock.calls.map((c) => String(c[0]));
+      expect(urls.filter((u) => u.includes("/topics") && u.includes("days=30"))).toHaveLength(1);
+      // The threats + actor feeds are not date-range based — a preset switch must not refetch them.
+      expect(urls.filter((u) => u.includes("/threats") || u.includes("/actor-intelligence"))).toHaveLength(0);
+    });
+    expect(onRangeChange).toHaveBeenCalledWith(30);
+    expect(screen.getByRole("button", { name: "30 hari" })).toHaveAttribute("aria-pressed", "true");
+  });
+
   it("refetches all three feeds when refreshNonce changes, and not on mount (T4 support)", async () => {
     stubFetch();
     const fetchMock = globalThis.fetch as unknown as ReturnType<typeof vi.fn>;
@@ -239,5 +272,74 @@ describe("CrisisGate (A10 — fear-first landing)", () => {
     expect(onRefresh).toHaveBeenCalledTimes(1);
     // The container owns the refetch (via the nonce) — the button must not also fetch.
     expect(fetchMock.mock.calls.filter((c) => String(c[0]).includes("fresh=1"))).toHaveLength(0);
+  });
+
+  // A10 v5.6 — BGN rebrand (opt-in brand/brandLogo/mock props).
+  it("keeps the Danantara brand, logo and briefing link by default (regression)", async () => {
+    stubFetch();
+    render(<CrisisGate />);
+    await waitFor(() => expect(screen.getByTestId("crisis-gate")).toBeInTheDocument());
+    expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("Danantara");
+    expect(screen.getByAltText("Danantara").getAttribute("src")).toContain("danantara.png");
+    expect(screen.getByTestId("crisis-detail-link")).toHaveAttribute("href", "/danantara/brief");
+  });
+
+  it("rebrands the gate name + logo and still shows the briefing link when a brand is set (A10 v9.2)", async () => {
+    stubFetch();
+    render(<CrisisGate brand="BGN" brandLogo="/bgn.png" />);
+    await waitFor(() => expect(screen.getByTestId("crisis-gate")).toBeInTheDocument());
+    expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("BGN");
+    expect(screen.getByAltText("BGN").getAttribute("src")).toContain("bgn.png");
+    // v9.2 (client request): the "View briefing" link is restored on the rebranded gate;
+    // it still points at the (Danantara-branded) /danantara/brief, whose data is already BGN.
+    expect(screen.getByTestId("crisis-detail-link")).toHaveAttribute("href", "/danantara/brief");
+  });
+
+  it("points the briefing link at briefingHref when provided (A10 v9.3)", async () => {
+    stubFetch();
+    render(<CrisisGate brand="BGN" brandLogo="/bgn.png" briefingHref="/bgn/briefing" />);
+    await waitFor(() => expect(screen.getByTestId("crisis-gate")).toBeInTheDocument());
+    expect(screen.getByTestId("crisis-detail-link")).toHaveAttribute("href", "/bgn/briefing");
+  });
+
+  it("appends mock=1 to all three feed fetches when mock is set (A10 v5.6)", async () => {
+    stubFetch();
+    render(<CrisisGate mock />);
+    const fetchMock = globalThis.fetch as unknown as ReturnType<typeof vi.fn>;
+    await waitFor(() => {
+      const feeds = fetchMock.mock.calls.map((c) => String(c[0])).filter((u) => u.includes("/api/v1/danantara/"));
+      expect(feeds).toHaveLength(3);
+      expect(feeds.every((u) => u.includes("mock=1"))).toBe(true);
+    });
+  });
+
+  it("omits mock=1 by default (regression)", async () => {
+    stubFetch();
+    render(<CrisisGate />);
+    const fetchMock = globalThis.fetch as unknown as ReturnType<typeof vi.fn>;
+    await waitFor(() => expect(fetchMock.mock.calls.length).toBeGreaterThanOrEqual(3));
+    expect(fetchMock.mock.calls.map((c) => String(c[0])).some((u) => u.includes("mock=1"))).toBe(false);
+  });
+
+  it("appends static=1 to only the actor-intelligence fetch when staticActors is set (A10 v10.0, T30)", async () => {
+    stubFetch();
+    render(<CrisisGate staticActors />);
+    const fetchMock = globalThis.fetch as unknown as ReturnType<typeof vi.fn>;
+    await waitFor(() => {
+      const feeds = fetchMock.mock.calls.map((c) => String(c[0])).filter((u) => u.includes("/api/v1/danantara/"));
+      expect(feeds).toHaveLength(3);
+      expect(feeds.filter((u) => u.includes("static=1"))).toEqual(
+        feeds.filter((u) => u.includes("/actor-intelligence")),
+      );
+      expect(feeds.some((u) => u.includes("/actor-intelligence") && u.includes("static=1"))).toBe(true);
+    });
+  });
+
+  it("omits static=1 by default (T30 regression)", async () => {
+    stubFetch();
+    render(<CrisisGate />);
+    const fetchMock = globalThis.fetch as unknown as ReturnType<typeof vi.fn>;
+    await waitFor(() => expect(fetchMock.mock.calls.length).toBeGreaterThanOrEqual(3));
+    expect(fetchMock.mock.calls.map((c) => String(c[0])).some((u) => u.includes("static=1"))).toBe(false);
   });
 });
