@@ -9,8 +9,10 @@
 import { mapActorRoster, type ActorRosterApiResponse } from "./ceo/actor-roster-source";
 import type { ThreatDriver } from "./ceo/threats-source";
 import { resolveFeedEndpoint, type FeedProduct } from "./feed-config";
+import { purgeFeedTag } from "./topics-feed";
 
 const REVALIDATE_S = 21_600; // 6 h — matches the topics/threats feeds
+const CACHE_TAG = "danantara-actors"; // A10 v11.1 — lets ?fresh=1 evict the cache, not just bypass it
 
 /** Thrown when the feed has no base URL or API key configured (callers map this to 503).
  * A10 v9.0: no hardcoded default base — the GARUDA host is dead (TrawlDeck cutover). */
@@ -33,8 +35,10 @@ export async function fetchActorRosterForCode(
   if (!endpoint) throw new ActorRosterNotConfiguredError("Actor roster feed not configured.");
   const { base, apiKey } = endpoint;
 
+  // A10 v11.1: a fresh read also EVICTS the 6 h cache (tag invalidation).
+  if (opts.fresh) purgeFeedTag(CACHE_TAG);
   const url = `${base}?${new URLSearchParams({ topic: code, api_key: apiKey }).toString()}`;
-  const res = await fetch(url, opts.fresh ? { cache: "no-store" } : { next: { revalidate: REVALIDATE_S } });
+  const res = await fetch(url, opts.fresh ? { cache: "no-store" } : { next: { revalidate: REVALIDATE_S, tags: [CACHE_TAG] } });
   if (!res.ok) throw new Error(`upstream ${res.status}`);
 
   const json = (await res.json()) as ActorRosterApiResponse;

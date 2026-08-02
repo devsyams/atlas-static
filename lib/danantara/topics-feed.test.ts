@@ -1,6 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { revalidateTag } from "next/cache";
 import type { TopicsApiResponse } from "./ceo/topics-source";
 import { FeedNotConfiguredError, fetchTopicsForCode } from "./topics-feed";
+
+vi.mock("next/cache", () => ({ revalidateTag: vi.fn() }));
 
 /** Two-topic payload. */
 const SAMPLE: TopicsApiResponse = {
@@ -90,7 +93,7 @@ describe("fetchTopicsForCode — stale/transient empty does not stick (A8 v4.1)"
 
     expect(result.issues).toHaveLength(2); // live data shown, not the cached empty
     const inits = fetchMock.mock.calls.map((c) => c[1]);
-    expect(inits[0]).toEqual({ next: { revalidate: 21600 } }); // primary path is cacheable (6 h)
+    expect(inits[0]).toEqual({ next: { revalidate: 21600, tags: ["danantara-topics"] } }); // primary path is cacheable (6 h)
     expect(inits).toContainEqual({ cache: "no-store" }); // a live (uncached) confirm happened
   });
 
@@ -129,7 +132,7 @@ describe("fetchTopicsForCode — stale/transient empty does not stick (A8 v4.1)"
 
     expect(result.issues).toHaveLength(2);
     expect(fetchMock).toHaveBeenCalledTimes(1); // no widening, no confirm on the happy path
-    expect(fetchMock.mock.calls[0][1]).toEqual({ next: { revalidate: 21600 } });
+    expect(fetchMock.mock.calls[0][1]).toEqual({ next: { revalidate: 21600, tags: ["danantara-topics"] } });
   });
 
   it("leaves a genuinely empty result empty (no fabricated data) after confirming live", async () => {
@@ -169,7 +172,7 @@ describe("fetchTopicsForCode — stale/transient empty does not stick (A8 v4.1)"
     const [firstUrl, secondUrl] = fetchMock.mock.calls.map((c) => String(c[0]));
     expect(secondUrl).toBe(firstUrl); // the confirm re-requests the SAME window
     const inits = fetchMock.mock.calls.map((c) => c[1]);
-    expect(inits[0]).toEqual({ next: { revalidate: 21600 } });
+    expect(inits[0]).toEqual({ next: { revalidate: 21600, tags: ["danantara-topics"] } });
     expect(inits[1]).toEqual({ cache: "no-store" });
   });
 
@@ -182,5 +185,32 @@ describe("fetchTopicsForCode — stale/transient empty does not stick (A8 v4.1)"
     expect(result.issues).toHaveLength(0);
     expect(fetchMock).toHaveBeenCalledTimes(2); // default + 28d widen only — no extra confirm
     for (const c of fetchMock.mock.calls) expect(c[1]).toEqual({ cache: "no-store" });
+  });
+});
+
+describe("fresh purges the data cache (A7 v51.0)", () => {
+  beforeEach(() => {
+    process.env.DANANTARA_INTELLIGENCE_BASE_URL = "https://api.example.io/api-nexorus";
+    process.env.DANANTARA_TOPICS_API_KEY = KEY;
+    vi.mocked(revalidateTag).mockClear();
+  });
+  afterEach(() => {
+    vi.restoreAllMocks();
+    delete process.env.DANANTARA_INTELLIGENCE_BASE_URL;
+    delete process.env.DANANTARA_TOPICS_API_KEY;
+  });
+
+  it("?fresh=1 invalidates the danantara-topics tag so the 6 h cache is evicted, not just bypassed", async () => {
+    vi.stubGlobal("fetch", seqFetch([SAMPLE]));
+    await fetchTopicsForCode("danantara_pertamina", { fresh: true, days: 7 });
+    expect(revalidateTag).toHaveBeenCalledWith("danantara-topics", "max");
+  });
+
+  it("a plain (cacheable) load does not invalidate, and its fetch carries the cache tag", async () => {
+    const fetchMock = seqFetch([SAMPLE]);
+    vi.stubGlobal("fetch", fetchMock);
+    await fetchTopicsForCode("danantara_pertamina", { days: 7 });
+    expect(revalidateTag).not.toHaveBeenCalled();
+    expect(fetchMock.mock.calls[0][1]).toEqual({ next: { revalidate: 21600, tags: ["danantara-topics"] } });
   });
 });

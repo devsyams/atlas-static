@@ -134,7 +134,7 @@ describe("GET /api/v1/danantara/topics (T20 / AC19)", () => {
     vi.stubGlobal("fetch", fetchMock);
 
     await GET(req(false));
-    expect(fetchMock.mock.calls[0][1]).toEqual({ next: { revalidate: 21600 } });
+    expect(fetchMock.mock.calls[0][1]).toEqual({ next: { revalidate: 21600, tags: ["danantara-topics"] } });
 
     await GET(req(true));
     expect(fetchMock.mock.calls[1][1]).toEqual({ cache: "no-store" });

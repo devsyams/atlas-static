@@ -36,10 +36,17 @@ const SAMPLE: TopicsApiResponse = {
   },
 };
 
-describe("rollingWindow (T19 / AC19)", () => {
+describe("rollingWindow (T19 / AC19; WIB since A7 v51.0)", () => {
   it("returns enddate = today and startdate = today − N days as ISO YYYY-MM-DD", () => {
     const today = new Date("2026-06-07T09:30:00Z");
     expect(rollingWindow(today, 28)).toEqual({ startdate: "2026-05-10", enddate: "2026-06-07" });
+  });
+
+  it("derives dates in WIB (UTC+7): a UTC evening is already the next WIB day", () => {
+    // 2026-08-02 18:00 UTC = 2026-08-03 01:00 WIB — the window must end on the 3rd,
+    // matching the engine snapshot the (WIB) client sees, not UTC's "yesterday".
+    const utcEvening = new Date("2026-08-02T18:00:00Z");
+    expect(rollingWindow(utcEvening, 6)).toEqual({ startdate: "2026-07-28", enddate: "2026-08-03" });
   });
 });
 

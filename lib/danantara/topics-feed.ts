@@ -8,6 +8,8 @@
  * 7 days). Server-only (reads `process.env`, calls fetch).
  */
 
+import { revalidateTag } from "next/cache";
+
 import {
   buildTopicsUrl,
   mapTopicsResponse,
@@ -19,6 +21,17 @@ import { resolveFeedEndpoint, type FeedProduct } from "./feed-config";
 
 const FALLBACK_DAYS = 28;
 const REVALIDATE_S = 21_600; // 6 hours (A7 v46.0, was 1 h since v36.0) — the upstream refreshes ~daily
+const CACHE_TAG = "danantara-topics"; // A7 v51.0 — lets ?fresh=1 evict the cache, not just bypass it
+
+/** Best-effort tag invalidation: a no-op outside a request context (unit tests).
+ * The `"max"` profile is Next 16's expire-now semantics for tag revalidation. */
+export function purgeFeedTag(tag: string): void {
+  try {
+    revalidateTag(tag, "max");
+  } catch {
+    /* not in a request scope — nothing cached to purge */
+  }
+}
 
 export type FeedResult = MappedTopics & { meta: TopicsApiResponse["meta"] };
 
@@ -34,7 +47,7 @@ async function fetchWindow(
   window?: { startdate: string; enddate: string },
 ): Promise<FeedResult> {
   const url = buildTopicsUrl(base, code, apiKey, window);
-  const res = await fetch(url, fresh ? { cache: "no-store" } : { next: { revalidate: REVALIDATE_S } });
+  const res = await fetch(url, fresh ? { cache: "no-store" } : { next: { revalidate: REVALIDATE_S, tags: [CACHE_TAG] } });
   if (!res.ok) throw new Error(`upstream ${res.status}`);
   const json = (await res.json()) as TopicsApiResponse;
   if (!json?.success || !Array.isArray(json?.data?.topics)) {
@@ -86,6 +99,10 @@ export async function fetchTopicsForCode(
   const { base, apiKey } = endpoint;
 
   const fresh = opts.fresh ?? false;
+
+  // A7 v51.0: a fresh read also EVICTS the 6 h cache (tag invalidation), so the
+  // next cacheable load refetches instead of reviving pre-refresh data.
+  if (fresh) purgeFeedTag(CACHE_TAG);
 
   // A7 v49.0: an explicit `days` window (1 = today only) is the caller's choice —
   // one request, no widening. The cacheable-empty live confirm still applies, on
