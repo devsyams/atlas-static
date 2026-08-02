@@ -147,18 +147,34 @@ describe("fetchTopicsForCode — stale/transient empty does not stick (A8 v4.1)"
     expect(inits).toContainEqual({ cache: "no-store" }); // it did try the live upstream
   });
 
-  it("days opt → one explicit-window fetch (start = today − (days−1)), no widening — T24 (A7 v49.0)", async () => {
+  it("preset days map to the engine's NAMED windows — window=, no date pair — T24 (A7 v52.0)", async () => {
+    // window and startdate/enddate are mutually exclusive upstream (422 if both),
+    // so the preset must send window INSTEAD of the dates.
+    for (const [days, named] of [[1, "today"], [7, "7d"], [30, "30d"]] as const) {
+      const fetchMock = seqFetch([SAMPLE]);
+      vi.stubGlobal("fetch", fetchMock);
+      const result = await fetchTopicsForCode("1", { days });
+      expect(result.issues).toHaveLength(2);
+      expect(fetchMock).toHaveBeenCalledTimes(1); // no widening on a chosen window
+      const params = new URL(String(fetchMock.mock.calls[0][0])).searchParams;
+      expect(params.get("window")).toBe(named);
+      expect(params.get("startdate")).toBeNull();
+      expect(params.get("enddate")).toBeNull();
+    }
+  });
+
+  it("a non-preset days value keeps the explicit WIB date-pair path (no window param)", async () => {
     const fetchMock = seqFetch([SAMPLE]);
     vi.stubGlobal("fetch", fetchMock);
 
-    const result = await fetchTopicsForCode("1", { days: 30 });
+    const result = await fetchTopicsForCode("1", { days: 14 });
 
     expect(result.issues).toHaveLength(2);
-    expect(fetchMock).toHaveBeenCalledTimes(1);
     const params = new URL(String(fetchMock.mock.calls[0][0])).searchParams;
+    expect(params.get("window")).toBeNull();
     const start = Date.parse(params.get("startdate") ?? "");
     const end = Date.parse(params.get("enddate") ?? "");
-    expect((end - start) / 86_400_000).toBe(29); // 30 days inclusive: today − 29 … today
+    expect((end - start) / 86_400_000).toBe(13); // 14 days inclusive
   });
 
   it("days + empty window stays empty — the chosen window is never widened, only live-confirmed — T24", async () => {

@@ -37,7 +37,7 @@
 | **A4** | AI assistant — copilot chat | 3-act | S5 | E7 | 1.0 | Planned |
 | **A5** | AI assistant — briefing, forecast & per-widget ask | 3-act | S5 | E7 | 1.0 | Planned |
 | **A6** | Real-time ticker, alerts & War Room | 3-act | S5–S6 | E8 | 1.0 | Planned |
-| **A7** | Danantara CEO Command Wall (zero-click demo) | 3-act | demo | — | 51.0 | Built |
+| **A7** | Danantara CEO Command Wall (zero-click demo) | 3-act | demo | — | 52.0 | Built |
 | **A8** | Per-BUMN CEO sentiment dashboards | 3-act | demo | — | 8.0 | Built |
 | **A9** | Communication Response Calculator | 3-act | demo | — | 3.1 | Built |
 | **A10** | Danantara Crisis Gate (fear-first executive landing) | 3-act | demo | — | 11.1 | Built |
@@ -206,3 +206,4 @@
 
 | 1.135 | 2026-08-02 | A10 → **v10.0 (MAJOR, client request)** + A13 → **v6.3 (MINOR)** — **captured static actor roster + actor detail popup on `/bgn/command`**: TrawlDeck actor enrichment is off (bare roster), so panel 3 opts onto a bundled capture of a real OpenGate MBG actor-intelligence run (`lib/bgn/mock/actor-intelligence.json`, 20 analysed actors) via a production-safe `?static=1` BFF branch + `staticActors` prop threading; actor cards become clickable → new `ActorDetailModal` with the full analysis sections. `/topics`+`/threats` stay live; `/danantara/krisis` untouched; reversible when enrichment lands |
 | 1.139 | 2026-08-03 | A7 → **v51.0 (MAJOR, client)** + A10 → **v11.1 (MINOR)** — **WIB feed windows + Refresh purges the feed caches**: `rollingWindow` derives dates in WIB (UTC+7) so atlas hits the same engine snapshot as the client's engine UI (UTC clock made "7 hari" end a day early each WIB evening — surfaced by a deleted AI topic lingering on /bgn/command only), and `?fresh=1` now `revalidateTag`s the `danantara-{topics,threats,actors}` Next-cache tags before its live read, so Refresh evicts the 6 h caches instead of only bypassing them |
+| 1.140 | 2026-08-03 | A7 → **v52.0 (MAJOR, client)** — **named engine windows for the presets**: the `?days=` presets (1/7/30) now send TrawlDeck PR #267's `?window=today|7d|30d` instead of an explicit date pair, hitting the **same named snapshot row the engine portal shows** (Asia/Jakarta-anchored, pre-warmed) instead of a never-self-refreshing custom-range row — /bgn/command AI Topics and the engine UI become snapshot-identical by construction (verified rank-for-rank incl. a suppression gap, exact `computed_at`). Deploy-order safe: the pre-#267 prod facade ignores the param |

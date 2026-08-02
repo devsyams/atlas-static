@@ -41,7 +41,9 @@ export interface TopicsApiResponse {
   status_code: number;
   // `idquery` (P8 v2.0) is the Nexorus monitoring-board id for this whole topic code —
   // one per response, used to deep-link into that board's Nexorus dashboard view.
-  meta: { topic: string; idquery?: string; startdate: string; enddate: string };
+  // `window` + `computed_at` are additive (TrawlDeck PR #267): echoed on the
+  // named-window path, absent/null on the date path or a pre-#267 facade.
+  meta: { topic: string; idquery?: string; startdate: string; enddate: string; window?: string | null; computed_at?: string };
   data: { topics: UpstreamTopic[]; summary: TopicsSummary; intent: TopicIntent[] };
 }
 
@@ -80,9 +82,14 @@ export function buildTopicsUrl(
   topicCode: string,
   apiKey: string,
   window?: { startdate: string; enddate: string },
+  named?: string,
 ): string {
   const qs = new URLSearchParams({ topic: topicCode, api_key: apiKey });
-  if (window) {
+  // A named engine window (TrawlDeck PR #267) and an explicit date pair are
+  // mutually exclusive upstream (422 if both) — named wins when given.
+  if (named) {
+    qs.set("window", named);
+  } else if (window) {
     qs.set("startdate", window.startdate);
     qs.set("enddate", window.enddate);
   }

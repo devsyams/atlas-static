@@ -106,16 +106,16 @@ describe("GET /api/v1/danantara/topics (T20 / AC19)", () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it("passes an allowlisted ?days= through as one explicit window (T24, v49.0)", async () => {
+  it("passes an allowlisted ?days= through as the engine's named window (T24, v52.0)", async () => {
     const fetchMock = vi.fn(async (_url: string) => new Response(JSON.stringify(SAMPLE), { status: 200 }));
     vi.stubGlobal("fetch", fetchMock);
 
     const res = await GET(reqWith("days=30"));
     expect(res.status).toBe(200);
-    expect(fetchMock).toHaveBeenCalledTimes(1); // explicit window: no widening retry
+    expect(fetchMock).toHaveBeenCalledTimes(1); // chosen window: no widening retry
     const url = String(fetchMock.mock.calls[0][0]);
-    expect(url).toContain("startdate=");
-    expect(url).toContain("enddate=");
+    expect(url).toContain("window=30d");
+    expect(url).not.toContain("startdate"); // mutually exclusive upstream (422 if both)
   });
 
   it("ignores an out-of-allowlist ?days= — the date-less default window applies (T24, v49.0)", async () => {
