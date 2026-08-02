@@ -89,6 +89,7 @@ export function CrisisGate({
   brandLogo = DEFAULT_LOGO,
   briefingHref = DEFAULT_BRIEFING_HREF,
   mock = false,
+  staticActors = false,
 }: {
   /** Sit inside a scrolling page (A13) instead of locking to one screen. */
   embedded?: boolean;
@@ -108,6 +109,8 @@ export function CrisisGate({
   briefingHref?: string;
   /** Append ?mock=1 to the feed fetches — the scoped BGN demo mock (A10 v5.6). */
   mock?: boolean;
+  /** Append ?static=1 to the actor-intelligence fetch only — the captured OpenGate roster (A10 v10.0). */
+  staticActors?: boolean;
 } = {}) {
 
   const [issues, setIssues] = useState<CeoIssue[]>([]);
@@ -172,7 +175,7 @@ export function CrisisGate({
   // (v5.3) — it carries real profile pictures, so the actors stay consistent whether or
   // not a threat is live. Degrades to an empty list if the roster ever fails.
   const loadRoster = useCallback((fresh = false) => {
-    fetch(`/api/v1/danantara/actor-intelligence${feedQuery({ fresh, mock })}`)
+    fetch(`/api/v1/danantara/actor-intelligence${feedQuery({ fresh, mock, static: staticActors })}`)
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))))
       .then((j: { actors?: ThreatDriver[] }) => {
         if (mountedRef.current) setDrivers(Array.isArray(j.actors) ? j.actors : []);
@@ -183,7 +186,7 @@ export function CrisisGate({
       .finally(() => {
         if (mountedRef.current) setRosterLoading(false);
       });
-  }, [mock]);
+  }, [mock, staticActors]);
 
   useEffect(() => {
     loadTopics(false);

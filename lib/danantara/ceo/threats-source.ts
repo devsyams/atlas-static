@@ -78,6 +78,11 @@ export interface ThreatDriver {
   engagement: number; // this account's loudest post engagement (the ranking key)
   note: string; // AI one-line read of who they are
   avatarUrl?: string; // profile image (base64 data-URI) — present for the roster fallback, absent for /threats posts
+  // v10.0 (captured static roster) — optional presentation extras; absent on the live feeds.
+  displayName?: string;
+  sentiment?: number; // −10..10
+  reach?: string; // "62.0/100"
+  intel?: import("./actor-intel").ActorIntel; // full analysis → card becomes clickable (popup)
 }
 
 /** The #1 detected threat — the middle-column "Ancaman Utama" read. */

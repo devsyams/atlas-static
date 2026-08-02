@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { Bot, ShieldAlert, UserRound, Users } from "lucide-react";
+import { Bot, ChevronRight, Flame, Newspaper, ShieldAlert, UserRound, Users } from "lucide-react";
 import type { ThreatDriver } from "@/lib/danantara/ceo/threats-source";
 import { cn } from "@/lib/utils";
+import { ActorDetailModal } from "./ActorDetailModal";
 
 /** Risk chip per level — how dangerous this account is to the narrative. */
 const RISK_META: Record<string, { label: string; cls: string; dot: string }> = {
@@ -50,40 +51,102 @@ function Avatar({ handle, avatarUrl }: { handle: string; avatarUrl?: string }) {
   );
 }
 
-/** One compact driver card — used in both the Human and Bot bands. */
-function DriverCard({ d }: { d: ThreatDriver }) {
-  const rm = RISK_META[d.riskLevel] ?? RISK_META.low;
+/** Ring colour per risk level — worn by the avatar so risk reads without a chip. */
+const RISK_RING: Record<string, string> = {
+  high: "ring-destructive/70",
+  medium: "ring-warning/70",
+  low: "ring-border",
+};
+
+/** Sentiment −10..+10 → the card's big signal number + a mini meter. */
+function SentimentSignal({ value }: { value: number }) {
+  const negative = value < 0;
   return (
-    <div className={cn("rounded-2xl border bg-background/40 p-3.5", d.bot ? "border-warning/40" : "border-border/50")}>
+    <div className="shrink-0 text-right">
+      <div className={cn("text-2xl font-extrabold leading-none tabular-nums", negative ? "text-destructive" : "text-success")}>
+        {value > 0 ? `+${value.toFixed(1)}` : value.toFixed(1)}
+      </div>
+      <div className="mt-1.5 ml-auto h-1 w-14 overflow-hidden rounded-full bg-muted/40">
+        <div
+          className={cn("h-full rounded-full", negative ? "bg-destructive" : "bg-success")}
+          style={{ width: `${Math.min(100, (Math.abs(value) / 10) * 100)}%`, marginLeft: "auto" }}
+        />
+      </div>
+      <div className="mt-1 text-[9px] font-semibold uppercase tracking-[0.2em] text-muted-foreground/70">Sentimen</div>
+    </div>
+  );
+}
+
+/** One compact driver card — used in both the Human and Bot bands. When the driver
+ *  carries captured `intel` (A10 v10.0) the card is a real button opening the detail
+ *  popup; live-feed drivers (no `intel`) stay plain, non-clickable cards. */
+function DriverCard({ d, onSelect }: { d: ThreatDriver; onSelect?: (d: ThreatDriver) => void }) {
+  const rm = RISK_META[d.riskLevel] ?? RISK_META.low;
+  const clickable = !!d.intel && !!onSelect;
+  const Wrapper = clickable ? "button" : "div";
+  return (
+    <Wrapper
+      {...(clickable ? { type: "button" as const, onClick: () => onSelect?.(d) } : {})}
+      className={cn(
+        "group block w-full rounded-2xl border bg-background/40 p-3.5 text-left",
+        d.bot ? "border-warning/40" : "border-border/50",
+        clickable && "cursor-pointer transition-all duration-150 hover:-translate-y-0.5 hover:border-primary/50 hover:bg-background/70 hover:shadow-lg motion-reduce:transition-none motion-reduce:hover:translate-y-0",
+      )}
+    >
       <div className="flex items-start gap-3">
-        <Avatar handle={d.handle} avatarUrl={d.avatarUrl} />
+        <div className={cn("shrink-0 rounded-lg ring-2 ring-offset-2 ring-offset-background", RISK_RING[d.riskLevel] ?? RISK_RING.low)}>
+          <Avatar handle={d.handle} avatarUrl={d.avatarUrl} />
+        </div>
         <div className="min-w-0 flex-1">
           {/* Long usernames wrap to a new line rather than truncating with an ellipsis. */}
           <span className="block break-words text-lg font-bold leading-tight text-foreground">@{d.handle}</span>
-          {d.platform && <div className="truncate text-sm capitalize text-muted-foreground">{d.platform}</div>}
+          {d.displayName && d.displayName.toLowerCase() !== d.handle.toLowerCase() && (
+            <div className="truncate text-sm text-muted-foreground">{d.displayName}</div>
+          )}
+          {!d.intel && d.platform && <div className="truncate text-sm capitalize text-muted-foreground">{d.platform}</div>}
+          {/* Captured classification (A10 v10.0) — the roster's own actor type, e.g. Influencer/News Media. */}
+          {d.intel?.classification && (
+            <div className="mt-1 truncate text-[11px] font-semibold uppercase tracking-wide text-muted-foreground/90">
+              {d.intel.classification}
+            </div>
+          )}
         </div>
-      </div>
-
-      <div className="mt-3 flex flex-wrap items-center gap-2 text-sm font-medium">
-        <span className={cn("inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1", rm.cls)}>
-          <span className={cn("h-2 w-2 rounded-full", rm.dot)} />
-          {rm.label}
-        </span>
-        {/* credibility 0 + empty classification = the upstream's actor-intel
-            enrichment hasn't run for this account (TrawlDeck flag off) — hide the
-            chip rather than show "0/10" as if it were a real score. A scored 0
-            (classification present) still renders. */}
-        {(d.credibility > 0 || d.accountType !== "") && (
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-muted/30 px-2.5 py-1 text-muted-foreground">
-            <ShieldAlert className="h-4 w-4" /> Kredibilitas {d.credibility}/10
+        {typeof d.sentiment === "number" ? (
+          <SentimentSignal value={d.sentiment} />
+        ) : (
+          <span className={cn("inline-flex shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-1 text-sm font-medium", rm.cls)}>
+            <span className={cn("h-2 w-2 rounded-full", rm.dot)} />
+            {rm.label}
           </span>
         )}
       </div>
 
-      <div className="mt-2.5 flex items-center gap-1.5 text-sm text-muted-foreground">
-        <Users className="h-4 w-4 shrink-0" />
-        <span className="font-semibold tabular-nums text-foreground/80">{fmtFollowers(d.followers)}</span>
-        <span>pengikut</span>
+      {/* One quiet stat strip instead of a chip pile: audience first, then the scores. */}
+      <div className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] text-muted-foreground">
+        <span className="inline-flex items-center gap-1.5">
+          <Users className="h-4 w-4 shrink-0" />
+          <span className="font-semibold tabular-nums text-foreground/80">{fmtFollowers(d.followers)}</span> pengikut
+        </span>
+        {typeof d.intel?.influence === "number" && d.intel.influence > 0 && (
+          <>
+            <span aria-hidden className="text-border">·</span>
+            <span className="inline-flex items-center gap-1.5">
+              <Flame className="h-4 w-4 shrink-0" /> Pengaruh <span className="font-semibold tabular-nums text-foreground/80">{d.intel.influence}/10</span>
+            </span>
+          </>
+        )}
+        {/* credibility 0 + empty classification = the upstream's actor-intel
+            enrichment hasn't run for this account (TrawlDeck flag off) — hide the
+            stat rather than show "0/10" as if it were a real score. A scored 0
+            (classification present) still renders. */}
+        {(d.credibility > 0 || d.accountType !== "") && (
+          <>
+            <span aria-hidden className="text-border">·</span>
+            <span className="inline-flex items-center gap-1.5">
+              <ShieldAlert className="h-4 w-4 shrink-0" /> Kredibilitas <span className="font-semibold tabular-nums text-foreground/80">{d.credibility}/10</span>
+            </span>
+          </>
+        )}
       </div>
 
       {d.note && <p className="mt-2.5 text-sm leading-relaxed text-muted-foreground">{d.note}</p>}
@@ -93,7 +156,13 @@ function DriverCard({ d }: { d: ThreatDriver }) {
           <Bot className="h-4 w-4" /> Provokator / bot
         </div>
       )}
-    </div>
+
+      {clickable && (
+        <div className="mt-2.5 flex items-center justify-end gap-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/0 transition-colors group-hover:text-primary motion-reduce:transition-none">
+          Lihat detail <ChevronRight className="h-3.5 w-3.5" />
+        </div>
+      )}
+    </Wrapper>
   );
 }
 
@@ -116,6 +185,25 @@ function EmptyState({ children }: { children: string }) {
   return <p className="text-sm text-muted-foreground/70">{children}</p>;
 }
 
+/** Actor-type groups (A10 v10.0) — derived from the captured classification. */
+const TYPE_ORDER = ["influencer", "media", "person", "other"] as const;
+type ActorType = (typeof TYPE_ORDER)[number];
+const TYPE_META: Record<ActorType, { label: string; icon: typeof UserRound }> = {
+  influencer: { label: "Influencer", icon: Flame },
+  media: { label: "News Media", icon: Newspaper },
+  person: { label: "Real Person", icon: UserRound },
+  other: { label: "Lainnya", icon: Users },
+};
+
+/** "Influencer/News Media" → influencer · "Real Person/Complainer" → person · "News Media" → media. */
+function actorTypeOf(d: ThreatDriver): ActorType {
+  const c = (d.intel?.classification ?? "").toLowerCase();
+  if (c.includes("influencer")) return "influencer";
+  if (c.includes("real person")) return "person";
+  if (c.includes("media")) return "media";
+  return "other";
+}
+
 /**
  * Right column of the Crisis Gate (A10 v5.0, v5.2) — the accounts to watch. When a
  * threat is detected, these are its **real drivers** (from `/threats`); in calm periods
@@ -133,10 +221,15 @@ export function ThreatActors({
   caption: string;
   loading?: boolean;
 }) {
-  // Show the two strongest of each kind — a balanced 2 human + 2 bot read.
-  const humans = drivers.filter((d) => !d.bot).slice(0, 2);
-  const bots = drivers.filter((d) => d.bot).slice(0, 2);
+  // Captured static roster (A10 v10.0): every driver carries `intel`, so the panel
+  // shows ALL actors as one list, each labelled with its captured classification —
+  // the static Human/Bot bands only apply to the live (intel-less) feed, where the
+  // classification isn't available and we show the two strongest of each kind.
+  const staticRoster = drivers.length > 0 && drivers.every((d) => d.intel);
+  const humans = staticRoster ? drivers : drivers.filter((d) => !d.bot).slice(0, 2);
+  const bots = staticRoster ? [] : drivers.filter((d) => d.bot).slice(0, 2);
   const shown = humans.length + bots.length;
+  const [selected, setSelected] = useState<ThreatDriver | null>(null);
 
   return (
     // On lg the three columns share one auto-sized grid row, so a tall column stretches
@@ -166,6 +259,33 @@ export function ThreatActors({
           <p className="mt-4 text-sm text-muted-foreground">Belum ada aktor penggerak teridentifikasi.</p>
         ) : (
           <div className="mt-4 min-h-0 flex-1 overflow-auto scrollbar-thin pr-1">
+            {staticRoster ? (
+              /* Captured roster: grouped by actor type (from each actor's own captured
+                 classification); capture order inside a group still floats the urgent
+                 actors to the top. */
+              <div className="space-y-4 rounded-3xl border border-border/60 bg-background/20 p-4 shadow-sm md:p-5">
+                {TYPE_ORDER.map((type) => {
+                  const inType = humans.filter((d) => actorTypeOf(d) === type);
+                  if (inType.length === 0) return null;
+                  const tm = TYPE_META[type];
+                  return (
+                    <section key={type} data-testid={`actor-group-${type}`}>
+                      <div className="mb-2.5 flex items-center gap-2 text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground">
+                        <tm.icon className="h-4 w-4 shrink-0" />
+                        {tm.label}
+                        <span className="opacity-60">({inType.length})</span>
+                        <span className="h-px flex-1 bg-border/60" aria-hidden />
+                      </div>
+                      <div className="space-y-3">
+                        {inType.map((d) => (
+                          <DriverCard key={d.handle} d={d} onSelect={setSelected} />
+                        ))}
+                      </div>
+                    </section>
+                  );
+                })}
+              </div>
+            ) : (
             <div className="overflow-hidden rounded-3xl border border-border/60 bg-background/20 shadow-sm">
               <section className="border-b border-border/60 px-4 py-4 md:px-5">
                 <div className="mb-3 flex items-center justify-between gap-3">
@@ -175,7 +295,7 @@ export function ThreatActors({
                   {humans.length === 0 ? (
                     <EmptyState>—</EmptyState>
                   ) : (
-                    humans.map((d) => <DriverCard key={d.handle} d={d} />)
+                    humans.map((d) => <DriverCard key={d.handle} d={d} onSelect={setSelected} />)
                   )}
                 </div>
               </section>
@@ -188,14 +308,17 @@ export function ThreatActors({
                   {bots.length === 0 ? (
                     <EmptyState>Tidak ada akun terindikasi.</EmptyState>
                   ) : (
-                    bots.map((d) => <DriverCard key={d.handle} d={d} />)
+                    bots.map((d) => <DriverCard key={d.handle} d={d} onSelect={setSelected} />)
                   )}
                 </div>
               </section>
             </div>
+            )}
           </div>
         )}
       </div>
+
+      {selected && <ActorDetailModal actor={selected} onClose={() => setSelected(null)} />}
     </div>
   );
 }

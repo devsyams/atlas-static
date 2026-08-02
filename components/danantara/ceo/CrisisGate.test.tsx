@@ -320,4 +320,26 @@ describe("CrisisGate (A10 — fear-first landing)", () => {
     await waitFor(() => expect(fetchMock.mock.calls.length).toBeGreaterThanOrEqual(3));
     expect(fetchMock.mock.calls.map((c) => String(c[0])).some((u) => u.includes("mock=1"))).toBe(false);
   });
+
+  it("appends static=1 to only the actor-intelligence fetch when staticActors is set (A10 v10.0, T30)", async () => {
+    stubFetch();
+    render(<CrisisGate staticActors />);
+    const fetchMock = globalThis.fetch as unknown as ReturnType<typeof vi.fn>;
+    await waitFor(() => {
+      const feeds = fetchMock.mock.calls.map((c) => String(c[0])).filter((u) => u.includes("/api/v1/danantara/"));
+      expect(feeds).toHaveLength(3);
+      expect(feeds.filter((u) => u.includes("static=1"))).toEqual(
+        feeds.filter((u) => u.includes("/actor-intelligence")),
+      );
+      expect(feeds.some((u) => u.includes("/actor-intelligence") && u.includes("static=1"))).toBe(true);
+    });
+  });
+
+  it("omits static=1 by default (T30 regression)", async () => {
+    stubFetch();
+    render(<CrisisGate />);
+    const fetchMock = globalThis.fetch as unknown as ReturnType<typeof vi.fn>;
+    await waitFor(() => expect(fetchMock.mock.calls.length).toBeGreaterThanOrEqual(3));
+    expect(fetchMock.mock.calls.map((c) => String(c[0])).some((u) => u.includes("static=1"))).toBe(false);
+  });
 });
