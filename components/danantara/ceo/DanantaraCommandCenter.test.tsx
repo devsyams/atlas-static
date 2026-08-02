@@ -217,6 +217,15 @@ describe("DanantaraCommandCenter (A13 — one-page)", () => {
     });
   });
 
+  // A13 v6.2 — the BGN page repoints the gate's "View briefing" at /bgn/briefing.
+  it("threads briefingHref to the gate's View briefing link (A13 v6.2)", async () => {
+    stubFetch();
+    render(<DanantaraCommandCenter brand="BGN" brandLogo="/bgn.png" briefingHref="/bgn/briefing" />);
+    await waitFor(() =>
+      expect(screen.getByTestId("crisis-detail-link")).toHaveAttribute("href", "/bgn/briefing"),
+    );
+  });
+
   it("defaults to Danantara branding and sends no mock=1 (regression)", async () => {
     const fetchMock = stubFetch();
     render(<DanantaraCommandCenter />);

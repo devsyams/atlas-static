@@ -75,6 +75,13 @@ describe("DanantaraBrief (A11 — Executive Briefing)", () => {
     expect(back).toHaveAttribute("href", "/danantara/krisis");
   });
 
+  it("points the back arrow at backHref when provided (A11 v3.0 — /bgn/briefing)", async () => {
+    stubFetch();
+    render(<DanantaraBrief backHref="/bgn/command" />);
+    const back = await screen.findByTestId("brief-back-link");
+    expect(back).toHaveAttribute("href", "/bgn/command");
+  });
+
   it("hides the 7-day sentiment momentum (AC7 currently disabled)", async () => {
     stubFetch();
     render(<DanantaraBrief />);

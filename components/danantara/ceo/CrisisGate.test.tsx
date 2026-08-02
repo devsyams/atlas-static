@@ -295,6 +295,13 @@ describe("CrisisGate (A10 — fear-first landing)", () => {
     expect(screen.getByTestId("crisis-detail-link")).toHaveAttribute("href", "/danantara/brief");
   });
 
+  it("points the briefing link at briefingHref when provided (A10 v9.3)", async () => {
+    stubFetch();
+    render(<CrisisGate brand="BGN" brandLogo="/bgn.png" briefingHref="/bgn/briefing" />);
+    await waitFor(() => expect(screen.getByTestId("crisis-gate")).toBeInTheDocument());
+    expect(screen.getByTestId("crisis-detail-link")).toHaveAttribute("href", "/bgn/briefing");
+  });
+
   it("appends mock=1 to all three feed fetches when mock is set (A10 v5.6)", async () => {
     stubFetch();
     render(<CrisisGate mock />);
