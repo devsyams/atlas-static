@@ -101,6 +101,23 @@ describe("GET /api/v1/danantara/actor-intelligence (T21 / AC11)", () => {
     expect(JSON.stringify(body)).not.toContain(KEY);
   });
 
+  it("serves the captured OpenGate roster on ?static=1 without hitting the upstream (A10 v10.0 / AC12, prod-safe)", async () => {
+    vi.stubEnv("NODE_ENV", "production");
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+    try {
+      const res = await GET(new Request("http://localhost/api/v1/danantara/actor-intelligence?static=1"));
+      expect(res.status).toBe(200);
+      const body = await res.json();
+      expect(body.actors).toHaveLength(10); // captured Twitter/X actors
+      expect(body.actors[0].handle).toBe("LambeSahamjja");
+      expect(body.actors[0].intel.riskAssessment).toBeTruthy(); // popup payload rides along
+      expect(fetchMock).not.toHaveBeenCalled();
+    } finally {
+      vi.unstubAllEnvs();
+    }
+  });
+
   it("serves the BGN mock roster on ?mock=1 without hitting the upstream (A13 v4.0, prod-safe)", async () => {
     vi.stubEnv("NODE_ENV", "production");
     const fetchMock = vi.fn();
