@@ -23,6 +23,9 @@ const FALLBACK_DAYS = 28;
 const REVALIDATE_S = 21_600; // 6 hours (A7 v46.0, was 1 h since v36.0) — the upstream refreshes ~daily
 const CACHE_TAG = "danantara-topics"; // A7 v51.0 — lets ?fresh=1 evict the cache, not just bypass it
 
+/** Preset `?days=` → the engine's named window (A7 v52.0 / TrawlDeck PR #267). */
+const NAMED_WINDOWS: Record<number, string> = { 1: "today", 7: "7d", 30: "30d" };
+
 /** Best-effort tag invalidation: a no-op outside a request context (unit tests).
  * The `"max"` profile is Next 16's expire-now semantics for tag revalidation. */
 export function purgeFeedTag(tag: string): void {
@@ -45,8 +48,9 @@ async function fetchWindow(
   apiKey: string,
   fresh: boolean,
   window?: { startdate: string; enddate: string },
+  named?: string,
 ): Promise<FeedResult> {
-  const url = buildTopicsUrl(base, code, apiKey, window);
+  const url = buildTopicsUrl(base, code, apiKey, window, named);
   const res = await fetch(url, fresh ? { cache: "no-store" } : { next: { revalidate: REVALIDATE_S, tags: [CACHE_TAG] } });
   if (!res.ok) throw new Error(`upstream ${res.status}`);
   const json = (await res.json()) as TopicsApiResponse;
@@ -104,15 +108,20 @@ export async function fetchTopicsForCode(
   // next cacheable load refetches instead of reviving pre-refresh data.
   if (fresh) purgeFeedTag(CACHE_TAG);
 
-  // A7 v49.0: an explicit `days` window (1 = today only) is the caller's choice —
-  // one request, no widening. The cacheable-empty live confirm still applies, on
-  // the same window.
+  // A7 v49.0/v52.0: a `days` window is the caller's choice — one request, no
+  // widening. The presets (1/7/30) map to the engine's NAMED windows (TrawlDeck
+  // PR #267): the facade then serves the SAME Asia/Jakarta-anchored snapshot row
+  // the engine portal shows, instead of a never-self-refreshing custom-range row
+  // (a pre-#267 facade ignores the param and serves its default window — soft
+  // degradation until the engine deploy lands). Non-preset values keep the
+  // explicit WIB date pair. The cacheable-empty live confirm applies to both.
   if (opts.days) {
-    const window = rollingWindow(new Date(), opts.days - 1);
-    const result = await fetchWindow(base, code, apiKey, fresh, window);
+    const named = NAMED_WINDOWS[opts.days];
+    const window = named ? undefined : rollingWindow(new Date(), opts.days - 1);
+    const result = await fetchWindow(base, code, apiKey, fresh, window, named);
     if (!fresh && result.issues.length === 0) {
       try {
-        const live = await fetchWindow(base, code, apiKey, true, window);
+        const live = await fetchWindow(base, code, apiKey, true, window, named);
         if (live.issues.length > 0) return live;
       } catch {
         /* keep the cached empty rather than failing the request */
