@@ -108,7 +108,7 @@ export function CounterTopicCard({
             title="Open WhatsApp with this counter-narrative pre-filled"
             className="mt-auto flex w-full items-center justify-center gap-2 rounded-lg bg-[#25D366] px-4 py-2 text-base font-bold text-[#06251a] shadow-sm transition hover:brightness-105"
           >
-            <MessageCircle className="h-5 w-5" /> Send to war room
+            <MessageCircle className="h-5 w-5" /> Send to Team
           </a>
         </div>
       </div>

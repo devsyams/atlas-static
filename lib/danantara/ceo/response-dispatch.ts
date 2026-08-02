@@ -59,8 +59,6 @@ export function buildResponseBrief(topic: ResponseTopic, plan: CounterNoisePlan)
     `• KOL posts: ${plan.kol.toLocaleString("en-US")}`,
     `• Homeless posts: ${plan.homeless.toLocaleString("en-US")}`,
     `Total: ${plan.counterActions.toLocaleString("en-US")} counter-actions`,
-    "",
-    "— Danantara CEO Command",
   );
   return lines.join("\n");
 }
@@ -87,7 +85,6 @@ export function buildWarRoomBrief(topic: CounterNarrativeTopic, plan: CounterNar
     ...plan.channels.map((c) => `• ${CHANNEL_LABEL[c.channel]}: ${c.posts.toLocaleString("en-US")}`),
     "",
     "The PR/media team will craft the final channel copy.",
-    "— Danantara CEO Command",
   ];
 
   return lines.join("\n");
