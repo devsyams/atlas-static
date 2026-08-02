@@ -7,6 +7,7 @@
  */
 
 import { mapThreatsResponse, type MappedThreats, type ThreatsApiResponse } from "./ceo/threats-source";
+import { resolveFeedEndpoint, type FeedProduct } from "./feed-config";
 
 const REVALIDATE_S = 21_600; // 6 h — matches the topics feed (the upstream refreshes ~daily)
 
@@ -41,10 +42,14 @@ async function fetchOnce(base: string, code: string, apiKey: string, fresh: bool
  * against the live (no-store) upstream and prefer any live threats — a transient hollow
  * self-heals on the next load instead of sticking. A genuinely calm feed stays empty.
  */
-export async function fetchThreatsForCode(code: string, opts: { fresh?: boolean } = {}): Promise<ThreatsResult> {
-  const base = process.env.DANANTARA_THREATS_API_BASE;
-  const apiKey = process.env.DANANTARA_TOPICS_API_KEY;
-  if (!base || !apiKey) throw new ThreatsNotConfiguredError("Threats feed not configured.");
+export async function fetchThreatsForCode(
+  code: string,
+  opts: { fresh?: boolean; product?: FeedProduct } = {},
+): Promise<ThreatsResult> {
+  // Per-product base+key (A10 v10.0): Danantara by default, BGN on `?bgn=1`.
+  const endpoint = resolveFeedEndpoint(opts.product ?? "danantara", "threats");
+  if (!endpoint) throw new ThreatsNotConfiguredError("Threats feed not configured.");
+  const { base, apiKey } = endpoint;
 
   const fresh = opts.fresh ?? false;
   const result = await fetchOnce(base, code, apiKey, fresh);

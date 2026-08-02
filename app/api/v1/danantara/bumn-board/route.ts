@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { BUMN_REGISTRY } from "@/lib/bumn/registry";
+import { MOCK_DANANTARA_BUMN } from "@/lib/danantara/mock/fixtures";
 import { buildBumnRow } from "@/lib/danantara/ceo/bumn-board";
 import { fetchTopicsForCode, FeedNotConfiguredError } from "@/lib/danantara/topics-feed";
 
@@ -36,7 +37,15 @@ async function mapPool<T, R>(items: T[], limit: number, fn: (item: T) => Promise
 }
 
 export async function GET(req: Request) {
-  const fresh = new URL(req.url).searchParams.get("fresh") === "1";
+  const params = new URL(req.url).searchParams;
+  const fresh = params.get("fresh") === "1";
+
+  // Scoped demo mock (?mock=1): the bundled Danantara BUMN board (A7 v50.2). The board is
+  // Danantara-only (/bgn/command doesn't render it), so no product branch is needed.
+  // Production-safe — bundled demo data, no secret, no upstream fan-out.
+  if (params.get("mock") === "1") {
+    return NextResponse.json(MOCK_DANANTARA_BUMN);
+  }
 
   let configured = true;
   const results = await mapPool(BUMN_REGISTRY, FANOUT_CONCURRENCY, async (b) => {

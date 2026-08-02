@@ -24,6 +24,7 @@ export function DanantaraCommandCenter({
   brandLogo = "/danantara.png",
   briefingHref,
   mock = false,
+  bgn = false,
 }: {
   mediaIntelligenceHref?: string;
   /** Client brand shown across the three panes (A13 v4.0; default Danantara, "BGN" on /bgn/command). */
@@ -34,6 +35,8 @@ export function DanantaraCommandCenter({
   briefingHref?: string;
   /** Serve every pane from the scoped BGN demo fixtures via `?mock=1` (A13 v4.0). */
   mock?: boolean;
+  /** Route every pane at the BGN product via `?bgn=1` (A13 v6.3; /bgn/command opts in). */
+  bgn?: boolean;
 } = {}) {
   // Bumped by the gate's header Refresh; both blocks refetch on the change. The gate
   // delegates rather than fetching directly, so each feed is pulled exactly once.
@@ -56,6 +59,7 @@ export function DanantaraCommandCenter({
         brandLogo={brandLogo}
         briefingHref={briefingHref}
         mock={mock}
+        bgn={bgn}
       />
       <CeoCommand
         showHeader={false}
@@ -63,9 +67,10 @@ export function DanantaraCommandCenter({
         refreshNonce={refreshNonce}
         brand={brand}
         mock={mock}
+        bgn={bgn}
         windowDays={windowDays}
       />
-      <CounterNarrativeWarRoom refreshNonce={refreshNonce} brand={brand} mock={mock} windowDays={windowDays} />
+      <CounterNarrativeWarRoom refreshNonce={refreshNonce} brand={brand} mock={mock} bgn={bgn} windowDays={windowDays} />
     </div>
   );
 }

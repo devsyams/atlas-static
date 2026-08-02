@@ -43,13 +43,15 @@ const KEY = "SECRET-KEY";
 
 describe("fetchThreatsForCode (A10 v5.0)", () => {
   beforeEach(() => {
-    process.env.DANANTARA_THREATS_API_BASE = "https://api.example.io/threats";
+    process.env.DANANTARA_INTELLIGENCE_BASE_URL = "https://api.example.io";
     process.env.DANANTARA_TOPICS_API_KEY = KEY;
   });
   afterEach(() => {
     vi.restoreAllMocks();
     delete process.env.DANANTARA_TOPICS_API_KEY;
-    delete process.env.DANANTARA_THREATS_API_BASE;
+    delete process.env.DANANTARA_INTELLIGENCE_BASE_URL;
+    delete process.env.BGN_INTELLIGENCE_BASE_URL;
+    delete process.env.BGN_INTELLIGENCE_API_KEY;
   });
 
   it("throws ThreatsNotConfiguredError when no api key is configured (503 path)", async () => {
@@ -60,12 +62,33 @@ describe("fetchThreatsForCode (A10 v5.0)", () => {
   it("throws ThreatsNotConfiguredError when no base is configured, even with a key — T23 (A10 v6.0)", async () => {
     // TrawlDeck cutover: the GARUDA default base is retired; without an explicit
     // base the feed must report not-configured, never fetch a hardcoded host.
-    delete process.env.DANANTARA_THREATS_API_BASE;
+    delete process.env.DANANTARA_INTELLIGENCE_BASE_URL;
+    delete process.env.BGN_INTELLIGENCE_BASE_URL;
+    delete process.env.BGN_INTELLIGENCE_API_KEY;
     const fetchMock = vi.fn(async () => new Response(JSON.stringify(SAMPLE), { status: 200 }));
     vi.stubGlobal("fetch", fetchMock);
 
     await expect(fetchThreatsForCode("1")).rejects.toBeInstanceOf(ThreatsNotConfiguredError);
     expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("reads the BGN product's own base + key when product:'bgn' — A10 v10.0", async () => {
+    process.env.BGN_INTELLIGENCE_BASE_URL = "https://trawldeck.example.io/atlas/v1";
+    process.env.BGN_INTELLIGENCE_API_KEY = "tdk_bgn";
+    let calledUrl = "";
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string) => {
+        calledUrl = String(url);
+        return new Response(JSON.stringify(SAMPLE), { status: 200 });
+      }),
+    );
+
+    await fetchThreatsForCode("1", { product: "bgn" });
+
+    expect(calledUrl).toContain("https://trawldeck.example.io/atlas/v1/threats?");
+    expect(calledUrl).toContain("api_key=tdk_bgn");
+    expect(calledUrl).not.toContain("api.example.io");
   });
 
   it("maps a successful upstream; sends topic + reused topics key; caches 6h by default", async () => {
@@ -115,13 +138,15 @@ describe("fetchThreatsForCode (A10 v5.0)", () => {
 
 describe("fetchThreatsForCode — stale-empty self-heal (A10 v5.2 — T20)", () => {
   beforeEach(() => {
-    process.env.DANANTARA_THREATS_API_BASE = "https://api.example.io/threats";
+    process.env.DANANTARA_INTELLIGENCE_BASE_URL = "https://api.example.io";
     process.env.DANANTARA_TOPICS_API_KEY = KEY;
   });
   afterEach(() => {
     vi.restoreAllMocks();
     delete process.env.DANANTARA_TOPICS_API_KEY;
-    delete process.env.DANANTARA_THREATS_API_BASE;
+    delete process.env.DANANTARA_INTELLIGENCE_BASE_URL;
+    delete process.env.BGN_INTELLIGENCE_BASE_URL;
+    delete process.env.BGN_INTELLIGENCE_API_KEY;
   });
 
   /** A fetch mock returning the i-th payload in `seq` (the last repeats), recording each call's init. */

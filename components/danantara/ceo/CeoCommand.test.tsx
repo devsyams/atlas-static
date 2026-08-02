@@ -237,6 +237,17 @@ describe("CeoCommand — live wall (v37.0)", () => {
     });
   });
 
+  it("appends mock=1 to the BUMN board fetch too when mock is set (A7 v50.2)", async () => {
+    stubFetch();
+    render(<CeoCommand mock />); // showBumn defaults true → the board is fetched
+    const fetchMock = globalThis.fetch as unknown as ReturnType<typeof vi.fn>;
+    await waitFor(() => {
+      const board = fetchMock.mock.calls.map((c) => String(c[0])).filter((u) => u.includes("bumn-board"));
+      expect(board.length).toBeGreaterThan(0);
+      expect(board.every((u) => u.includes("mock=1"))).toBe(true);
+    });
+  });
+
   it("passes brand through to the issue board title (A7 v47.1)", async () => {
     stubFetch();
     render(<CeoCommand showBumn={false} brand="BGN" />);
@@ -249,6 +260,26 @@ describe("CeoCommand — live wall (v37.0)", () => {
     const fetchMock = globalThis.fetch as unknown as ReturnType<typeof vi.fn>;
     await waitFor(() => expect(screen.getByTestId("ceo-issues")).toBeInTheDocument());
     expect(fetchMock.mock.calls.map((c) => String(c[0])).some((u) => u.includes("mock=1"))).toBe(false);
+  });
+
+  // A7 v50.0 — BGN product signal (opt-in bgn prop; only /bgn/command sets it).
+  it("appends bgn=1 to the topics fetch when bgn is set (A7 v50.0)", async () => {
+    stubFetch();
+    render(<CeoCommand showBumn={false} bgn />);
+    const fetchMock = globalThis.fetch as unknown as ReturnType<typeof vi.fn>;
+    await waitFor(() => {
+      const topics = fetchMock.mock.calls.map((c) => String(c[0])).filter((u) => u.includes("/topics"));
+      expect(topics.length).toBeGreaterThan(0);
+      expect(topics.every((u) => u.includes("bgn=1"))).toBe(true);
+    });
+  });
+
+  it("omits bgn=1 by default (regression — /danantara stays on the Danantara product)", async () => {
+    stubFetch();
+    render(<CeoCommand showBumn={false} />);
+    const fetchMock = globalThis.fetch as unknown as ReturnType<typeof vi.fn>;
+    await waitFor(() => expect(screen.getByTestId("ceo-issues")).toBeInTheDocument());
+    expect(fetchMock.mock.calls.map((c) => String(c[0])).some((u) => u.includes("bgn=1"))).toBe(false);
   });
 
   it("refetches both feeds when refreshNonce changes, and not on mount (T4 support)", async () => {

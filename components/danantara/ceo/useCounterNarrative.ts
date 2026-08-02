@@ -43,9 +43,9 @@ const TOPIC_COUNT = 3;
  */
 export function useCounterNarrative(
   refreshNonce?: number,
-  opts: { mock?: boolean; windowDays?: number } = {},
+  opts: { mock?: boolean; windowDays?: number; bgn?: boolean } = {},
 ): CounterNarrativeState {
-  const { mock = false, windowDays } = opts;
+  const { mock = false, windowDays, bgn = false } = opts;
   const [issues, setIssues] = useState<CeoIssue[]>([]);
   const [summary, setSummary] = useState<TopicsSummary | null>(null);
   const [feed, setFeed] = useState<FeedState>("loading");
@@ -64,7 +64,7 @@ export function useCounterNarrative(
     (fresh = false) => {
       // A13 v5.0: follow the page's selected window so the drafts always counter
       // the same topic set the boards above are rendering.
-      fetch(`/api/v1/danantara/topics${feedQuery({ fresh, mock, days: windowDays })}`)
+      fetch(`/api/v1/danantara/topics${feedQuery({ fresh, mock, days: windowDays, bgn })}`)
         .then((r) => {
           if (!r.ok) throw new Error(`HTTP ${r.status}`);
           return r.json();
@@ -79,7 +79,7 @@ export function useCounterNarrative(
           if (mountedRef.current) setFeed("offline");
         });
     },
-    [mock, windowDays],
+    [mock, windowDays, bgn],
   );
 
   useEffect(() => {

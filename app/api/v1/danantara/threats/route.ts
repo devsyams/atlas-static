@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 
 import { MOCK_THREATS } from "@/lib/bgn/mock/fixtures";
-import { DANANTARA_MAIN_CODE, isAllowedTopicCode } from "@/lib/bumn/registry";
 import { readDevMockJson } from "@/lib/danantara/dev-mocks";
+import { feedProductFromParams, resolveTopicCode } from "@/lib/danantara/feed-config";
 import { fetchThreatsForCode, ThreatsNotConfiguredError } from "@/lib/danantara/threats-feed";
 
 /**
@@ -37,14 +37,12 @@ export async function GET(req: Request) {
     }
   }
 
-  const requested = params.get("code");
-  const code =
-    requested && isAllowedTopicCode(requested)
-      ? requested
-      : process.env.DANANTARA_TOPIC_CODE || DANANTARA_MAIN_CODE;
+  // Per-product resolution (A10 v10.0): `?bgn=1` → BGN product, else Danantara.
+  const product = feedProductFromParams(params);
+  const code = resolveTopicCode(params, product);
 
   try {
-    const { threats, stats } = await fetchThreatsForCode(code, { fresh });
+    const { threats, stats } = await fetchThreatsForCode(code, { fresh, product });
     return NextResponse.json({ threat: threats[0] ?? null, stats });
   } catch (e) {
     if (e instanceof ThreatsNotConfiguredError) {

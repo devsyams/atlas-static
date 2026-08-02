@@ -4,6 +4,7 @@ import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { TopicsApiResponse } from "@/lib/danantara/ceo/topics-source";
 import { MOCK_TOPICS } from "@/lib/bgn/mock/fixtures";
+import { MOCK_DANANTARA_TOPICS } from "@/lib/danantara/mock/fixtures";
 import { GET } from "./route";
 
 const SAMPLE: TopicsApiResponse = {
@@ -57,7 +58,7 @@ const writeMock = (name: string, data: unknown) => {
 
 describe("GET /api/v1/danantara/topics (T20 / AC19)", () => {
   beforeEach(() => {
-    process.env.DANANTARA_TOPICS_API_BASE = "https://api.example.io/topics";
+    process.env.DANANTARA_INTELLIGENCE_BASE_URL = "https://api.example.io";
     process.env.DANANTARA_TOPICS_API_KEY = KEY;
     process.env.DANANTARA_TOPIC_CODE = "danantara_main";
     mockDir = mkdtempSync(join(tmpdir(), "atlas-topics-mock-"));
@@ -65,9 +66,12 @@ describe("GET /api/v1/danantara/topics (T20 / AC19)", () => {
   });
   afterEach(() => {
     vi.restoreAllMocks();
-    delete process.env.DANANTARA_TOPICS_API_BASE;
+    delete process.env.DANANTARA_INTELLIGENCE_BASE_URL;
     delete process.env.DANANTARA_TOPICS_API_KEY;
     delete process.env.DANANTARA_TOPIC_CODE;
+    delete process.env.BGN_INTELLIGENCE_BASE_URL;
+    delete process.env.BGN_INTELLIGENCE_API_KEY;
+    delete process.env.BGN_TOPIC_CODE;
     delete process.env.DANANTARA_LOCAL_MOCK_DIR;
     if (mockDir) rmSync(mockDir, { recursive: true, force: true });
     mockDir = "";
@@ -199,14 +203,14 @@ describe("GET /api/v1/danantara/topics (T20 / AC19)", () => {
     expect(calledUrl).not.toContain("enddate");
   });
 
-  it("serves the BGN mock fixture on ?mock=1 without hitting the upstream (A13 v4.0, prod-safe)", async () => {
-    // The ?mock=1 branch is the scoped-mock signal /bgn/command sends. Unlike the
-    // dev-mock seam it must work in production, so assert under NODE_ENV=production.
+  it("serves the BGN mock fixture on ?mock=1&bgn=1 without hitting the upstream (A13 v4.0 / A7 v50.1, prod-safe)", async () => {
+    // The ?mock=1 branch is the scoped-mock signal; product-aware since v50.1, so with
+    // ?bgn=1 it serves the BGN fixtures. Unlike the dev-mock seam it must work in prod.
     vi.stubEnv("NODE_ENV", "production");
     const fetchMock = vi.fn();
     vi.stubGlobal("fetch", fetchMock);
     try {
-      const res = await GET(reqWith("mock=1"));
+      const res = await GET(reqWith("mock=1&bgn=1"));
       expect(res.status).toBe(200);
       const body = await res.json();
       expect(body.issues).toHaveLength(MOCK_TOPICS.issues.length);
@@ -215,5 +219,44 @@ describe("GET /api/v1/danantara/topics (T20 / AC19)", () => {
     } finally {
       vi.unstubAllEnvs();
     }
+  });
+
+  it("serves the Danantara demo fixture on ?mock=1 (no bgn) without hitting the upstream (A7 v50.1, prod-safe)", async () => {
+    vi.stubEnv("NODE_ENV", "production");
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+    try {
+      const res = await GET(reqWith("mock=1"));
+      expect(res.status).toBe(200);
+      const body = await res.json();
+      expect(body.issues).toHaveLength(MOCK_DANANTARA_TOPICS.issues.length);
+      expect(body.issues[0].title).toBe(MOCK_DANANTARA_TOPICS.issues[0].title);
+      // the Danantara demo, not the BGN/MBG fixture
+      expect(body.issues[0].title).not.toBe(MOCK_TOPICS.issues[0].title);
+      expect(fetchMock).not.toHaveBeenCalled();
+    } finally {
+      vi.unstubAllEnvs();
+    }
+  });
+
+  it("routes ?bgn=1 to the BGN product upstream + code, not the Danantara one (A7 v50.0)", async () => {
+    process.env.BGN_INTELLIGENCE_BASE_URL = "https://trawldeck.example.io/atlas/v1";
+    process.env.BGN_INTELLIGENCE_API_KEY = "tdk_bgn";
+    process.env.BGN_TOPIC_CODE = "1";
+    let calledUrl = "";
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string) => {
+        calledUrl = String(url);
+        return new Response(JSON.stringify(SAMPLE), { status: 200 });
+      }),
+    );
+
+    const res = await GET(reqWith("bgn=1"));
+    expect(res.status).toBe(200);
+    expect(calledUrl).toContain("https://trawldeck.example.io/atlas/v1/topics?");
+    expect(calledUrl).toContain("topic=1");
+    expect(calledUrl).toContain("api_key=tdk_bgn");
+    expect(calledUrl).not.toContain("api.example.io"); // never the Danantara host
   });
 });

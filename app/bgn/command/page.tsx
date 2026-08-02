@@ -26,6 +26,7 @@ export default async function Page() {
         brand="BGN"
         brandLogo="/bgn.png"
         briefingHref="/bgn/briefing"
+        bgn
       />
     </AppShell>
   );

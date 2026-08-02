@@ -41,24 +41,44 @@ function seqFetch(seq: TopicsApiResponse[]) {
 
 describe("fetchTopicsForCode — stale/transient empty does not stick (A8 v4.1)", () => {
   beforeEach(() => {
-    process.env.DANANTARA_TOPICS_API_BASE = "https://api.example.io/topics";
+    // Per-product base (A7 v50.0): the origin+prefix only — the `/topics` suffix is
+    // appended by `feed-config`, so the base carries no endpoint.
+    process.env.DANANTARA_INTELLIGENCE_BASE_URL = "https://api.example.io";
     process.env.DANANTARA_TOPICS_API_KEY = KEY;
   });
   afterEach(() => {
     vi.restoreAllMocks();
-    delete process.env.DANANTARA_TOPICS_API_BASE;
+    delete process.env.DANANTARA_INTELLIGENCE_BASE_URL;
     delete process.env.DANANTARA_TOPICS_API_KEY;
+    delete process.env.BGN_INTELLIGENCE_BASE_URL;
+    delete process.env.BGN_INTELLIGENCE_API_KEY;
   });
 
   it("throws FeedNotConfiguredError when no base is configured, even with a key — T23 (A7 v48.0)", async () => {
     // TrawlDeck cutover: the GARUDA default base is retired; without an explicit
     // base the feed must report not-configured, never fetch a hardcoded host.
-    delete process.env.DANANTARA_TOPICS_API_BASE;
+    delete process.env.DANANTARA_INTELLIGENCE_BASE_URL;
     const fetchMock = seqFetch([SAMPLE]);
     vi.stubGlobal("fetch", fetchMock);
 
     await expect(fetchTopicsForCode("1")).rejects.toBeInstanceOf(FeedNotConfiguredError);
     expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("reads the BGN product's own base + key when product:'bgn' — A7 v50.0", async () => {
+    // /bgn/command sends ?bgn=1 → the route asks the feed for the BGN product, which
+    // must hit the BGN upstream (TrawlDeck), NOT the Danantara one.
+    process.env.BGN_INTELLIGENCE_BASE_URL = "https://trawldeck.example.io/atlas/v1";
+    process.env.BGN_INTELLIGENCE_API_KEY = "tdk_bgn";
+    const fetchMock = seqFetch([SAMPLE]);
+    vi.stubGlobal("fetch", fetchMock);
+
+    await fetchTopicsForCode("1", { product: "bgn" });
+
+    const url = String(fetchMock.mock.calls[0][0]);
+    expect(url).toContain("https://trawldeck.example.io/atlas/v1/topics?");
+    expect(url).toContain("api_key=tdk_bgn");
+    expect(url).not.toContain("api.example.io"); // never the Danantara host
   });
 
   it("self-heals a cached/transient empty: confirms against the live upstream and uses live data", async () => {

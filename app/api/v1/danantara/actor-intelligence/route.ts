@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 
 import { MOCK_ACTORS } from "@/lib/bgn/mock/fixtures";
-import { DANANTARA_MAIN_CODE, isAllowedTopicCode } from "@/lib/bumn/registry";
 import { readDevMockJson } from "@/lib/danantara/dev-mocks";
+import { feedProductFromParams, resolveTopicCode } from "@/lib/danantara/feed-config";
 import { ActorRosterNotConfiguredError, fetchActorRosterForCode } from "@/lib/danantara/actor-roster-feed";
 
 /**
@@ -37,14 +37,12 @@ export async function GET(req: Request) {
     }
   }
 
-  const requested = params.get("code");
-  const code =
-    requested && isAllowedTopicCode(requested)
-      ? requested
-      : process.env.DANANTARA_TOPIC_CODE || DANANTARA_MAIN_CODE;
+  // Per-product resolution (A10 v10.0): `?bgn=1` → BGN product, else Danantara.
+  const product = feedProductFromParams(params);
+  const code = resolveTopicCode(params, product);
 
   try {
-    const actors = await fetchActorRosterForCode(code, { fresh });
+    const actors = await fetchActorRosterForCode(code, { fresh, product });
     return NextResponse.json({ actors });
   } catch (e) {
     if (e instanceof ActorRosterNotConfiguredError) {

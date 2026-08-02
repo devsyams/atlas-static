@@ -8,6 +8,7 @@
 
 import { mapActorRoster, type ActorRosterApiResponse } from "./ceo/actor-roster-source";
 import type { ThreatDriver } from "./ceo/threats-source";
+import { resolveFeedEndpoint, type FeedProduct } from "./feed-config";
 
 const REVALIDATE_S = 21_600; // 6 h — matches the topics/threats feeds
 
@@ -21,10 +22,14 @@ export class ActorRosterNotConfiguredError extends Error {}
  * OpenGate routes share one key). Throws `ActorRosterNotConfiguredError` if no key,
  * or a generic error on upstream failure / malformed payload.
  */
-export async function fetchActorRosterForCode(code: string, opts: { fresh?: boolean } = {}): Promise<ThreatDriver[]> {
-  const base = process.env.DANANTARA_ACTORS_API_BASE;
-  const apiKey = process.env.DANANTARA_TOPICS_API_KEY;
-  if (!base || !apiKey) throw new ActorRosterNotConfiguredError("Actor roster feed not configured.");
+export async function fetchActorRosterForCode(
+  code: string,
+  opts: { fresh?: boolean; product?: FeedProduct } = {},
+): Promise<ThreatDriver[]> {
+  // Per-product base+key (A10 v10.0): Danantara by default, BGN on `?bgn=1`.
+  const endpoint = resolveFeedEndpoint(opts.product ?? "danantara", "actor-intelligence");
+  if (!endpoint) throw new ActorRosterNotConfiguredError("Actor roster feed not configured.");
+  const { base, apiKey } = endpoint;
 
   const url = `${base}?${new URLSearchParams({ topic: code, api_key: apiKey }).toString()}`;
   const res = await fetch(url, opts.fresh ? { cache: "no-store" } : { next: { revalidate: REVALIDATE_S } });

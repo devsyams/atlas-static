@@ -15,6 +15,7 @@ import {
   type MappedTopics,
   type TopicsApiResponse,
 } from "./ceo/topics-source";
+import { resolveFeedEndpoint, type FeedProduct } from "./feed-config";
 
 const FALLBACK_DAYS = 28;
 const REVALIDATE_S = 21_600; // 6 hours (A7 v46.0, was 1 h since v36.0) — the upstream refreshes ~daily
@@ -76,11 +77,13 @@ async function fetchWidened(
  */
 export async function fetchTopicsForCode(
   code: string,
-  opts: { fresh?: boolean; days?: number } = {},
+  opts: { fresh?: boolean; days?: number; product?: FeedProduct } = {},
 ): Promise<FeedResult> {
-  const base = process.env.DANANTARA_TOPICS_API_BASE;
-  const apiKey = process.env.DANANTARA_TOPICS_API_KEY;
-  if (!base || !apiKey) throw new FeedNotConfiguredError("Topics feed not configured.");
+  // Per-product base+key (A7 v50.0): Danantara by default, BGN when the route resolves
+  // `?bgn=1`. The base already carries the `/topics` suffix.
+  const endpoint = resolveFeedEndpoint(opts.product ?? "danantara", "topics");
+  if (!endpoint) throw new FeedNotConfiguredError("Topics feed not configured.");
+  const { base, apiKey } = endpoint;
 
   const fresh = opts.fresh ?? false;
 
