@@ -53,12 +53,18 @@ export interface MappedTopics {
 
 /* ------------------------------- helpers -------------------------------- */
 
-/** ISO date (UTC, YYYY-MM-DD) for a Date. */
+/** Jakarta is UTC+7 year-round (no DST). */
+const WIB_OFFSET_MS = 7 * 3_600_000;
+
+/** ISO date (YYYY-MM-DD) for a Date, **in WIB** (A7 v51.0) — the engine and its
+ * operators live in Asia/Jakarta, so windows must name WIB calendar days. On a
+ * UTC server the WIB evening is already "tomorrow"; using the UTC date made the
+ * window end a day early and hit a different engine snapshot than the client's. */
 function isoDate(d: Date): string {
-  return d.toISOString().slice(0, 10);
+  return new Date(d.getTime() + WIB_OFFSET_MS).toISOString().slice(0, 10);
 }
 
-/** A rolling window ending today: { startdate: today − days, enddate: today }. */
+/** A rolling window ending today (WIB): { startdate: today − days, enddate: today }. */
 export function rollingWindow(today: Date, days: number): { startdate: string; enddate: string } {
   const start = new Date(today.getTime() - days * 86_400_000);
   return { startdate: isoDate(start), enddate: isoDate(today) };

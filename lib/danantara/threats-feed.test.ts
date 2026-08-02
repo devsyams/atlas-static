@@ -1,4 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { revalidateTag } from "next/cache";
+
+vi.mock("next/cache", () => ({ revalidateTag: vi.fn() }));
 import type { ThreatsApiResponse } from "./ceo/threats-source";
 import { fetchThreatsForCode, ThreatsNotConfiguredError } from "./threats-feed";
 
@@ -109,7 +112,7 @@ describe("fetchThreatsForCode (A10 v5.0)", () => {
     expect(r.stats.total_threats).toBe(1);
     expect(calledUrl).toContain("topic=danantara_main");
     expect(calledUrl).toContain(`api_key=${KEY}`);
-    expect(calledInit).toEqual({ next: { revalidate: 21600 } });
+    expect(calledInit).toEqual({ next: { revalidate: 21600, tags: ["danantara-threats"] } });
   });
 
   it("bypasses the data cache on ?fresh=1", async () => {
@@ -123,6 +126,8 @@ describe("fetchThreatsForCode (A10 v5.0)", () => {
     );
     await fetchThreatsForCode("danantara_main", { fresh: true });
     expect(calledInit).toEqual({ cache: "no-store" });
+    // A10 v11.1: fresh also evicts the 6 h cache, not just bypasses it.
+    expect(revalidateTag).toHaveBeenCalledWith("danantara-threats", "max");
   });
 
   it("throws on a malformed payload (no threats array)", async () => {
@@ -168,7 +173,7 @@ describe("fetchThreatsForCode — stale-empty self-heal (A10 v5.2 — T20)", () 
 
     const r = await fetchThreatsForCode("danantara_main");
     expect(r.threats).toHaveLength(1); // live data shown, not the cached hollow
-    expect(inits[0]).toEqual({ next: { revalidate: 21600 } }); // primary path is cacheable (6 h)
+    expect(inits[0]).toEqual({ next: { revalidate: 21600, tags: ["danantara-threats"] } }); // primary path is cacheable (6 h)
     expect(inits).toContainEqual({ cache: "no-store" }); // a live confirm happened
   });
 

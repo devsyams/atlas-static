@@ -37,10 +37,10 @@
 | **A4** | AI assistant — copilot chat | 3-act | S5 | E7 | 1.0 | Planned |
 | **A5** | AI assistant — briefing, forecast & per-widget ask | 3-act | S5 | E7 | 1.0 | Planned |
 | **A6** | Real-time ticker, alerts & War Room | 3-act | S5–S6 | E8 | 1.0 | Planned |
-| **A7** | Danantara CEO Command Wall (zero-click demo) | 3-act | demo | — | 49.0 | Built |
+| **A7** | Danantara CEO Command Wall (zero-click demo) | 3-act | demo | — | 51.0 | Built |
 | **A8** | Per-BUMN CEO sentiment dashboards | 3-act | demo | — | 8.0 | Built |
 | **A9** | Communication Response Calculator | 3-act | demo | — | 3.1 | Built |
-| **A10** | Danantara Crisis Gate (fear-first executive landing) | 3-act | demo | — | 11.0 | Built |
+| **A10** | Danantara Crisis Gate (fear-first executive landing) | 3-act | demo | — | 11.1 | Built |
 | **A11** | Danantara Executive Briefing | 3-act | demo | — | 3.0 | Built |
 | **A12** | JasaMarga AI Ops Insight & Predictions (LLM-backed) | 3-act | demo | — | 7.0 | Built |
 | **A13** | BGN Command Center (one-page) | 3-act | demo | — | 6.4 | Built |
@@ -205,3 +205,4 @@
 | 1.139 | 2026-08-03 | A7 → **v50.3 (MINOR)** — **/danantara demo BUMN board → top-8 + real topics** (client). Cap the board at the 8 highest-profile BUMN (Pertamina, Mandiri, BRI, PLN, Telkom, Garuda, BNI, Jasa Marga); each BUMN's negative + positive topic now comes from the **most-recent (late-July/early-August 2026) X/social + news discourse** (researched per BUMN via parallel agents, refreshed for recency) rather than templated strings — Pertamina's Sumatra fuel-shortage + PLN's Kalimantan blackouts lead the board. Still built via the live `buildBumnRow`; fixture tests updated (8 rows, specific slugs). Built (TDD): suite green |
 
 | 1.135 | 2026-08-02 | A10 → **v10.0 (MAJOR, client request)** + A13 → **v6.3 (MINOR)** — **captured static actor roster + actor detail popup on `/bgn/command`**: TrawlDeck actor enrichment is off (bare roster), so panel 3 opts onto a bundled capture of a real OpenGate MBG actor-intelligence run (`lib/bgn/mock/actor-intelligence.json`, 20 analysed actors) via a production-safe `?static=1` BFF branch + `staticActors` prop threading; actor cards become clickable → new `ActorDetailModal` with the full analysis sections. `/topics`+`/threats` stay live; `/danantara/krisis` untouched; reversible when enrichment lands |
+| 1.139 | 2026-08-03 | A7 → **v51.0 (MAJOR, client)** + A10 → **v11.1 (MINOR)** — **WIB feed windows + Refresh purges the feed caches**: `rollingWindow` derives dates in WIB (UTC+7) so atlas hits the same engine snapshot as the client's engine UI (UTC clock made "7 hari" end a day early each WIB evening — surfaced by a deleted AI topic lingering on /bgn/command only), and `?fresh=1` now `revalidateTag`s the `danantara-{topics,threats,actors}` Next-cache tags before its live read, so Refresh evicts the 6 h caches instead of only bypassing them |
