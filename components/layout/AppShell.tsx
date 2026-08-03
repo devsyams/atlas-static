@@ -47,6 +47,7 @@ const NAV: NavItem[] = [
   { to: "/danantara/krisis", label: "Danantara Crisis Gate", icon: Siren, group: "Dashboards" },
   { to: "/bgn/command", label: "BGN Command Center", icon: LayoutDashboard, group: "Dashboards" },
   { to: "/danantara/simulation", label: "Crisis Simulation Room", icon: Users, group: "Dashboards" },
+  { to: "/bgn/simulation", label: "BGN Crisis Simulation Room", icon: Users, group: "Dashboards" },
   { to: "/bumn", label: "BUMN Dashboards (v1)", icon: Building2, group: "Dashboards" },
   { to: "/bumn-v2", label: "BUMN Dashboards (v2)", icon: Building2, group: "Dashboards" },
 

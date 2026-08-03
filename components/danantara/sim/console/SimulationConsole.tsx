@@ -8,7 +8,7 @@ import { SEED_MAX } from "@/lib/danantara/sim/console-ai";
 import { fallbackConsoleWorld } from "@/lib/danantara/sim/console-fallback";
 import { PLATFORMS, type ConsoleWorld, type PlatformKey } from "@/lib/danantara/sim/console-types";
 import { typeColor } from "@/lib/danantara/sim/graph-layout";
-import { MODES, type SimMode } from "@/lib/danantara/sim/modes";
+import { MODES, samplesFor, type SimMode } from "@/lib/danantara/sim/modes";
 import { ACTIVITY_WINDOWS, HOURS_PER_ROUND, activationPlan, simConfig } from "@/lib/danantara/sim/sim-config";
 import { GraphCanvas } from "./GraphCanvas";
 import { InteractionPanel } from "./InteractionPanel";
@@ -171,7 +171,7 @@ function logLine(w: ConsoleWorld, step: StepIndex, tick: number, runRounds: numb
  * All five steps replay a **single** cached LLM world, so a rehearsed demo is instant
  * and identical. Everything shown is synthetic and labelled as such.
  */
-export function SimulationConsole() {
+export function SimulationConsole({ bgn = false }: { bgn?: boolean }) {
   const [view, setView] = useState<View>("console");
   const [tab, setTab] = useState<Tab>("split");
   const [step, setStep] = useState<StepIndex>(0);
@@ -200,6 +200,8 @@ export function SimulationConsole() {
     const h = seedFromString(seedText || "seed").toString(16).padStart(8, "0");
     return { proj: `proj_${h}`, sim: `sim_${h}`, report: `report_${h}`, graph: `nexorus_graph_${h}`, task: `task_prepare_${h}` };
   }, [seedText]);
+
+  const samples = samplesFor(mode, bgn);
 
   // The world is read from a ref so a re-render can't restart the clock mid-step. The
   // *step* is taken from the effect closure instead — the effect already re-runs on a
@@ -412,7 +414,7 @@ export function SimulationConsole() {
             </div>
 
             <div className="mt-3 flex flex-wrap gap-2">
-              {mode.samples.map((s) => (
+              {samples.map((s) => (
                 <button
                   key={s.key}
                   type="button"
