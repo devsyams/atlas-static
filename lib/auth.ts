@@ -10,8 +10,9 @@
 
 import { getBumn, listBumn } from "./bumn/registry";
 
-/** `all` = super-admin; `danantara` = the CEO wall; `bumn:<slug>` = one BUMN CEO. */
-export type Scope = "all" | "danantara" | `bumn:${string}`;
+/** `all` = super-admin; `danantara` = the CEO wall; `bgn-sim` = the BGN Crisis
+ *  Simulation Room kiosk; `bumn:<slug>` = one BUMN CEO. */
+export type Scope = "all" | "danantara" | "bgn-sim" | `bumn:${string}`;
 
 export interface DemoUser {
   email: string;
@@ -53,6 +54,17 @@ export const DEMO_USERS: DemoUser[] = [
     name: "Danantara Analyst",
     role: "Sovereign Analyst",
   },
+  {
+    // BGN Simulation kiosk (A16): a single-purpose login that boots straight into
+    // the BGN Crisis Simulation Room (/bgn/simulation) and can reach nothing else.
+    // The AppShell hides the whole dashboards gear menu for this scope.
+    email: "bgn@nexorus.io",
+    password: "bgnnexorus",
+    scope: "bgn-sim",
+    home: "/bgn/simulation",
+    name: "BGN Simulation",
+    role: "Crisis Simulation Room",
+  },
   ...BUMN_USERS,
 ];
 
@@ -73,6 +85,7 @@ export function homeForScope(scope: Scope): string {
   // danantara2026) still opens the /danantara/krisis fear gate via its own
   // DEMO_USERS.home — a separate flow.
   if (scope === "danantara") return "/bgn/command";
+  if (scope === "bgn-sim") return "/bgn/simulation";
   const slug = bumnSlug(scope);
   if (slug) return `/bumn/${slug}`;
   return "/";
@@ -84,6 +97,10 @@ export function scopeAllowsPath(scope: Scope, pathname: string): boolean {
   // /bgn/* is the renamed BGN Command Center (A13 v4.0); the danantara scope lands
   // there via homeForScope, so it must be reachable or the middleware redirect-loops.
   if (scope === "danantara") return pathname.startsWith("/danantara") || pathname.startsWith("/bgn");
+  // A16: the BGN Simulation kiosk is locked to the one room — not the sibling
+  // /bgn/command, not the /danantara simulation twin, nothing else.
+  if (scope === "bgn-sim")
+    return pathname === "/bgn/simulation" || pathname.startsWith("/bgn/simulation/");
   const slug = bumnSlug(scope);
   if (slug) {
     // A BUMN CEO only ever sees their own dashboard — not the index, not others.
@@ -101,6 +118,7 @@ export function scopeAllowsPath(scope: Scope, pathname: string): boolean {
 /** Read the scope cookie value into a typed Scope (client or server). */
 export function parseScope(value: string | undefined | null): Scope {
   if (value === "danantara") return "danantara";
+  if (value === "bgn-sim") return "bgn-sim";
   if (value && value.startsWith("bumn:")) {
     // Only honour a bumn scope for a registered slug; otherwise treat as all.
     return getBumn(value.slice("bumn:".length)) ? (value as Scope) : "all";

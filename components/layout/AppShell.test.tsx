@@ -158,3 +158,38 @@ describe("AppShell gear menu — BGN Command Center link (A13 v4.0)", () => {
     expect(link).toHaveAttribute("href", "/bgn/simulation");
   });
 });
+
+describe("AppShell — BGN Simulation kiosk chrome (A16 / AC2, AC5)", () => {
+  beforeEach(() => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => new Response(JSON.stringify({ anomalies: [] }), { status: 200 })),
+    );
+  });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    document.cookie = "atlas_scope=; path=/; max-age=0";
+  });
+
+  it("hides the gear/dashboards menu entirely for a bgn-sim user, keeping the account + Sign out (T4/AC2)", () => {
+    pathname = "/bgn/simulation";
+    document.cookie = "atlas_scope=bgn-sim; path=/";
+    render(<AppShell>content</AppShell>);
+
+    // The dashboards gear dropdown is gone — there is no trigger to open it.
+    expect(screen.queryByLabelText("Open menu")).not.toBeInTheDocument();
+
+    // The account menu remains so the kiosk operator can still sign out.
+    fireEvent.click(screen.getByLabelText("Account"));
+    expect(screen.getByText("Sign out")).toBeInTheDocument();
+  });
+
+  it("still renders the gear menu for the default super-admin scope (T5/AC5 regression)", () => {
+    // Only the bgn-sim scope hides the gear menu; every other scope keeps it. The
+    // danantara scope's gear menu (incl. the P8 "Nexorus Opengate" item) is already
+    // locked by the P8/A10/A13 gear-menu tests above.
+    pathname = "/";
+    render(<AppShell>content</AppShell>);
+    expect(screen.getByLabelText("Open menu")).toBeInTheDocument();
+  });
+});
