@@ -144,7 +144,17 @@ describe("AppShell gear menu — BGN Command Center link (A13 v4.0)", () => {
     render(<AppShell>content</AppShell>);
     openGearMenu();
 
-    const link = screen.getByRole("link", { name: /crisis simulation room/i });
+    const link = screen.getByRole("link", { name: /^crisis simulation room$/i });
     expect(link).toHaveAttribute("href", "/danantara/simulation");
+  });
+
+  it("links to /bgn/simulation from the gear menu, through both filters (A15 v5.0)", () => {
+    pathname = "/bgn/command";
+    document.cookie = "atlas_scope=danantara; path=/";
+    render(<AppShell>content</AppShell>);
+    openGearMenu();
+
+    const link = screen.getByRole("link", { name: /bgn crisis simulation room/i });
+    expect(link).toHaveAttribute("href", "/bgn/simulation");
   });
 });

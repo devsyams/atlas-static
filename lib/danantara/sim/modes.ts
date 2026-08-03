@@ -26,6 +26,8 @@ export interface SimMode {
   /** Labels for the two simulated platforms in this mode. */
   platforms: { plaza: string; community: string };
   samples: { key: string; label: string; text: string }[];
+  /** BGN-flavored samples, shown instead of `samples` when the console runs at /bgn/simulation. */
+  samplesBgn?: { key: string; label: string; text: string }[];
 }
 
 const POLICY: SimMode = {
@@ -73,6 +75,35 @@ Kelompok pengemudi transportasi daring dan pelaku usaha mikro mengkhawatirkan ke
 Pemerintah menyatakan aturan ini diperlukan untuk menekan penyebaran informasi palsu dan penipuan daring yang merugikan masyarakat. Asosiasi industri digital menilai tenggat 1x24 jam tidak realistis secara teknis dan berisiko menimbulkan penghapusan konten berlebihan.
 
 Organisasi masyarakat sipil mengangkat kekhawatiran soal kebebasan berekspresi dan perlindungan data pribadi, khususnya pada kewajiban verifikasi identitas.`,
+    },
+  ],
+  samplesBgn: [
+    {
+      key: "mk-pemisahan-anggaran",
+      label: "Putusan MK: anggaran MBG",
+      text: `Mahkamah Konstitusi mengabulkan sebagian gugatan uji materi terkait skema pendanaan Program Makan Bergizi Gratis (MBG), dengan menetapkan bahwa anggaran program tersebut harus dipisahkan dari anggaran fungsi pendidikan selambat-lambatnya pada APBN 2028. Putusan menegaskan bahwa MBG penting untuk penanganan stunting, namun pembiayaannya tidak boleh dibebankan pada pos anggaran pendidikan.
+
+Badan Gizi Nasional menyatakan siap menjalankan kebijakan anggaran sesuai putusan tersebut dan tengah menyinkronkan data dengan kementerian terkait untuk mempercepat penyaluran ke wilayah dengan prevalensi stunting tinggi yang belum terlayani. Sejumlah anggota Komisi terkait di DPR menilai putusan ini menjadi momentum bagi BGN untuk merancang ulang skema pendanaan program secara lebih berkelanjutan.
+
+Sejumlah pengamat kebijakan mempertanyakan kesiapan fiskal pemerintah untuk menyediakan pos anggaran tersendiri dalam waktu kurang dari dua tahun, mengingat skala program yang menyasar puluhan juta penerima manfaat.`,
+    },
+    {
+      key: "prioritas-stunting",
+      label: "Prioritas wilayah stunting",
+      text: `Badan Gizi Nasional tengah menyusun basis data penerima manfaat MBG yang diperbarui, dengan fokus mengalihkan prioritas penyaluran ke wilayah dengan prevalensi stunting tertinggi dan daerah tertinggal, terdepan, dan terluar (3T) yang belum sepenuhnya terlayani program. Kebijakan ini merupakan penyesuaian dari pola penyaluran sebelumnya yang dinilai lebih merata namun belum sepenuhnya berbasis data kebutuhan gizi.
+
+Pemerintah menyebut pendekatan berbasis data ini akan membuat program lebih tepat sasaran dan berdampak lebih besar pada penurunan angka stunting nasional. Sejumlah pemerintah daerah di wilayah yang sebelumnya menjadi prioritas awal mengkhawatirkan kemungkinan pengurangan alokasi penerima di wilayah mereka apabila skema prioritas baru diterapkan.
+
+Organisasi masyarakat sipil di bidang gizi anak meminta agar kriteria dan data yang menjadi dasar penentuan wilayah prioritas dipublikasikan secara terbuka agar proses realokasi dapat diawasi publik.`,
+    },
+    {
+      key: "bulog-pangan-lokal",
+      label: "Pangan lokal & buffer Bulog",
+      text: `Badan Gizi Nasional menyatakan akan memprioritaskan penggunaan bahan pangan dari produsen lokal untuk dapur-dapur Satuan Pelayanan Pemenuhan Gizi (SPPG), dengan Perum Bulog diposisikan sebagai penyangga pasokan beras apabila terjadi kelangkaan di tingkat daerah. Kebijakan ini belum sepenuhnya diberlakukan secara nasional dan masih dalam tahap penyusunan mekanisme pengadaan.
+
+Pemerintah menilai skema ini akan memperkuat ekonomi petani dan produsen pangan lokal sekaligus menjaga stabilitas pasokan dapur MBG. Sejumlah asosiasi pengusaha katering dan penyedia bahan baku non-beras mempertanyakan apakah penekanan pada Bulog dan produsen lokal akan mempersempit ruang bagi pemasok swasta yang selama ini menjadi mitra SPPG.
+
+Pengamat pangan menilai keberhasilan skema ini bergantung pada kesiapan rantai pasok lokal di luar Jawa, yang selama ini menjadi titik lemah program penyediaan pangan skala nasional.`,
     },
   ],
 };
@@ -125,10 +156,44 @@ Manajemen belum memberikan keterangan resmi. Dalam kekosongan itu, beredar berba
 Serikat pekerja meminta dialog dan kepastian mengenai skema kompensasi. Beberapa akun berpengaruh di bidang ketenagakerjaan mulai mengangkat isu ini sebagai contoh buruknya komunikasi perusahaan kepada karyawan.`,
     },
   ],
+  samplesBgn: [
+    {
+      key: "keracunan-semarang",
+      label: "Dugaan keracunan MBG Semarang",
+      text: `Sebanyak 707 orang, terdiri atas 693 siswa dan 14 guru SMK Negeri 6 Kota Semarang, diduga mengalami keracunan setelah menyantap menu Makanan Bergizi Gratis (MBG) yang dimasak di Satuan Pelayanan Pemenuhan Gizi (SPPG) Karangturi. Para korban mengalami gejala gangguan pencernaan berupa mual, muntah, dan diare tak lama setelah makan siang.
+
+Badan Gizi Nasional menghentikan sementara operasional SPPG Karangturi sambil menunggu hasil investigasi dan pemeriksaan laboratorium untuk memastikan penyebab insiden. Kepala BGN turun langsung meninjau korban di rumah sakit dan menyatakan sikap tanpa toleransi terhadap pelanggaran keamanan pangan dalam program MBG. Dugaan sementara mengarah pada beberapa bahan makanan dalam menu, termasuk daun singkong dan bumbu rendang.
+
+Video dan unggahan warganet tentang kejadian ini menyebar cepat di media sosial, memicu kekhawatiran publik yang lebih luas terhadap standar keamanan pangan di ribuan dapur SPPG lain di seluruh Indonesia. Sejumlah orang tua murid di daerah lain mempertanyakan apakah dapur di sekolah anak mereka menjalani pengawasan yang sama ketatnya.`,
+    },
+    {
+      key: "hoaks-dana-sppg",
+      label: "Hoaks penghentian dana SPPG",
+      text: `Sebuah kabar yang menyebut penyaluran dana operasional ke Satuan Pelayanan Pemenuhan Gizi (SPPG) di seluruh Indonesia dihentikan beredar luas di media sosial dan grup percakapan, memicu kekhawatiran di kalangan pengelola dapur dan mitra penyedia bahan pangan program Makan Bergizi Gratis (MBG).
+
+Badan Gizi Nasional menegaskan kabar tersebut adalah hoaks dan bahwa layanan MBG serta penyaluran dana ke SPPG tetap berjalan normal sesuai jadwal. Namun sejumlah pengelola SPPG di daerah mengaku sempat menunda pembelian bahan baku karena khawatir tidak mendapat penggantian, sehingga sebagian dapur sempat mengurangi porsi menu pada hari kabar tersebut beredar.
+
+Pengamat komunikasi krisis menilai lambatnya respons resmi di jam-jam awal penyebaran kabar membuat narasi keliru sempat mendominasi percakapan publik sebelum klarifikasi resmi menjangkau kelompok yang paling terdampak, yakni pengelola dapur dan pemasok kecil di daerah.`,
+    },
+    {
+      key: "efisiensi-anggaran",
+      label: "Efisiensi & pengembalian anggaran",
+      text: `Badan Gizi Nasional mengumumkan telah mengembalikan lebih dari Rp311 miliar sisa anggaran program Makan Bergizi Gratis (MBG) ke kas negara, sebagai bagian dari langkah efisiensi anggaran dan penguatan tata kelola program. Pengembalian ini disampaikan bersamaan dengan penataan ulang skema operasional MBG untuk meningkatkan efektivitas penyaluran.
+
+Pemerintah menyebut langkah ini menunjukkan disiplin anggaran dan komitmen menghindari pemborosan dalam program berskala besar yang menyasar puluhan juta penerima manfaat. Namun sejumlah warganet dan pengamat anggaran publik mempertanyakan mengapa dana yang cukup besar tidak terserap, dan mengaitkannya dengan pertanyaan lama soal kesiapan implementasi program di lapangan.
+
+Beberapa anggota parlemen meminta penjelasan lebih rinci mengenai pos mana saja yang menyumbang sisa anggaran tersebut, agar publik tidak menafsirkan pengembalian dana sebagai indikasi program berjalan di bawah target.`,
+    },
+  ],
 };
 
 export const MODES: SimMode[] = [POLICY, CRISIS];
 
 export function modeByKey(key: string | undefined): SimMode {
   return MODES.find((m) => m.key === key) ?? POLICY;
+}
+
+/** The reality-seed samples to show for a mode — BGN-flavored when `bgn` is set, else default. */
+export function samplesFor(mode: SimMode, bgn: boolean): SimMode["samples"] {
+  return (bgn && mode.samplesBgn) || mode.samples;
 }

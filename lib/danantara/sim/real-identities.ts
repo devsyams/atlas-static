@@ -44,6 +44,11 @@ export const PUBLIC_FIGURE_PATTERNS: readonly string[] = [
   "pandjaitan",
   "luhut",
 
+  // Officials named across the BGN / MBG coverage.
+  "sudaryono",
+  "dadanhindayana",
+  "hindayana",
+
   // Media outlets — a persona must never impersonate a newsroom account.
   "kompas",
   "detikcom",
@@ -68,4 +73,7 @@ export const PUBLIC_FIGURE_PATTERNS: readonly string[] = [
   "bankindonesia",
   "ojkindonesia",
   "setkabgoid",
+  "badangizinasional",
+  "bgnri",
+  "perumbulog",
 ] as const;
