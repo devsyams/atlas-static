@@ -82,6 +82,34 @@ describe("DanantaraBrief (A11 — Executive Briefing)", () => {
     expect(back).toHaveAttribute("href", "/bgn/command");
   });
 
+  it("appends bgn=1 to the topics fetch when bgn is set (/bgn/briefing → BGN product)", async () => {
+    stubFetch();
+    render(<DanantaraBrief bgn />);
+    await waitFor(() => expect(screen.getByTestId("brief-verdict").textContent).toContain("broadly positive"));
+    const topicsCalls = vi.mocked(fetch).mock.calls.map((c) => String(c[0])).filter((u) => u.includes("/topics"));
+    expect(topicsCalls.length).toBeGreaterThan(0);
+    for (const u of topicsCalls) expect(u).toContain("bgn=1");
+  });
+
+  it("regression: no bgn flag → the topics fetch carries no bgn=1 (/danantara/brief)", async () => {
+    stubFetch();
+    render(<DanantaraBrief />);
+    await waitFor(() => expect(screen.getByTestId("brief-verdict").textContent).toContain("broadly positive"));
+    for (const c of vi.mocked(fetch).mock.calls) expect(String(c[0])).not.toContain("bgn=1");
+  });
+
+  it("keeps bgn=1 on the fresh refresh fetch", async () => {
+    stubFetch();
+    render(<DanantaraBrief bgn />);
+    await waitFor(() => expect(screen.getByTestId("brief-verdict").textContent).toContain("broadly positive"));
+    fireEvent.click(screen.getByTitle("Refresh"));
+    await waitFor(() => {
+      const fresh = vi.mocked(fetch).mock.calls.map((c) => String(c[0])).filter((u) => u.includes("/topics") && u.includes("fresh=1"));
+      expect(fresh.length).toBeGreaterThan(0);
+      for (const u of fresh) expect(u).toContain("bgn=1");
+    });
+  });
+
   it("hides the 7-day sentiment momentum (AC7 currently disabled)", async () => {
     stubFetch();
     render(<DanantaraBrief />);
