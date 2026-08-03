@@ -10,6 +10,7 @@ import { biggestThreat, crisisIndex, CRISIS_LEVEL_LABEL } from "@/lib/danantara/
 import { dominantTone, topWin } from "@/lib/danantara/ceo/briefing";
 import type { TrendInputPoint } from "@/lib/danantara/ceo/trend";
 import { fmtCount } from "@/lib/danantara/ceo/format";
+import { feedQuery } from "@/lib/danantara/feed-query";
 import { withAlpha } from "@/lib/danantara/ui";
 import { SentimentBreakdown } from "@/components/danantara/ceo/SentimentBreakdown";
 import { DetailModal, type DetailSelection } from "@/components/danantara/ceo/DetailModal";
@@ -33,9 +34,12 @@ const TONE_COPY = {
  */
 export function DanantaraBrief({
   backHref = "/danantara/krisis",
+  bgn = false,
 }: {
   /** Back-arrow target (v3.0) — /bgn/briefing passes /bgn/command; default is the legacy gate. */
   backHref?: string;
+  /** Append ?bgn=1 to the topics fetch — the BGN-product signal (only /bgn/briefing sets it). */
+  bgn?: boolean;
 } = {}) {
   const [issues, setIssues] = useState<CeoIssue[]>([]);
   const [summary, setSummary] = useState<TopicsSummary | null>(null);
@@ -54,7 +58,7 @@ export function DanantaraBrief({
   }, []);
 
   const load = useCallback((fresh = false) => {
-    fetch(`/api/v1/danantara/topics${fresh ? "?fresh=1" : ""}`)
+    fetch(`/api/v1/danantara/topics${feedQuery({ fresh, bgn })}`)
       .then((r) => {
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
         return r.json();
@@ -72,7 +76,7 @@ export function DanantaraBrief({
       .finally(() => {
         if (mountedRef.current) setRefreshing(false);
       });
-  }, []);
+  }, [bgn]);
 
   // The trend feed is independent — if it fails the briefing still renders (momentum just omitted).
   const loadTrend = useCallback((fresh = false) => {
