@@ -119,6 +119,11 @@ describe("BGN Simulation kiosk login (A16 / AC1–AC4)", () => {
     // other dashboards, the index and the login page.
     expect(scopeAllowsPath("bgn-sim", "/bgn/command")).toBe(false);
     expect(scopeAllowsPath("bgn-sim", "/bgn")).toBe(false);
+    // Prefix-confusion boundary: a path that merely *starts with* the room path but
+    // is not the room (or a child under "/") must be denied. Guards against a future
+    // refactor to a bare startsWith("/bgn/simulation") silently opening siblings.
+    expect(scopeAllowsPath("bgn-sim", "/bgn/simulationX")).toBe(false);
+    expect(scopeAllowsPath("bgn-sim", "/bgn/simulation-foo")).toBe(false);
     expect(scopeAllowsPath("bgn-sim", "/danantara/simulation")).toBe(false);
     expect(scopeAllowsPath("bgn-sim", "/danantara")).toBe(false);
     expect(scopeAllowsPath("bgn-sim", "/bumn/pln")).toBe(false);

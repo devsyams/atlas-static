@@ -29,4 +29,10 @@ describe("middleware — bgn-sim scope lock (A16 / AC3 / T6)", () => {
     // NextResponse.next() carries no Location redirect.
     expect(res.headers.get("location")).toBeNull();
   });
+
+  it("sends an already-authed bgn-sim user off /login to /bgn/simulation (AC4)", () => {
+    const res = middleware(req("/login", { atlas_auth: "1", atlas_scope: "bgn-sim" }));
+    expect(res.headers.get("location")).not.toBeNull();
+    expect(locationPath(res)).toBe("/bgn/simulation");
+  });
 });
