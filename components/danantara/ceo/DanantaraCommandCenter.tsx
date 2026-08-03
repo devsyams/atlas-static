@@ -11,8 +11,10 @@ import { CrisisGate } from "./CrisisGate";
  * what is it, who's driving it"); the A7 **CEO Command wall** scrolls in below it
  * (running narration + the Danantara topic board — negative vs positive; the BUMN
  * heatboard is dropped here per v2.0, and its feed is never fetched); then the A14
- * **Counter-Narrative War Room** answers "so what do we post?" (v3.0). One header,
- * one refresh, no route hop — so a boardroom display never blanks mid-read.
+ * **Counter-Narrative War Room** answers "so what do we post?" (v3.0) — unless the opt-in
+ * `showWarRoom` prop is `false` (v7.0 — `/bgn/command` hides it, so the page reads only
+ * *how bad* → *what is said*). One header, one refresh, no route hop — so a boardroom
+ * display never blanks mid-read.
  *
  * Deliberately thin: it owns the refresh nonce and the scroll layout, nothing else.
  * All three blocks keep their own fetches and their own live/offline state, so one
@@ -26,6 +28,7 @@ export function DanantaraCommandCenter({
   mock = false,
   bgn = false,
   staticActors = false,
+  showWarRoom = true,
 }: {
   mediaIntelligenceHref?: string;
   /** Client brand shown across the three panes (A13 v4.0; default Danantara, "BGN" on /bgn/command). */
@@ -40,6 +43,12 @@ export function DanantaraCommandCenter({
   bgn?: boolean;
   /** Serve the gate's actor column from the captured OpenGate roster via `?static=1` (A13 v6.3 / A10 v10.0). */
   staticActors?: boolean;
+  /**
+   * Render the A14 Counter-Narrative War Room as the third section (A13 v7.0; default `true`).
+   * `/bgn/command` passes `false` to hide it — when off, the war room is not rendered and its
+   * `/topics` + `/counter-narrative` fetches are never issued.
+   */
+  showWarRoom?: boolean;
 } = {}) {
   // Bumped by the gate's header Refresh; both blocks refetch on the change. The gate
   // delegates rather than fetching directly, so each feed is pulled exactly once.
@@ -74,7 +83,9 @@ export function DanantaraCommandCenter({
         bgn={bgn}
         windowDays={windowDays}
       />
-      <CounterNarrativeWarRoom refreshNonce={refreshNonce} brand={brand} mock={mock} bgn={bgn} windowDays={windowDays} />
+      {showWarRoom && (
+        <CounterNarrativeWarRoom refreshNonce={refreshNonce} brand={brand} mock={mock} bgn={bgn} windowDays={windowDays} />
+      )}
     </div>
   );
 }

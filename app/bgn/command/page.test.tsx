@@ -25,6 +25,7 @@ vi.mock("../../../components/danantara/ceo/DanantaraCommandCenter", () => ({
     briefingHref,
     mock,
     staticActors,
+    showWarRoom,
   }: {
     mediaIntelligenceHref?: string;
     brand?: string;
@@ -32,6 +33,7 @@ vi.mock("../../../components/danantara/ceo/DanantaraCommandCenter", () => ({
     briefingHref?: string;
     mock?: boolean;
     staticActors?: boolean;
+    showWarRoom?: boolean;
   }) => (
     <div
       data-testid="danantara-command-center"
@@ -41,6 +43,8 @@ vi.mock("../../../components/danantara/ceo/DanantaraCommandCenter", () => ({
       data-briefing={briefingHref ?? ""}
       data-mock={mock ? "1" : "0"}
       data-static-actors={staticActors ? "1" : "0"}
+      // "0" only when the page explicitly passes showWarRoom={false} (v7.0).
+      data-war-room={showWarRoom === false ? "0" : "1"}
     />
   ),
 }));
@@ -97,6 +101,8 @@ describe("/bgn/command (A13 v5.0 — T13/T20)", () => {
     expect(cc).toHaveAttribute("data-mock", "0");
     // v6.3 (T21): panel 3 opts onto the captured static actor roster (A10 v10.0).
     expect(cc).toHaveAttribute("data-static-actors", "1");
+    // v7.0 (T24): the Counter-Narrative War Room is hidden on /bgn/command.
+    expect(cc).toHaveAttribute("data-war-room", "0");
   });
 
   it("hides the shortcut when the signed SSO cookie is absent — still rebranded, still live", async () => {

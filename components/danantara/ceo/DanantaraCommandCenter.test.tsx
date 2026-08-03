@@ -117,6 +117,36 @@ describe("DanantaraCommandCenter (A13 — one-page)", () => {
     expect(order).toEqual(["crisis-gate", "ceo-wall", "counter-war-room"]);
   });
 
+  // A13 v7.0 — client: hide the War Room on /bgn/command by default.
+  it("omits the Counter-Narrative War Room when showWarRoom is false (T22)", async () => {
+    stubFetch();
+    render(<DanantaraCommandCenter showWarRoom={false} />);
+    // The gate + wall still render; the war room is gone entirely.
+    await waitFor(() => expect(screen.getByTestId("ceo-wall")).toBeInTheDocument());
+    expect(screen.getByTestId("crisis-gate")).toBeInTheDocument();
+    expect(screen.queryByTestId("counter-war-room")).not.toBeInTheDocument();
+  });
+
+  it("with the War Room hidden, one Refresh makes 4 feed reads and never POSTs /counter-narrative (T23)", async () => {
+    const fetchMock = stubFetch();
+    render(<DanantaraCommandCenter showWarRoom={false} />);
+    await waitFor(() => expect(screen.getByTestId("ceo-wall")).toBeInTheDocument());
+
+    fetchMock.mockClear();
+    fireEvent.click(screen.getByLabelText("Refresh"));
+
+    await waitFor(() => {
+      const urls = fetchMock.mock.calls.map((c) => String(c[0]));
+      // /topics only twice now — gate + wall — the war room's third read is gone.
+      expect(urls.filter((u) => u.includes("/topics") && u.includes("fresh=1"))).toHaveLength(2);
+      expect(urls.filter((u) => u.includes("/threats") && u.includes("fresh=1"))).toHaveLength(1);
+      expect(urls.filter((u) => u.includes("/actor-intelligence") && u.includes("fresh=1"))).toHaveLength(1);
+      // No war room → its /counter-narrative POST is never made, and the total drops 5 → 4.
+      expect(urls.filter((u) => u.includes("counter-narrative"))).toHaveLength(0);
+      expect(urls).toHaveLength(4);
+    });
+  });
+
   it("shows a single header — the wall's HeaderStrip is suppressed (T3)", async () => {
     stubFetch();
     render(<DanantaraCommandCenter />);
