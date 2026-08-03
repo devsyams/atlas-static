@@ -1,4 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { revalidateTag } from "next/cache";
+
+vi.mock("next/cache", () => ({ revalidateTag: vi.fn() }));
 import type { ActorRosterApiResponse } from "./ceo/actor-roster-source";
 import { ActorRosterNotConfiguredError, fetchActorRosterForCode } from "./actor-roster-feed";
 
@@ -79,7 +82,7 @@ describe("fetchActorRosterForCode (A10 v5.2)", () => {
     expect(drivers[0].followers).toBe(1_200_000);
     expect(calledUrl).toContain("topic=danantara_main");
     expect(calledUrl).toContain(`api_key=${KEY}`);
-    expect(calledInit).toEqual({ next: { revalidate: 21600 } });
+    expect(calledInit).toEqual({ next: { revalidate: 21600, tags: ["danantara-actors"] } });
   });
 
   it("bypasses the data cache on ?fresh=1", async () => {
@@ -93,6 +96,8 @@ describe("fetchActorRosterForCode (A10 v5.2)", () => {
     );
     await fetchActorRosterForCode("danantara_main", { fresh: true });
     expect(calledInit).toEqual({ cache: "no-store" });
+    // A10 v11.1: fresh also evicts the 6 h cache, not just bypasses it.
+    expect(revalidateTag).toHaveBeenCalledWith("danantara-actors", "max");
   });
 
   it("throws on a malformed payload / upstream failure", async () => {

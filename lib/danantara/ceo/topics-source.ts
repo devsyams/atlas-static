@@ -41,7 +41,9 @@ export interface TopicsApiResponse {
   status_code: number;
   // `idquery` (P8 v2.0) is the Nexorus monitoring-board id for this whole topic code —
   // one per response, used to deep-link into that board's Nexorus dashboard view.
-  meta: { topic: string; idquery?: string; startdate: string; enddate: string };
+  // `window` + `computed_at` are additive (TrawlDeck PR #267): echoed on the
+  // named-window path, absent/null on the date path or a pre-#267 facade.
+  meta: { topic: string; idquery?: string; startdate: string; enddate: string; window?: string | null; computed_at?: string };
   data: { topics: UpstreamTopic[]; summary: TopicsSummary; intent: TopicIntent[] };
 }
 
@@ -53,12 +55,18 @@ export interface MappedTopics {
 
 /* ------------------------------- helpers -------------------------------- */
 
-/** ISO date (UTC, YYYY-MM-DD) for a Date. */
+/** Jakarta is UTC+7 year-round (no DST). */
+const WIB_OFFSET_MS = 7 * 3_600_000;
+
+/** ISO date (YYYY-MM-DD) for a Date, **in WIB** (A7 v51.0) — the engine and its
+ * operators live in Asia/Jakarta, so windows must name WIB calendar days. On a
+ * UTC server the WIB evening is already "tomorrow"; using the UTC date made the
+ * window end a day early and hit a different engine snapshot than the client's. */
 function isoDate(d: Date): string {
-  return d.toISOString().slice(0, 10);
+  return new Date(d.getTime() + WIB_OFFSET_MS).toISOString().slice(0, 10);
 }
 
-/** A rolling window ending today: { startdate: today − days, enddate: today }. */
+/** A rolling window ending today (WIB): { startdate: today − days, enddate: today }. */
 export function rollingWindow(today: Date, days: number): { startdate: string; enddate: string } {
   const start = new Date(today.getTime() - days * 86_400_000);
   return { startdate: isoDate(start), enddate: isoDate(today) };
@@ -74,9 +82,14 @@ export function buildTopicsUrl(
   topicCode: string,
   apiKey: string,
   window?: { startdate: string; enddate: string },
+  named?: string,
 ): string {
   const qs = new URLSearchParams({ topic: topicCode, api_key: apiKey });
-  if (window) {
+  // A named engine window (TrawlDeck PR #267) and an explicit date pair are
+  // mutually exclusive upstream (422 if both) — named wins when given.
+  if (named) {
+    qs.set("window", named);
+  } else if (window) {
     qs.set("startdate", window.startdate);
     qs.set("enddate", window.enddate);
   }

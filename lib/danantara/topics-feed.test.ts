@@ -1,6 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { revalidateTag } from "next/cache";
 import type { TopicsApiResponse } from "./ceo/topics-source";
 import { FeedNotConfiguredError, fetchTopicsForCode } from "./topics-feed";
+
+vi.mock("next/cache", () => ({ revalidateTag: vi.fn() }));
 
 /** Two-topic payload. */
 const SAMPLE: TopicsApiResponse = {
@@ -90,7 +93,7 @@ describe("fetchTopicsForCode — stale/transient empty does not stick (A8 v4.1)"
 
     expect(result.issues).toHaveLength(2); // live data shown, not the cached empty
     const inits = fetchMock.mock.calls.map((c) => c[1]);
-    expect(inits[0]).toEqual({ next: { revalidate: 21600 } }); // primary path is cacheable (6 h)
+    expect(inits[0]).toEqual({ next: { revalidate: 21600, tags: ["danantara-topics"] } }); // primary path is cacheable (6 h)
     expect(inits).toContainEqual({ cache: "no-store" }); // a live (uncached) confirm happened
   });
 
@@ -129,7 +132,7 @@ describe("fetchTopicsForCode — stale/transient empty does not stick (A8 v4.1)"
 
     expect(result.issues).toHaveLength(2);
     expect(fetchMock).toHaveBeenCalledTimes(1); // no widening, no confirm on the happy path
-    expect(fetchMock.mock.calls[0][1]).toEqual({ next: { revalidate: 21600 } });
+    expect(fetchMock.mock.calls[0][1]).toEqual({ next: { revalidate: 21600, tags: ["danantara-topics"] } });
   });
 
   it("leaves a genuinely empty result empty (no fabricated data) after confirming live", async () => {
@@ -144,18 +147,34 @@ describe("fetchTopicsForCode — stale/transient empty does not stick (A8 v4.1)"
     expect(inits).toContainEqual({ cache: "no-store" }); // it did try the live upstream
   });
 
-  it("days opt → one explicit-window fetch (start = today − (days−1)), no widening — T24 (A7 v49.0)", async () => {
+  it("preset days map to the engine's NAMED windows — window=, no date pair — T24 (A7 v52.0)", async () => {
+    // window and startdate/enddate are mutually exclusive upstream (422 if both),
+    // so the preset must send window INSTEAD of the dates.
+    for (const [days, named] of [[1, "today"], [7, "7d"], [30, "30d"]] as const) {
+      const fetchMock = seqFetch([SAMPLE]);
+      vi.stubGlobal("fetch", fetchMock);
+      const result = await fetchTopicsForCode("1", { days });
+      expect(result.issues).toHaveLength(2);
+      expect(fetchMock).toHaveBeenCalledTimes(1); // no widening on a chosen window
+      const params = new URL(String(fetchMock.mock.calls[0][0])).searchParams;
+      expect(params.get("window")).toBe(named);
+      expect(params.get("startdate")).toBeNull();
+      expect(params.get("enddate")).toBeNull();
+    }
+  });
+
+  it("a non-preset days value keeps the explicit WIB date-pair path (no window param)", async () => {
     const fetchMock = seqFetch([SAMPLE]);
     vi.stubGlobal("fetch", fetchMock);
 
-    const result = await fetchTopicsForCode("1", { days: 30 });
+    const result = await fetchTopicsForCode("1", { days: 14 });
 
     expect(result.issues).toHaveLength(2);
-    expect(fetchMock).toHaveBeenCalledTimes(1);
     const params = new URL(String(fetchMock.mock.calls[0][0])).searchParams;
+    expect(params.get("window")).toBeNull();
     const start = Date.parse(params.get("startdate") ?? "");
     const end = Date.parse(params.get("enddate") ?? "");
-    expect((end - start) / 86_400_000).toBe(29); // 30 days inclusive: today − 29 … today
+    expect((end - start) / 86_400_000).toBe(13); // 14 days inclusive
   });
 
   it("days + empty window stays empty — the chosen window is never widened, only live-confirmed — T24", async () => {
@@ -169,7 +188,7 @@ describe("fetchTopicsForCode — stale/transient empty does not stick (A8 v4.1)"
     const [firstUrl, secondUrl] = fetchMock.mock.calls.map((c) => String(c[0]));
     expect(secondUrl).toBe(firstUrl); // the confirm re-requests the SAME window
     const inits = fetchMock.mock.calls.map((c) => c[1]);
-    expect(inits[0]).toEqual({ next: { revalidate: 21600 } });
+    expect(inits[0]).toEqual({ next: { revalidate: 21600, tags: ["danantara-topics"] } });
     expect(inits[1]).toEqual({ cache: "no-store" });
   });
 
@@ -182,5 +201,32 @@ describe("fetchTopicsForCode — stale/transient empty does not stick (A8 v4.1)"
     expect(result.issues).toHaveLength(0);
     expect(fetchMock).toHaveBeenCalledTimes(2); // default + 28d widen only — no extra confirm
     for (const c of fetchMock.mock.calls) expect(c[1]).toEqual({ cache: "no-store" });
+  });
+});
+
+describe("fresh purges the data cache (A7 v51.0)", () => {
+  beforeEach(() => {
+    process.env.DANANTARA_INTELLIGENCE_BASE_URL = "https://api.example.io/api-nexorus";
+    process.env.DANANTARA_TOPICS_API_KEY = KEY;
+    vi.mocked(revalidateTag).mockClear();
+  });
+  afterEach(() => {
+    vi.restoreAllMocks();
+    delete process.env.DANANTARA_INTELLIGENCE_BASE_URL;
+    delete process.env.DANANTARA_TOPICS_API_KEY;
+  });
+
+  it("?fresh=1 invalidates the danantara-topics tag so the 6 h cache is evicted, not just bypassed", async () => {
+    vi.stubGlobal("fetch", seqFetch([SAMPLE]));
+    await fetchTopicsForCode("danantara_pertamina", { fresh: true, days: 7 });
+    expect(revalidateTag).toHaveBeenCalledWith("danantara-topics", "max");
+  });
+
+  it("a plain (cacheable) load does not invalidate, and its fetch carries the cache tag", async () => {
+    const fetchMock = seqFetch([SAMPLE]);
+    vi.stubGlobal("fetch", fetchMock);
+    await fetchTopicsForCode("danantara_pertamina", { days: 7 });
+    expect(revalidateTag).not.toHaveBeenCalled();
+    expect(fetchMock.mock.calls[0][1]).toEqual({ next: { revalidate: 21600, tags: ["danantara-topics"] } });
   });
 });

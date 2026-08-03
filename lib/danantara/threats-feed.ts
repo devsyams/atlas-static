@@ -8,8 +8,10 @@
 
 import { mapThreatsResponse, type MappedThreats, type ThreatsApiResponse } from "./ceo/threats-source";
 import { resolveFeedEndpoint, type FeedProduct } from "./feed-config";
+import { purgeFeedTag } from "./topics-feed";
 
 const REVALIDATE_S = 21_600; // 6 h — matches the topics feed (the upstream refreshes ~daily)
+const CACHE_TAG = "danantara-threats"; // A10 v11.1 — lets ?fresh=1 evict the cache, not just bypass it
 
 export type ThreatsResult = MappedThreats & { meta: ThreatsApiResponse["meta"] };
 
@@ -20,7 +22,7 @@ export class ThreatsNotConfiguredError extends Error {}
 /** One fetch + map. `fresh` bypasses the data cache. */
 async function fetchOnce(base: string, code: string, apiKey: string, fresh: boolean): Promise<ThreatsResult> {
   const url = `${base}?${new URLSearchParams({ topic: code, api_key: apiKey }).toString()}`;
-  const res = await fetch(url, fresh ? { cache: "no-store" } : { next: { revalidate: REVALIDATE_S } });
+  const res = await fetch(url, fresh ? { cache: "no-store" } : { next: { revalidate: REVALIDATE_S, tags: [CACHE_TAG] } });
   if (!res.ok) throw new Error(`upstream ${res.status}`);
 
   const json = (await res.json()) as ThreatsApiResponse;
@@ -54,6 +56,8 @@ export async function fetchThreatsForCode(
   const { base, apiKey } = endpoint;
 
   const fresh = opts.fresh ?? false;
+  // A10 v11.1: a fresh read also EVICTS the 6 h cache (tag invalidation).
+  if (fresh) purgeFeedTag(CACHE_TAG);
   const result = await fetchOnce(base, code, apiKey, fresh);
 
   // Cacheable + empty → re-check the live upstream once, so a recovered feed isn't

@@ -10,7 +10,7 @@ import { DanantaraBrief } from "../../../components/danantara/brief/DanantaraBri
 export default function Page() {
   return (
     <AppShell>
-      <DanantaraBrief backHref="/bgn/command" />
+      <DanantaraBrief backHref="/bgn/command" bgn />
     </AppShell>
   );
 }
