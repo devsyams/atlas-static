@@ -43,7 +43,7 @@
 | **A10** | Danantara Crisis Gate (fear-first executive landing) | 3-act | demo | — | 11.0 | Built |
 | **A11** | Danantara Executive Briefing | 3-act | demo | — | 3.0 | Built |
 | **A12** | JasaMarga AI Ops Insight & Predictions (LLM-backed) | 3-act | demo | — | 7.0 | Built |
-| **A13** | BGN Command Center (one-page) | 3-act | demo | — | 6.4 | Built |
+| **A13** | BGN Command Center (one-page) | 3-act | demo | — | 7.0 | Built |
 | **A14** | Counter-Narrative War Room (AI counter-content) | 3-act | demo | — | 5.0 | Built |
 | **A15** | Crisis Simulation Room (world builder) | 3-act | demo | — | 2.0 | Built |
 
@@ -205,3 +205,4 @@
 | 1.139 | 2026-08-03 | A7 → **v50.3 (MINOR)** — **/danantara demo BUMN board → top-8 + real topics** (client). Cap the board at the 8 highest-profile BUMN (Pertamina, Mandiri, BRI, PLN, Telkom, Garuda, BNI, Jasa Marga); each BUMN's negative + positive topic now comes from the **most-recent (late-July/early-August 2026) X/social + news discourse** (researched per BUMN via parallel agents, refreshed for recency) rather than templated strings — Pertamina's Sumatra fuel-shortage + PLN's Kalimantan blackouts lead the board. Still built via the live `buildBumnRow`; fixture tests updated (8 rows, specific slugs). Built (TDD): suite green |
 
 | 1.135 | 2026-08-02 | A10 → **v10.0 (MAJOR, client request)** + A13 → **v6.3 (MINOR)** — **captured static actor roster + actor detail popup on `/bgn/command`**: TrawlDeck actor enrichment is off (bare roster), so panel 3 opts onto a bundled capture of a real OpenGate MBG actor-intelligence run (`lib/bgn/mock/actor-intelligence.json`, 20 analysed actors) via a production-safe `?static=1` BFF branch + `staticActors` prop threading; actor cards become clickable → new `ActorDetailModal` with the full analysis sections. `/topics`+`/threats` stay live; `/danantara/krisis` untouched; reversible when enrichment lands |
+| 1.140 | 2026-08-03 | A13 → **v7.0 (MAJOR, scope — client)** — **hide the A14 Counter-Narrative War Room on `/bgn/command` by default** (incl. its nested "Recommended Counter-Posts — Top 3 Negative Topics" divider + cards; both live in one component). New opt-in `showWarRoom` prop on `DanantaraCommandCenter` (default `true`, so the third-section composition stays intact and the change is one-line reversible); `/bgn/command` passes `showWarRoom={false}`, so `counter-war-room` is **not rendered** and its `/topics` + `/counter-narrative` fetches are never issued (the page refresh drops **5 → 4** requests). A14's `CounterNarrativeWarRoom.tsx` is **untouched** — only A13's container composition changes. AC4/AC8 amended; T22–T24 added |
