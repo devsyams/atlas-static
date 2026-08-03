@@ -94,3 +94,40 @@ describe("BUMN demo logins (T11 / AC7)", () => {
     }
   });
 });
+
+describe("BGN Simulation kiosk login (A16 / AC1–AC4)", () => {
+  it("signs in as bgn@nexorus.io / bgnnexorus into the BGN Crisis Simulation Room (T1/AC1)", () => {
+    const user = findUser("bgn@nexorus.io", "bgnnexorus");
+    expect(user).not.toBeNull();
+    expect(user?.scope).toBe("bgn-sim");
+    expect(user?.home).toBe("/bgn/simulation");
+  });
+
+  it("rejects a wrong password for the kiosk account (T1/AC1)", () => {
+    expect(findUser("bgn@nexorus.io", "wrong")).toBeNull();
+  });
+
+  it("parses and routes the bgn-sim scope home to the simulation room (T2/AC1/AC4)", () => {
+    expect(parseScope("bgn-sim")).toBe("bgn-sim");
+    expect(homeForScope("bgn-sim")).toBe("/bgn/simulation");
+  });
+
+  it("locks the bgn-sim scope to /bgn/simulation only (T3/AC3)", () => {
+    expect(scopeAllowsPath("bgn-sim", "/bgn/simulation")).toBe(true);
+    expect(scopeAllowsPath("bgn-sim", "/bgn/simulation/anything")).toBe(true);
+    // Everything else is out — sibling /bgn pages, the sim room's Danantara twin,
+    // other dashboards, the index and the login page.
+    expect(scopeAllowsPath("bgn-sim", "/bgn/command")).toBe(false);
+    expect(scopeAllowsPath("bgn-sim", "/bgn")).toBe(false);
+    // Prefix-confusion boundary: a path that merely *starts with* the room path but
+    // is not the room (or a child under "/") must be denied. Guards against a future
+    // refactor to a bare startsWith("/bgn/simulation") silently opening siblings.
+    expect(scopeAllowsPath("bgn-sim", "/bgn/simulationX")).toBe(false);
+    expect(scopeAllowsPath("bgn-sim", "/bgn/simulation-foo")).toBe(false);
+    expect(scopeAllowsPath("bgn-sim", "/danantara/simulation")).toBe(false);
+    expect(scopeAllowsPath("bgn-sim", "/danantara")).toBe(false);
+    expect(scopeAllowsPath("bgn-sim", "/bumn/pln")).toBe(false);
+    expect(scopeAllowsPath("bgn-sim", "/")).toBe(false);
+    expect(scopeAllowsPath("bgn-sim", "/login")).toBe(false);
+  });
+});

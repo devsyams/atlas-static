@@ -15,6 +15,11 @@ export default defineConfig({
     // with a `// @vitest-environment jsdom` docblock at the top of the file.
     environment: "node",
     setupFiles: ["./vitest.setup.ts"],
-    include: ["app/**/*.test.{ts,tsx}", "components/**/*.test.{ts,tsx}", "lib/**/*.test.{ts,tsx}"],
+    include: [
+      "app/**/*.test.{ts,tsx}",
+      "components/**/*.test.{ts,tsx}",
+      "lib/**/*.test.{ts,tsx}",
+      "middleware.test.ts",
+    ],
   },
 });

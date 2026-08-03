@@ -84,7 +84,8 @@ export function AppShell({ children }: { children: ReactNode }) {
     scope === "danantara"
       ? NAV.filter((n) => n.to.startsWith("/danantara") || n.to.startsWith("/bgn"))
       : NAV;
-  const homeHref = scope === "danantara" ? "/danantara" : "/";
+  const homeHref =
+    scope === "danantara" ? "/danantara" : scope === "bgn-sim" ? "/bgn/simulation" : "/";
 
   // Executive dashboards (Danantara CEO v2 + each per-BUMN board) run a stripped
   // chrome for their 40–60 y/o CEO audience: only the Dashboards menu group, no
@@ -159,7 +160,8 @@ export function AppShell({ children }: { children: ReactNode }) {
           {/* Notifications — hidden on the executive dashboards. */}
           {!minimalChrome && <NotificationsMenu />}
 
-          {/* Settings / Nav dropdown */}
+          {/* Settings / Nav dropdown — hidden entirely for the bgn-sim kiosk (A16) */}
+          {scope !== "bgn-sim" && (
           <Dropdown
             align="end"
             contentClassName="w-64"
@@ -217,6 +219,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               </>
             )}
           </Dropdown>
+          )}
 
           <UserMenu scope={scope} />
         </div>
@@ -327,10 +330,11 @@ function NotificationsMenu() {
 function UserMenu({ scope }: { scope: Scope }) {
   const router = useRouter();
   const isDan = scope === "danantara";
-  const displayName = isDan ? "Danantara Analyst" : "Operator";
-  const initials = isDan ? "DA" : "OP";
-  const roleLabel = isDan ? "Sovereign Analyst" : "Super Admin";
-  const emailLabel = isDan ? "danantara" : "operator@nexorus.io";
+  const isBgnSim = scope === "bgn-sim";
+  const displayName = isBgnSim ? "BGN Simulation" : isDan ? "Danantara Analyst" : "Operator";
+  const initials = isBgnSim ? "BG" : isDan ? "DA" : "OP";
+  const roleLabel = isBgnSim ? "Crisis Simulation Room" : isDan ? "Sovereign Analyst" : "Super Admin";
+  const emailLabel = isBgnSim ? "bgn@nexorus.io" : isDan ? "danantara" : "operator@nexorus.io";
   return (
     <Dropdown
       align="end"
