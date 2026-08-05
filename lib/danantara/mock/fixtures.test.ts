@@ -133,7 +133,7 @@ describe("MOCK_DANANTARA_ACTORS", () => {
     expect(actors.filter((a) => isBotAccountType(a.accountType)).length).toBeGreaterThanOrEqual(2);
   });
 
-  it("shows a photo only on the credible/real-person actors — never a provocateur/buzzer (no real face under that label)", () => {
+  it("never shows a photo on a provocateur/buzzer account (no real face under that label); real-face actors keep their bundled photo", () => {
     for (const a of actors) {
       if (isBotAccountType(a.accountType)) expect(a.avatarUrl, `@${a.handle}`).toBeUndefined();
     }
