@@ -1,12 +1,14 @@
 /**
- * `/danantara` demo fixtures (A7 v50.1) — a production-safe stand-in for the live
- * Danantara topics feed while the garudaperkasa (opengate) key is being renewed.
+ * `/danantara` demo fixtures (A7 v50.1; A10 v11.2) — a production-safe stand-in for the
+ * live Danantara feeds while the garudaperkasa (opengate) key is being renewed.
  *
- * Served via the `/api/v1/danantara/topics` `?mock=1` branch for the **Danantara**
- * product (i.e. NOT `?bgn=1` — `/bgn/command` keeps its own `lib/bgn/mock` fixtures).
- * `/danantara` opts in only when `DANANTARA_DEMO_MOCK=1`, so with the flag unset the
- * page is byte-identical to the live path. Remove the flag (and, later, this module +
- * the route branch) when the feed is live again.
+ * Served via the Danantara product's `?mock=1` branch on the three feed BFFs (i.e. NOT
+ * `?bgn=1` — `/bgn/command` keeps its own `lib/bgn/mock` fixtures): `MOCK_DANANTARA_TOPICS`
+ * + `MOCK_DANANTARA_BUMN` power `/danantara` (the CEO wall, A7), and `MOCK_DANANTARA_THREATS`
+ * + `MOCK_DANANTARA_ACTORS` power `/danantara/krisis` (the Crisis Gate's "Ancaman Utama" +
+ * "Aktor Penggerak" columns, A10). Both pages opt in only when `DANANTARA_DEMO_MOCK=1`, so
+ * with the flag unset they are byte-identical to the live path. Remove the flag (and, later,
+ * this module + the route branches) when the feeds are live again.
  *
  * Built the same way as the BGN fixtures: the client-supplied topics are shaped as a
  * raw upstream `TopicsApiResponse` and run through the real `mapTopicsResponse`, so the
@@ -16,7 +18,15 @@
  */
 
 import { getBumn } from "@/lib/bumn/registry";
+import { mapActorRoster, type ActorRosterApiResponse } from "@/lib/danantara/ceo/actor-roster-source";
 import { buildBumnRow } from "@/lib/danantara/ceo/bumn-board";
+import {
+  mapThreatsResponse,
+  type DetectedThreat,
+  type ThreatsApiResponse,
+  type ThreatDriver,
+  type ThreatsStats,
+} from "@/lib/danantara/ceo/threats-source";
 import { mapTopicsResponse, type TopicsApiResponse } from "@/lib/danantara/ceo/topics-source";
 import type { BumnSentiment, CeoIssue } from "@/lib/danantara/ceo/types";
 import type { FeedResult } from "@/lib/danantara/topics-feed";
@@ -187,4 +197,198 @@ export type MockDanantaraBumn = { bumn: BumnSentiment[]; issues: CeoIssue[] };
 export const MOCK_DANANTARA_BUMN: MockDanantaraBumn = {
   bumn: BUMN_ROWS.map((r) => r.row),
   issues: BUMN_ROWS.flatMap((r) => r.issues),
+};
+
+/* ---------------------- crisis gate: /threats (A10) --------------------- */
+
+/**
+ * The Crisis Gate's middle column ("Ancaman Utama") demo fixture — the **#1 detected
+ * threat** for `/danantara/krisis`. Authored as one coherent Danantara situation: the
+ * transparency / alleged-corruption crisis around the unpublished consolidated
+ * financials and the APBN funds Danantara manages — the loudest genuinely-negative
+ * Danantara narrative (it lines up with the corruption + laporan-keuangan topics in
+ * `MOCK_DANANTARA_TOPICS`). Built through the live `mapThreatsResponse`, so it matches
+ * a real `/api/v1/danantara/threats` response exactly. (Panel 3 always reads the
+ * `/actor-intelligence` roster below, not this threat's `top_impact_posts` — AC11.)
+ */
+export type MockDanantaraThreats = { threat: DetectedThreat | null; stats: ThreatsStats };
+
+const RAW_DANANTARA_THREATS: ThreatsApiResponse = {
+  success: true,
+  status_code: 200,
+  meta: { topic: "danantara_main" },
+  data: {
+    stats: { total_threats: 3, high_severity: 1, medium_severity: 2, low_severity: 0 },
+    threats: [
+      {
+        id: "thr-danantara-transparansi",
+        severity_class: "high",
+        severity: 8,
+        title: "Dugaan Korupsi Pengelolaan Dana & Laporan Keuangan Danantara Tak Kunjung Terbit",
+        intelligence:
+          "Tudingan dugaan korupsi pengelolaan dana kelolaan Danantara (menyentuh program MBG, Kopdes, hingga dana APBN ratusan triliun) menguat setelah laporan keuangan konsolidasi perdana tak kunjung diterbitkan; tokoh seperti Mahfud MD ikut menyoroti aturan Patriot Bond dan tagar transparansi menyebar dalam 48 jam terakhir.",
+        impact:
+          "Kepercayaan publik atas tata kelola Danantara tergerus; muncul desakan audit BPK, publikasi laporan keuangan, dan pembukaan portal data — risiko reputasi bagi lembaga dan BUMN di bawahnya.",
+        threat_type: "governance_transparency",
+        posts_count: 3820,
+        growth_rate: "+27%",
+        total_engagement: 486_000,
+        platforms: ["X", "TikTok"],
+        trending_keywords: ["#DanantaraTransparan", "korupsi", "laporan keuangan", "APBN", "Patriot Bond"],
+        time_to_viral: 8,
+        recommended_actions: [
+          "Umumkan tenggat publikasi laporan keuangan konsolidasi (pra-audit BPK) dalam 24 jam",
+          "Aktifkan juru bicara untuk meluruskan angka Rp917 T dan alur dana yang salah dibingkai",
+          "Buka portal data/transparansi pengelolaan dana untuk memutus narasi ketertutupan",
+        ],
+        top_impact_posts: [
+          {
+            username: "suara_rakyat_merdeka",
+            text: "Dana ratusan triliun dikelola tapi laporan keuangan nggak ada? Audit sekarang! #DanantaraTransparan",
+            engagement: 118_000,
+            followers: "47,300",
+            actor_intelligence: {
+              username: "suara_rakyat_merdeka",
+              account_type: "propaganda_provocator",
+              credibility_score: 2,
+              risk_level: "high",
+              follower_count: "47,300",
+              analysis: "Pola amplifikasi terkoordinasi; membingkai keterlambatan laporan sebagai bukti korupsi.",
+            },
+          },
+          {
+            username: "wong_cilik_bersuara",
+            text: "Serius nanya: kapan laporan keuangan konsolidasi Danantara terbit? Publik berhak tahu ke mana dana kelolaan mengalir.",
+            engagement: 74_000,
+            followers: "84,200",
+            actor_intelligence: {
+              username: "wong_cilik_bersuara",
+              account_type: "negative_critic",
+              credibility_score: 6,
+              risk_level: "medium",
+              follower_count: "84,200",
+              analysis: "Kritikus tata kelola; mendorong akuntabilitas dengan nada tegas namun berbasis fakta.",
+            },
+          },
+        ],
+      },
+    ],
+  },
+};
+
+const mappedDanantaraThreats = mapThreatsResponse(RAW_DANANTARA_THREATS);
+export const MOCK_DANANTARA_THREATS: MockDanantaraThreats = {
+  threat: mappedDanantaraThreats.threats[0] ?? null,
+  stats: mappedDanantaraThreats.stats,
+};
+
+/* ------------------ crisis gate: /actor-intelligence (A10) -------------- */
+
+/**
+ * The Crisis Gate's right column ("Aktor Penggerak") demo roster — the key accounts in
+ * the Danantara conversation, split **human (top) vs coordinated provocateur/bot
+ * (bottom)** by the gate. Built through the live `mapActorRoster`, so it matches a real
+ * `/api/v1/danantara/actor-intelligence` response; the roster ranks negative-leaning +
+ * influential first, so the two loudest grievance voices surface (as on the live feed).
+ *
+ * Placeholder-person photos (randomuser.me) are attached to the **human** actors only —
+ * the **bot / provocateur** accounts get no photo (they fall back to `ThreatActors`'
+ * initials tile), because a real face must never render under a "bot" label. The mapper
+ * only keeps a `data:image` `profile_picture`, so these http URLs are attached to the
+ * mapped `avatarUrl` below instead; the Avatar `<img>` also degrades to the initials tile
+ * on load error, so a blocked CDN (prod egress is selective) never breaks the column.
+ */
+export type MockDanantaraActors = { actors: ThreatDriver[] };
+
+const DANANTARA_AVATAR_URLS: Record<string, string> = {
+  mr_soerjodibroto: "https://randomuser.me/api/portraits/men/52.jpg",
+  ponokadar: "https://randomuser.me/api/portraits/men/75.jpg",
+  wong_cilik_bersuara: "https://randomuser.me/api/portraits/men/41.jpg",
+  analis_pasar_id: "https://randomuser.me/api/portraits/women/29.jpg",
+};
+
+const RAW_DANANTARA_ROSTER: ActorRosterApiResponse = {
+  success: true,
+  status_code: 200,
+  meta: { topic: "danantara_main" },
+  data: [
+    {
+      username: "mr_soerjodibroto",
+      platform: "Instagram",
+      follower_count: "1,040",
+      influence_score: 4,
+      credibility_score: 5,
+      sentiment_score: -9,
+      risk_level: "high",
+      account_classification: "Complainer",
+      content_themes:
+        "Konsisten menyuarakan keluhan proyek LRT City yang mangkrak dari PT Adhi Commuter Properti (anak usaha Adhi Karya) — janji serah-terima tak terpenuhi; menuntut perhatian Danantara.",
+    },
+    {
+      username: "ponokadar",
+      platform: "Instagram",
+      follower_count: "103",
+      influence_score: 3,
+      credibility_score: 3,
+      sentiment_score: -9,
+      risk_level: "high",
+      account_classification: "Complainer",
+      content_themes:
+        "Lansia yang menyatakan terjebak masalah keuangan dengan Bank BNI & BRI dan menghadapi ancaman lelang rumah; memohon solusi kepada pemangku kepentingan.",
+    },
+    {
+      username: "wong_cilik_bersuara",
+      platform: "X",
+      follower_count: "84,200",
+      influence_score: 7,
+      credibility_score: 6,
+      sentiment_score: -6,
+      risk_level: "medium",
+      account_classification: "Negative Critic",
+      content_themes: "Mendesak transparansi laporan keuangan konsolidasi Danantara dan asal-usul dana kelolaan.",
+    },
+    {
+      username: "analis_pasar_id",
+      platform: "X",
+      follower_count: "312,000",
+      influence_score: 8,
+      credibility_score: 8,
+      sentiment_score: -5,
+      risk_level: "medium",
+      account_classification: "Financial Analyst",
+      content_themes:
+        "Menyoroti penundaan penerbitan obligasi dolar Danantara dan kekhawatiran independensi otoritas keuangan pasca pelibatan di rapat KSSK.",
+    },
+    {
+      username: "suara_rakyat_merdeka",
+      platform: "X",
+      follower_count: "47,300",
+      influence_score: 5,
+      credibility_score: 2,
+      sentiment_score: -9,
+      risk_level: "high",
+      account_classification: "Propaganda/Provocator",
+      influence_analysis: "Amplifikasi terkoordinasi; membingkai keterlambatan laporan keuangan sebagai bukti korupsi dan menyerukan pembubaran.",
+    },
+    {
+      username: "kawal_apbn_official",
+      platform: "X",
+      follower_count: "38,900",
+      influence_score: 4,
+      credibility_score: 2,
+      sentiment_score: -8,
+      risk_level: "high",
+      account_classification: "Buzzer",
+      influence_analysis: "Klaster buzzer; mengaitkan dana APBN Rp917 T dengan dugaan penyimpangan tanpa bukti.",
+    },
+  ],
+};
+
+// Attach the realistic photo per handle onto the mapped roster (the mapper drops
+// non-`data:image` profile_picture values, so the URL can't ride through it).
+export const MOCK_DANANTARA_ACTORS: MockDanantaraActors = {
+  actors: mapActorRoster(RAW_DANANTARA_ROSTER).map((a) => ({
+    ...a,
+    avatarUrl: DANANTARA_AVATAR_URLS[a.handle] ?? a.avatarUrl,
+  })),
 };

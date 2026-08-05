@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import capturedRoster from "@/lib/bgn/mock/actor-intelligence.json";
 import { MOCK_ACTORS } from "@/lib/bgn/mock/fixtures";
+import { MOCK_DANANTARA_ACTORS } from "@/lib/danantara/mock/fixtures";
 import { mapCapturedRoster } from "@/lib/danantara/ceo/actor-intel";
 import { readDevMockJson } from "@/lib/danantara/dev-mocks";
 import { feedProductFromParams, resolveTopicCode } from "@/lib/danantara/feed-config";
@@ -21,13 +22,15 @@ import { ActorRosterNotConfiguredError, fetchActorRosterForCode } from "@/lib/da
 export async function GET(req: Request) {
   const params = new URL(req.url).searchParams;
   const fresh = params.get("fresh") === "1";
+  // Per-product resolution (A10 v11.0): `?bgn=1` → BGN product, else Danantara.
+  const product = feedProductFromParams(params);
 
-  // Scoped BGN demo mock (A13 v4.0). Intentionally BGN-only — NOT made product-aware like
-  // the /topics branch: the /danantara demo (A7 v50.1) mocks only the panes it renders
-  // (/topics + /bumn-board), and /danantara/krisis (CrisisGate) isn't wired to the demo,
-  // so no Danantara caller sends ?mock=1 here. Production-safe; returns the bundled BGN roster.
+  // Scoped demo mock (?mock=1) — **product-aware** (A10 v11.2): BGN roster for
+  // /bgn/command (which also sends ?bgn=1), the Danantara roster for the /danantara/krisis
+  // demo (DANANTARA_DEMO_MOCK). Every other caller falls through to the live path.
+  // Production-safe by design — bundled demo data, no secret, returns before the upstream call.
   if (params.get("mock") === "1") {
-    return NextResponse.json(MOCK_ACTORS);
+    return NextResponse.json(product === "bgn" ? MOCK_ACTORS : MOCK_DANANTARA_ACTORS);
   }
 
   // Captured static roster (A10 v10.0 / AC12): only /bgn/command sends ?static=1 while
@@ -48,8 +51,6 @@ export async function GET(req: Request) {
     }
   }
 
-  // Per-product resolution (A10 v11.0): `?bgn=1` → BGN product, else Danantara.
-  const product = feedProductFromParams(params);
   const code = resolveTopicCode(params, product);
 
   try {

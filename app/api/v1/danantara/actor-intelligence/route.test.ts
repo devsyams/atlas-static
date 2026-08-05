@@ -4,6 +4,7 @@ import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ActorRosterApiResponse } from "@/lib/danantara/ceo/actor-roster-source";
 import { MOCK_ACTORS } from "@/lib/bgn/mock/fixtures";
+import { MOCK_DANANTARA_ACTORS } from "@/lib/danantara/mock/fixtures";
 import { GET } from "./route";
 
 const ROSTER: ActorRosterApiResponse = {
@@ -141,7 +142,25 @@ describe("GET /api/v1/danantara/actor-intelligence (T21 / AC11)", () => {
     }
   });
 
-  it("serves the BGN mock roster on ?mock=1 without hitting the upstream (A13 v4.0, prod-safe)", async () => {
+  it("serves the BGN mock roster on ?mock=1&bgn=1 without hitting the upstream (A13 v4.0, prod-safe)", async () => {
+    vi.stubEnv("NODE_ENV", "production");
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+    try {
+      const res = await GET(new Request("http://localhost/api/v1/danantara/actor-intelligence?mock=1&bgn=1"));
+      expect(res.status).toBe(200);
+      const body = await res.json();
+      expect(body.actors).toHaveLength(MOCK_ACTORS.actors.length);
+      expect(body.actors.map((a: { handle: string }) => a.handle)).toEqual(
+        MOCK_ACTORS.actors.map((a) => a.handle),
+      );
+      expect(fetchMock).not.toHaveBeenCalled();
+    } finally {
+      vi.unstubAllEnvs();
+    }
+  });
+
+  it("serves the Danantara mock roster on ?mock=1 (no bgn) without hitting the upstream (A10 v11.2, prod-safe)", async () => {
     vi.stubEnv("NODE_ENV", "production");
     const fetchMock = vi.fn();
     vi.stubGlobal("fetch", fetchMock);
@@ -149,8 +168,12 @@ describe("GET /api/v1/danantara/actor-intelligence (T21 / AC11)", () => {
       const res = await GET(new Request("http://localhost/api/v1/danantara/actor-intelligence?mock=1"));
       expect(res.status).toBe(200);
       const body = await res.json();
-      expect(body.actors).toHaveLength(MOCK_ACTORS.actors.length);
+      expect(body.actors).toHaveLength(MOCK_DANANTARA_ACTORS.actors.length);
       expect(body.actors.map((a: { handle: string }) => a.handle)).toEqual(
+        MOCK_DANANTARA_ACTORS.actors.map((a) => a.handle),
+      );
+      // the Danantara demo, not the BGN/MBG roster
+      expect(body.actors.map((a: { handle: string }) => a.handle)).not.toEqual(
         MOCK_ACTORS.actors.map((a) => a.handle),
       );
       expect(fetchMock).not.toHaveBeenCalled();
