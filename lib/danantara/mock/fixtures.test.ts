@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { getBumn } from "@/lib/bumn/registry";
 import { topicsForBumn } from "@/lib/danantara/ceo/engine";
+import { isBotAccountType } from "@/lib/danantara/ceo/threats-source";
 import { MOCK_TOPICS } from "@/lib/bgn/mock/fixtures";
 import { MOCK_DANANTARA_ACTORS, MOCK_DANANTARA_BUMN, MOCK_DANANTARA_THREATS, MOCK_DANANTARA_TOPICS } from "./fixtures";
 
@@ -108,37 +109,60 @@ describe("MOCK_DANANTARA_THREATS", () => {
 describe("MOCK_DANANTARA_ACTORS", () => {
   const { actors } = MOCK_DANANTARA_ACTORS;
 
-  it("fills both the Human and Bot bands (≥2 each) so the roster reads like the live gate", () => {
-    const humans = actors.filter((a) => !a.bot);
-    const bots = actors.filter((a) => a.bot);
-    expect(humans.length).toBeGreaterThanOrEqual(2);
-    expect(bots.length).toBeGreaterThanOrEqual(2);
+  it("gives EVERY actor a full intel payload so the demo gate renders the grouped, clickable popup (like /bgn/command, T31)", () => {
+    // ThreatActors renders the grouped, clickable static-roster layout only when
+    // `drivers.every(d => d.intel)`; a single intel-less actor drops it back to the
+    // plain non-clickable Human/Bot bands — so every card must carry intel.
+    expect(actors.length).toBeGreaterThanOrEqual(5);
     for (const a of actors) {
       expect(a.handle.trim()).not.toBe("");
       expect(a.handle.startsWith("@")).toBe(false); // handle is bare (the card prefixes @)
+      expect(a.intel, `@${a.handle} intel`).toBeTruthy();
+      // the popup needs real analysis to show, not an empty object
+      expect(a.intel!.riskAssessment || a.intel!.influenceAnalysis, `@${a.handle} analysis`).toBeTruthy();
+      expect(a.intel!.classification, `@${a.handle} classification`).toBeTruthy();
     }
   });
 
-  it("gives the human actors a photo but never the bot accounts (no real face under a bot label)", () => {
+  it("spans the actor-type groups (Influencer / News Media / Real Person) and keeps ≥2 coordinated provocateur/buzzer accounts", () => {
+    const classes = actors.map((a) => a.accountType.toLowerCase());
+    expect(classes.some((c) => c.includes("influencer"))).toBe(true);
+    expect(classes.some((c) => c.includes("media"))).toBe(true);
+    expect(classes.some((c) => c.includes("real person"))).toBe(true);
+    // the transparency threat is provocateur-driven — keep the coordinated amplifiers
+    expect(actors.filter((a) => isBotAccountType(a.accountType)).length).toBeGreaterThanOrEqual(2);
+  });
+
+  it("shows a photo only on the credible/real-person actors — never a provocateur/buzzer (no real face under that label)", () => {
     for (const a of actors) {
-      if (a.bot) expect(a.avatarUrl).toBeUndefined();
-      else expect(typeof a.avatarUrl).toBe("string");
+      if (isBotAccountType(a.accountType)) expect(a.avatarUrl, `@${a.handle}`).toBeUndefined();
     }
+    // the real-face actors keep their bundled photos
+    expect(actors.filter((a) => a.avatarUrl).length).toBeGreaterThanOrEqual(3);
   });
 
-  it("serves human avatars as same-origin /public assets, never an external CDN (prod egress is selective)", () => {
+  it("serves avatars as same-origin /public assets, never an external CDN (prod egress is selective)", () => {
     // An external host (randomuser.me, etc.) is silently dropped in prod, so the <img>
     // hangs without firing onError and not even the initials fallback shows. A bundled
     // same-origin path is always reachable — lock that in.
-    for (const a of actors.filter((x) => !x.bot)) {
-      expect(a.avatarUrl!.startsWith("/")).toBe(true);
-      expect(/^https?:/i.test(a.avatarUrl!)).toBe(false);
+    for (const a of actors) {
+      if (!a.avatarUrl) continue;
+      expect(a.avatarUrl.startsWith("/")).toBe(true);
+      expect(/^https?:/i.test(a.avatarUrl)).toBe(false);
     }
   });
 
-  it("is Danantara context, not the BGN/MBG roster", () => {
+  it("is Danantara transparency-crisis context (matches 'Ancaman Utama'), not the BGN/MBG roster", () => {
     const handles = actors.map((a) => a.handle);
-    expect(handles).not.toContain("warga_peduli_gizi"); // a BGN handle
-    expect(handles.length).toBeGreaterThan(0);
+    expect(handles).not.toContain("warga_peduli_gizi"); // a BGN live-mock handle
+    expect(handles).not.toContain("LambeSahamjja"); // a BGN captured-roster handle
+    // the analysis ties to the transparency threat named in the middle column
+    const intelBlob = actors
+      .flatMap((a) => Object.values(a.intel ?? {}))
+      .filter((v): v is string => typeof v === "string")
+      .join(" ")
+      .toLowerCase();
+    expect(/laporan keuangan|apbn|transparan|dana kelolaan/.test(intelBlob)).toBe(true);
+    expect(/mbg|keracunan|gizi/.test(intelBlob)).toBe(false);
   });
 });
