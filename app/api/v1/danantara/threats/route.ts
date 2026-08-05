@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { MOCK_THREATS } from "@/lib/bgn/mock/fixtures";
+import { MOCK_DANANTARA_THREATS } from "@/lib/danantara/mock/fixtures";
 import { readDevMockJson } from "@/lib/danantara/dev-mocks";
 import { feedProductFromParams, resolveTopicCode } from "@/lib/danantara/feed-config";
 import { fetchThreatsForCode, ThreatsNotConfiguredError } from "@/lib/danantara/threats-feed";
@@ -21,13 +22,15 @@ import { fetchThreatsForCode, ThreatsNotConfiguredError } from "@/lib/danantara/
 export async function GET(req: Request) {
   const params = new URL(req.url).searchParams;
   const fresh = params.get("fresh") === "1";
+  // Per-product resolution (A10 v11.0): `?bgn=1` → BGN product, else Danantara.
+  const product = feedProductFromParams(params);
 
-  // Scoped BGN demo mock (A13 v4.0). Intentionally BGN-only — NOT made product-aware like
-  // the /topics branch: the /danantara demo (A7 v50.1) mocks only the panes it renders
-  // (/topics + /bumn-board), and /danantara/krisis (CrisisGate) isn't wired to the demo,
-  // so no Danantara caller sends ?mock=1 here. Production-safe; returns before the upstream call.
+  // Scoped demo mock (?mock=1) — **product-aware** (A10 v11.2): BGN fixtures for
+  // /bgn/command (which also sends ?bgn=1), Danantara fixtures for the /danantara/krisis
+  // demo (DANANTARA_DEMO_MOCK). Every other caller falls through to the live path.
+  // Production-safe by design — bundled demo data, no secret, returns before the upstream call.
   if (params.get("mock") === "1") {
-    return NextResponse.json(MOCK_THREATS);
+    return NextResponse.json(product === "bgn" ? MOCK_THREATS : MOCK_DANANTARA_THREATS);
   }
 
   const mockJson = readDevMockJson("threats.json") ?? process.env.DANANTARA_THREATS_MOCK_JSON;
@@ -39,8 +42,6 @@ export async function GET(req: Request) {
     }
   }
 
-  // Per-product resolution (A10 v11.0): `?bgn=1` → BGN product, else Danantara.
-  const product = feedProductFromParams(params);
   const code = resolveTopicCode(params, product);
 
   try {

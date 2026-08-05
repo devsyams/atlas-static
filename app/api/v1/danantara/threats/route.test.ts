@@ -4,6 +4,7 @@ import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ThreatsApiResponse } from "@/lib/danantara/ceo/threats-source";
 import { MOCK_THREATS } from "@/lib/bgn/mock/fixtures";
+import { MOCK_DANANTARA_THREATS } from "@/lib/danantara/mock/fixtures";
 import { GET } from "./route";
 
 const SAMPLE: ThreatsApiResponse = {
@@ -159,7 +160,23 @@ describe("GET /api/v1/danantara/threats (T13 / AC8)", () => {
     expect(JSON.stringify(body)).not.toContain(KEY);
   });
 
-  it("serves the BGN mock threat on ?mock=1 without hitting the upstream (A13 v4.0, prod-safe)", async () => {
+  it("serves the BGN mock threat on ?mock=1&bgn=1 without hitting the upstream (A13 v4.0, prod-safe)", async () => {
+    vi.stubEnv("NODE_ENV", "production");
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+    try {
+      const res = await GET(new Request("http://localhost/api/v1/danantara/threats?mock=1&bgn=1"));
+      expect(res.status).toBe(200);
+      const body = await res.json();
+      expect(body.threat.title).toBe(MOCK_THREATS.threat?.title);
+      expect(body.stats.total_threats).toBe(MOCK_THREATS.stats.total_threats);
+      expect(fetchMock).not.toHaveBeenCalled();
+    } finally {
+      vi.unstubAllEnvs();
+    }
+  });
+
+  it("serves the Danantara mock threat on ?mock=1 (no bgn) without hitting the upstream (A10 v11.2, prod-safe)", async () => {
     vi.stubEnv("NODE_ENV", "production");
     const fetchMock = vi.fn();
     vi.stubGlobal("fetch", fetchMock);
@@ -167,8 +184,10 @@ describe("GET /api/v1/danantara/threats (T13 / AC8)", () => {
       const res = await GET(new Request("http://localhost/api/v1/danantara/threats?mock=1"));
       expect(res.status).toBe(200);
       const body = await res.json();
-      expect(body.threat.title).toBe(MOCK_THREATS.threat?.title);
-      expect(body.stats.total_threats).toBe(MOCK_THREATS.stats.total_threats);
+      expect(body.threat.title).toBe(MOCK_DANANTARA_THREATS.threat?.title);
+      expect(body.stats.total_threats).toBe(MOCK_DANANTARA_THREATS.stats.total_threats);
+      // the Danantara demo, not the BGN/MBG fixture
+      expect(body.threat.title).not.toBe(MOCK_THREATS.threat?.title);
       expect(fetchMock).not.toHaveBeenCalled();
     } finally {
       vi.unstubAllEnvs();

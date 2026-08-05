@@ -2,7 +2,8 @@ import { describe, expect, it } from "vitest";
 
 import { getBumn } from "@/lib/bumn/registry";
 import { topicsForBumn } from "@/lib/danantara/ceo/engine";
-import { MOCK_DANANTARA_BUMN, MOCK_DANANTARA_TOPICS } from "./fixtures";
+import { MOCK_TOPICS } from "@/lib/bgn/mock/fixtures";
+import { MOCK_DANANTARA_ACTORS, MOCK_DANANTARA_BUMN, MOCK_DANANTARA_THREATS, MOCK_DANANTARA_TOPICS } from "./fixtures";
 
 /** The top-8 BUMN the demo board shows (A7 v50.3). */
 const TOP8 = ["mandiri", "pertamina", "pln", "telkom", "bri", "bni", "garudaindonesia", "jasamarga"];
@@ -75,5 +76,59 @@ describe("MOCK_DANANTARA_BUMN", () => {
     const sents = MOCK_DANANTARA_BUMN.bumn.map((r) => r.sentiment);
     expect(Math.max(...sents)).toBeGreaterThan(0); // some net-positive BUMN (Mandiri/BRI/BNI)
     expect(Math.min(...sents)).toBeLessThan(0); // some net-negative BUMN (Pertamina/PLN/…)
+  });
+});
+
+/**
+ * `/danantara/krisis` demo fixtures (A10 v11.2) — the Crisis Gate's middle
+ * ("Ancaman Utama") + right ("Aktor Penggerak") columns while the opengate key is
+ * renewed. Built through the live `mapThreatsResponse` / `mapActorRoster`, so they
+ * match a real `/threats` / `/actor-intelligence` route response.
+ */
+describe("MOCK_DANANTARA_THREATS", () => {
+  it("carries one detected Danantara threat with severity + stats", () => {
+    const { threat, stats } = MOCK_DANANTARA_THREATS;
+    expect(threat).not.toBeNull();
+    expect(threat!.title.trim()).not.toBe("");
+    expect(threat!.severity).toBeGreaterThan(0);
+    expect(threat!.severity).toBeLessThanOrEqual(10);
+    expect(["high", "medium", "low"]).toContain(threat!.severityClass);
+    expect(threat!.growthRate.trim()).not.toBe("");
+    expect(threat!.trendingKeywords.length).toBeGreaterThan(0);
+    expect(stats.total_threats).toBeGreaterThanOrEqual(1);
+  });
+
+  it("is Danantara context, not the BGN/MBG fixture", () => {
+    expect(MOCK_DANANTARA_THREATS.threat!.title).not.toBe(MOCK_TOPICS.issues[0].title);
+    expect(/mbg|keracunan/i.test(MOCK_DANANTARA_THREATS.threat!.title)).toBe(false);
+    expect(/danantara|bumn|apbn|keuangan/i.test(MOCK_DANANTARA_THREATS.threat!.title)).toBe(true);
+  });
+});
+
+describe("MOCK_DANANTARA_ACTORS", () => {
+  const { actors } = MOCK_DANANTARA_ACTORS;
+
+  it("fills both the Human and Bot bands (≥2 each) so the roster reads like the live gate", () => {
+    const humans = actors.filter((a) => !a.bot);
+    const bots = actors.filter((a) => a.bot);
+    expect(humans.length).toBeGreaterThanOrEqual(2);
+    expect(bots.length).toBeGreaterThanOrEqual(2);
+    for (const a of actors) {
+      expect(a.handle.trim()).not.toBe("");
+      expect(a.handle.startsWith("@")).toBe(false); // handle is bare (the card prefixes @)
+    }
+  });
+
+  it("gives the human actors a photo but never the bot accounts (no real face under a bot label)", () => {
+    for (const a of actors) {
+      if (a.bot) expect(a.avatarUrl).toBeUndefined();
+      else expect(typeof a.avatarUrl).toBe("string");
+    }
+  });
+
+  it("is Danantara context, not the BGN/MBG roster", () => {
+    const handles = actors.map((a) => a.handle);
+    expect(handles).not.toContain("warga_peduli_gizi"); // a BGN handle
+    expect(handles.length).toBeGreaterThan(0);
   });
 });
