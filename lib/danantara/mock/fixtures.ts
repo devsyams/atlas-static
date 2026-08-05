@@ -18,7 +18,7 @@
  */
 
 import { getBumn } from "@/lib/bumn/registry";
-import { mapActorRoster, type ActorRosterApiResponse } from "@/lib/danantara/ceo/actor-roster-source";
+import { mapCapturedRoster } from "@/lib/danantara/ceo/actor-intel";
 import { buildBumnRow } from "@/lib/danantara/ceo/bumn-board";
 import {
   mapThreatsResponse,
@@ -31,6 +31,7 @@ import { mapTopicsResponse, type TopicsApiResponse } from "@/lib/danantara/ceo/t
 import type { BumnSentiment, CeoIssue } from "@/lib/danantara/ceo/types";
 import type { FeedResult } from "@/lib/danantara/topics-feed";
 import raw from "./danantara-topics.json";
+import capturedDanantaraRoster from "./actor-intelligence.json";
 
 /** Net sentiment (−100..100) → the upstream's categorical label. Cosmetic: the mapper
  * derives the actual numbers from `stats_sentiment`, not from this string. */
@@ -285,113 +286,26 @@ export const MOCK_DANANTARA_THREATS: MockDanantaraThreats = {
 /* ------------------ crisis gate: /actor-intelligence (A10) -------------- */
 
 /**
- * The Crisis Gate's right column ("Aktor Penggerak") demo roster — the key accounts in
- * the Danantara conversation, split **human (top) vs coordinated provocateur/bot
- * (bottom)** by the gate. Built through the live `mapActorRoster`, so it matches a real
- * `/api/v1/danantara/actor-intelligence` response; the roster ranks negative-leaning +
- * influential first, so the two loudest grievance voices surface (as on the live feed).
+ * The Crisis Gate's right column ("Aktor Penggerak") demo roster (A10 v11.4) — the key
+ * accounts driving the demo's transparency/corruption crisis (the same situation the
+ * middle "Ancaman Utama" column names). Authored in the captured-roster shape
+ * (`./actor-intelligence.json`) and mapped by the **same `mapCapturedRoster`** that
+ * `/bgn/command` uses (A10 v10.0), so **every** actor carries its full `intel` analysis.
+ * That makes `ThreatActors` render the grouped-by-actor-type, **clickable** cards +
+ * `ActorDetailModal` — exactly like `/bgn/command` — instead of the plain, non-clickable
+ * Human/Bot bands the v11.2 `mapActorRoster` roster produced. Edit the JSON to refresh the
+ * demo (Twitter/X actors only; `mapCapturedRoster` keeps `platform === "twitter"`).
  *
- * Placeholder-person photos are attached to the **human** actors only — the **bot /
- * provocateur** accounts get no photo (they fall back to `ThreatActors`' initials tile),
- * because a real face must never render under a "bot" label. The photos are **bundled as
- * same-origin `/public` assets** (`public/danantara/actors/<handle>.jpg`), NOT an external
- * CDN: prod egress is selective, and an external host (e.g. randomuser.me) is silently
- * dropped there — the `<img>` then hangs without firing `onError`, so not even the initials
- * fallback shows (the empty-avatar bug). A same-origin path is always reachable (the app
- * serves it), so the photo renders. The mapper only keeps a `data:image` `profile_picture`,
- * so these paths are attached to the mapped `avatarUrl` below instead.
+ * Avatars are **bundled same-origin `/public` assets** (`public/danantara/actors/<handle>.jpg`),
+ * NOT an external CDN: prod egress is selective, and an external host is silently dropped
+ * there — the `<img>` then hangs without firing `onError`, so not even the initials fallback
+ * shows (the empty-avatar bug, v11.3). `mapCapturedRoster` passes the JSON's `avatarUrl`
+ * straight through, so a same-origin path always renders. The coordinated provocateur/buzzer
+ * accounts carry **no** photo (JSON `avatarUrl: null` → `ThreatActors`' initials tile) —
+ * a real face must never render under that label.
  */
 export type MockDanantaraActors = { actors: ThreatDriver[] };
 
-const DANANTARA_AVATAR_URLS: Record<string, string> = {
-  mr_soerjodibroto: "/danantara/actors/mr_soerjodibroto.jpg",
-  ponokadar: "/danantara/actors/ponokadar.jpg",
-  wong_cilik_bersuara: "/danantara/actors/wong_cilik_bersuara.jpg",
-  analis_pasar_id: "/danantara/actors/analis_pasar_id.jpg",
-};
-
-const RAW_DANANTARA_ROSTER: ActorRosterApiResponse = {
-  success: true,
-  status_code: 200,
-  meta: { topic: "danantara_main" },
-  data: [
-    {
-      username: "mr_soerjodibroto",
-      platform: "Instagram",
-      follower_count: "1,040",
-      influence_score: 4,
-      credibility_score: 5,
-      sentiment_score: -9,
-      risk_level: "high",
-      account_classification: "Complainer",
-      content_themes:
-        "Konsisten menyuarakan keluhan proyek LRT City yang mangkrak dari PT Adhi Commuter Properti (anak usaha Adhi Karya) — janji serah-terima tak terpenuhi; menuntut perhatian Danantara.",
-    },
-    {
-      username: "ponokadar",
-      platform: "Instagram",
-      follower_count: "103",
-      influence_score: 3,
-      credibility_score: 3,
-      sentiment_score: -9,
-      risk_level: "high",
-      account_classification: "Complainer",
-      content_themes:
-        "Lansia yang menyatakan terjebak masalah keuangan dengan Bank BNI & BRI dan menghadapi ancaman lelang rumah; memohon solusi kepada pemangku kepentingan.",
-    },
-    {
-      username: "wong_cilik_bersuara",
-      platform: "X",
-      follower_count: "84,200",
-      influence_score: 7,
-      credibility_score: 6,
-      sentiment_score: -6,
-      risk_level: "medium",
-      account_classification: "Negative Critic",
-      content_themes: "Mendesak transparansi laporan keuangan konsolidasi Danantara dan asal-usul dana kelolaan.",
-    },
-    {
-      username: "analis_pasar_id",
-      platform: "X",
-      follower_count: "312,000",
-      influence_score: 8,
-      credibility_score: 8,
-      sentiment_score: -5,
-      risk_level: "medium",
-      account_classification: "Financial Analyst",
-      content_themes:
-        "Menyoroti penundaan penerbitan obligasi dolar Danantara dan kekhawatiran independensi otoritas keuangan pasca pelibatan di rapat KSSK.",
-    },
-    {
-      username: "suara_rakyat_merdeka",
-      platform: "X",
-      follower_count: "47,300",
-      influence_score: 5,
-      credibility_score: 2,
-      sentiment_score: -9,
-      risk_level: "high",
-      account_classification: "Propaganda/Provocator",
-      influence_analysis: "Amplifikasi terkoordinasi; membingkai keterlambatan laporan keuangan sebagai bukti korupsi dan menyerukan pembubaran.",
-    },
-    {
-      username: "kawal_apbn_official",
-      platform: "X",
-      follower_count: "38,900",
-      influence_score: 4,
-      credibility_score: 2,
-      sentiment_score: -8,
-      risk_level: "high",
-      account_classification: "Buzzer",
-      influence_analysis: "Klaster buzzer; mengaitkan dana APBN Rp917 T dengan dugaan penyimpangan tanpa bukti.",
-    },
-  ],
-};
-
-// Attach the realistic photo per handle onto the mapped roster (the mapper drops
-// non-`data:image` profile_picture values, so the URL can't ride through it).
 export const MOCK_DANANTARA_ACTORS: MockDanantaraActors = {
-  actors: mapActorRoster(RAW_DANANTARA_ROSTER).map((a) => ({
-    ...a,
-    avatarUrl: DANANTARA_AVATAR_URLS[a.handle] ?? a.avatarUrl,
-  })),
+  actors: mapCapturedRoster(capturedDanantaraRoster),
 };
