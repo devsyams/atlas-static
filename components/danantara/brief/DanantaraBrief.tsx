@@ -44,11 +44,20 @@ const BRAND = {
 export function DanantaraBrief({
   backHref = "/danantara/krisis",
   bgn = false,
+  mock = false,
 }: {
   /** Back-arrow target (v3.0) — /bgn/briefing passes /bgn/command; default is the legacy gate. */
   backHref?: string;
   /** BGN product (only /bgn/briefing sets it) — appends ?bgn=1 to the topics fetch and brands the chrome BGN. */
   bgn?: boolean;
+  /**
+   * Danantara demo mock (A10 v11.2) — appends ?mock=1 so the topics BFF serves the bundled
+   * `MOCK_DANANTARA_TOPICS` fixture (the same demo dataset behind /danantara & /danantara/krisis)
+   * while the garudaperkasa key is dead. Only /danantara/brief sets it (via DANANTARA_DEMO_MOCK);
+   * /bgn/briefing leaves it false and keeps its live BGN feed. The briefing derives its whole read
+   * from this one feed, so mocking it renders a fully-populated, story-consistent briefing.
+   */
+  mock?: boolean;
 } = {}) {
   const [issues, setIssues] = useState<CeoIssue[]>([]);
   const [summary, setSummary] = useState<TopicsSummary | null>(null);
@@ -67,7 +76,7 @@ export function DanantaraBrief({
   }, []);
 
   const load = useCallback((fresh = false) => {
-    fetch(`/api/v1/danantara/topics${feedQuery({ fresh, bgn })}`)
+    fetch(`/api/v1/danantara/topics${feedQuery({ fresh, bgn, mock })}`)
       .then((r) => {
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
         return r.json();
@@ -85,7 +94,7 @@ export function DanantaraBrief({
       .finally(() => {
         if (mountedRef.current) setRefreshing(false);
       });
-  }, [bgn]);
+  }, [bgn, mock]);
 
   // The trend feed is independent — if it fails the briefing still renders (momentum just omitted).
   const loadTrend = useCallback((fresh = false) => {
