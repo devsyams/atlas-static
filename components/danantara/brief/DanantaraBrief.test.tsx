@@ -110,6 +110,36 @@ describe("DanantaraBrief (A11 — Executive Briefing)", () => {
     });
   });
 
+  it("brands the page Danantara without the bgn flag — /danantara/brief (A11 v4.0, AC8)", async () => {
+    stubFetch();
+    render(<DanantaraBrief />);
+    await waitFor(() => expect(screen.getByTestId("brief-verdict").textContent).toContain("broadly positive"));
+    expect(screen.getByAltText("Danantara").getAttribute("src")).toContain("danantara.png");
+    expect(screen.queryByAltText("BGN")).not.toBeInTheDocument();
+    expect(document.body.textContent).toContain("Danantara · Media Briefing");
+    expect(screen.getByTestId("brief-verdict").textContent).toContain("Public sentiment toward Danantara is");
+  });
+
+  it("brands the page BGN when bgn is set — /bgn/briefing (A11 v4.0, AC8)", async () => {
+    stubFetch();
+    render(<DanantaraBrief bgn />);
+    await waitFor(() => expect(screen.getByTestId("brief-verdict").textContent).toContain("broadly positive"));
+    expect(screen.getByAltText("BGN").getAttribute("src")).toContain("bgn.png");
+    expect(screen.queryByAltText("Danantara")).not.toBeInTheDocument();
+    expect(document.body.textContent).toContain("BGN · Media Briefing");
+    expect(screen.getByTestId("brief-verdict").textContent).toContain("Public sentiment toward BGN is");
+  });
+
+  it("names the right brand in the offline copy (A11 v4.0, AC8)", async () => {
+    stubFetch(502);
+    const { unmount } = render(<DanantaraBrief />);
+    await waitFor(() => expect(screen.getByTestId("brief-offline").textContent).toContain("The Danantara feed"));
+    unmount();
+
+    render(<DanantaraBrief bgn />);
+    await waitFor(() => expect(screen.getByTestId("brief-offline").textContent).toContain("The BGN feed"));
+  });
+
   it("hides the 7-day sentiment momentum (AC7 currently disabled)", async () => {
     stubFetch();
     render(<DanantaraBrief />);

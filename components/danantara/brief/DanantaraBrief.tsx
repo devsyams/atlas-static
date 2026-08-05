@@ -26,11 +26,20 @@ const TONE_COPY = {
   neutral: { word: "largely neutral", className: "text-muted-foreground" },
 } as const;
 
+/** Visible brand per product (v4.0) — picked by the `bgn` prop, i.e. by the route. */
+const BRAND = {
+  danantara: { name: "Danantara", logo: "/danantara.png" },
+  bgn: { name: "BGN", logo: "/bgn.png" },
+} as const;
+
 /**
- * BGN Executive Briefing (A11) — the drill-down behind the /krisis alarm, driven
- * by the shared BGN topics feed (internally `danantara_main`). A top-down read for a
- * busy CEO: a one-line verdict + KPIs, the biggest win and the main concern, the
- * share of voice, then every topic. English chrome; topic titles stay Indonesian.
+ * Executive Briefing (A11) — the drill-down behind the /krisis alarm, driven by the
+ * shared topics feed (internally `danantara_main`). A top-down read for a busy CEO:
+ * a one-line verdict + KPIs, the biggest win and the main concern, the share of
+ * voice, then every topic. English chrome; topic titles stay Indonesian.
+ *
+ * The visible brand follows `bgn` (v4.0): /bgn/briefing is BGN, /danantara/brief is
+ * Danantara. Internal names stay `danantara_*` on both.
  */
 export function DanantaraBrief({
   backHref = "/danantara/krisis",
@@ -38,7 +47,7 @@ export function DanantaraBrief({
 }: {
   /** Back-arrow target (v3.0) — /bgn/briefing passes /bgn/command; default is the legacy gate. */
   backHref?: string;
-  /** Append ?bgn=1 to the topics fetch — the BGN-product signal (only /bgn/briefing sets it). */
+  /** BGN product (only /bgn/briefing sets it) — appends ?bgn=1 to the topics fetch and brands the chrome BGN. */
   bgn?: boolean;
 } = {}) {
   const [issues, setIssues] = useState<CeoIssue[]>([]);
@@ -104,6 +113,7 @@ export function DanantaraBrief({
     ? { positive: summary.percentage.positive, neutral: summary.percentage.neutral, negative: summary.percentage.negative }
     : { positive: 0, neutral: 0, negative: 0 };
   const toneCopy = TONE_COPY[tone.tone];
+  const brand = bgn ? BRAND.bgn : BRAND.danantara;
 
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 pb-10">
@@ -118,13 +128,13 @@ export function DanantaraBrief({
         >
           <ArrowLeft className="h-4 w-4" />
         </Link>
-        <Image src="/bgn.png" alt="BGN" width={40} height={40} className="h-10 w-10 rounded-lg object-contain" />
+        <Image src={brand.logo} alt={brand.name} width={40} height={40} className="h-10 w-10 rounded-lg object-contain" />
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.28em] text-muted-foreground">
             <span className="flex items-center gap-1 text-success">
               <Radio className="h-3 w-3" /> Live
             </span>
-            BGN · Media Briefing
+            {brand.name} · Media Briefing
           </div>
           <h1 className="text-xl font-bold tracking-tight text-foreground sm:text-2xl">Executive Briefing</h1>
         </div>
@@ -155,14 +165,14 @@ export function DanantaraBrief({
       {live === "offline" ? (
         <div data-testid="brief-offline" className="rounded-2xl border border-border/50 py-16 text-center text-muted-foreground">
           <p className="text-2xl font-semibold">Data unavailable</p>
-          <p className="mt-1 text-sm">The BGN feed could not be reached. Try refreshing.</p>
+          <p className="mt-1 text-sm">The {brand.name} feed could not be reached. Try refreshing.</p>
         </div>
       ) : (
         <>
           {/* Verdict hero */}
           <section data-testid="brief-verdict" className="panel flex flex-col gap-5 p-6">
             <p className="text-lg leading-relaxed text-muted-foreground sm:text-xl">
-              Public sentiment toward BGN is{" "}
+              Public sentiment toward {brand.name} is{" "}
               {live === "loading" ? (
                 <span className="text-foreground">…</span>
               ) : (
