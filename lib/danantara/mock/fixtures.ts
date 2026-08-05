@@ -291,20 +291,23 @@ export const MOCK_DANANTARA_THREATS: MockDanantaraThreats = {
  * `/api/v1/danantara/actor-intelligence` response; the roster ranks negative-leaning +
  * influential first, so the two loudest grievance voices surface (as on the live feed).
  *
- * Placeholder-person photos (randomuser.me) are attached to the **human** actors only —
- * the **bot / provocateur** accounts get no photo (they fall back to `ThreatActors`'
- * initials tile), because a real face must never render under a "bot" label. The mapper
- * only keeps a `data:image` `profile_picture`, so these http URLs are attached to the
- * mapped `avatarUrl` below instead; the Avatar `<img>` also degrades to the initials tile
- * on load error, so a blocked CDN (prod egress is selective) never breaks the column.
+ * Placeholder-person photos are attached to the **human** actors only — the **bot /
+ * provocateur** accounts get no photo (they fall back to `ThreatActors`' initials tile),
+ * because a real face must never render under a "bot" label. The photos are **bundled as
+ * same-origin `/public` assets** (`public/danantara/actors/<handle>.jpg`), NOT an external
+ * CDN: prod egress is selective, and an external host (e.g. randomuser.me) is silently
+ * dropped there — the `<img>` then hangs without firing `onError`, so not even the initials
+ * fallback shows (the empty-avatar bug). A same-origin path is always reachable (the app
+ * serves it), so the photo renders. The mapper only keeps a `data:image` `profile_picture`,
+ * so these paths are attached to the mapped `avatarUrl` below instead.
  */
 export type MockDanantaraActors = { actors: ThreatDriver[] };
 
 const DANANTARA_AVATAR_URLS: Record<string, string> = {
-  mr_soerjodibroto: "https://randomuser.me/api/portraits/men/52.jpg",
-  ponokadar: "https://randomuser.me/api/portraits/men/75.jpg",
-  wong_cilik_bersuara: "https://randomuser.me/api/portraits/men/41.jpg",
-  analis_pasar_id: "https://randomuser.me/api/portraits/women/29.jpg",
+  mr_soerjodibroto: "/danantara/actors/mr_soerjodibroto.jpg",
+  ponokadar: "/danantara/actors/ponokadar.jpg",
+  wong_cilik_bersuara: "/danantara/actors/wong_cilik_bersuara.jpg",
+  analis_pasar_id: "/danantara/actors/analis_pasar_id.jpg",
 };
 
 const RAW_DANANTARA_ROSTER: ActorRosterApiResponse = {
