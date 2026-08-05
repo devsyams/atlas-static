@@ -126,6 +126,16 @@ describe("MOCK_DANANTARA_ACTORS", () => {
     }
   });
 
+  it("serves human avatars as same-origin /public assets, never an external CDN (prod egress is selective)", () => {
+    // An external host (randomuser.me, etc.) is silently dropped in prod, so the <img>
+    // hangs without firing onError and not even the initials fallback shows. A bundled
+    // same-origin path is always reachable — lock that in.
+    for (const a of actors.filter((x) => !x.bot)) {
+      expect(a.avatarUrl!.startsWith("/")).toBe(true);
+      expect(/^https?:/i.test(a.avatarUrl!)).toBe(false);
+    }
+  });
+
   it("is Danantara context, not the BGN/MBG roster", () => {
     const handles = actors.map((a) => a.handle);
     expect(handles).not.toContain("warga_peduli_gizi"); // a BGN handle
