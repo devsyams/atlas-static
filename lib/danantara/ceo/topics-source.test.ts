@@ -96,6 +96,34 @@ describe("mapTopicsResponse (T18 / AC19)", () => {
     expect(neu).toBe(100); // 1000 × 10%
   });
 
+  it("carries the upstream sentiment percentages through untouched", () => {
+    const neg = issues.find((i) => i.title.startsWith("Kontroversi"))!;
+    expect(neg.sentimentPct).toEqual({ positive: 5, neutral: 10, negative: 85 });
+  });
+
+  it("keeps the sentiment split on a zero-volume topic (TrawlDeck news/facebook rows)", () => {
+    // impressions/reach are 0 upstream for source types with no view metrics, but
+    // stats_sentiment is source-independent — the split must not collapse to 0/0/0.
+    const { issues: zero } = mapTopicsResponse({
+      ...SAMPLE,
+      data: {
+        ...SAMPLE.data,
+        topics: [
+          {
+            topik: "BGN Kampanye Pemenuhan Gizi Ibu Hamil untuk Generasi Sehat",
+            impressions: 0,
+            reach: 0,
+            sentiment: "positive",
+            stats_sentiment: { positive: 65, negative: 12, neutral: 22 },
+            penjelasan: "Kampanye gizi ibu hamil.",
+          },
+        ],
+      },
+    });
+    expect(zero[0].mentions).toBe(0);
+    expect(zero[0].sentimentPct).toEqual({ positive: 65, neutral: 22, negative: 12 });
+  });
+
   it("derives net sentiment as positive% − negative%", () => {
     const neg = issues.find((i) => i.title.startsWith("Kontroversi"))!;
     expect(neg.sentiment).toBe(-80); // 5 − 85
