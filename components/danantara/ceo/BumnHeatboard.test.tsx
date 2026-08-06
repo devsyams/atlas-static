@@ -114,4 +114,30 @@ describe("BumnHeatboard one row per BUMN: identity | negative topic | positive t
     fireEvent.click(prt.querySelector("[data-testid='bumn-topic-negative']") as HTMLElement);
     expect(onSelectTopic).toHaveBeenCalledWith("prt-bad");
   });
+
+  it("can be relabeled for a non-BUMN command board", () => {
+    render(
+      <BumnHeatboard
+        rows={rows}
+        issues={issues}
+        boardTitle="Polda Sentiment"
+        entityLabel="POLDA"
+        entityPathBase="/polri/polda"
+        logoPathBase="/polri/polda"
+      />,
+    );
+    const board = screen.getByTestId("ceo-bumn");
+    expect(board.textContent).toContain("Polda Sentiment");
+    expect(board.textContent).toContain("2 POLDA · negative & positive topic");
+    expect(board.textContent).toContain("POLDA");
+    expect(screen.getByTestId("btn-bumn-tile-wsk")).toHaveAttribute("href", "/polri/polda/wsk");
+  });
+
+  it("can hide rank movement badges for cloned boards", () => {
+    const movingRows = rows.map((row, index) => ({ ...row, rankDelta: index === 0 ? 1 : -1 }));
+    render(<BumnHeatboard rows={movingRows} issues={issues} showRankMovement={false} />);
+
+    expect(screen.queryAllByTestId("rank-up")).toHaveLength(0);
+    expect(screen.queryAllByTestId("rank-down")).toHaveLength(0);
+  });
 });

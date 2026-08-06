@@ -22,7 +22,7 @@ function monogramColor(key: string): string {
 }
 
 /** BUMN logo: real asset at `/public/bumn/{id}.png`, monogram fallback when absent. */
-function BumnLogo({ row }: { row: BumnSentiment }) {
+function BumnLogo({ row, logoPathBase = "/bumn" }: { row: BumnSentiment; logoPathBase?: string }) {
   const [failed, setFailed] = useState(false);
   const initials = row.short.replace(/\s+/g, "").slice(0, 4).toUpperCase();
   return (
@@ -37,7 +37,7 @@ function BumnLogo({ row }: { row: BumnSentiment }) {
         </span>
       ) : (
         <Image
-          src={`/bumn/${row.id}.png`}
+          src={`${logoPathBase}/${row.id}.png`}
           alt={`${row.name} logo`}
           width={36}
           height={36}
@@ -114,11 +114,17 @@ function BumnRow({
   rank,
   issues,
   onSelectTopic,
+  entityPathBase,
+  logoPathBase,
+  showRankMovement,
 }: {
   row: BumnSentiment;
   rank: number;
   issues: CeoIssue[];
   onSelectTopic?: (id: string) => void;
+  entityPathBase: string;
+  logoPathBase: string;
+  showRankMovement: boolean;
 }) {
   const { positive, negative } = topicsForBumn(row.id, issues);
   return (
@@ -129,13 +135,13 @@ function BumnRow({
     >
       {/* Identity → the BUMN's own dashboard. Click the logo to open it. */}
       <Link
-        href={`/bumn/${row.id}`}
+        href={`${entityPathBase}/${row.id}`}
         data-testid={`btn-bumn-tile-${row.id}`}
         title={`Open ${row.name} dashboard`}
         className="flex flex-row items-center justify-center gap-2 rounded-md pt-0.5 text-center transition-colors hover:bg-card/50 sm:flex-col sm:gap-1"
       >
         <span className="relative inline-block">
-          <BumnLogo row={row} />
+          <BumnLogo row={row} logoPathBase={logoPathBase} />
           <span
             data-testid="bumn-rank"
             className="absolute -left-2 -top-2 flex h-5 min-w-5 items-center justify-center rounded-full border border-background bg-foreground px-1 font-mono text-base font-bold tabular-nums leading-none text-background shadow-sm"
@@ -145,7 +151,7 @@ function BumnRow({
         </span>
         <span className="flex items-center gap-1">
           <span data-testid="bumn-name" className="max-w-full truncate text-xl font-bold leading-tight">{row.short}</span>
-          <RankBadge delta={row.rankDelta} />
+          {showRankMovement && <RankBadge delta={row.rankDelta} />}
         </span>
       </Link>
       {/* Negative topic on the left, then positive — same order as the Issues board. */}
@@ -188,25 +194,35 @@ export function BumnHeatboard({
   issues,
   loading = false,
   onSelectTopic,
+  boardTitle = "BUMN Sentiment",
+  entityLabel = "BUMN",
+  entityPathBase = "/bumn",
+  logoPathBase = "/bumn",
+  showRankMovement = true,
 }: {
   rows: BumnSentiment[];
   issues: CeoIssue[];
   loading?: boolean;
   /** Open a specific topic's detail (a topic cell was clicked). */
   onSelectTopic?: (id: string) => void;
+  boardTitle?: string;
+  entityLabel?: string;
+  entityPathBase?: string;
+  logoPathBase?: string;
+  showRankMovement?: boolean;
 }) {
   return (
     <div data-testid="ceo-bumn" className="panel flex flex-col overflow-hidden xl:h-full">
       <div className="flex items-center gap-2 border-b border-border px-3 py-2.5">
         <Building2 className="h-5 w-5 text-primary" />
-        <span className="text-xl font-semibold uppercase tracking-[0.18em]">BUMN Sentiment</span>
+        <span className="text-xl font-semibold uppercase tracking-[0.18em]">{boardTitle}</span>
         <span className="ml-auto text-base uppercase tracking-widest text-muted-foreground">
-          {loading ? "Loading…" : `${rows.length} BUMN · negative & positive topic`}
+          {loading ? "Loading…" : `${rows.length} ${entityLabel} · negative & positive topic`}
         </span>
       </div>
       {/* Column legend — hidden on phones (the cells carry their own tone). */}
       <div className={`hidden ${GRID} gap-2.5 border-b border-border/60 bg-card px-3 py-1.5 text-base font-bold tracking-[0.14em] text-muted-foreground sm:grid sm:items-center`}>
-        <span className="text-center">BUMN</span>
+        <span className="text-center">{entityLabel}</span>
         <span className="flex items-center gap-1.5 text-destructive">
           <ThumbsDown className="h-4 w-4 shrink-0" /> NEGATIVE TOPICS
         </span>
@@ -223,7 +239,16 @@ export function BumnHeatboard({
       ) : (
         <ol data-testid="bumn-list" className="min-h-0 flex-1 overflow-y-auto">
           {rows.map((row, idx) => (
-            <BumnRow key={row.id} row={row} rank={idx + 1} issues={issues} onSelectTopic={onSelectTopic} />
+            <BumnRow
+              key={row.id}
+              row={row}
+              rank={idx + 1}
+              issues={issues}
+              onSelectTopic={onSelectTopic}
+              entityPathBase={entityPathBase}
+              logoPathBase={logoPathBase}
+              showRankMovement={showRankMovement}
+            />
           ))}
         </ol>
       )}

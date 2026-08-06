@@ -47,7 +47,7 @@ describe("DetailModal (T10 / AC10)", () => {
   const topIssue = state.issues[0];
   const topBumn = state.bumn[0];
 
-  it("renders issue detail with the description (not Top Coverage) and related BUMN (v32.0)", () => {
+  it("renders issue detail with the description and default dashboard links", () => {
     render(
       <DetailModal selection={{ type: "issue", id: topIssue.id }} state={state} onClose={vi.fn()} onNavigate={vi.fn()} />,
     );
@@ -62,9 +62,8 @@ describe("DetailModal (T10 / AC10)", () => {
     // Impressions/Reach/Sentiment hints are spelled out in English.
     expect(detail.textContent).toContain("Total views across all posts in this topic");
     expect(detail.textContent).toContain("Number of users exposed to this topic");
-    for (const id of topIssue.relatedBumn) {
-      expect(screen.getByTestId(`related-bumn-${id}`)).toBeInTheDocument();
-    }
+    expect(detail.textContent).toContain("BUMN Dashboard");
+    for (const id of topIssue.relatedBumn) expect(screen.getByTestId(`related-bumn-${id}`)).toBeInTheDocument();
   });
 
   it("renders BUMN detail with related issues", () => {
@@ -103,14 +102,12 @@ describe("DetailModal (T10 / AC10)", () => {
     expect(onClose).toHaveBeenCalledOnce();
   });
 
-  it("links a related BUMN to its dashboard (v40.0)", () => {
+  it("can hide related BUMN dashboard links from an issue detail", () => {
     render(
-      <DetailModal selection={{ type: "issue", id: topIssue.id }} state={state} onClose={vi.fn()} onNavigate={vi.fn()} />,
+      <DetailModal selection={{ type: "issue", id: topIssue.id }} state={state} onClose={vi.fn()} onNavigate={vi.fn()} showRelatedDashboards={false} />,
     );
-    expect(screen.getByTestId(`related-bumn-${topIssue.relatedBumn[0]}`)).toHaveAttribute(
-      "href",
-      `/bumn/${topIssue.relatedBumn[0]}`,
-    );
+    expect(screen.queryByText("BUMN Dashboard")).not.toBeInTheDocument();
+    expect(screen.queryByTestId(`related-bumn-${topIssue.relatedBumn[0]}`)).not.toBeInTheDocument();
   });
 
   it("renders nothing when the id does not exist", () => {
