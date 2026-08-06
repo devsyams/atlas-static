@@ -30,6 +30,10 @@ export interface CeoIssue {
   rankDelta: number; // rank one window ago − current rank; positive = climbed (derived)
   posMentions: number; // positive-tone mention count (derived)
   negMentions: number; // negative-tone mention count (derived)
+  /** Upstream sentiment split, in percent. Authoritative and independent of
+   * impressions/reach — the feed reports it even for topics with no view metrics
+   * (news/facebook-only clusters), where the mention counts above are all 0. */
+  sentimentPct?: { positive: number; neutral: number; negative: number };
   idQuery?: string; // Nexorus dashboard deep-link id (P8 v2.0); absent for older feeds
 }
 

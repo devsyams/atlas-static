@@ -6,13 +6,30 @@ export function sentimentTint(sentiment: number, alpha = 0.18): string {
   return `oklch(0.45 ${chroma.toFixed(3)} ${hue.toFixed(0)} / ${alpha})`;
 }
 
-/** SentimentPie totals from any item carrying mention counts (AC14). */
-export function pieTotals(item: { mentions: number; posMentions: number; negMentions: number }): {
+/**
+ * SentimentPie totals from any item carrying mention counts (AC14).
+ *
+ * The counts are impressions-derived, so a topic the feed reports with zero
+ * impressions (upstream has no view metrics for news/facebook-only clusters)
+ * would collapse to 0/0/0 — an empty donut, and a topic every consumer reads as
+ * negative. Its `sentimentPct` is still authoritative there, so fall back to the
+ * percentages as the split when there is no volume to weight them by.
+ */
+export function pieTotals(item: {
+  mentions: number;
+  posMentions: number;
+  negMentions: number;
+  sentimentPct?: { positive: number; neutral: number; negative: number };
+}): {
   pos: number;
   neg: number;
   neu: number;
   total: number;
 } {
+  if (item.mentions <= 0 && item.sentimentPct) {
+    const { positive, neutral, negative } = item.sentimentPct;
+    return { pos: positive, neg: negative, neu: neutral, total: positive + neutral + negative };
+  }
   return {
     pos: item.posMentions,
     neg: item.negMentions,

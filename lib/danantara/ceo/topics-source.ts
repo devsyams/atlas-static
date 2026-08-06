@@ -114,7 +114,7 @@ function inferCategory(title: string): IssueCategory {
 
 /** One upstream topic → a flat CeoIssue snapshot (no simulated history/velocity). */
 function toIssue(t: UpstreamTopic, idx: number): CeoIssue {
-  const { positive, negative } = t.stats_sentiment;
+  const { positive, negative, neutral } = t.stats_sentiment;
   const mentions = Math.round(t.impressions);
   return {
     id: `topic-${idx}`,
@@ -133,6 +133,7 @@ function toIssue(t: UpstreamTopic, idx: number): CeoIssue {
     rankDelta: 0,
     posMentions: Math.round((mentions * positive) / 100),
     negMentions: Math.round((mentions * negative) / 100),
+    sentimentPct: { positive, neutral, negative },
   };
 }
 
