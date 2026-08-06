@@ -185,12 +185,15 @@ export function IssueBoard({
   loading = false,
   onSelect,
   brand = "Danantara",
+  boardTitle,
 }: {
   issues: CeoIssue[];
   loading?: boolean;
   onSelect?: (id: string) => void;
   /** Board title prefix — "{brand} Issues" (A7 v47.1; default Danantara). */
   brand?: string;
+  /** Full board title override for cloned executive-command experiences. */
+  boardTitle?: string;
 }) {
   const { positive, negative } = groupIssuesBySentiment(issues);
 
@@ -198,7 +201,7 @@ export function IssueBoard({
     <div data-testid="ceo-issues" className="panel flex flex-col overflow-hidden xl:h-full">
       <div className="flex items-center gap-2 border-b border-border px-3 py-2.5">
         <Flame className="h-5 w-5 text-primary" />
-        <span className="text-xl font-semibold uppercase tracking-[0.18em]">{brand} Issues</span>
+        <span className="text-xl font-semibold uppercase tracking-[0.18em]">{boardTitle ?? `${brand} Issues`}</span>
         <span className="ml-auto text-base uppercase tracking-widest text-muted-foreground">
           {loading ? "Loading…" : `${issues.length} topics · negative vs positive`}
         </span>

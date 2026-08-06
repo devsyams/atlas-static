@@ -37,12 +37,15 @@ export function DetailModal({
   state,
   onClose,
   onNavigate,
+  showRelatedDashboards = true,
 }: {
   selection: DetailSelection;
   state: CeoState;
   onClose: () => void;
   /** Switch the modal to another item (e.g. click a related-BUMN chip). */
   onNavigate: (next: DetailSelection) => void;
+  /** Hide related-dashboard jumps for cloned executive-command experiences. */
+  showRelatedDashboards?: boolean;
 }) {
   // Esc closes
   useEffect(() => {
@@ -157,7 +160,7 @@ export function DetailModal({
               )}
 
               {/* Jump to the related BUMN's own dashboard. */}
-              {relatedBumn.length > 0 && (
+              {showRelatedDashboards && relatedBumn.length > 0 && (
                 <div>
                   <div className="mb-2 flex items-center gap-1.5 text-lg font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                     <LayoutDashboard className="h-4 w-4" /> BUMN Dashboard
