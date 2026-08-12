@@ -54,6 +54,13 @@ describe("responseCalculator (A9 v2.0 — boss's counter-action model)", () => {
     const baseline = negativeBaselineFromIssue({ negMentions: 11_000_000 });
     expect(baseline).toBeGreaterThan(1000);
     expect(baseline).toBeLessThan(2000);
-    expect(negativeBaselineFromIssue({ negMentions: 0 })).toBe(0);
+  });
+
+  it("floors the baseline at 1 — a negative topic always has at least one post to counter", () => {
+    // Zero-volume rows (news/facebook-only clusters — upstream has no view metrics)
+    // report negMentions=0 while sentiment says Negative: posts exist, views are unmeasured.
+    expect(negativeBaselineFromIssue({ negMentions: 0 })).toBe(1);
+    // Low-volume: < 3750 negative impressions used to round down to a 0-post baseline.
+    expect(negativeBaselineFromIssue({ negMentions: 2_000 })).toBe(1);
   });
 });

@@ -156,6 +156,29 @@ describe("DetailModal (T10 / AC10)", () => {
     expect(text).toContain("Communication Response plan"); // the response plan
   });
 
+  it("shows a non-zero plan for a zero-volume negative topic (A9 v3.2 — sentimentPct fallback rows)", () => {
+    // News/facebook-only clusters aggregate upstream to impressions=0, so the mapper
+    // derives negMentions=0 — but stats_sentiment still marks the topic Negative and
+    // the panel renders. The plan must not tell the boardroom to deploy 0 actions.
+    const zeroVolume: CeoIssue = {
+      ...issue,
+      id: "zero-topic",
+      mentions: 0,
+      reach: 0,
+      posMentions: 0,
+      negMentions: 0,
+      sentimentPct: { positive: 10, neutral: 20, negative: 70 },
+    };
+    const st: CeoState = { tickCount: 0, issues: [zeroVolume], bumn: [] };
+    render(<DetailModal selection={{ type: "issue", id: "zero-topic" }} state={st} onClose={vi.fn()} onNavigate={vi.fn()} />);
+    const panel = screen.getByTestId("counter-noise");
+    expect(panel.textContent).toContain("From 1"); // floored baseline, not 0
+    const counts = ["clipper", "kol", "homeless"].map((ch) =>
+      parseInt(screen.getByTestId(`counter-${ch}`).textContent ?? "", 10),
+    );
+    expect(counts.reduce((a, b) => a + b, 0)).toBeGreaterThan(0);
+  });
+
   it("omits the Communication Response calculator for a positive topic (A9 / T7 / AC4)", () => {
     const positive: CeoIssue = { ...issue, id: "pos-topic", posMentions: 800, negMentions: 100, sentiment: 60 };
     const posState: CeoState = { tickCount: 0, issues: [positive], bumn: [] };
