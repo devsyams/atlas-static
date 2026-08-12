@@ -85,7 +85,13 @@ export function responseCalculator(negativeBaseline: number, tier: ResponseTier 
   };
 }
 
-/** Estimate a topic's negative-post baseline from its negative impressions. */
+/**
+ * Estimate a topic's negative-post baseline from its negative impressions,
+ * floored at 1: the panel only renders for negative-dominant topics, and their
+ * sentiment is computed upstream from real posts even when the feed reports no
+ * view metrics (news/facebook-only clusters → negMentions 0) — so a 0-post
+ * baseline would tell the boardroom to deploy 0 counter-actions.
+ */
 export function negativeBaselineFromIssue(issue: { negMentions: number }): number {
-  return Math.round(Math.max(0, issue.negMentions) / IMPRESSIONS_PER_POST);
+  return Math.max(1, Math.round(Math.max(0, issue.negMentions) / IMPRESSIONS_PER_POST));
 }
